@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>แบบทดสอบขั้นสูง: คุณรู้ทันภัยไซเบอร์แค่ไหน?</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Kanit', sans-serif;
+            background-color: #0d1117;
+            color: #c9d1d9;
+        }
+        .quiz-container {
+            background-color: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 1rem;
+            padding: 2rem;
+            width: 100%;
+            max-width: 48rem; /* Increased max-width */
+        }
+        .option-btn {
+            background-color: #21262d;
+            border: 1px solid #30363d;
+            transition: all 0.2s ease-in-out;
+        }
+        .option-btn:hover:not(:disabled) {
+            border-color: #8b949e;
+            background-color: #30363d;
+        }
+        .option-btn.correct {
+            background-color: #238636;
+            border-color: #38a24a;
+            color: white;
+        }
+        .option-btn.incorrect {
+            background-color: #da3633;
+            border-color: #f85149;
+            color: white;
+        }
+        .explanation-box {
+            background-color: #0d1117;
+            border-left: 4px solid #58a6ff;
+            padding: 1rem;
+            margin-top: 1.5rem;
+            border-radius: 0.25rem;
+        }
+        #progress-bar {
+            transition: width 0.5s ease-in-out;
+        }
+        .form-input {
+            background-color: #0d1117;
+            border: 1px solid #30363d;
+            color: #c9d1d9;
+            border-radius: 0.5rem;
+            padding: 0.75rem 1rem;
+            width: 100%;
+        }
+        .form-input:focus {
+            outline: none;
+            border-color: #58a6ff;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <div id="quiz-app" class="container mx-auto p-4 min-h-screen flex items-center justify-center">
+        <div class="quiz-container">
+
+            <!-- Start Screen -->
+            <div id="start-screen" class="text-center">
+                <h1 class="text-4xl font-bold text-white mb-4">คุณรู้ทันภัยไซเบอร์แค่ไหน?</h1>
+                <p class="text-gray-400 mb-8">ทำแบบทดสอบ 30 สถานการณ์เพื่อประเมินความรู้และรับคำแนะนำส่วนบุคคล</p>
+                <div class="max-w-sm mx-auto space-y-4 mb-8">
+                    <input type="text" id="name-input" placeholder="กรุณากรอกชื่อ" class="form-input text-center">
+                    <input type="email" id="email-input" placeholder="กรุณากรอกอีเมล" class="form-input text-center">
+                </div>
+                <button id="start-btn" class="bg-blue-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-blue-700 transition-all text-lg">
+                    <i class="fas fa-play mr-2"></i> เริ่มทำแบบทดสอบ
+                </button>
+            </div>
+
+            <!-- Quiz Screen -->
+            <div id="quiz-screen" class="hidden">
+                <div class="flex justify-between items-center mb-4">
+                    <p class="text-lg font-semibold">คำถามที่ <span id="question-number"></span>/30</p>
+                    <p class="text-lg font-semibold">คะแนน: <span id="score">0</span></p>
+                </div>
+                <div class="w-full bg-gray-700 rounded-full h-2.5 mb-6">
+                    <div id="progress-bar" class="bg-blue-500 h-2.5 rounded-full" style="width: 0%"></div>
+                </div>
+                <div class="mb-6">
+                    <p class="text-lg text-gray-400 mb-2">สถานการณ์:</p>
+                    <div id="scenario-box" class="p-4 bg-gray-900 rounded-lg border border-gray-700 min-h-[100px]">
+                        <p id="question-text" class="text-white text-xl"></p>
+                    </div>
+                </div>
+                <h2 class="text-2xl font-bold text-white mb-4">นี่คือภัยคุกคามประเภทใด?</h2>
+                <div id="options-container" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+                <div id="explanation-container" class="hidden mt-6"></div>
+                <button id="next-btn" class="hidden bg-gray-600 w-full mt-8 text-white font-bold py-3 px-6 rounded-lg hover:bg-gray-700 transition-colors">ข้อต่อไป <i class="fas fa-arrow-right ml-2"></i></button>
+            </div>
+
+            <!-- Result Screen -->
+            <div id="result-screen" class="hidden text-center">
+                 <h1 class="text-4xl font-bold text-white mb-4">สรุปผลของคุณ <span id="user-name-display"></span></h1>
+                 <div id="result-icon" class="text-7xl mb-4"></div>
+                 <p class="text-2xl text-gray-300 mb-2">คุณทำได้</p>
+                 <p class="text-6xl font-bold text-blue-400 mb-4"><span id="final-score"></span> / 30</p>
+                 <p id="result-message" class="text-xl text-gray-400 mb-8"></p>
+                 <div id="weakness-analysis" class="mb-8"></div>
+                 <button id="restart-btn" class="bg-blue-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-blue-700 transition-all text-lg">
+                    <i class="fas fa-redo mr-2"></i> ลองอีกครั้ง
+                </button>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        const quizData = [
+            // Existing 15 questions with category
+            { question: "คุณได้รับอีเมลจาก 'K-Bank' แจ้งว่าบัญชีของคุณมีการเข้าระบบที่น่าสงสัย และขอให้คลิกลิงก์เพื่อ 'ยืนยันตัวตน' ด่วน มิฉะนั้นบัญชีจะถูกระงับ", options: ["Phishing", "Ransomware", "Malware", "DDoS Attack"], answer: "Phishing", category: "Phishing & Social Engineering", explanation: "นี่คือการหลอกลวงแบบ Phishing ที่พยายามสร้างความตกใจเพื่อให้คุณคลิกลิงก์ไปยังเว็บไซต์ปลอมและขโมยรหัสผ่านของคุณ", red_flags: ["ผู้ส่งใช้อีเมลแปลกๆ ไม่ใช่ @kasikornbank.com", "สร้างสถานการณ์เร่งด่วน กดดันให้รีบทำ", "มีลิงก์ให้คลิกเพื่อกรอกข้อมูลสำคัญ"], prevention: ["ห้ามคลิกลิงก์ในอีเมล", "เข้าสู่เว็บไซต์ธนาคารโดยการพิมพ์ URL เองโดยตรง", "ธนาคารไม่มีนโยบายขอรหัสผ่านหรือข้อมูลส่วนตัวผ่านอีเมล"] },
+            { question: "เพื่อนร่วมงานส่งไฟล์ 'แผนงาน-final-v2.zip' มาให้ทางอีเมล เมื่อคุณเปิดไฟล์ คอมพิวเตอร์ก็ค้างไปสักพัก จากนั้นไฟล์งานทั้งหมดในเครื่องก็เปิดไม่ได้และมีนามสกุล .locked ต่อท้าย", options: ["Insider Threat", "Ransomware", "Fake News", "Phishing"], answer: "Ransomware", category: "Malware & Ransomware", explanation: "ไฟล์ที่ถูกส่งมามีมัลแวร์เรียกค่าไถ่ (Ransomware) แฝงอยู่ ซึ่งจะเข้ารหัสไฟล์ทั้งหมดในเครื่องเพื่อเรียกเงินค่าไถ่", red_flags: ["ไฟล์ถูกบีบอัดเป็น .zip ซึ่งอาจใช้ซ่อนไฟล์อันตราย", "ไฟล์ถูกเข้ารหัสและเปิดไม่ได้", "มีข้อความเรียกค่าไถ่ปรากฏขึ้น"], prevention: ["สำรองข้อมูลสำคัญอย่างสม่ำเสมอ", "ใช้โปรแกรม Antivirus สแกนไฟล์แนบก่อนเปิด", "สอบถามผู้ส่งโดยตรงผ่านช่องทางอื่นเพื่อยืนยันว่าเขาได้ส่งไฟล์มาจริง"] },
+            { question: "คุณเห็นโพสต์ใน Facebook ที่มีคนแชร์จำนวนมาก บอกว่า 'ดื่มน้ำมะนาวผสมโซดาสามารถรักษามะเร็งได้!' โดยไม่มีการอ้างอิงงานวิจัยที่น่าเชื่อถือ", options: ["Phishing", "Malware", "Fake News", "Insider Threat"], answer: "Fake News", category: "Misinformation", explanation: "นี่คือข่าวปลอมด้านสุขภาพที่มักถูกสร้างขึ้นเพื่อสร้างความเข้าใจผิด อาจนำไปสู่การรักษาที่ผิดวิธีและเป็นอันตรายได้", red_flags: ["อ้างสรรพคุณเกินจริง 'รักษาหายขาด'", "ไม่มีแหล่งข้อมูลทางวิทยาศาสตร์ที่น่าเชื่อถือรองรับ", "กระตุ้นให้รีบแชร์ต่อๆ กันไป"], prevention: ["เช็คก่อนแชร์", "ตรวจสอบข้อมูลกับแหล่งข่าวที่น่าเชื่อถือ เช่น หน่วยงานสาธารณสุข", "ไม่หลงเชื่อข้อมูลสุขภาพที่ไม่มีการอ้างอิง"] },
+            { question: "ขณะท่องเว็บ มีป๊อปอัปเด้งขึ้นมาพร้อมเสียงเตือนดังลั่นว่า 'คอมพิวเตอร์ของคุณติดไวรัส 5 ตัว! คลิกที่นี่เพื่อล้างไวรัสทันที!'", options: ["DDoS Attack", "Ransomware", "Malware", "Phishing"], answer: "Malware", category: "Malware & Ransomware", explanation: "ป๊อปอัปหลอกลวงนี้พยายามทำให้คุณตกใจและคลิกปุ่ม ซึ่งจะนำไปสู่การติดตั้งมัลแวร์หรือโปรแกรมที่ไม่พึงประสงค์จริงๆ", red_flags: ["ข้อความเตือนที่ดูน่ากลัวและเกินจริง", "มาจากเว็บไซต์ทั่วไป ไม่ใช่โปรแกรม Antivirus ของคุณ", "กดดันให้รีบแก้ไขทันที"], prevention: ["อย่าคลิกปุ่มใดๆ บนป๊อปอัป", "ปิดหน้าต่างเบราว์เซอร์นั้นทันที", "ใช้โปรแกรม Antivirus ที่ติดตั้งในเครื่องของคุณสแกนระบบเพื่อความแน่ใจ"] },
+            { question: "พนักงานที่กำลังจะลาออก ถูกพบว่ากำลังคัดลอกข้อมูลรายชื่อลูกค้าทั้งหมดของบริษัทใส่ใน USB Drive ส่วนตัว", options: ["Insider Threat", "Phishing", "DDoS Attack", "Fake News"], answer: "Insider Threat", category: "Operational Security", explanation: "นี่คือภัยคุกคามจากบุคคลภายในองค์กร (Insider Threat) ที่มีเจตนาขโมยข้อมูลสำคัญของบริษัทเพื่อนำไปใช้ประโยชน์ส่วนตน", red_flags: ["พฤติกรรมการเข้าถึงข้อมูลผิดปกติ", "การคัดลอกข้อมูลจำนวนมากในช่วงใกล้ลาออก", "การใช้อุปกรณ์ส่วนตัวกับข้อมูลบริษัท"], prevention: ["องค์กรควรกำหนดสิทธิ์การเข้าถึงข้อมูลตามความจำเป็น", "มีระบบตรวจสอบและบันทึกการเข้าถึงข้อมูล", "ยกเลิกสิทธิ์การเข้าถึงทันทีที่พนักงานพ้นสภาพ"] },
+            { question: "คุณได้รับ SMS จาก 'ไปรษณีย์ไทย' แจ้งว่า 'พัสดุของคุณมีปัญหาในการจัดส่ง' พร้อมแนบลิงก์สั้นๆ (เช่น bit.ly/...) ให้กดเพื่ออัปเดตที่อยู่", options: ["Ransomware", "Phishing", "Fake News", "Malware"], answer: "Phishing", category: "Phishing & Social Engineering", explanation: "เป็นการหลอกลวงแบบ Phishing ผ่านทาง SMS (เรียกว่า Smishing) เพื่อให้คุณคลิกลิงก์อันตราย ซึ่งอาจนำไปสู่เว็บขโมยข้อมูลหรือติดตั้งมัลแวร์", red_flags: ["ใช้ลิงก์ย่อเพื่อปิดบัง URL จริง", "อ้างปัญหาการจัดส่งเพื่อสร้างความกังวล", "มาจากเบอร์ที่ไม่ใช่เบอร์ทางการ"], prevention: ["อย่าคลิกลิงก์จาก SMS ที่ไม่แน่ใจ", "นำเลขพัสดุไปตรวจสอบในเว็บไซต์หรือแอปทางการของบริษัทขนส่งโดยตรง"] },
+            { question: "รหัสผ่านใดต่อไปนี้ปลอดภัยที่สุด?", options: ["12345678", "MyPassword123", "P@ssw0rd!", "MyB1rthd@y-1995"], answer: "P@ssw0rd!", category: "Passwords & Authentication", explanation: "รหัสผ่านที่ดีควรยาว, คาดเดายาก, และผสมอักขระหลายแบบ 'P@ssw0rd!' ใช้การแทนที่ตัวอักษร (o->0, a->@) และมีสัญลักษณ์ ทำให้คาดเดายากกว่าตัวเลือกอื่น", red_flags: ["ใช้คำที่อยู่ในพจนานุกรม", "ใช้ข้อมูลส่วนตัวที่เดาง่าย", "ใช้ตัวเลขเรียงกัน"], prevention: ["ใช้รหัสผ่านยาว 12 ตัวอักษรขึ้นไป", "ผสมตัวพิมพ์ใหญ่-เล็ก, ตัวเลข, และสัญลักษณ์", "ใช้ Password Manager ช่วยสร้างและจำรหัสผ่านที่ซับซ้อน"] },
+            { question: "เว็บไซต์ E-commerce ที่คุณใช้งานอยู่ ประกาศว่าถูกแฮกและข้อมูลลูกค้ารั่วไหล ซึ่งอาจรวมถึงชื่อ, อีเมล, และรหัสผ่านที่ถูกเข้ารหัสไว้", options: ["Data Breach", "DDoS Attack", "Ransomware", "Fake News"], answer: "Data Breach", category: "Data Privacy", explanation: "เหตุการณ์นี้คือการละเมิดข้อมูล (Data Breach) ซึ่งข้อมูลส่วนตัวของผู้ใช้ถูกเข้าถึงโดยไม่ได้รับอนุญาต", red_flags: ["ประกาศจากบริษัทโดยตรง", "ได้รับอีเมลแจ้งเตือนให้เปลี่ยนรหัสผ่าน"], prevention: ["รีบเปลี่ยนรหัสผ่านของเว็บไซต์นั้นทันที", "หากใช้รหัสผ่านเดียวกันกับเว็บอื่น ให้รีบเปลี่ยนทั้งหมด", "เปิดใช้งาน 2FA เพื่อเพิ่มความปลอดภัย"] },
+            { question: "คุณดาวน์โหลดเกมจากเว็บ Torrent เมื่อติดตั้งเสร็จ คอมพิวเตอร์เริ่มทำงานช้าลงมาก และมีโฆษณาแปลกๆ แสดงขึ้นมาเต็มหน้าจอ", options: ["Phishing", "Malware", "Insider Threat", "Fake News"], answer: "Malware", category: "Malware & Ransomware", explanation: "ไฟล์ที่ดาวน์โหลดจากแหล่งที่ไม่น่าเชื่อถือมักแฝงมัลแวร์ประเภท Adware (แสดงโฆษณา) หรือ Spyware (ดักจับข้อมูล) มาด้วย", red_flags: ["ดาวน์โหลดจากแหล่งละเมิดลิขสิทธิ์", "คอมพิวเตอร์ทำงานช้าลงอย่างเห็นได้ชัด", "มีโฆษณาหรือโปรแกรมแปลกๆ เกิดขึ้นเอง"], prevention: ["หลีกเลี่ยงการดาวน์โหลดซอฟต์แวร์ละเมิดลิขสิทธิ์", "ใช้โปรแกรม Antivirus สแกนระบบทั้งหมด", "พิจารณาติดตั้งระบบปฏิบัติการใหม่หากไม่สามารถแก้ไขได้"] },
+            { question: "เพื่อนของคุณส่งข้อความมาทางแชทว่า 'ดูนี่สิ! วิดีโอหลุดของดาราคนนี้' พร้อมกับลิงก์ที่ดูน่าสงสัย", options: ["Phishing", "Fake News", "Ransomware", "DDoS Attack"], answer: "Phishing", category: "Phishing & Social Engineering", explanation: "เป็นกลวิธี Phishing ที่ใช้หัวข้อที่น่าสนใจเพื่อหลอกให้คลิกลิงก์ ซึ่งอาจนำไปสู่เว็บขโมยข้อมูล, ติดตั้งมัลแวร์, หรืออาจเป็นบัญชีของเพื่อนที่ถูกแฮกแล้วส่งข้อความมา", red_flags: ["หัวข้อที่ล่อแหลมหรือน่าตกใจ", "ลิงก์ดูไม่น่าไว้วางใจ", "อาจไม่ใช่ภาษาที่เพื่อนของคุณใช้ปกติ"], prevention: ["อย่าเพิ่งคลิก", "สอบถามเพื่อนโดยตรงว่าได้ส่งมาจริงหรือไม่", "หากเพื่อนถูกแฮก ให้แนะนำเพื่อนรีบเปลี่ยนรหัสผ่านและแจ้งเตือนคนอื่นๆ"] },
+            { question: "เว็บไซต์ของหน่วยงานราชการล่ม เข้าใช้งานไม่ได้ในวันประกาศผลสอบที่สำคัญ โดยมีผู้ใช้พยายามเข้าพร้อมกันจำนวนมากผิดปกติ", options: ["Data Breach", "DDoS Attack", "Malware", "Insider Threat"], answer: "DDoS Attack", category: "Network Security", explanation: "อาการของเว็บไซต์ที่ล่มจากการรับ Traffic มากเกินกว่าจะรับไหว คือลักษณะเด่นของการโจมตีแบบ DDoS (Distributed Denial-of-Service)", red_flags: ["เว็บไซต์ไม่สามารถเข้าถึงได้", "เกิดขึ้นในช่วงเวลาสำคัญที่มีคนต้องการใช้งานเยอะ"], prevention: ["(สำหรับผู้ให้บริการ) ต้องใช้บริการป้องกัน DDoS", "(สำหรับผู้ใช้) ป้องกันเครื่องตัวเองไม่ให้ตกเป็นเครื่องมือ (Botnet) ในการโจมตี"] },
+            { question: "คุณได้รับอีเมลเสนองานที่ให้ผลตอบแทนสูงผิดปกติ แค่ทำงานง่ายๆ ผ่านมือถือ แต่ต้องจ่าย 'ค่าสมัคร' ก่อน 500 บาท", options: ["Fake News", "Scam (หลอกลวง)", "Ransomware", "DDoS Attack"], answer: "Scam (หลอกลวง)", category: "Phishing & Social Engineering", explanation: "นี่คือลักษณะของแก๊งหลอกลวง (Scam) ที่ใช้วิธีการทางวิศวกรรมสังคมเพื่อหลอกเอาเงิน ไม่ใช่ภัยคุกคามทางเทคนิคโดยตรง แต่ก็เป็นภัยในโลกออนไลน์", red_flags: ["ข้อเสนอดีเกินจริง", "ขอให้จ่ายเงินก่อนได้รับผลตอบแทน", "ไม่มีข้อมูลบริษัทที่ชัดเจน"], prevention: ["งานที่ถูกกฎหมายจะไม่เรียกเก็บเงินค่าสมัครจากผู้สมัคร", "อย่าโอนเงินให้คนที่ไม่รู้จัก", "ตรวจสอบประวัติของบริษัทก่อนตัดสินใจ"] },
+            { question: "คุณใช้ Wi-Fi ฟรีที่ร้านกาแฟ และทำธุรกรรมธนาคารออนไลน์ หลังจากนั้นไม่นาน พบว่ามีเงินหายไปจากบัญชี", options: ["Man-in-the-Middle Attack", "Ransomware", "Fake News", "DDoS Attack"], answer: "Man-in-the-Middle Attack", category: "Network Security", explanation: "การใช้ Wi-Fi สาธารณะที่ไม่ปลอดภัยมีความเสี่ยงสูงที่ผู้ไม่หวังดีในเครือข่ายเดียวกันจะดักจับข้อมูลของคุณได้ (Man-in-the-Middle)", red_flags: ["ใช้ Wi-Fi ที่ไม่มีรหัสผ่าน หรือรหัสผ่านที่ให้มาง่ายๆ", "ทำธุรกรรมที่สำคัญผ่านเครือข่ายสาธารณะ"], prevention: ["หลีกเลี่ยงการทำธุรกรรมสำคัญผ่าน Wi-Fi สาธารณะ", "ใช้ VPN (Virtual Private Network) เพื่อเข้ารหัสข้อมูลการเชื่อมต่อ", "ใช้ 4G/5G จากมือถือของตนเองจะปลอดภัยกว่า"] },
+            { question: "หัวหน้าแผนกขอรหัสผ่านเข้าระบบของคุณ เพื่อเข้าไปดึงข้อมูลด่วนขณะที่คุณลาพักร้อน", options: ["Phishing", "Insider Threat", "Malware", "เป็นเรื่องปกติ"], answer: "Insider Threat", category: "Operational Security", explanation: "แม้จะมาจากเจตนาดี แต่การแชร์รหัสผ่านเป็นการสร้างความเสี่ยง (Insider Threat จากความไม่ตั้งใจ) และผิดหลักความปลอดภัย เพราะทำให้ไม่สามารถตรวจสอบได้ว่าใครเป็นผู้กระทำที่แท้จริง", red_flags: ["การร้องขอข้อมูลที่ละเอียดอ่อน เช่น รหัสผ่าน", "การแชร์บัญชีใช้งานร่วมกัน"], prevention: ["ห้ามเปิดเผยรหัสผ่านของตนเองให้ผู้อื่น ไม่ว่ากรณีใดๆ", "องค์กรควรมีวิธีการให้สิทธิ์เข้าถึงชั่วคราวสำหรับกรณีจำเป็น โดยไม่ต้องแชร์รหัสผ่าน"] },
+            { question: "คุณได้รับ QR Code ในกลุ่มแชท บอกว่าสแกนเพื่อรับส่วนลดสินค้า แต่เมื่อสแกนแล้วกลับเป็นการแอดไลน์บัญชีแปลกๆ และขอข้อมูลส่วนตัว", options: ["Fake News", "Phishing", "Ransomware", "DDoS Attack"], answer: "Phishing", category: "Phishing & Social Engineering", explanation: "เป็น Phishing รูปแบบใหม่ (Quishing - QR Code Phishing) ที่ใช้ QR Code เพื่อนำทางผู้ใช้ไปยังปลายทางที่เป็นอันตราย เช่น ไลน์ปลอม หรือเว็บไซต์ขโมยข้อมูล", red_flags: ["QR Code จากแหล่งที่ไม่น่าเชื่อถือ", "ปลายทางหลังสแกนดูน่าสงสัย", "มีการขอข้อมูลส่วนตัวทันที"], prevention: ["อย่าสแกน QR Code จากแหล่งที่ไม่น่าไว้ใจ", "ตรวจสอบ URL ที่แสดงขึ้นมาก่อนกดยืนยัน", "ใช้แอปสแกนที่มีระบบความปลอดภัยเพื่อตรวจสอบลิงก์ก่อนเปิด"] },
+            
+            // New 15 questions
+            { question: "อีเมลจากฝ่าย IT ที่ระบุชื่อและแผนกของคุณถูกต้อง ขอให้คุณรีเซ็ตรหัสผ่านทันทีผ่านลิงก์ที่ให้มา เนื่องจาก 'การอัปเกรดระบบความปลอดภัย'", options: ["Spear Phishing", "Vishing", "BEC", "Malware"], answer: "Spear Phishing", category: "Phishing & Social Engineering", explanation: "นี่คือ Spear Phishing ซึ่งเป็นการโจมตีแบบเจาะจงโดยใช้ข้อมูลส่วนตัวของคุณ (ชื่อ, แผนก) เพื่อสร้างความน่าเชื่อถือและหลอกให้คุณคลิกลิงก์อันตราย", red_flags: ["แม้จะระบุข้อมูลส่วนตัวถูกต้อง แต่ยังคงเป็นการกดดันให้ทำผ่านลิงก์", "การอ้างเรื่องความปลอดภัยเพื่อสร้างความเร่งด่วน"], prevention: ["ตรวจสอบกับฝ่าย IT โดยตรงผ่านเบอร์โทรศัพท์หรือเดินไปหา", "ไม่คลิกลิงก์รีเซ็ตรหัสผ่านจากอีเมล หากต้องการรีเซ็ตให้เข้าเว็บทางการเอง"] },
+            { question: "มีคนโทรมาอ้างว่าเป็นเจ้าหน้าที่ธนาคาร แจ้งว่าบัตรเครดิตของคุณถูกใช้ในต่างประเทศ และขอให้คุณบอกรหัส OTP ที่เพิ่งส่งไปให้ เพื่อ 'ระงับรายการ'", options: ["Smishing", "Vishing", "Phishing", "Scam"], answer: "Vishing", category: "Phishing & Social Engineering", explanation: "นี่คือ Vishing (Voice Phishing) หรือการหลอกลวงทางโทรศัพท์ คนร้ายจะสร้างเรื่องราวที่น่าตกใจเพื่อหลอกเอารหัส OTP ซึ่งใช้ยืนยันการทำธุรกรรม", red_flags: ["การโทรมาโดยไม่คาดคิด", "ขอข้อมูลลับ เช่น OTP, รหัส PIN", "สร้างความกดดันทางเวลา"], prevention: ["ห้ามบอกรหัส OTP ให้ใครเด็ดขาด", "วางสายแล้วโทรกลับเบอร์ทางการของธนาคารเพื่อตรวจสอบ", "ธนาคารและหน่วยงานต่างๆ จะไม่ขอรหัส OTP ของคุณทางโทรศัพท์"] },
+            { question: "คุณได้รับการแจ้งเตือนว่ามีคนพยายามล็อกอินเข้าบัญชี Facebook ของคุณจากเวียดนาม คุณจำได้ว่าใช้รหัสผ่านเดียวกันนี้กับ Gmail และบัญชีธนาคาร", options: ["Data Breach", "Credential Stuffing", "Phishing", "Malware"], answer: "Credential Stuffing", category: "Passwords & Authentication", explanation: "นี่คือผลของ Credential Stuffing คนร้ายได้รหัสผ่านของคุณจากเว็บอื่นที่เคยรั่วไหล (Data Breach) แล้วนำมาลองล็อกอินกับบริการอื่นๆ ของคุณ", red_flags: ["การแจ้งเตือนล็อกอินจากที่ที่ไม่รู้จัก", "การใช้รหัสผ่านซ้ำกันหลายบริการ"], prevention: ["ใช้รหัสผ่านที่แตกต่างกันสำหรับแต่ละบริการ", "เปิดใช้งาน 2FA ทุกที่ที่เป็นไปได้", "ใช้ Password Manager เพื่อจัดการรหัสผ่านที่ซับซ้อน"] },
+            { question: "ขณะนั่งทำงานในร้านกาแฟ คุณสังเกตเห็นคนข้างหลังชะโงกหน้ามองจอคอมพิวเตอร์ของคุณเป็นระยะๆ", options: ["Eavesdropping", "Shoulder Surfing", "Phishing", "Vishing"], answer: "Shoulder Surfing", category: "Physical Security", explanation: "Shoulder Surfing คือการแอบมองหน้าจอของผู้อื่นเพื่อขโมยข้อมูลที่ละเอียดอ่อน เช่น รหัสผ่าน, ข้อมูลบัตรเครดิต, หรือข้อมูลลับของบริษัท", red_flags: ["คนแปลกหน้าเข้ามาใกล้ผิดปกติ", "การทำงานในที่สาธารณะที่คนพลุกพล่าน"], prevention: ["ใช้แผ่นฟิล์มกรองแสงกันการแอบมอง (Privacy Filter)", "นั่งในมุมที่คนอื่นมองจอได้ยาก เช่น หันหลังให้กำแพง", "ระมัดระวังสิ่งรอบข้างเสมอเมื่อต้องกรอกข้อมูลสำคัญ"] },
+            { question: "โทรศัพท์ของคุณแบตใกล้หมด คุณจึงใช้พอร์ตชาร์จ USB สาธารณะที่สนามบินเพื่อชาร์จไฟ", options: ["Overcharging", "Juice Jacking", "Short Circuit", "Power Surge"], answer: "Juice Jacking", category: "Device Security", explanation: "Juice Jacking คือการโจมตีผ่านพอร์ต USB สาธารณะที่ถูกดัดแปลง ซึ่งสามารถติดตั้งมัลแวร์หรือขโมยข้อมูลจากอุปกรณ์ของคุณได้ในขณะที่กำลังชาร์จ", red_flags: ["การใช้พอร์ตชาร์จ USB ที่ไม่น่าเชื่อถือ", "ไม่มีทางรู้ว่าพอร์ตนั้นปลอดภัยหรือไม่"], prevention: ["ใช้ปลั๊กไฟกับอะแดปเตอร์ของตัวเองแทนพอร์ต USB", "พก Power Bank ส่วนตัว", "ใช้สาย USB แบบ 'Charge-Only' ที่ไม่มีเส้น Data"] },
+            { question: "คุณเข้าเว็บไซต์ดูหนังออนไลน์ฟรี แล้วสังเกตว่าพัดลมคอมพิวเตอร์ของคุณเริ่มทำงานเสียงดังและเครื่องช้าลงอย่างมาก แม้จะไม่ได้ทำอะไรหนักๆ", options: ["Overheating", "Cryptojacking", "Adware", "Spyware"], answer: "Cryptojacking", category: "Malware & Ransomware", explanation: "เว็บไซต์นั้นอาจแอบฝังสคริปต์ Cryptojacking ที่ใช้พลังประมวลผลของเครื่องคุณในการ 'ขุด' สกุลเงินดิจิทัลให้เจ้าของเว็บ ทำให้เครื่องทำงานหนักและช้าลง", red_flags: ["เครื่องทำงานหนักและร้อนขึ้นผิดปกติเมื่อเข้าเว็บใดเว็บหนึ่ง", "ประสิทธิภาพลดลงอย่างไม่มีสาเหตุ"], prevention: ["ติดตั้งส่วนขยายเบราว์เซอร์ (Extension) ที่ช่วยบล็อกสคริปต์ขุดเหรียญ", "ปิดแท็บเว็บไซต์ที่น่าสงสัยนั้นทันที"] },
+            { question: "คุณซื้อกล้องวงจรปิดอัจฉริยะมาติดตั้งที่บ้าน และเชื่อมต่อกับ Wi-Fi โดยใช้ Username และ Password ที่ตั้งมาจากโรงงาน (เช่น admin/admin)", options: ["Data Breach", "Firmware Bug", "IoT Security Risk", "Network Intrusion"], answer: "IoT Security Risk", category: "Device Security", explanation: "อุปกรณ์ IoT จำนวนมากมาพร้อมรหัสผ่านเริ่มต้นที่คาดเดาง่าย การไม่เปลี่ยนรหัสผ่านทำให้แฮกเกอร์สามารถค้นหาและเข้าถึงอุปกรณ์ของคุณผ่านอินเทอร์เน็ตได้อย่างง่ายดาย", red_flags: ["การใช้รหัสผ่านเริ่มต้น (Default Password)", "ไม่ได้อัปเดตเฟิร์มแวร์ของอุปกรณ์"], prevention: ["เปลี่ยนรหัสผ่านเริ่มต้นทันทีที่เริ่มใช้งาน", "ตั้งรหัสผ่านที่คาดเดายาก", "หมั่นตรวจสอบและอัปเดตเฟิร์มแวร์ของอุปกรณ์ IoT ให้เป็นเวอร์ชันล่าสุด"] },
+            { question: "คุณพิมพ์ URL เพื่อเข้าเว็บธนาคาร แต่พิมพ์ผิดไปหนึ่งตัวอักษร (เช่น kbank.co แทนที่จะเป็น kbank.com) และหน้าเว็บที่ปรากฏขึ้นมาดูคล้ายของจริงแต่มีโฆษณาเยอะผิดปกติ", options: ["DNS Poisoning", "Typosquatting", "Clickjacking", "Cross-site Scripting"], answer: "Typosquatting", category: "Web Security", explanation: "Typosquatting คือการจดโดเมนเนมที่สะกดผิดเล็กน้อยจากชื่อเว็บดัง เพื่อดักจับผู้ใช้ที่พิมพ์ผิด เว็บเหล่านี้มักใช้เพื่อแพร่มัลแวร์, ทำ Phishing, หรือแสดงโฆษณา", red_flags: ["URL สะกดผิด", "หน้าเว็บมีหน้าตาหรือพฤติกรรมแปลกไปจากเดิม"], prevention: ["ตรวจสอบ URL ให้ถูกต้องเสมอ", "ใช้ Bookmark หรือลิงก์จากเว็บทางการแทนการพิมพ์เองทุกครั้ง"] },
+            { question: "แอปพลิเคชันเกมที่คุณเพิ่งติดตั้ง ขอสิทธิ์เข้าถึง 'รายชื่อผู้ติดต่อ', 'ตำแหน่งที่ตั้ง' และ 'ไมโครโฟน' ของคุณ", options: ["Standard Procedure", "Data Privacy Concern", "Feature Requirement", "OS Bug"], answer: "Data Privacy Concern", category: "Data Privacy", explanation: "แอปที่ขอสิทธิ์เกินความจำเป็นในการทำงานอาจมีเจตนาแอบแฝงในการรวบรวมข้อมูลส่วนตัวของคุณไปขายหรือใช้เพื่อวัตถุประสงค์อื่น",
+                red_flags: ["การขอสิทธิ์ที่ไม่สอดคล้องกับฟังก์ชันของแอป", "ไม่มีคำอธิบายที่ชัดเจนว่าทำไมถึงต้องการสิทธิ์นั้น"], prevention: ["อ่านและพิจารณาการให้สิทธิ์ (Permissions) ก่อนกดอนุญาต", "ให้สิทธิ์เท่าที่จำเป็นเท่านั้น", "ถอนการติดตั้งแอปที่ไม่น่าไว้วางใจ"] },
+            { question: "มีคนโทรมาอ้างว่าเป็นเจ้าหน้าที่ Microsoft บอกว่าคอมพิวเตอร์ของคุณส่งสัญญาณผิดปกติ และเขาต้องการให้คุณติดตั้งโปรแกรมเพื่อให้เขารีโมทเข้ามา 'ซ่อม' ให้", options: ["Tech Support Scam", "Vishing", "Malware", "Insider Threat"], answer: "Tech Support Scam", category: "Phishing & Social Engineering", explanation: "นี่คือการหลอกลวงแบบ Tech Support Scam ที่คนร้ายจะสร้างเรื่องขึ้นมาเพื่อหลอกให้คุณให้สิทธิ์เข้าถึงคอมพิวเตอร์ จากนั้นอาจขโมยข้อมูลหรือหลอกให้คุณจ่ายเงินค่าซ่อมที่ไม่มีอยู่จริง", red_flags: ["มีการติดต่อเข้ามาก่อนโดยที่คุณไม่ได้ร้องขอ", "อ้างปัญหาทางเทคนิคที่คุณไม่เคยเจอ", "ขอให้ติดตั้งโปรแกรมรีโมท"], prevention: ["วางสายทันที บริษัทเทคโนโลยีใหญ่ๆ จะไม่โทรหาลูกค้าเพื่อแจ้งปัญหาในลักษณะนี้", "อย่าให้ใครรีโมทเข้ามาในเครื่องของคุณเด็ดขาด"] },
+            { question: "วิธีใดคือการจัดการรหัสผ่านจำนวนมากสำหรับหลายเว็บไซต์ที่ปลอดภัยและสะดวกที่สุด?", options: ["ใช้รหัสผ่านเดียวกันทั้งหมด", "จดใส่สมุดบันทึก", "ใช้ Password Manager", "ให้เบราว์เซอร์จำรหัสผ่าน"], answer: "ใช้ Password Manager", category: "Passwords & Authentication", explanation: "Password Manager เป็นเครื่องมือที่ช่วยสร้างและจัดเก็บรหัสผ่านที่ซับซ้อนและแตกต่างกันสำหรับแต่ละเว็บไซต์อย่างปลอดภัย คุณเพียงแค่จำ Master Password เพียงรหัสเดียว", red_flags: ["-"], prevention: ["เลือกใช้ Password Manager ที่น่าเชื่อถือ", "ตั้ง Master Password ที่แข็งแกร่งและไม่ซ้ำใคร", "เปิด 2FA สำหรับบัญชี Password Manager ของคุณ"] },
+            { question: "คุณได้รับอีเมลจาก CEO ของบริษัท (ซึ่งดูเหมือนจริงมาก) สั่งให้ฝ่ายการเงินรีบโอนเงินไปยังซัพพลายเออร์รายใหม่โดยด่วนที่สุด เนื่องจากเป็น 'ดีลลับสุดยอด'", options: ["Ransomware", "Insider Threat", "Business Email Compromise (BEC)", "Spear Phishing"], answer: "Business Email Compromise (BEC)", category: "Phishing & Social Engineering", explanation: "นี่คือการโจมตีแบบ BEC ที่คนร้ายจะปลอมอีเมลเป็นผู้บริหารระดับสูงเพื่อหลอกให้พนักงานโอนเงินหรือเปิดเผยข้อมูลสำคัญ การโจมตีนี้มักไม่ใช้ลิงก์หรือไฟล์แนบ แต่ใช้หลักจิตวิทยาล้วนๆ", red_flags: ["คำสั่งเร่งด่วนผิดปกติ", "การอ้างเรื่องความลับเพื่อไม่ให้ตรวจสอบ", "บัญชีผู้รับเงินเป็นบัญชีใหม่ที่ไม่เคยติดต่อ"], prevention: ["มีกระบวนการตรวจสอบ (Verification) การโอนเงินทุกครั้ง เช่น การโทรยืนยันกับผู้สั่งโดยตรง (ห้ามใช้เบอร์ในอีเมล)", "อบรมพนักงานให้ตระหนักถึงภัย BEC"] },
+            { question: "ข่าวใหญ่: เว็บเบราว์เซอร์ยอดนิยมเพิ่งประกาศว่าพบช่องโหว่ร้ายแรงที่แฮกเกอร์กำลังใช้โจมตีผู้ใช้ที่ยังไม่ได้อัปเดต", options: ["Malware", "Zero-Day Vulnerability", "Data Breach", "DDoS Attack"], answer: "Zero-Day Vulnerability", category: "Software & System Security", explanation: "Zero-Day คือช่องโหว่ในซอฟต์แวร์ที่เพิ่งถูกค้นพบและยังไม่มีแพตช์แก้ไขจากผู้พัฒนา ทำให้เป็นช่วงเวลาที่อันตรายที่สุดเพราะแฮกเกอร์สามารถใช้ประโยชน์จากช่องโหว่นี้ได้เต็มที่", red_flags: ["ประกาศด้านความปลอดภัยจากผู้พัฒนาซอฟต์แวร์"], prevention: ["เปิดใช้งานการอัปเดตอัตโนมัติสำหรับระบบปฏิบัติการและโปรแกรมสำคัญ", "ติดตามข่าวสารด้านความปลอดภัย", "ติดตั้งแพตช์ทันทีที่มีการปล่อยออกมา"] },
+            { question: "พนักงานในบริษัทใช้ Google Drive เพื่อเก็บข้อมูลลูกค้า และเผลอตั้งค่าโฟลเดอร์นั้นเป็น 'Public' ทำให้ใครก็ตามที่มีลิงก์สามารถเข้ามาดูข้อมูลได้", options: ["Cloud Misconfiguration", "Data Breach", "Insider Threat", "Malware"], answer: "Cloud Misconfiguration", category: "Data Privacy", explanation: "นี่คือความผิดพลาดในการตั้งค่าบริการคลาวด์ ซึ่งเป็นสาเหตุสำคัญของการรั่วไหลของข้อมูลจำนวนมาก เกิดจากความไม่เข้าใจหรือความประมาทของผู้ใช้", red_flags: ["การตั้งค่าการแชร์เป็น 'Public' หรือ 'Anyone with the link'", "ไม่มีการตรวจสอบสิทธิ์การเข้าถึงอย่างสม่ำเสมอ"], prevention: ["อบรมพนักงานเกี่ยวกับการตั้งค่าความปลอดภัยบนคลาวด์", "กำหนดนโยบายการแชร์ข้อมูลที่ชัดเจน", "ใช้เครื่องมือตรวจสอบการตั้งค่าความปลอดภัยของคลาวด์"] },
+            { question: "คุณกำลังจะเชื่อมต่อ Wi-Fi ที่สนามบิน และเห็น 2 เครือข่าย: 'Airport_Free_WiFi' (ไม่มีแม่กุญแจ) และ 'Airport_WiFi_Secure' (มีแม่กุญแจ)", options: ["เลือกอันไหนก็ได้", "เลือกอันที่ไม่มีแม่กุญแจเพราะง่ายกว่า", "เลือกอันที่มีแม่กุญแจ (Secure)", "ใช้ 4G/5G ของตัวเอง"], answer: "ใช้ 4G/5G ของตัวเอง", category: "Network Security", explanation: "แม้เครือข่ายที่มีแม่กุญแจจะปลอดภัยกว่า แต่ตัวเลือกที่ปลอดภัยที่สุดเสมอคือการใช้เครือข่ายมือถือของตัวเอง เพราะคุณไม่ต้องไว้ใจเครือข่ายที่ไม่รู้จักเลย 'Airport_Free_WiFi' ที่ไม่มีการเข้ารหัสคือตัวเลือกที่อันตรายที่สุด", red_flags: ["เครือข่าย Wi-Fi สาธารณะที่ไม่มีการเข้ารหัส (ไม่มีแม่กุญแจ)"], prevention: ["หลีกเลี่ยง Wi-Fi สาธารณะที่ไม่ปลอดภัย", "หากจำเป็นต้องใช้ ให้เลือกเครือข่ายที่เข้ารหัส (WPA2/WPA3) และใช้ VPN ควบคู่ไปด้วย"] }
+        ];
+
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let userName = '';
+        let incorrectAnswersByCategory = [];
+
+        const startScreen = document.getElementById('start-screen');
+        const quizScreen = document.getElementById('quiz-screen');
+        const resultScreen = document.getElementById('result-screen');
+        const startBtn = document.getElementById('start-btn');
+        const restartBtn = document.getElementById('restart-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const nameInput = document.getElementById('name-input');
+        const emailInput = document.getElementById('email-input');
+        const questionNumberEl = document.getElementById('question-number');
+        const scoreEl = document.getElementById('score');
+        const progressBar = document.getElementById('progress-bar');
+        const questionTextEl = document.getElementById('question-text');
+        const optionsContainer = document.getElementById('options-container');
+        const explanationContainer = document.getElementById('explanation-container');
+        const finalScoreEl = document.getElementById('final-score');
+        const resultIconEl = document.getElementById('result-icon');
+        const resultMessageEl = document.getElementById('result-message');
+        const userNameDisplay = document.getElementById('user-name-display');
+        const weaknessAnalysisEl = document.getElementById('weakness-analysis');
+
+        function startQuiz() {
+            if (nameInput.value.trim() === '' || emailInput.value.trim() === '') {
+                alert('กรุณากรอกชื่อและอีเมลของคุณเพื่อเริ่มทำแบบทดสอบ');
+                return;
+            }
+            userName = nameInput.value.trim();
+            startScreen.classList.add('hidden');
+            resultScreen.classList.add('hidden');
+            quizScreen.classList.remove('hidden');
+            currentQuestionIndex = 0;
+            score = 0;
+            incorrectAnswersByCategory = [];
+            scoreEl.textContent = score;
+            showQuestion();
+        }
+
+        function showQuestion() {
+            resetState();
+            const currentQuestion = quizData[currentQuestionIndex];
+            questionNumberEl.textContent = currentQuestionIndex + 1;
+            questionTextEl.textContent = currentQuestion.question;
+            
+            const progressPercentage = ((currentQuestionIndex + 1) / quizData.length) * 100;
+            progressBar.style.width = `${progressPercentage}%`;
+
+            currentQuestion.options.forEach(option => {
+                const button = document.createElement('button');
+                button.innerText = option;
+                button.classList.add('option-btn', 'p-4', 'rounded-lg', 'text-lg', 'w-full', 'text-left');
+                button.addEventListener('click', selectAnswer);
+                optionsContainer.appendChild(button);
+            });
+        }
+
+        function resetState() {
+            nextBtn.classList.add('hidden');
+            explanationContainer.classList.add('hidden');
+            while (optionsContainer.firstChild) {
+                optionsContainer.removeChild(optionsContainer.firstChild);
+            }
+        }
+
+        function selectAnswer(e) {
+            const selectedBtn = e.target;
+            const currentQuestion = quizData[currentQuestionIndex];
+            const correct = selectedBtn.innerText === currentQuestion.answer;
+            
+            if (correct) {
+                score++;
+                scoreEl.textContent = score;
+                selectedBtn.classList.add('correct');
+            } else {
+                selectedBtn.classList.add('incorrect');
+                incorrectAnswersByCategory.push(currentQuestion.category);
+            }
+
+            Array.from(optionsContainer.children).forEach(button => {
+                if (button.innerText === currentQuestion.answer) {
+                    button.classList.add('correct');
+                }
+                button.disabled = true;
+            });
+            
+            showExplanation(currentQuestion);
+            nextBtn.classList.remove('hidden');
+        }
+
+        function showExplanation(question) {
+            explanationContainer.innerHTML = `
+                <div class="explanation-box">
+                    <h3 class="text-xl font-bold text-blue-400 mb-2">คำอธิบาย</h3>
+                    <p class="text-gray-300">${question.explanation}</p>
+                    <div class="mt-4">
+                        <h4 class="font-semibold text-yellow-400"><i class="fas fa-flag mr-2"></i>จุดสังเกต (Red Flags)</h4>
+                        <ul class="list-disc list-inside text-gray-400 mt-1">
+                            ${question.red_flags.map(flag => `<li>${flag}</li>`).join('')}
+                        </ul>
+                    </div>
+                    <div class="mt-4">
+                        <h4 class="font-semibold text-green-400"><i class="fas fa-shield-alt mr-2"></i>วิธีป้องกัน</h4>
+                        <ul class="list-disc list-inside text-gray-400 mt-1">
+                             ${question.prevention.map(tip => `<li>${tip}</li>`).join('')}
+                        </ul>
+                    </div>
+                </div>
+            `;
+            explanationContainer.classList.remove('hidden');
+        }
+        
+        function analyzeWeaknesses() {
+            if (incorrectAnswersByCategory.length === 0) {
+                weaknessAnalysisEl.innerHTML = '';
+                return;
+            }
+
+            const categoryCounts = incorrectAnswersByCategory.reduce((acc, category) => {
+                acc[category] = (acc[category] || 0) + 1;
+                return acc;
+            }, {});
+
+            const sortedCategories = Object.entries(categoryCounts).sort(([,a],[,b]) => b-a);
+            
+            let analysisHTML = `<div class="explanation-box text-left"><h3 class="text-xl font-bold text-yellow-400 mb-2">หัวข้อที่ควรศึกษาเพิ่มเติม</h3><p class="text-gray-400 mb-4">จากคำตอบของคุณ พบว่าคุณอาจต้องทบทวนในหัวข้อต่อไปนี้เป็นพิเศษ:</p><ul class="list-disc list-inside space-y-2">`;
+            
+            sortedCategories.forEach(([category, count]) => {
+                analysisHTML += `<li class="text-gray-300"><span class="font-semibold text-white">${category}</span> (ผิด ${count} ข้อ)</li>`;
+            });
+
+            analysisHTML += `</ul></div>`;
+            weaknessAnalysisEl.innerHTML = analysisHTML;
+        }
+
+
+        function showResults() {
+            quizScreen.classList.add('hidden');
+            resultScreen.classList.remove('hidden');
+            userNameDisplay.textContent = userName;
+            finalScoreEl.textContent = score;
+            
+            const passScore = 25;
+
+            if (score >= passScore) {
+                resultIconEl.innerHTML = '<i class="fas fa-shield-alt text-green-400"></i>';
+                resultMessageEl.textContent = `ยอดเยี่ยม! คุณผ่านการทดสอบและมีความรู้ความเข้าใจด้านความปลอดภัยไซเบอร์ในระดับที่ดีมาก!`;
+                weaknessAnalysisEl.innerHTML = ''; // Clear analysis if passed
+                restartBtn.textContent = "ทำแบบทดสอบอีกครั้ง";
+            } else {
+                resultIconEl.innerHTML = '<i class="fas fa-exclamation-triangle text-yellow-400"></i>';
+                resultMessageEl.textContent = `คะแนนของคุณยังไม่ถึงเกณฑ์ (25/30) แต่ไม่ต้องกังวล! ลองทบทวนจุดอ่อนแล้วลองใหม่อีกครั้งเพื่อเสริมความรู้ของคุณ`;
+                analyzeWeaknesses();
+                restartBtn.innerHTML = '<i class="fas fa-redo mr-2"></i> สู้ใหม่อีกครั้ง!';
+            }
+        }
+        
+        nextBtn.addEventListener('click', () => {
+            currentQuestionIndex++;
+            if (currentQuestionIndex < quizData.length) {
+                showQuestion();
+            } else {
+                showResults();
+            }
+        });
+
+        startBtn.addEventListener('click', startQuiz);
+        restartBtn.addEventListener('click', () => {
+            // No need to clear name/email, just restart the quiz logic
+            startQuiz();
+        });
+
+    </script>
+
+</body>
+</html>
