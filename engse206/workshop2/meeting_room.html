@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive SRS: MeetingRoom Pro</title>
+
+    <!-- Placeholder Comments -->
+    <!-- Chosen Palette: Professional Blue (Light gray/white background with slate text and a strong blue accent) -->
+    <!-- Application Structure Plan: The application is designed as a single-page dashboard with a sticky top navigation for easy access to key sections (ภาพรวม, ข้อกำหนด, Use Cases, การตรวจสอบ, แดชบอร์ด). This non-linear structure allows stakeholders to jump directly to the information they need. Dense content like requirements is organized into interactive cards within a tabbed interface (Functional/Non-Functional) to prevent cognitive overload, promoting exploration over linear reading. -->
+    <!-- Visualization & Content Choices: Report Info: REQ-F005 (Reporting) -> Goal: Compare & Inform -> Viz: Bar Chart (Utilization Rate) & List (Popular Rooms) -> Interaction: Hover tooltips on chart -> Justification: A bar chart effectively compares utilization across rooms, and a simple list is clear for rankings. Library: Chart.js (Canvas). Report Info: Use Case Diagram -> Goal: Organize actor-system relationships -> Viz: HTML/CSS Diagram -> Interaction: Hover effects -> Justification: An HTML diagram is responsive and lightweight, avoiding static images and aligning with the SPA philosophy. Library: None (Tailwind CSS). -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <style>
+        html { scroll-behavior: smooth; }
+        body {
+            font-family: 'Sarabun', sans-serif;
+            background-color: #f1f5f9; /* slate-100 */
+            color: #334155; /* slate-700 */
+        }
+        .gradient-text {
+            background: linear-gradient(to right, #2563eb, #4f46e5);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .section-card {
+            background-color: #ffffff;
+            border-radius: 0.75rem;
+            padding: 2.5rem;
+            margin-bottom: 2.5rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+            border: 1px solid #e2e8f0;
+        }
+        .req-card {
+            background-color: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+        }
+        .req-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.07), 0 4px 6px -4px rgb(0 0 0 / 0.07);
+        }
+        .tag {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .tag-high { background-color: #fecaca; color: #b91c1c; }
+        .tag-medium { background-color: #fed7aa; color: #c2410c; }
+        .tabs button {
+            padding: 0.5rem 1rem;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+            font-weight: 600;
+            color: #64748b;
+        }
+        .tabs button.active {
+            border-bottom-color: #3b82f6;
+            color: #1e293b;
+        }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; animation: fadeIn 0.5s; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            height: 400px;
+            margin: auto;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <nav class="sticky top-0 bg-white/80 backdrop-blur-lg shadow-sm z-50">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex-shrink-0">
+                    <span class="text-2xl font-bold gradient-text">MeetingRoom Pro</span>
+                </div>
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-4">
+                        <a href="#overview" class="text-slate-600 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">ภาพรวม</a>
+                        <a href="#requirements" class="text-slate-600 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">ข้อกำหนด</a>
+                        <a href="#usecases" class="text-slate-600 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">Use Cases</a>
+                        <a href="#dashboard" class="text-slate-600 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">แดชบอร์ด</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mx-auto p-4 md:p-8 max-w-6xl">
+
+        <header class="text-center py-12">
+            <h1 class="text-4xl md:text-6xl font-extrabold text-slate-800">MeetingRoom Pro</h1>
+            <p class="mt-4 text-xl text-slate-600 max-w-3xl mx-auto">ระบบจองห้องประชุมออนไลน์สำหรับองค์กรยุคใหม่</p>
+            <div class="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-4xl mx-auto">
+                <div class="p-4 bg-white rounded-lg shadow-sm border border-slate-200"><i class="fas fa-clock text-blue-500 mr-2"></i>ลดเวลาจองเหลือ 2 นาที</div>
+                <div class="p-4 bg-white rounded-lg shadow-sm border border-slate-200"><i class="fas fa-lock text-blue-500 mr-2"></i>ป้องกันการจองซ้ำซ้อน 100%</div>
+                <div class="p-4 bg-white rounded-lg shadow-sm border border-slate-200"><i class="fas fa-chart-line text-blue-500 mr-2"></i>เพิ่มประสิทธิภาพใช้ห้อง 30%</div>
+            </div>
+        </header>
+
+        <section id="overview" class="section-card">
+            <h2 class="text-3xl font-bold mb-8 text-slate-800 text-center">ภาพรวมระบบ (Overall Description)</h2>
+            <div class="grid md:grid-cols-2 gap-8">
+                <div>
+                    <h3 class="font-semibold text-xl mb-3"><i class="fas fa-binoculars mr-2 text-blue-500"></i>Product Perspective</h3>
+                    <p>MeetingRoom Pro เป็น Web Application ที่พัฒนาขึ้นใหม่ ทำงานร่วมกับ Mobile App (iOS/Android) และเชื่อมต่อกับระบบอื่นผ่าน API เช่น LDAP/Active Directory, Email, และ Calendar (Outlook, Google Calendar)</p>
+                </div>
+                <div>
+                    <h3 class="font-semibold text-xl mb-3"><i class="fas fa-users mr-2 text-blue-500"></i>User Characteristics</h3>
+                    <ul class="list-disc list-inside space-y-1">
+                        <li><b>พนักงานทั่วไป (80%):</b> ต้องการความรวดเร็วและความง่ายในการจอง</li>
+                        <li><b>ผู้จัดการ (15%):</b> ต้องการดูรายงานและจัดการทีม</li>
+                        <li><b>ผู้ดูแลระบบ (5%):</b> ต้องการเครื่องมือควบคุมและจัดการระบบทั้งหมด</li>
+                    </ul>
+                </div>
+                <div class="md:col-span-2">
+                    <h3 class="font-semibold text-xl mb-3"><i class="fas fa-exclamation-triangle mr-2 text-blue-500"></i>Constraints & Assumptions</h3>
+                    <p>ระบบต้องทำงานบน Browsers หลัก (Chrome, Firefox, Safari, Edge), รองรับ iOS 12+ และ Android 8+, ใช้ HTTPS เสมอ, และมี Uptime 99.5% โดยตั้งอยู่บนสมมติฐานว่าองค์กรมี Network ที่เสถียรและผู้ใช้มีความรู้พื้นฐานในการใช้งานเว็บ</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="requirements" class="section-card">
+            <h2 class="text-3xl font-bold mb-8 text-slate-800 text-center">ข้อกำหนดของระบบ (Specific Requirements)</h2>
+            <div class="tabs flex justify-center border-b border-slate-200 mb-6" id="req-tabs-container">
+                <button class="tab-button active" onclick="openTab(event, 'functional-reqs', 'req-tabs-container')">Functional</button>
+                <button class="tab-button" onclick="openTab(event, 'non-functional-reqs', 'req-tabs-container')">Non-Functional</button>
+            </div>
+            
+            <div id="functional-reqs" class="tab-content active">
+                <div class="space-y-4">
+                    <div class="req-card">
+                        <div class="flex justify-between items-start">
+                            <h4 class="font-bold text-lg text-slate-800">REQ-F001: User Registration and Authentication</h4>
+                            <span class="tag tag-high">High</span>
+                        </div>
+                        <p class="mt-2 text-slate-600">ระบบต้องอนุญาตให้ผู้ใช้สมัครสมาชิกและเข้าสู่ระบบได้อย่างปลอดภัยผ่าน Email/Password และ SSO พร้อมระบบ Verification และ Account Lockout</p>
+                    </div>
+                    <div class="req-card">
+                        <div class="flex justify-between items-start">
+                            <h4 class="font-bold text-lg text-slate-800">REQ-F002: Room Search and Availability Check</h4>
+                            <span class="tag tag-high">High</span>
+                        </div>
+                        <p class="mt-2 text-slate-600">ผู้ใช้ต้องสามารถค้นหาห้องประชุมที่ว่างตามเงื่อนไข (วันที่, เวลา, ขนาด, อุปกรณ์) และเห็นสถานะห้องแบบ Real-time โดยผลการค้นหาต้องแสดงภายใน 3 วินาที</p>
+                    </div>
+                    <div class="req-card">
+                        <div class="flex justify-between items-start">
+                            <h4 class="font-bold text-lg text-slate-800">REQ-F003: Room Booking and Management</h4>
+                            <span class="tag tag-high">High</span>
+                        </div>
+                        <p class="mt-2 text-slate-600">ผู้ใช้ต้องสามารถจอง, แก้ไข, และยกเลิกการจองได้ โดยระบบต้องป้องกันการจองซ้ำซ้อน (Double Booking) อย่างสมบูรณ์</p>
+                    </div>
+                    <div class="req-card">
+                        <div class="flex justify-between items-start">
+                            <h4 class="font-bold text-lg text-slate-800">REQ-F004: Notification System</h4>
+                            <span class="tag tag-medium">Medium</span>
+                        </div>
+                        <p class="mt-2 text-slate-600">ระบบต้องส่งการแจ้งเตือนยืนยัน, แก้ไข, ยกเลิก, และเตือนความจำก่อนประชุมผ่าน Email, SMS, และ Push Notification โดยผู้ใช้สามารถตั้งค่าการรับได้</p>
+                    </div>
+                    <div class="req-card">
+                        <div class="flex justify-between items-start">
+                            <h4 class="font-bold text-lg text-slate-800">REQ-F005: Reporting and Analytics</h4>
+                            <span class="tag tag-medium">Medium</span>
+                        </div>
+                        <p class="mt-2 text-slate-600">ผู้ดูแลระบบและผู้จัดการต้องสามารถสร้างรายงานการใช้งานห้องประชุมรายวัน/สัปดาห์/เดือน และดูสถิติสำคัญ เช่น อัตราการใช้งาน, ห้องยอดนิยม ได้</p>
+                    </div>
+                </div>
+            </div>
+            <div id="non-functional-reqs" class="tab-content">
+                <div class="space-y-4">
+                    <div class="req-card">
+                        <h4 class="font-bold text-lg text-slate-800">REQ-NF001: Performance</h4>
+                        <p class="mt-2 text-slate-600">หน้าเว็บต้องโหลดภายใน 2-3 วินาที, การจองเสร็จสิ้นใน 5 วินาที, และระบบต้องรองรับผู้ใช้พร้อมกันอย่างน้อย 200 คน</p>
+                    </div>
+                    <div class="req-card">
+                        <h4 class="font-bold text-lg text-slate-800">REQ-NF002: Security</h4>
+                        <p class="mt-2 text-slate-600">ใช้ HTTPS เสมอ, รหัสผ่านต้องปลอดภัย, มี Session Timeout, รองรับ 2FA, และข้อมูลส่วนบุคคลต้องถูกเข้ารหัส พร้อมมี Audit Trail</p>
+                    </div>
+                    <div class="req-card">
+                        <h4 class="font-bold text-lg text-slate-800">REQ-NF003: Usability</h4>
+                        <p class="mt-2 text-slate-600">ผู้ใช้ใหม่ต้องเรียนรู้การจองได้ใน 5 นาที, รองรับภาษาไทย/อังกฤษ, และเป็นไปตามมาตรฐาน WCAG 2.1 AA สำหรับ Accessibility</p>
+                    </div>
+                     <div class="req-card">
+                        <h4 class="font-bold text-lg text-slate-800">REQ-NF004: Reliability</h4>
+                        <p class="mt-2 text-slate-600">System uptime ต้องอย่างน้อย 99.5%, มี Automatic Failover, และสามารถกู้คืนระบบจากความล้มเหลวได้ภายใน 15 นาที</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="usecases" class="section-card">
+            <h2 class="text-3xl font-bold mb-8 text-slate-800 text-center">Use Case Model</h2>
+            <p class="text-slate-500 mb-8 text-center max-w-2xl mx-auto">แผนภาพแสดงปฏิสัมพันธ์ระหว่างผู้ใช้ (Actor) และฟังก์ชันหลักของระบบ (Use Cases)</p>
+            <div class="bg-slate-50 p-8 rounded-lg border border-slate-200 flex flex-col items-center">
+                <div class="flex items-center space-x-8 md:space-x-24">
+                    <div class="text-center">
+                        <i class="fas fa-user text-5xl text-slate-700"></i>
+                        <p class="font-bold mt-2">Employee</p>
+                    </div>
+                    <div class="w-px bg-slate-300 h-64"></div>
+                    <div class="border-2 border-dashed border-slate-400 p-6 rounded-lg space-y-4 text-center">
+                        <h4 class="font-bold text-slate-600 mb-4">MeetingRoom Pro System</h4>
+                        <div class="bg-white p-3 rounded-lg border border-slate-300 shadow-sm">Search Rooms</div>
+                        <div class="bg-white p-3 rounded-lg border border-slate-300 shadow-sm">Book Room</div>
+                        <div class="bg-white p-3 rounded-lg border border-slate-300 shadow-sm">Modify / Cancel Booking</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="dashboard" class="section-card">
+            <h2 class="text-3xl font-bold mb-8 text-slate-800 text-center">ตัวอย่างแดชบอร์ดและรายงาน (REQ-F005)</h2>
+            <div class="grid md:grid-cols-2 gap-8 items-center">
+                <div>
+                    <h3 class="font-semibold text-xl mb-3">อัตราการใช้งานห้องประชุม (Room Utilization Rate)</h3>
+                    <p class="text-slate-500 mb-4">แผนภูมินี้แสดงเปอร์เซ็นต์การใช้งานของห้องประชุมแต่ละห้องในช่วง 30 วันที่ผ่านมา ช่วยให้เห็นว่าห้องใดถูกใช้งานมากที่สุดและห้องใดที่อาจมีพื้นที่ว่าง</p>
+                    <div class="chart-container">
+                        <canvas id="utilizationChart"></canvas>
+                    </div>
+                </div>
+                <div>
+                    <h3 class="font-semibold text-xl mb-3">ห้องประชุมยอดนิยม (Top 5 Most Booked)</h3>
+                    <p class="text-slate-500 mb-4">รายการห้องประชุมที่มีการจองมากที่สุด 5 อันดับแรก</p>
+                    <ol class="list-decimal list-inside bg-slate-50 p-4 rounded-lg space-y-2">
+                        <li class="p-2 bg-white rounded">ห้องประชุม 101 (The Innovator)</li>
+                        <li class="p-2 bg-white rounded">ห้องประชุม 205 (The Collaborator)</li>
+                        <li class="p-2 bg-white rounded">ห้องประชุม 302 (The Summit)</li>
+                        <li class="p-2 bg-white rounded">ห้องประชุม 102 (The Spark)</li>
+                        <li class="p-2 bg-white rounded">ห้องประชุม 410 (The Visionary)</li>
+                    </ol>
+                </div>
+            </div>
+        </section>
+
+    </div>
+
+    <script>
+        function openTab(evt, tabName, containerId) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+
+            const tabcontent = container.parentElement.querySelectorAll('.tab-content');
+            tabcontent.forEach(tab => tab.classList.remove('active'));
+            
+            const tablinks = container.querySelectorAll('.tab-button');
+            tablinks.forEach(link => link.classList.remove('active'));
+            
+            document.getElementById(tabName).classList.add('active');
+            evt.currentTarget.classList.add('active');
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const ctx = document.getElementById('utilizationChart');
+            if (!ctx) return;
+
+            const data = {
+                labels: ['Room 101', 'Room 102', 'Room 205', 'Room 302', 'Room 410', 'Room 411'],
+                datasets: [{
+                    label: 'อัตราการใช้งาน (%)',
+                    data: [85, 60, 92, 78, 88, 45],
+                    backgroundColor: 'rgba(59, 130, 246, 0.6)',
+                    borderColor: 'rgba(59, 130, 246, 1)',
+                    borderWidth: 1
+                }]
+            };
+
+            const config = {
+                type: 'bar',
+                data: data,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    indexAxis: 'y',
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            max: 100,
+                            ticks: {
+                                callback: function(value) { return value + "%" }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) { return context.raw + '%'; }
+                            }
+                        }
+                    }
+                }
+            };
+            new Chart(ctx, config);
+        });
+    </script>
+
+</body>
+</html>
