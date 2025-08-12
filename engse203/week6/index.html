@@ -1,0 +1,2119 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>สัปดาห์ที่ 6: Advanced React & State Management</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Reset & Base Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --react-color: #61dafb;
+            --success-color: #2ecc71;
+            --warning-color: #f39c12;
+            --danger-color: #e74c3c;
+            --dark-color: #1a252f;
+            --light-color: #ecf0f1;
+            --text-color: #333;
+            --bg-color: #ffffff;
+            --code-bg: #f8f9fa;
+            --border-color: #dee2e6;
+        }
+
+        body {
+            font-family: 'Kanit', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: var(--text-color);
+            line-height: 1.6;
+        }
+
+        /* Navigation */
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(44, 62, 80, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 1rem 2rem;
+            z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .nav-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .nav-title {
+            color: white;
+            font-size: 1.5rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .react-badge {
+            background: var(--react-color);
+            color: #282c34;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .nav-controls {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .slide-counter {
+            color: white;
+            font-size: 1rem;
+            background: rgba(255,255,255,0.1);
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+        }
+
+        .nav-btn {
+            background: var(--secondary-color);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: all 0.3s ease;
+        }
+
+        .nav-btn:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+        }
+
+        .nav-btn:disabled {
+            background: #7f8c8d;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Main Content */
+        .container {
+            margin-top: 80px;
+            padding: 2rem;
+            max-width: 1400px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* Slide Styles */
+        .slide {
+            display: none;
+            min-height: calc(100vh - 120px);
+            padding: 2rem;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+        }
+
+        .slide.active {
+            display: block;
+            animation: slideIn 0.5s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .slide-title {
+            font-size: 2.5rem;
+            color: var(--primary-color);
+            margin-bottom: 1.5rem;
+            text-align: center;
+            border-bottom: 3px solid var(--react-color);
+            padding-bottom: 1rem;
+        }
+
+        .slide-subtitle {
+            font-size: 1.8rem;
+            color: var(--secondary-color);
+            margin: 2rem 0 1rem 0;
+            border-left: 4px solid var(--react-color);
+            padding-left: 1rem;
+        }
+
+        /* Code Examples */
+        .code-example {
+            background: var(--code-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            margin: 1.5rem 0;
+            overflow: hidden;
+        }
+
+        .code-header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            padding: 0.75rem 1rem;
+            font-weight: 500;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .code-lang {
+            background: rgba(255,255,255,0.2);
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.875rem;
+        }
+
+        .code {
+            background: #282c34;
+            color: #abb2bf;
+            padding: 1.5rem;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            white-space: pre-wrap;
+            overflow-x: auto;
+            margin: 0;
+            line-height: 1.5;
+        }
+
+        /* React-specific code highlighting */
+        .code .keyword { color: #c678dd; }
+        .code .string { color: #98c379; }
+        .code .function { color: #61dafb; }
+        .code .comment { color: #5c6370; font-style: italic; }
+        .code .tag { color: #e06c75; }
+        .code .attribute { color: #d19a66; }
+
+        /* Interactive Demo */
+        .demo-container {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 15px;
+            padding: 2rem;
+            margin: 2rem 0;
+            color: white;
+        }
+
+        .demo-title {
+            font-size: 1.3rem;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+
+        .demo-content {
+            background: white;
+            color: var(--text-color);
+            padding: 1.5rem;
+            border-radius: 10px;
+            margin-top: 1rem;
+        }
+
+        /* Feature Cards */
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .feature-card {
+            background: white;
+            border: 2px solid var(--border-color);
+            border-radius: 10px;
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, var(--react-color), var(--secondary-color));
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        .feature-icon {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, var(--react-color), var(--secondary-color));
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1rem;
+            font-size: 1.5rem;
+        }
+
+        /* Quiz Section */
+        .quiz-container {
+            background: var(--light-color);
+            border-radius: 10px;
+            padding: 2rem;
+            margin: 2rem 0;
+        }
+
+        .quiz-question {
+            font-size: 1.2rem;
+            color: var(--primary-color);
+            margin-bottom: 1.5rem;
+            font-weight: 500;
+        }
+
+        .quiz-options {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .quiz-option {
+            background: white;
+            border: 2px solid var(--border-color);
+            padding: 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .quiz-option:hover {
+            background: var(--react-color);
+            color: #282c34;
+            transform: translateX(5px);
+        }
+
+        .quiz-answer {
+            background: var(--success-color);
+            color: white;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-top: 1rem;
+            display: none;
+        }
+
+        .quiz-answer.show {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* Lists */
+        .concept-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .concept-list li {
+            background: var(--light-color);
+            margin: 0.75rem 0;
+            padding: 1rem 1rem 1rem 3rem;
+            border-radius: 8px;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .concept-list li::before {
+            content: "⚛️";
+            position: absolute;
+            left: 1rem;
+            font-size: 1.2rem;
+        }
+
+        .concept-list li:hover {
+            background: var(--react-color);
+            transform: translateX(10px);
+        }
+
+        /* Performance Metrics */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin: 2rem 0;
+        }
+
+        .metric-card {
+            background: linear-gradient(135deg, var(--secondary-color), var(--react-color));
+            color: white;
+            padding: 1.5rem;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .metric-value {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+
+        .metric-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        /* Comparison Table */
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 2rem 0;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        .comparison-table th {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            padding: 1rem;
+            font-weight: 600;
+        }
+
+        .comparison-table td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border-color);
+            text-align: center;
+        }
+
+        .comparison-table tr:hover {
+            background: var(--light-color);
+        }
+
+        /* Workshop Section */
+        .workshop-section {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            padding: 2rem;
+            border-radius: 15px;
+            margin: 2rem 0;
+        }
+
+        .workshop-title {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+
+        .workshop-steps {
+            background: white;
+            color: var(--text-color);
+            padding: 1.5rem;
+            border-radius: 10px;
+            margin-top: 1rem;
+        }
+
+        .step {
+            display: flex;
+            align-items: flex-start;
+            margin: 1rem 0;
+        }
+
+        .step-number {
+            background: var(--react-color);
+            color: #282c34;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-right: 1rem;
+            flex-shrink: 0;
+        }
+
+        /* Progress Bar */
+        .progress-container {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--light-color);
+            z-index: 1000;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--react-color), var(--secondary-color));
+            transition: width 0.3s ease;
+        }
+
+        /* Interactive Button */
+        .try-button {
+            background: linear-gradient(135deg, var(--react-color), var(--secondary-color));
+            color: #282c34;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 1rem auto;
+            display: block;
+        }
+
+        .try-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 10px 30px rgba(97, 218, 251, 0.4);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+
+            .slide-title {
+                font-size: 1.8rem;
+            }
+
+            .slide-subtitle {
+                font-size: 1.3rem;
+            }
+
+            .feature-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .nav-content {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .code {
+                font-size: 0.875rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-content">
+            <h1 class="nav-title">
+                Week 6: Advanced React 
+                <span class="react-badge">⚛️ React 18</span>
+            </h1>
+            <div class="nav-controls">
+                <span class="slide-counter">
+                    <span id="current-slide">1</span> / <span id="total-slides">20</span>
+                </span>
+                <button class="nav-btn" id="prev-btn" onclick="previousSlide()">← ก่อนหน้า</button>
+                <button class="nav-btn" id="next-btn" onclick="nextSlide()">ถัดไป →</button>
+                <button class="nav-btn" onclick="toggleFullscreen()">เต็มจอ</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Progress Bar -->
+    <div class="progress-container">
+        <div class="progress-bar" id="progress-bar"></div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="container">
+        <!-- Slide 1: Title -->
+        <section class="slide active">
+            <h1 class="slide-title">สัปดาห์ที่ 6: Advanced React & State Management</h1>
+            <div class="slide-content">
+                <div style="text-align: center; margin: 3rem 0;">
+                    <h2 style="color: var(--secondary-color); margin-bottom: 2rem;">ENGSE203 การเขียนโปรแกรมสำหรับวิศวกรซอฟต์แวร์</h2>
+                    <div style="font-size: 6rem; margin: 2rem 0;">⚛️</div>
+                    <h3 style="color: var(--react-color); font-size: 1.5rem;">React Advanced Patterns & State Management</h3>
+                </div>
+                
+                <div class="feature-grid">
+                    <div class="feature-card">
+                        <div class="feature-icon">🎯</div>
+                        <h3>Custom Hooks</h3>
+                        <p>สร้าง logic ที่ reusable ด้วย Custom Hooks</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">🔄</div>
+                        <h3>Context API</h3>
+                        <p>จัดการ state แบบ global ไม่ต้อง prop drilling</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">🚀</div>
+                        <h3>Performance</h3>
+                        <p>เทคนิคการ optimize React application</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Slide 2: Learning Objectives -->
+        <section class="slide">
+            <h1 class="slide-title">เป้าหมายการเรียนรู้</h1>
+            <div class="slide-content">
+                <h2 class="slide-subtitle">หลังจากเรียนจบคาบนี้ นักศึกษาจะสามารถ:</h2>
+                
+                <ul class="concept-list">
+                    <li>เข้าใจและใช้งาน Advanced React Patterns (HOC, Render Props, Custom Hooks)</li>
+                    <li>สร้าง Custom Hooks สำหรับ logic ที่ซับซ้อน</li>
+                    <li>จัดการ state ด้วย Context API อย่างมีประสิทธิภาพ</li>
+                    <li>ใช้ Redux Toolkit สำหรับ state management ขนาดใหญ่</li>
+                    <li>implement React Router สำหรับ Single Page Application</li>
+                    <li>ใช้เทคนิค Performance Optimization (memo, useMemo, useCallback)</li>
+                    <li>เชื่อมต่อกับ Backend API อย่างมีประสิทธิภาพ</li>
+                </ul>
+
+                <div class="demo-container">
+                    <h3 class="demo-title">🎯 เป้าหมายหลักของคาบนี้</h3>
+                    <div class="demo-content">
+                        <p style="text-align: center; font-size: 1.2rem;">
+                            "พัฒนาทักษะ React ขั้นสูงเพื่อสร้าง Application ที่ซับซ้อนและมีประสิทธิภาพ"
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Slide 3: Review React Basics -->
+        <section class="slide">
+            <h1 class="slide-title">ทบทวน React Fundamentals จากสัปดาห์ที่ 5</h1>
+            <div class="slide-content">
+                <h2 class="slide-subtitle">Quick Review: React Hooks พื้นฐาน</h2>
+                
+                <div class="code-example">
+                    <div class="code-header">
+                        <span>React Basic Hooks</span>
+                        <span class="code-lang">JSX</span>
+                    </div>
+                    <pre class="code"><span class="keyword">import</span> React, { useState, useEffect } <span class="keyword">from</span> <span class="string">'react'</span>;
+
+<span class="keyword">function</span> <span class="function">UserProfile</span>() {
+  <span class="comment">// useState - จัดการ state ภายใน component</span>
+  <span class="keyword">const</span> [user, setUser] = useState(null);
+  <span class="keyword">const</span> [loading, setLoading] = useState(true);
+
+  <span class="comment">// useEffect - side effects และ lifecycle</span>
+  useEffect(() => {
+    fetchUserData();
+  }, []); <span class="comment">// Empty dependency array = componentDidMount</span>
+
+  <span class="keyword">const</span> <span class="function">fetchUserData</span> = <span class="keyword">async</span> () => {
+    <span class="keyword">try</span> {
+      <span class="keyword">const</span> response = <span class="keyword">await</span> fetch(<span class="string">'/api/user'</span>);
+      <span class="keyword">const</span> data = <span class="keyword">await</span> response.json();
+      setUser(data);
+    } <span class="keyword">finally</span> {
+      setLoading(false);
+    }
+  };
+
+  <span class="keyword">if</span> (loading) <span class="keyword">return</span> <span class="tag">&lt;div&gt;</span>Loading...<span class="tag">&lt;/div&gt;</span>;
+
+  <span class="keyword">return</span> (
+    <span class="tag">&lt;div&gt;</span>
+      <span class="tag">&lt;h1&gt;</span>{user?.name}<span class="tag">&lt;/h1&gt;</span>
+      <span class="tag">&lt;p&gt;</span>{user?.email}<span class="tag">&lt;/p&gt;</span>
+    <span class="tag">&lt;/div&gt;</span>
+  );
+}</pre>
+                </div>
+
+                <div class="quiz-container">
+                    <div class="quiz-question">❓ คำถาม: useEffect ที่มี dependency array เป็น [] จะทำงานเมื่อไหร่?</div>
+                    <div class="quiz-options">
+                        <div class="quiz-option" onclick="showAnswer(1)">A. ทุกครั้งที่ component render</div>
+                        <div class="quiz-option" onclick="showAnswer(1)">B. เฉพาะครั้งแรกที่ component mount</div>
+                        <div class="quiz-option" onclick="showAnswer(1)">C. เมื่อ state เปลี่ยน</div>
+                        <div class="quiz-option" onclick="showAnswer(1)">D. ไม่ทำงานเลย</div>
+                    </div>
+                    <div class="quiz-answer" id="answer-1">
+                        ✅ <strong>คำตอบ: B</strong> - useEffect ที่มี empty dependency array [] จะทำงานเพียงครั้งเดียวเมื่อ component mount (เหมือน componentDidMount)
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Slide 4: Custom Hooks Introduction -->
+        <section class="slide">
+            <h1 class="slide-title">Custom Hooks - Reusable Logic</h1>
+            <div class="slide-content">
+                <h2 class="slide-subtitle">ทำไมต้องใช้ Custom Hooks?</h2>
+                
+                <div class="feature-grid">
+                    <div class="feature-card">
+                        <h3>✨ Reusability</h3>
+                        <p>แชร์ logic ระหว่าง components ได้</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>🎯 Separation of Concerns</h3>
+                        <p>แยก business logic ออกจาก UI</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>🧪 Testability</h3>
+                        <p>ทดสอบ logic แยกจาก component</p>
+                    </div>
+                </div>
+
+                <h2 class="slide-subtitle">กฎของ Custom Hooks</h2>
+                <ul class="concept-list">
+                    <li>ชื่อต้องขึ้นต้นด้วย "use" เสมอ (เช่น useCounter, useFetch)</li>
+                    <li>สามารถเรียกใช้ Hooks อื่นๆ ภายในได้</li>
+                    <li>ต้องเรียกใช้ที่ top level ของ function เท่านั้น</li>
+                    <li>สามารถ return ค่าอะไรก็ได้ (ไม่จำเป็นต้องเป็น JSX)</li>
+                </ul>
+
+                <div class="code-example">
+                    <div class="code-header">
+                        <span>Simple Custom Hook Example</span>
+                        <span class="code-lang">JSX</span>
+                    </div>
+                    <pre class="code"><span class="comment">// Custom Hook สำหรับจัดการ counter</span>
+<span class="keyword">function</span> <span class="function">useCounter</span>(initialValue = 0) {
+  <span class="keyword">const</span> [count, setCount] = useState(initialValue);
+
+  <span class="keyword">const</span> increment = () => setCount(count + 1);
+  <span class="keyword">const</span> decrement = () => setCount(count - 1);
+  <span class="keyword">const</span> reset = () => setCount(initialValue);
+
+  <span class="keyword">return</span> { count, increment, decrement, reset };
+}</pre>
+                </div>
+            </div>
+        </section>
+
+        <!-- Slide 5: Custom Hook - useFetch -->
+        <section class="slide">
+            <h1 class="slide-title">Custom Hook ตัวอย่าง: useFetch</h1>
+            <div class="slide-content">
+                <div class="code-example">
+                    <div class="code-header">
+                        <span>useFetch Hook - ดึงข้อมูลจาก API</span>
+                        <span class="code-lang">JSX</span>
+                    </div>
+                    <pre class="code"><span class="keyword">import</span> { useState, useEffect } <span class="keyword">from</span> <span class="string">'react'</span>;
+
+<span class="keyword">function</span> <span class="function">useFetch</span>(url) {
+  <span class="keyword">const</span> [data, setData] = useState(null);
+  <span class="keyword">const</span> [loading, setLoading] = useState(true);
+  <span class="keyword">const</span> [error, setError] = useState(null);
+
+  useEffect(() => {
+    <span class="keyword">const</span> <span class="function">fetchData</span> = <span class="keyword">async</span> () => {
+      <span class="keyword">try</span> {
+        setLoading(true);
+        <span class="keyword">const</span> response = <span class="keyword">await</span> fetch(url);
+        
+        <span class="keyword">if</span> (!response.ok) {
+          <span class="keyword">throw new</span> Error(<span class="string">`HTTP error! status: ${response.status}`</span>);
+        }
+        
+        <span class="keyword">const</span> jsonData = <span class="keyword">await</span> response.json();
+        setData(jsonData);
+      } <span class="keyword">catch</span> (err) {
+        setError(err.message);
+      } <span class="keyword">finally</span> {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [url]); <span class="comment">// Re-fetch เมื่อ URL เปลี่ยน</span>
+
+  <span class="keyword">return</span> { data, loading, error };
+}
+
+<span class="comment">// การใช้งาน useFetch</span>
+<span class="keyword">function</span> <span class="function">UserList</span>() {
+  <span class="keyword">const</span> { data: users, loading, error } = <span class="function">useFetch</span>(<span class="string">'/api/users'</span>);
+
+  <span class="keyword">if</span> (loading) <span class="keyword">return</span> <span class="tag">&lt;div&gt;</span>กำลังโหลด...<span class="tag">&lt;/div&gt;</span>;
+  <span class="keyword">if</span> (error) <span class="keyword">return</span> <span class="tag">&lt;div&gt;</span>เกิดข้อผิดพลาด: {error}<span class="tag">&lt;/div&gt;</span>;
+
+  <span class="keyword">return</span> (
+    <span class="tag">&lt;ul&gt;</span>
+      {users?.map(user => (
+        <span class="tag">&lt;li</span> <span class="attribute">key</span>=<span class="string">{user.id}</span><span class="tag">&gt;</span>{user.name}<span class="tag">&lt;/li&gt;</span>
+      ))}
+    <span class="tag">&lt;/ul&gt;</span>
+  );
+}</pre>
+                </div>
+
+                <div class="workshop-section">
+                    <h3 class="workshop-title">🛠️ Workshop: สร้าง Custom Hook</h3>
+                    <div class="workshop-steps">
+                        <div class="step">
+                            <div class="step-number">1</div>
+                            <div>สร้าง useLocalStorage hook สำหรับเก็บข้อมูลใน localStorage</div>
+                        </div>
+                        <div class="step">
+                            <div class="step-number">2</div>
+                            <div>ทำให้ sync กับ localStorage เมื่อค่าเปลี่ยน</div>
+                        </div>
+                        <div class="step">
+                            <div class="step-number">3</div>
+                            <div>handle JSON parsing และ error cases</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Slide 6: useLocalStorage Custom Hook -->
+        <section class="slide">
+            <h1 class="slide-title">Workshop Solution: useLocalStorage Hook</h1>
+            <div class="slide-content">
+                <div class="code-example">
+                    <div class="code-header">
+                        <span>useLocalStorage Custom Hook</span>
+                        <span class="code-lang">JSX</span>
+                    </div>
+                    <pre class="code"><span class="keyword">function</span> <span class="function">useLocalStorage</span>(key, initialValue) {
+  <span class="comment">// อ่านค่าเริ่มต้นจาก localStorage</span>
+  <span class="keyword">const</span> [storedValue, setStoredValue] = useState(() => {
+    <span class="keyword">try</span> {
+      <span class="keyword">const</span> item = window.localStorage.getItem(key);
+      <span class="keyword">return</span> item ? JSON.parse(item) : initialValue;
+    } <span class="keyword">catch</span> (error) {
+      console.error(<span class="string">`Error loading localStorage key "${key}":`</span>, error);
+      <span class="keyword">return</span> initialValue;
+    }
+  });
+
+  <span class="comment">// สร้าง setter function ที่บันทึกลง localStorage</span>
+  <span class="keyword">const</span> <span class="function">setValue</span> = (value) => {
+    <span class="keyword">try</span> {
+      <span class="comment">// Allow value to be a function (like useState)</span>
+      <span class="keyword">const</span> valueToStore = value <span class="keyword">instanceof</span> Function 
+        ? value(storedValue) 
+        : value;
+      
+      setStoredValue(valueToStore);
+      window.localStorage.setItem(key, JSON.stringify(valueToStore));
+    } <span class="keyword">catch</span> (error) {
+      console.error(<span class="string">`Error saving to localStorage key "${key}":`</span>, error);
+    }
+  };
+
+  <span class="keyword">return</span> [storedValue, setValue];
+}
+
+<span class="comment">// ตัวอย่างการใช้งาน</span>
+<span class="keyword">function</span> <span class="function">ThemeSettings</span>() {
+  <span class="keyword">const</span> [theme, setTheme] = <span class="function">useLocalStorage</span>(<span class="string">'theme'</span>, <span class="string">'light'</span>);
+  
+  <span class="keyword">return</span> (
+    <span class="tag">&lt;button</span> <span class="attribute">onClick</span>={() => setTheme(theme === <span class="string">'light'</span> ? <span class="string">'dark'</span> : <span class="string">'light'</span>)}<span class="tag">&gt;</span>
+      Current theme: {theme}
+    <span class="tag">&lt;/button&gt;</span>
+  );
+}</pre>
+                </div>
+
+                <div class="quiz-container">
+                    <div class="quiz-question">❓ คำถาม: ทำไมเราใช้ lazy initial state ใน useState?</div>
+                    <div class="quiz-options">
+                        <div class="quiz-option" onclick="showAnswer(2)">A. เพื่อความเร็วในการ render</div>
+                        <div class="quiz-option" onclick="showAnswer(2)">B. เพื่อหลีกเลี่ยงการอ่าน localStorage ทุกครั้งที่ render</div>
+                        <div class="quiz-option" onclick="showAnswer(2)">C. เพื่อให้โค้ดสั้นลง</div>
+                        <div class="quiz-option" onclick="showAnswer(2)">D. ไม่มีเหตุผลพิเศษ</div>
+                    </div>
+                    <div class="quiz-answer" id="answer-2">
+                        ✅ <strong>คำตอบ: B</strong> - Lazy initial state (ใช้ function) ทำให้การอ่าน localStorage เกิดเพียงครั้งเดียวตอน mount ไม่ใช่ทุกครั้งที่ component re-render
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Slide 7: Higher-Order Components (HOC) -->
+        <section class="slide">
+            <h1 class="slide-title">Higher-Order Components (HOC)</h1>
+            <div class="slide-content">
+                <h2 class="slide-subtitle">HOC คืออะไร?</h2>
+                <p style="font-size: 1.1rem; margin: 1rem 0;">
+                    <strong>Higher-Order Component</strong> คือ function ที่รับ component เป็น parameter และ return component ใหม่ที่มี functionality เพิ่มเติม
+                </p>
+
+                <div class="code-example">
+                    <div class="code-header">
+                        <span>HOC Pattern Example - withAuth</span>
+                        <span class="code-lang">JSX</span>
+                    </div>
+                    <pre class="code"><span class="comment">// HOC สำหรับตรวจสอบ authentication</span>
+<span class="keyword">function</span> <span class="function">withAuth</span>(WrappedComponent) {
+  <span class="keyword">return function</span> <span class="function">WithAuthComponent</span>(props) {
+    <span class="keyword">const</span> [isAuthenticated, setIsAuthenticated] = useState(false);
+    <span class="keyword">const</span> [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+      <span class="comment">// ตรวจสอบ auth status</span>
+      <span class="keyword">const</span> checkAuth = <span class="keyword">async</span> () => {
+        <span class="keyword">try</span> {
+          <span class="keyword">const</span> token = localStorage.getItem(<span class="string">'token'</span>);
+          <span class="keyword">if</span> (token) {
+            <span class="comment">// Verify token with backend</span>
+            <span class="keyword">const</span> response = <span class="keyword">await</span> fetch(<span class="string">'/api/verify'</span>, {
+              headers: { <span class="string">'Authorization'</span>: <span class="string">`Bearer ${token}`</span> }
+            });
+            setIsAuthenticated(response.ok);
+          }
+        } <span class="keyword">finally</span> {
+          setLoading(false);
+        }
+      };
+      checkAuth();
+    }, []);
+
+    <span class="keyword">if</span> (loading) <span class="keyword">return</span> <span class="tag">&lt;div&gt;</span>Checking authentication...<span class="tag">&lt;/div&gt;</span>;
+    <span class="keyword">if</span> (!isAuthenticated) <span class="keyword">return</span> <span class="tag">&lt;div&gt;</span>Please login to continue<span class="tag">&lt;/div&gt;</span>;
+
+    <span class="comment">// Pass all props to wrapped component</span>
+    <span class="keyword">return</span> <span class="tag">&lt;WrappedComponent</span> {...props} <span class="tag">/&gt;</span>;
+  };
+}
+
+<span class="comment">// การใช้งาน HOC</span>
+<span class="keyword">function</span> <span class="function">Dashboard</span>() {
+  <span class="keyword">return</span> <span class="tag">&lt;div&gt;</span>Welcome to Dashboard!<span class="tag">&lt;/div&gt;</span>;
+}
+
+<span class="keyword">const</span> ProtectedDashboard = <span class="function">withAuth</span>(Dashboard);
+
+<span class="comment">// ใช้ใน App</span>
+<span class="tag">&lt;ProtectedDashboard /&gt;</span></pre>
+                </div>
+
+                <div class="comparison-table">
+                    <thead>
+                        <tr>
+                            <th>ข้อดี HOC</th>
+                            <th>ข้อเสีย HOC</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>✅ Reuse logic ได้หลาย component</td>
+                            <td>❌ Wrapper Hell (HOC ซ้อนกันหลายชั้น)</td>
+                        </tr>
+                        <tr>
+                            <td>✅ แยก concerns ได้ชัดเจน</td>
+                            <td>❌ Props collision อาจเกิดขึ้น</td>
+                        </tr>
+                        <tr>
+                            <td>✅ ทดสอบแยกส่วนได้</td>
+                            <td>❌ Debug ยากกว่า Hooks</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Slide 8: Render Props Pattern -->
+        <section class="slide">
+            <h1 class="slide-title">Render Props Pattern</h1>
+            <div class="slide-content">
+                <h2 class="slide-subtitle">Render Props คืออะไร?</h2>
+                <p style="margin: 1rem 0;">
+                    เทคนิคการแชร์ code ระหว่าง components โดยใช้ prop ที่เป็น function และ return JSX
+                </p>
+
+                <div class="code-example">
+                    <div class="code-header">
+                        <span>Render Props Example - Mouse Tracker</span>
+                        <span class="code-lang">JSX</span>
+                    </div>
+                    <pre class="code"><span class="comment">// Component ที่ track mouse position</span>
+<span class="keyword">function</span> <span class="function">MouseTracker</span>({ render }) {
+  <span class="keyword">const</span> [position, setPosition] = useState({ x: 0, y: 0 });
+
+  useEffect(() => {
+    <span class="keyword">const</span> <span class="function">handleMouseMove</span> = (event) => {
+      setPosition({ x: event.clientX, y: event.clientY });
+    };
+
+    window.addEventListener(<span class="string">'mousemove'</span>, handleMouseMove);
+    <span class="keyword">return</span> () => window.removeEventListener(<span class="string">'mousemove'</span>, handleMouseMove);
+  }, []);
+
+  <span class="comment">// เรียก render prop function พร้อมส่ง data</span>
+  <span class="keyword">return</span> render(position);
+}
+
+<span class="comment">// การใช้งาน Render Props</span>
+<span class="keyword">function</span> <span class="function">App</span>() {
+  <span class="keyword">return</span> (
+    <span class="tag">&lt;div&gt;</span>
+      <span class="tag">&lt;h1&gt;</span>Mouse Position Tracker<span class="tag">&lt;/h1&gt;</span>
+      
+      <span class="tag">&lt;MouseTracker</span> 
+        <span class="attribute">render</span>={({ x, y }) => (
+          <span class="tag">&lt;div&gt;</span>
+            Mouse position: ({x}, {y})
+          <span class="tag">&lt;/div&gt;</span>
+        )}
+      <span class="tag">/&gt;</span>
+
+      <span class="comment">{/* ใช้ซ้ำกับ UI ที่ต่างกัน */}</span>
+      <span class="tag">&lt;MouseTracker</span> 
+        <span class="attribute">render</span>={({ x, y }) => (
+          <span class="tag">&lt;div</span> <span class="attribute">style</span>={{
+            width: 20,
+            height: 20,
+            borderRadius: <span class="string">'50%'</span>,
+            background: <span class="string">'red'</span>,
+            position: <span class="string">'fixed'</span>,
+            left: x - 10,
+            top: y - 10
+          }}<span class="tag">/&gt;</span>
+        )}
+      <span class="tag">/&gt;</span>
+    <span class="tag">&lt;/div&gt;</span>
+  );
+}</pre>
+                </div>
+
+                <div class="demo-container">
+                    <h3 class="demo-title">💡 เปรียบเทียบ Patterns</h3>
+                    <div class="demo-content">
+                        <ul>
+                            <li><strong>Custom Hooks:</strong> ดีที่สุดสำหรับ logic reuse (แนะนำ)</li>
+                            <li><strong>HOC:</strong> ดีสำหรับ enhance component behavior</li>
+                            <li><strong>Render Props:</strong> ดีสำหรับ dynamic rendering logic</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Slide 9: Context API Introduction -->
+        <section class="slide">
+            <h1 class="slide-title">Context API - Global State Management</h1>
+            <div class="slide-content">
+                <h2 class="slide-subtitle">ปัญหา Prop Drilling</h2>
+                <p>เมื่อต้องส่ง props ผ่านหลายๆ ชั้นของ components</p>
+
+                <div class="code-example">
+                    <div class="code-header">
+                        <span>❌ ปัญหา: Prop Drilling</span>
+                        <span class="code-lang">JSX</span>
+                    </div>
+                    <pre class="code"><span class="comment">// ต้องส่ง user ผ่าน 3 ชั้น!</span>
+<span class="tag">&lt;App</span> <span class="attribute">user</span>={user}<span class="tag">&gt;</span>
+  <span class="tag">&lt;Dashboard</span> <span class="attribute">user</span>={user}<span class="tag">&gt;</span>
+    <span class="tag">&lt;Header</span> <span class="attribute">user</span>={user}<span class="tag">&gt;</span>
+      <span class="tag">&lt;UserProfile</span> <span class="attribute">user</span>={user} <span class="tag">/&gt;</span>
+    <span class="tag">&lt;/Header&gt;</span>
+  <span class="tag">&lt;/Dashboard&gt;</span>
+<span class="tag">&lt;/App&gt;</span></pre>
+                </div>
+
+                <h2 class="slide-subtitle">✅ Solution: Context API</h2>
+                <div class="code-example">
+                    <div class="code-header">
+                        <span>Context API Implementation</span>
+                        <span class="code-lang">JSX</span>
+                    </div>
+                    <pre class="code"><span class="comment">// 1. สร้าง Context</span>
+<span class="keyword">const</span> UserContext = React.createContext();
+
+<span class="comment">// 2. สร้าง Provider Component</span>
+<span class="keyword">function</span> <span class="function">UserProvider</span>({ children }) {
+  <span class="keyword">const</span> [user, setUser] = useState(null);
+  <span class="keyword">const</span> [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    <span class="comment">// Fetch user data</span>
+    fetchUserData().then(data => {
+      setUser(data);
+      setLoading(false);
+    });
+  }, []);
+
+  <span class="keyword">const</span> login = <span class="keyword">async</span> (email, password) => {
+    <span class="keyword">const</span> response = <span class="keyword">await</span> fetch(<span class="string">'/api/login'</span>, {
+      method: <span class="string">'POST'</span>,
+      body: JSON.stringify({ email, password })
+    });
+    <span class="keyword">const</span> userData = <span class="keyword">await</span> response.json();
+    setUser(userData);
+  };
+
+  <span class="keyword">const</span> logout = () => setUser(null);
+
+  <span class="keyword">const</span> value = { user, loading, login, logout };
+
+  <span class="keyword">return</span> (
+    <span class="tag">&lt;UserContext.Provider</span> <span class="attribute">value</span>={value}<span class="tag">&gt;</span>
+      {children}
+    <span class="tag">&lt;/UserContext.Provider&gt;</span>
+  );
+}</pre>
+                </div>
+            </div>
+        </section>
+
+        <!-- Slide 10: Using Context API -->
+        <section class="slide">
+            <h1 class="slide-title">การใช้งาน Context API</h1>
+            <div class="slide-content">
+                <div class="code-example">
+                    <div class="code-header">
+                        <span>Custom Hook สำหรับใช้ Context</span>
+                        <span class="code-lang">JSX</span>
+                    </div>
+                    <pre class="code"><span class="comment">// 3. สร้าง Custom Hook สำหรับใช้ Context</span>
+<span class="keyword">function</span> <span class="function">useUser</span>() {
+  <span class="keyword">const</span> context = useContext(UserContext);
+  
+  <span class="keyword">if</span> (!context) {
+    <span class="keyword">throw new</span> Error(<span class="string">'useUser must be used within UserProvider'</span>);
+  }
+  
+  <span class="keyword">return</span> context;
+}
+
+<span class="comment">// 4. Wrap App ด้วย Provider</span>
+<span class="keyword">function</span> <span class="function">App</span>() {
+  <span class="keyword">return</span> (
+    <span class="tag">&lt;UserProvider&gt;</span>
+      <span class="tag">&lt;Dashboard /&gt;</span>
+      <span class="tag">&lt;LoginForm /&gt;</span>
+    <span class="tag">&lt;/UserProvider&gt;</span>
+  );
+}
+
+<span class="comment">// 5. ใช้งานใน Component ไหนก็ได้!</span>
+<span class="keyword">function</span> <span class="function">UserProfile</span>() {
+  <span class="keyword">const</span> { user, loading, logout } = <span class="function">useUser</span>();
+
+  <span class="keyword">if</span> (loading) <span class="keyword">return</span> <span class="tag">&lt;div&gt;</span>Loading...<span class="tag">&lt;/div&gt;</span>;
+  <span class="keyword">if</span> (!user) <span class="keyword">return</span> <span class="tag">&lt;div&gt;</span>Please login<span class="tag">&lt;/div&gt;</span>;
+
+  <span class="keyword">return</span> (
+    <span class="tag">&lt;div&gt;</span>
+      <span class="tag">&lt;h2&gt;</span>Welcome, {user.name}!<span class="tag">&lt;/h2&gt;</span>
+      <span class="tag">&lt;p&gt;</span>{user.email}<span class="tag">&lt;/p&gt;</span>
+      <span class="tag">&lt;button</span> <span class="attribute">onClick</span>={logout}<span class="tag">&gt;</span>Logout<span class="tag">&lt;/button&gt;</span>
+    <span class="tag">&lt;/div&gt;</span>
+  );
+}
+
+<span class="keyword">function</span> <span class="function">LoginForm</span>() {
+  <span class="keyword">const</span> { login } = <span class="function">useUser</span>();
+  <span class="keyword">const</span> [email, setEmail] = useState(<span class="string">''</span>);
+  <span class="keyword">const</span> [password, setPassword] = useState(<span class="string">''</span>);
+
+  <span class="keyword">const</span> <span class="function">handleSubmit</span> = (e) => {
+    e.preventDefault();
+    login(email, password);
+  };
+
+  <span class="comment">// Form JSX...</span>
+}</pre>
+                </div>
+
+                <div class="workshop-section">
+                    <h3 class="workshop-title">🛠️ Workshop: Theme Context</h3>
+                    <div class="workshop-steps">
+                        <div class="step">
+                            <div class="step-number">1</div>
+                            <div>สร้าง ThemeContext สำหรับ dark/light mode</div>
+                        </div>
+                        <div class="step">
+                            <div class="step-number">2</div>
+                            <div>เพิ่ม toggle function และ save ใน localStorage</div>
+                        </div>
+                        <div class="step">
+                            <div class="step-number">3</div>
+                            <div>Apply theme ทั้ง app</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Slide 11: Redux Toolkit Introduction -->
+        <section class="slide">
+            <h1 class="slide-title">Redux Toolkit - Modern Redux</h1>
+            <div class="slide-content">
+                <h2 class="slide-subtitle">ทำไมต้องใช้ Redux?</h2>
+                
+                <div class="comparison-table">
+                    <thead>
+                        <tr>
+                            <th>Context API</th>
+                            <th>Redux Toolkit</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>เหมาะสำหรับ state ง่ายๆ</td>
+                            <td>เหมาะสำหรับ state ที่ซับซ้อน</td>
+                        </tr>
+                        <tr>
+                            <td>Built-in React</td>
+                            <td>ต้องติดตั้งเพิ่ม</td>
+                        </tr>
+                        <tr>
+                            <td>Performance issues กับ frequent updates</td>
+                            <td>Optimized for performance</td>
+                        </tr>
+                        <tr>
+                            <td>No DevTools</td>
+                            <td>Redux DevTools Extension</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h2 class="slide-subtitle">Redux Toolkit Setup</h2>
+                <div class="code-example">
+                    <div class="code-header">
+                        <span>Install Redux Toolkit</span>
+                        <span class="code-lang">bash</span>
+                    </div>
+                    <pre class="code">npm install @reduxjs/toolkit react-redux</pre>
+                </div>
+
+                <div class="code-example">
+                    <div class="code-header">
+                        <span>Create a Slice (Redux Toolkit)</span>
+                        <span class="code-lang">JSX</span>
+                    </div>
+                    <pre class="code"><span class="comment">// features/counter/counterSlice.js</span>
+<span class="keyword">import</span> { createSlice } <span class="keyword">from</span> <span class="string">'@reduxjs/toolkit'</span>;
+
+<span class="keyword">const</span> counterSlice = createSlice({
+  name: <span class="string">'counter'</span>,
+  initialState: {
+    value: 0
+  },
+  reducers: {
+    increment: (state) => {
+      <span class="comment">// Redux Toolkit uses Immer internally</span>
+      <span class="comment">// สามารถ "mutate" state ได้โดยตรง!</span>
+      state.value += 1;
+    },
+    decrement: (state) => {
+      state.value -= 1;
+    },
+    incrementByAmount: (state, action) => {
+      state.value += action.payload;
+    }
+  }
+});
+
+<span class="keyword">export const</span> { increment, decrement, incrementByAmount } = counterSlice.actions;
+<span class="keyword">export default</span> counterSlice.reducer;</pre>
+                </div>
+            </div>
+        </section>
+
+        <!-- Slide 12: Redux Store Configuration -->
+        <section class="slide">
+            <h1 class="slide-title">Redux Store และการใช้งาน</h1>
+            <div class="slide-content">
+                <div class="code-example">
+                    <div class="code-header">
+                        <span>Configure Store</span>
+                        <span class="code-lang">JSX</span>
+                    </div>
+                    <pre class="code"><span class="comment">// app/store.js</span>
+<span class="keyword">import</span> { configureStore } <span class="keyword">from</span> <span class="string">'@reduxjs/toolkit'</span>;
+<span class="keyword">import</span> counterReducer <span class="keyword">from</span> <span class="string">'../features/counter/counterSlice'</span>;
+<span class="keyword">import</span> userReducer <span class="keyword">from</span> <span class="string">'../features/user/userSlice'</span>;
+
+<span class="keyword">export const</span> store = configureStore({
+  reducer: {
+    counter: counterReducer,
+    user: userReducer
+  }
+});
+
+<span class="comment">// main.jsx หรือ index.js</span>
+<span class="keyword">import</span> { Provider } <span class="keyword">from</span> <span class="string">'react-redux'</span>;
+<span class="keyword">import</span> { store } <span class="keyword">from</span> <span class="string">'./app/store'</span>;
+
+ReactDOM.render(
+  <span class="tag">&lt;Provider</span> <span class="attribute">store</span>={store}<span class="tag">&gt;</span>
+    <span class="tag">&lt;App /&gt;</span>
+  <span class="tag">&lt;/Provider&gt;</span>,
+  document.getElementById(<span class="string">'root'</span>)
+);</pre>
+                </div>
+
+                <div class="code-example">
+                    <div class="code-header">
+                        <span>Using Redux in Components</span>
+                        <span class="code-lang">JSX</span>
+                    </div>
+                    <pre class="code"><span class="keyword">import</span> { useSelector, useDispatch } <span class="keyword">from</span> <span class="string">'react-redux'</span>;
+<span class="keyword">import</span> { increment, decrement } <span class="keyword">from</span> <span class="string">'./counterSlice'</span>;
+
+<span class="keyword">function</span> <span class="function">Counter</span>() {
+  <span class="comment">// อ่าน state จาก Redux store</span>
+  <span class="keyword">const</span> count = useSelector((state) => state.counter.value);
+  
+  <span class="comment">// ได้ dispatch function สำหรับส่ง actions</span>
+  <span class="keyword">const</span> dispatch = useDispatch();
+
+  <span class="keyword">return</span> (
+    <span class="tag">&lt;div&gt;</span>
+      <span class="tag">&lt;h2&gt;</span>Count: {count}<span class="tag">&lt;/h2&gt;</span>
+      <span class="tag">&lt;button</span> <span class="attribute">onClick</span>={() => dispatch(increment())}<span class="tag">&gt;</span>+<span class="tag">&lt;/button&gt;</span>
+      <span class="tag">&lt;button</span> <span class="attribute">onClick</span>={() => dispatch(decrement())}<span class="tag">&gt;</span>-<span class="tag">&lt;/button&gt;</span>
+    <span class="tag">&lt;/div&gt;</span>
+  );
+}</pre>
+                </div>
+
+                <div class="quiz-container">
+                    <div class="quiz-question">❓ คำถาม: Redux Toolkit แก้ปัญหาอะไรของ Redux เดิม?</div>
+                    <div class="quiz-options">
+                        <div class="quiz-option" onclick="showAnswer(3)">A. Boilerplate code ที่มากเกินไป</div>
+                        <div class="quiz-option" onclick="showAnswer(3)">B. Configuration ที่ซับซ้อน</div>
+                        <div class="quiz-option" onclick="showAnswer(3)">C. Immutable updates ที่ยาก</div>
+                        <div class="quiz-option" onclick="showAnswer(3)">D. ทั้งหมดที่กล่าวมา</div>
+                    </div>
+                    <div class="quiz-answer" id="answer-3">
+                        ✅ <strong>คำตอบ: D</strong> - Redux Toolkit ช่วยลด boilerplate, ทำให้ configuration ง่ายขึ้น, และใช้ Immer สำหรับ immutable updates
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Slide 13: React Router -->
+        <section class="slide">
+            <h1 class="slide-title">React Router - Single Page Application</h1>
+            <div class="slide-content">
+                <h2 class="slide-subtitle">Installation และ Setup</h2>
+                <div class="code-example">
+                    <div class="code-header">
+                        <span>Install React Router</span>
+                        <span class="code-lang">bash</span>
+                    </div>
+                    <pre class="code">npm install react-router-dom</pre>
+                </div>
+
+                <div class="code-example">
+                    <div class="code-header">
+                        <span>Basic Router Setup</span>
+                        <span class="code-lang">JSX</span>
+                    </div>
+                    <pre class="code"><span class="keyword">import</span> { 
+  BrowserRouter, 
+  Routes, 
+  Route, 
+  Link, 
+  useNavigate,
+  useParams 
+} <span class="keyword">from</span> <span class="string">'react-router-dom'</span>;
+
+<span class="keyword">function</span> <span class="function">App</span>() {
+  <span class="keyword">return</span> (
+    <span class="tag">&lt;BrowserRouter&gt;</span>
+      <span class="tag">&lt;nav&gt;</span>
+        <span class="tag">&lt;Link</span> <span class="attribute">to</span>=<span class="string">"/"</span><span class="tag">&gt;</span>Home<span class="tag">&lt;/Link&gt;</span>
+        <span class="tag">&lt;Link</span> <span class="attribute">to</span>=<span class="string">"/products"</span><span class="tag">&gt;</span>Products<span class="tag">&lt;/Link&gt;</span>
+        <span class="tag">&lt;Link</span> <span class="attribute">to</span>=<span class="string">"/about"</span><span class="tag">&gt;</span>About<span class="tag">&lt;/Link&gt;</span>
+      <span class="tag">&lt;/nav&gt;</span>
+
+      <span class="tag">&lt;Routes&gt;</span>
+        <span class="tag">&lt;Route</span> <span class="attribute">path</span>=<span class="string">"/"</span> <span class="attribute">element</span>={<span class="tag">&lt;Home /&gt;</span>} <span class="tag">/&gt;</span>
+        <span class="tag">&lt;Route</span> <span class="attribute">path</span>=<span class="string">"/products"</span> <span class="attribute">element</span>={<span class="tag">&lt;Products /&gt;</span>} <span class="tag">/&gt;</span>
+        <span class="tag">&lt;Route</span> <span class="attribute">path</span>=<span class="string">"/products/:id"</span> <span class="attribute">element</span>={<span class="tag">&lt;ProductDetail /&gt;</span>} <span class="tag">/&gt;</span>
+        <span class="tag">&lt;Route</span> <span class="attribute">path</span>=<span class="string">"/about"</span> <span class="attribute">element</span>={<span class="tag">&lt;About /&gt;</span>} <span class="tag">/&gt;</span>
+        <span class="tag">&lt;Route</span> <span class="attribute">path</span>=<span class="string">"*"</span> <span class="attribute">element</span>={<span class="tag">&lt;NotFound /&gt;</span>} <span class="tag">/&gt;</span>
+      <span class="tag">&lt;/Routes&gt;</span>
+    <span class="tag">&lt;/BrowserRouter&gt;</span>
+  );
+}
+
+<span class="comment">// Component with Dynamic Route</span>
+<span class="keyword">function</span> <span class="function">ProductDetail</span>() {
+  <span class="keyword">const</span> { id } = useParams(); <span class="comment">// ดึง parameter จาก URL</span>
+  <span class="keyword">const</span> navigate = useNavigate(); <span class="comment">// สำหรับ navigate programmatically</span>
+  
+  <span class="keyword">const</span> [product, setProduct] = useState(null);
+  
+  useEffect(() => {
+    fetch(<span class="string">`/api/products/${id}`</span>)
+      .then(res => res.json())
+      .then(data => setProduct(data));
+  }, [id]);
+
+  <span class="keyword">return</span> (
+    <span class="tag">&lt;div&gt;</span>
+      <span class="tag">&lt;h1&gt;</span>{product?.name}<span class="tag">&lt;/h1&gt;</span>
+      <span class="tag">&lt;button</span> <span class="attribute">onClick</span>={() => navigate(<span class="string">'/products'</span>)}<span class="tag">&gt;</span>
+        Back to Products
+      <span class="tag">&lt;/button&gt;</span>
+    <span class="tag">&lt;/div&gt;</span>
+  );
+}</pre>
+                </div>
+            </div>
+        </section>
+
+        <!-- Slide 14: Protected Routes -->
+        <section class="slide">
+            <h1 class="slide-title">Protected Routes และ Navigation Guards</h1>
+            <div class="slide-content">
+                <div class="code-example">
+                    <div class="code-header">
+                        <span>Protected Route Component</span>
+                        <span class="code-lang">JSX</span>
+                    </div>
+                    <pre class="code"><span class="keyword">import</span> { Navigate, Outlet } <span class="keyword">from</span> <span class="string">'react-router-dom'</span>;
+
+<span class="comment">// Protected Route Wrapper</span>
+<span class="keyword">function</span> <span class="function">ProtectedRoute</span>({ children }) {
+  <span class="keyword">const</span> { user } = <span class="function">useUser</span>(); <span class="comment">// จาก Context หรือ Redux</span>
+  
+  <span class="keyword">if</span> (!user) {
+    <span class="comment">// Redirect ไป login ถ้ายังไม่ได้ login</span>
+    <span class="keyword">return</span> <span class="tag">&lt;Navigate</span> <span class="attribute">to</span>=<span class="string">"/login"</span> <span class="attribute">replace</span> <span class="tag">/&gt;</span>;
+  }
+  
+  <span class="keyword">return</span> children;
+}
+
+<span class="comment">// Layout Component with Outlet</span>
+<span class="keyword">function</span> <span class="function">DashboardLayout</span>() {
+  <span class="keyword">return</span> (
+    <span class="tag">&lt;div&gt;</span>
+      <span class="tag">&lt;Sidebar /&gt;</span>
+      <span class="tag">&lt;main&gt;</span>
+        <span class="tag">&lt;Outlet /&gt;</span> <span class="comment">{/* Child routes render here */}</span>
+      <span class="tag">&lt;/main&gt;</span>
+    <span class="tag">&lt;/div&gt;</span>
+  );
+}
+
+<span class="comment">// Routes Configuration</span>
+<span class="keyword">function</span> <span class="function">App</span>() {
+  <span class="keyword">return</span> (
+    <span class="tag">&lt;Routes&gt;</span>
+      <span class="tag">&lt;Route</span> <span class="attribute">path</span>=<span class="string">"/login"</span> <span class="attribute">element</span>={<span class="tag">&lt;Login /&gt;</span>} <span class="tag">/&gt;</span>
+      
+      <span class="comment">{/* Protected Routes */}</span>
+      <span class="tag">&lt;Route</span> 
+        <span class="attribute">path</span>=<span class="string">"/dashboard"</span> 
+        <span class="attribute">element</span>={
+          <span class="tag">&lt;ProtectedRoute&gt;</span>
+            <span class="tag">&lt;DashboardLayout /&gt;</span>
+          <span class="tag">&lt;/ProtectedRoute&gt;</span>
+        }
+      <span class="tag">&gt;</span>
+        <span class="tag">&lt;Route</span> <span class="attribute">index</span> <span class="attribute">element</span>={<span class="tag">&lt;DashboardHome /&gt;</span>} <span class="tag">/&gt;</span>
+        <span class="tag">&lt;Route</span> <span class="attribute">path</span>=<span class="string">"profile"</span> <span class="attribute">element</span>={<span class="tag">&lt;Profile /&gt;</span>} <span class="tag">/&gt;</span>
+        <span class="tag">&lt;Route</span> <span class="attribute">path</span>=<span class="string">"settings"</span> <span class="attribute">element</span>={<span class="tag">&lt;Settings /&gt;</span>} <span class="tag">/&gt;</span>
+      <span class="tag">&lt;/Route&gt;</span>
+    <span class="tag">&lt;/Routes&gt;</span>
+  );
+}</pre>
+                </div>
+
+                <div class="feature-grid">
+                    <div class="feature-card">
+                        <h3>🔐 Authentication Check</h3>
+                        <p>ตรวจสอบสิทธิ์ก่อนเข้าถึงหน้า</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>🔄 Auto Redirect</h3>
+                        <p>ส่งไป login page อัตโนมัติ</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>📱 Nested Routes</h3>
+                        <p>จัดการ layout และ sub-routes</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Slide 15: Performance Optimization - memo -->
+        <section class="slide">
+            <h1 class="slide-title">Performance Optimization - React.memo</h1>
+            <div class="slide-content">
+                <h2 class="slide-subtitle">React.memo - Prevent Unnecessary Re-renders</h2>
+                
+                <div class="code-example">
+                    <div class="code-header">
+                        <span>Without React.memo (Problem)</span>
+                        <span class="code-lang">JSX</span>
+                    </div>
+                    <pre class="code"><span class="comment">// ❌ Child component re-renders ทุกครั้งที่ parent re-render</span>
+<span class="keyword">function</span> <span class="function">ExpensiveList</span>({ items }) {
+  console.log(<span class="string">'ExpensiveList rendered!'</span>); <span class="comment">// จะ log ทุกครั้ง!</span>
+  
+  <span class="keyword">return</span> (
+    <span class="tag">&lt;ul&gt;</span>
+      {items.map(item => (
+        <span class="tag">&lt;li</span> <span class="attribute">key</span>={item.id}<span class="tag">&gt;</span>{item.name}<span class="tag">&lt;/li&gt;</span>
+      ))}
+    <span class="tag">&lt;/ul&gt;</span>
+  );
+}
+
+<span class="keyword">function</span> <span class="function">Parent</span>() {
+  <span class="keyword">const</span> [count, setCount] = useState(0);
+  <span class="keyword">const</span> items = [{ id: 1, name: <span class="string">'Item 1'</span> }]; <span class="comment">// ไม่เปลี่ยน</span>
+  
+  <span class="keyword">return</span> (
+    <span class="tag">&lt;div&gt;</span>
+      <span class="tag">&lt;button</span> <span class="attribute">onClick</span>={() => setCount(count + 1)}<span class="tag">&gt;</span>
+        Count: {count}
+      <span class="tag">&lt;/button&gt;</span>
+      <span class="tag">&lt;ExpensiveList</span> <span class="attribute">items</span>={items} <span class="tag">/&gt;</span> <span class="comment">{/* Re-render ทุกครั้ง! */}</span>
+    <span class="tag">&lt;/div&gt;</span>
+  );
+}</pre>
+                </div>
+
+                <div class="code-example">
+                    <div class="code-header">
+                        <span>With React.memo (Solution)</span>
+                        <span class="code-lang">JSX</span>
+                    </div>
+                    <pre class="code"><span class="comment">// ✅ ใช้ React.memo เพื่อ memoize component</span>
+<span class="keyword">const</span> ExpensiveList = React.memo(<span class="keyword">function</span> <span class="function">ExpensiveList</span>({ items }) {
+  console.log(<span class="string">'ExpensiveList rendered!'</span>); <span class="comment">// จะ log เมื่อ items เปลี่ยนเท่านั้น</span>
+  
+  <span class="keyword">return</span> (
+    <span class="tag">&lt;ul&gt;</span>
+      {items.map(item => (
+        <span class="tag">&lt;li</span> <span class="attribute">key</span>={item.id}<span class="tag">&gt;</span>{item.name}<span class="tag">&lt;/li&gt;</span>
+      ))}
+    <span class="tag">&lt;/ul&gt;</span>
+  );
+});
+
+<span class="comment">// Custom comparison function (optional)</span>
+<span class="keyword">const</span> MemoizedComponent = React.memo(Component, (prevProps, nextProps) => {
+  <span class="comment">// return true ถ้า props เท่ากัน (skip re-render)</span>
+  <span class="comment">// return false ถ้า props ต่างกัน (re-render)</span>
+  <span class="keyword">return</span> prevProps.id === nextProps.id;
+});</pre>
+                </div>
+            </div>
+        </section>
+
+        <!-- Slide 16: useMemo and useCallback -->
+        <section class="slide">
+            <h1 class="slide-title">Performance: useMemo & useCallback</h1>
+            <div class="slide-content">
+                <h2 class="slide-subtitle">useMemo - Memoize Values</h2>
+                <div class="code-example">
+                    <div class="code-header">
+                        <span>useMemo Example</span>
+                        <span class="code-lang">JSX</span>
+                    </div>
+                    <pre class="code"><span class="keyword">function</span> <span class="function">ExpensiveComponent</span>({ data, filter }) {
+  <span class="comment">// ❌ คำนวณใหม่ทุกครั้งที่ component re-render</span>
+  <span class="comment">// const filteredData = data.filter(item => item.includes(filter));</span>
+  
+  <span class="comment">// ✅ คำนวณใหม่เฉพาะเมื่อ data หรือ filter เปลี่ยน</span>
+  <span class="keyword">const</span> filteredData = useMemo(() => {
+    console.log(<span class="string">'Filtering data...'</span>);
+    <span class="keyword">return</span> data.filter(item => item.includes(filter));
+  }, [data, filter]);
+
+  <span class="keyword">const</span> totalPrice = useMemo(() => {
+    <span class="keyword">return</span> filteredData.reduce((sum, item) => sum + item.price, 0);
+  }, [filteredData]);
+
+  <span class="keyword">return</span> (
+    <span class="tag">&lt;div&gt;</span>
+      <span class="tag">&lt;p&gt;</span>Total: {totalPrice}<span class="tag">&lt;/p&gt;</span>
+      {filteredData.map(item => <span class="tag">&lt;Item</span> <span class="attribute">key</span>={item.id} <span class="attribute">data</span>={item} <span class="tag">/&gt;</span>)}
+    <span class="tag">&lt;/div&gt;</span>
+  );
+}</pre>
+                </div>
+
+                <h2 class="slide-subtitle">useCallback - Memoize Functions</h2>
+                <div class="code-example">
+                    <div class="code-header">
+                        <span>useCallback Example</span>
+                        <span class="code-lang">JSX</span>
+                    </div>
+                    <pre class="code"><span class="keyword">function</span> <span class="function">TodoList</span>() {
+  <span class="keyword">const</span> [todos, setTodos] = useState([]);
+  <span class="keyword">const</span> [filter, setFilter] = useState(<span class="string">''</span>);
+
+  <span class="comment">// ❌ สร้าง function ใหม่ทุกครั้ง = child component re-render</span>
+  <span class="comment">// const handleDelete = (id) => {</span>
+  <span class="comment">//   setTodos(todos.filter(todo => todo.id !== id));</span>
+  <span class="comment">// };</span>
+
+  <span class="comment">// ✅ useCallback เพื่อ memoize function</span>
+  <span class="keyword">const</span> handleDelete = useCallback((id) => {
+    setTodos(prevTodos => prevTodos.filter(todo => todo.id !== id));
+  }, []); <span class="comment">// Empty deps = function ไม่เปลี่ยนเลย</span>
+
+  <span class="keyword">const</span> handleAdd = useCallback((text) => {
+    setTodos(prevTodos => [...prevTodos, { id: Date.now(), text }]);
+  }, []);
+
+  <span class="keyword">return</span> (
+    <span class="tag">&lt;div&gt;</span>
+      <span class="tag">&lt;AddTodo</span> <span class="attribute">onAdd</span>={handleAdd} <span class="tag">/&gt;</span>
+      <span class="tag">&lt;TodoItems</span> 
+        <span class="attribute">todos</span>={todos} 
+        <span class="attribute">onDelete</span>={handleDelete}
+        <span class="attribute">filter</span>={filter}
+      <span class="tag">/&gt;</span>
+    <span class="tag">&lt;/div&gt;</span>
+  );
+}
+
+<span class="comment">// Child component with React.memo</span>
+<span class="keyword">const</span> TodoItems = React.memo(({ todos, onDelete, filter }) => {
+  <span class="comment">// จะ re-render เมื่อ props เปลี่ยนเท่านั้น</span>
+  <span class="keyword">return</span> todos.map(todo => ...);
+});</pre>
+                </div>
+            </div>
+        </section>
+
+        <!-- Slide 17: Code Splitting & Lazy Loading -->
+        <section class="slide">
+            <h1 class="slide-title">Code Splitting & Lazy Loading</h1>
+            <div class="slide-content">
+                <h2 class="slide-subtitle">React.lazy และ Suspense</h2>
+                
+                <div class="code-example">
+                    <div class="code-header">
+                        <span>Dynamic Import with React.lazy</span>
+                        <span class="code-lang">JSX</span>
+                    </div>
+                    <pre class="code"><span class="keyword">import</span> React, { lazy, Suspense } <span class="keyword">from</span> <span class="string">'react'</span>;
+
+<span class="comment">// ❌ Import ปกติ - โหลดทั้งหมดตั้งแต่แรก</span>
+<span class="comment">// import Dashboard from './Dashboard';</span>
+<span class="comment">// import Analytics from './Analytics';</span>
+
+<span class="comment">// ✅ Lazy loading - โหลดเมื่อจำเป็น</span>
+<span class="keyword">const</span> Dashboard = lazy(() => <span class="keyword">import</span>(<span class="string">'./Dashboard'</span>));
+<span class="keyword">const</span> Analytics = lazy(() => <span class="keyword">import</span>(<span class="string">'./Analytics'</span>));
+<span class="keyword">const</span> Settings = lazy(() => <span class="keyword">import</span>(<span class="string">'./Settings'</span>));
+
+<span class="comment">// Loading component</span>
+<span class="keyword">function</span> <span class="function">LoadingSpinner</span>() {
+  <span class="keyword">return</span> (
+    <span class="tag">&lt;div</span> <span class="attribute">className</span>=<span class="string">"spinner"</span><span class="tag">&gt;</span>
+      Loading...
+    <span class="tag">&lt;/div&gt;</span>
+  );
+}
+
+<span class="keyword">function</span> <span class="function">App</span>() {
+  <span class="keyword">return</span> (
+    <span class="tag">&lt;BrowserRouter&gt;</span>
+      <span class="tag">&lt;Suspense</span> <span class="attribute">fallback</span>={<span class="tag">&lt;LoadingSpinner /&gt;</span>}<span class="tag">&gt;</span>
+        <span class="tag">&lt;Routes&gt;</span>
+          <span class="tag">&lt;Route</span> <span class="attribute">path</span>=<span class="string">"/dashboard"</span> <span class="attribute">element</span>={<span class="tag">&lt;Dashboard /&gt;</span>} <span class="tag">/&gt;</span>
+          <span class="tag">&lt;Route</span> <span class="attribute">path</span>=<span class="string">"/analytics"</span> <span class="attribute">element</span>={<span class="tag">&lt;Analytics /&gt;</span>} <span class="tag">/&gt;</span>
+          <span class="tag">&lt;Route</span> <span class="attribute">path</span>=<span class="string">"/settings"</span> <span class="attribute">element</span>={<span class="tag">&lt;Settings /&gt;</span>} <span class="tag">/&gt;</span>
+        <span class="tag">&lt;/Routes&gt;</span>
+      <span class="tag">&lt;/Suspense&gt;</span>
+    <span class="tag">&lt;/BrowserRouter&gt;</span>
+  );
+}
+
+<span class="comment">// Route-based code splitting</span>
+<span class="keyword">const</span> routes = [
+  {
+    path: <span class="string">'/dashboard'</span>,
+    component: lazy(() => <span class="keyword">import</span>(<span class="string">'./pages/Dashboard'</span>))
+  },
+  {
+    path: <span class="string">'/users/:id'</span>,
+    component: lazy(() => <span class="keyword">import</span>(<span class="string">'./pages/UserProfile'</span>))
+  }
+];</pre>
+                </div>
+
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <div class="metric-value">-60%</div>
+                        <div class="metric-label">Initial Bundle Size</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">2x</div>
+                        <div class="metric-label">Faster First Load</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">100%</div>
+                        <div class="metric-label">Better UX</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Slide 18: Backend API Integration -->
+        <section class="slide">
+            <h1 class="slide-title">Backend API Integration Best Practices</h1>
+            <div class="slide-content">
+                <h2 class="slide-subtitle">API Service Layer</h2>
+                
+                <div class="code-example">
+                    <div class="code-header">
+                        <span>API Service Configuration</span>
+                        <span class="code-lang">JSX</span>
+                    </div>
+                    <pre class="code"><span class="comment">// services/api.js</span>
+<span class="keyword">const</span> API_URL = <span class="keyword">import</span>.meta.env.VITE_API_URL || <span class="string">'http://localhost:3000'</span>;
+
+<span class="keyword">class</span> <span class="function">ApiService</span> {
+  <span class="keyword">constructor</span>() {
+    <span class="keyword">this</span>.baseURL = API_URL;
+    <span class="keyword">this</span>.token = localStorage.getItem(<span class="string">'token'</span>);
+  }
+
+  <span class="keyword">async</span> <span class="function">request</span>(endpoint, options = {}) {
+    <span class="keyword">const</span> url = <span class="string">`${this.baseURL}${endpoint}`</span>;
+    
+    <span class="keyword">const</span> config = {
+      ...options,
+      headers: {
+        <span class="string">'Content-Type'</span>: <span class="string">'application/json'</span>,
+        ...options.headers,
+      }
+    };
+
+    <span class="comment">// Add auth token if exists</span>
+    <span class="keyword">if</span> (<span class="keyword">this</span>.token) {
+      config.headers.Authorization = <span class="string">`Bearer ${this.token}`</span>;
+    }
+
+    <span class="keyword">try</span> {
+      <span class="keyword">const</span> response = <span class="keyword">await</span> fetch(url, config);
+      
+      <span class="keyword">if</span> (!response.ok) {
+        <span class="keyword">if</span> (response.status === 401) {
+          <span class="comment">// Handle unauthorized</span>
+          <span class="keyword">this</span>.logout();
+        }
+        <span class="keyword">throw new</span> Error(<span class="string">`HTTP error! status: ${response.status}`</span>);
+      }
+      
+      <span class="keyword">return await</span> response.json();
+    } <span class="keyword">catch</span> (error) {
+      console.error(<span class="string">'API Error:'</span>, error);
+      <span class="keyword">throw</span> error;
+    }
+  }
+
+  <span class="comment">// Auth methods</span>
+  <span class="keyword">async</span> <span class="function">login</span>(email, password) {
+    <span class="keyword">const</span> data = <span class="keyword">await this</span>.request(<span class="string">'/auth/login'</span>, {
+      method: <span class="string">'POST'</span>,
+      body: JSON.stringify({ email, password })
+    });
+    <span class="keyword">this</span>.token = data.token;
+    localStorage.setItem(<span class="string">'token'</span>, data.token);
+    <span class="keyword">return</span> data;
+  }
+
+  <span class="function">logout</span>() {
+    <span class="keyword">this</span>.token = null;
+    localStorage.removeItem(<span class="string">'token'</span>);
+    window.location.href = <span class="string">'/login'</span>;
+  }
+
+  <span class="comment">// CRUD operations</span>
+  get = (endpoint) => <span class="keyword">this</span>.request(endpoint);
+  
+  post = (endpoint, data) => <span class="keyword">this</span>.request(endpoint, {
+    method: <span class="string">'POST'</span>,
+    body: JSON.stringify(data)
+  });
+  
+  put = (endpoint, data) => <span class="keyword">this</span>.request(endpoint, {
+    method: <span class="string">'PUT'</span>,
+    body: JSON.stringify(data)
+  });
+  
+  delete = (endpoint) => <span class="keyword">this</span>.request(endpoint, {
+    method: <span class="string">'DELETE'</span>
+  });
+}
+
+<span class="keyword">export default new</span> ApiService();</pre>
+                </div>
+
+                <div class="code-example">
+                    <div class="code-header">
+                        <span>Using API Service in Components</span>
+                        <span class="code-lang">JSX</span>
+                    </div>
+                    <pre class="code"><span class="keyword">import</span> api <span class="keyword">from</span> <span class="string">'./services/api'</span>;
+
+<span class="keyword">function</span> <span class="function">useProducts</span>() {
+  <span class="keyword">const</span> [products, setProducts] = useState([]);
+  <span class="keyword">const</span> [loading, setLoading] = useState(true);
+  <span class="keyword">const</span> [error, setError] = useState(null);
+
+  <span class="keyword">const</span> fetchProducts = <span class="keyword">async</span> () => {
+    <span class="keyword">try</span> {
+      setLoading(true);
+      <span class="keyword">const</span> data = <span class="keyword">await</span> api.get(<span class="string">'/products'</span>);
+      setProducts(data);
+    } <span class="keyword">catch</span> (err) {
+      setError(err.message);
+    } <span class="keyword">finally</span> {
+      setLoading(false);
+    }
+  };
+
+  <span class="keyword">const</span> createProduct = <span class="keyword">async</span> (productData) => {
+    <span class="keyword">const</span> newProduct = <span class="keyword">await</span> api.post(<span class="string">'/products'</span>, productData);
+    setProducts([...products, newProduct]);
+    <span class="keyword">return</span> newProduct;
+  };
+
+  <span class="keyword">const</span> updateProduct = <span class="keyword">async</span> (id, updates) => {
+    <span class="keyword">const</span> updated = <span class="keyword">await</span> api.put(<span class="string">`/products/${id}`</span>, updates);
+    setProducts(products.map(p => p.id === id ? updated : p));
+  };
+
+  <span class="keyword">const</span> deleteProduct = <span class="keyword">async</span> (id) => {
+    <span class="keyword">await</span> api.delete(<span class="string">`/products/${id}`</span>);
+    setProducts(products.filter(p => p.id !== id));
+  };
+
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
+  <span class="keyword">return</span> {
+    products,
+    loading,
+    error,
+    createProduct,
+    updateProduct,
+    deleteProduct,
+    refetch: fetchProducts
+  };
+}</pre>
+                </div>
+            </div>
+        </section>
+
+        <!-- Slide 19: Workshop Summary -->
+        <section class="slide">
+            <h1 class="slide-title">🛠️ Final Workshop: E-Commerce Dashboard</h1>
+            <div class="slide-content">
+                <h2 class="slide-subtitle">สร้าง Mini E-Commerce Admin Dashboard</h2>
+                
+                <div class="workshop-section">
+                    <h3 class="workshop-title">Requirements</h3>
+                    <div class="workshop-steps">
+                        <div class="step">
+                            <div class="step-number">1</div>
+                            <div>
+                                <strong>Authentication:</strong> Login/Logout with JWT token
+                            </div>
+                        </div>
+                        <div class="step">
+                            <div class="step-number">2</div>
+                            <div>
+                                <strong>State Management:</strong> ใช้ Context API หรือ Redux Toolkit
+                            </div>
+                        </div>
+                        <div class="step">
+                            <div class="step-number">3</div>
+                            <div>
+                                <strong>Routing:</strong> Protected routes สำหรับ admin pages
+                            </div>
+                        </div>
+                        <div class="step">
+                            <div class="step-number">4</div>
+                            <div>
+                                <strong>CRUD Operations:</strong> Products management
+                            </div>
+                        </div>
+                        <div class="step">
+                            <div class="step-number">5</div>
+                            <div>
+                                <strong>Performance:</strong> ใช้ memo, useMemo, lazy loading
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="code-example">
+                    <div class="code-header">
+                        <span>Project Structure</span>
+                        <span class="code-lang">bash</span>
+                    </div>
+                    <pre class="code">src/
+├── components/
+│   ├── common/
+│   │   ├── Layout.jsx
+│   │   ├── ProtectedRoute.jsx
+│   │   └── LoadingSpinner.jsx
+│   └── products/
+│       ├── ProductList.jsx
+│       ├── ProductForm.jsx
+│       └── ProductCard.jsx
+├── contexts/
+│   ├── AuthContext.jsx
+│   └── ProductContext.jsx
+├── hooks/
+│   ├── useAuth.js
+│   ├── useProducts.js
+│   └── useApi.js
+├── pages/
+│   ├── Login.jsx
+│   ├── Dashboard.jsx
+│   └── Products.jsx
+├── services/
+│   └── api.js
+└── App.jsx</pre>
+                </div>
+
+                <button class="try-button" onclick="alert('เริ่มทำ Workshop ได้เลย! 💪')">
+                    เริ่ม Workshop
+                </button>
+            </div>
+        </section>
+
+        <!-- Slide 20: Summary & Resources -->
+        <section class="slide">
+            <h1 class="slide-title">สรุปและแหล่งเรียนรู้เพิ่มเติม</h1>
+            <div class="slide-content">
+                <h2 class="slide-subtitle">🎯 สิ่งที่เราเรียนรู้วันนี้</h2>
+                
+                <div class="feature-grid">
+                    <div class="feature-card">
+                        <div class="feature-icon">🎣</div>
+                        <h3>Custom Hooks</h3>
+                        <p>สร้าง reusable logic</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">🌍</div>
+                        <h3>Context API</h3>
+                        <p>Global state management</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">🗄️</div>
+                        <h3>Redux Toolkit</h3>
+                        <p>Advanced state management</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">🛣️</div>
+                        <h3>React Router</h3>
+                        <p>SPA navigation</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">⚡</div>
+                        <h3>Performance</h3>
+                        <p>memo, useMemo, useCallback</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">🔌</div>
+                        <h3>API Integration</h3>
+                        <p>Backend communication</p>
+                    </div>
+                </div>
+
+                <h2 class="slide-subtitle">📚 Resources สำหรับการเรียนรู้ต่อ</h2>
+                <ul class="concept-list">
+                    <li>📖 React Official Docs - react.dev</li>
+                    <li>🎮 React Router Docs - reactrouter.com</li>
+                    <li>🗄️ Redux Toolkit - redux-toolkit.js.org</li>
+                    <li>🎯 React Patterns - patterns.dev</li>
+                    <li>⚡ Web.dev Performance - web.dev/react</li>
+                </ul>
+
+                <div class="quiz-container">
+                    <div class="quiz-question">❓ Final Question: อะไรคือ key takeaway ที่สำคัญที่สุดจากคาบนี้?</div>
+                    <div class="quiz-options">
+                        <div class="quiz-option" onclick="showAnswer(4)">A. ต้องใช้ Redux ในทุก project</div>
+                        <div class="quiz-option" onclick="showAnswer(4)">B. Performance optimization ทำตอนท้ายสุด</div>
+                        <div class="quiz-option" onclick="showAnswer(4)">C. เลือก tool ที่เหมาะสมกับปัญหา</div>
+                        <div class="quiz-option" onclick="showAnswer(4)">D. Custom Hooks ดีกว่า patterns อื่นเสมอ</div>
+                    </div>
+                    <div class="quiz-answer" id="answer-4">
+                        ✅ <strong>คำตอบ: C</strong> - เลือกใช้ pattern และ tools ที่เหมาะสมกับปัญหาที่เจอ ไม่ใช่ใช้ทุกอย่างในทุก project
+                    </div>
+                </div>
+
+                <div class="demo-container">
+                    <h3 class="demo-title">🚀 Next Week Preview</h3>
+                    <div class="demo-content">
+                        <p style="text-align: center; font-size: 1.2rem;">
+                            <strong>สัปดาห์ที่ 7:</strong> Backend Development with Node.js<br>
+                            Express.js, RESTful API, Middleware, Error Handling
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slide');
+        const totalSlides = slides.length;
+        
+        // Update slide counter
+        document.getElementById('total-slides').textContent = totalSlides;
+        
+        function showSlide(n) {
+            slides.forEach(slide => slide.classList.remove('active'));
+            slides[n].classList.add('active');
+            
+            // Update counter
+            document.getElementById('current-slide').textContent = n + 1;
+            
+            // Update progress bar
+            const progress = ((n + 1) / totalSlides) * 100;
+            document.getElementById('progress-bar').style.width = progress + '%';
+            
+            // Update navigation buttons
+            document.getElementById('prev-btn').disabled = n === 0;
+            document.getElementById('next-btn').disabled = n === totalSlides - 1;
+        }
+        
+        function nextSlide() {
+            if (currentSlide < totalSlides - 1) {
+                currentSlide++;
+                showSlide(currentSlide);
+            }
+        }
+        
+        function previousSlide() {
+            if (currentSlide > 0) {
+                currentSlide--;
+                showSlide(currentSlide);
+            }
+        }
+        
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+            } else {
+                document.exitFullscreen();
+            }
+        }
+
+        // Show quiz answers
+        function showAnswer(questionId) {
+            const answer = document.getElementById(`answer-${questionId}`);
+            if (answer) {
+                answer.classList.add('show');
+            }
+        }
+        
+        // Keyboard navigation
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'ArrowRight' || e.key === ' ') {
+                e.preventDefault();
+                nextSlide();
+            } else if (e.key === 'ArrowLeft') {
+                e.preventDefault();
+                previousSlide();
+            } else if (e.key === 'F11') {
+                e.preventDefault();
+                toggleFullscreen();
+            } else if (e.key === 'Escape') {
+                // Reset quiz answers when pressing Escape
+                document.querySelectorAll('.quiz-answer').forEach(answer => {
+                    answer.classList.remove('show');
+                });
+            }
+        });
+
+        // Touch/swipe support for mobile
+        let touchStartX = 0;
+        let touchEndX = 0;
+
+        document.addEventListener('touchstart', function(e) {
+            touchStartX = e.changedTouches[0].screenX;
+        });
+
+        document.addEventListener('touchend', function(e) {
+            touchEndX = e.changedTouches[0].screenX;
+            handleSwipe();
+        });
+
+        function handleSwipe() {
+            if (touchEndX < touchStartX - 50) {
+                nextSlide(); // Swipe left
+            }
+            if (touchEndX > touchStartX + 50) {
+                previousSlide(); // Swipe right
+            }
+        }
+        
+        // Initialize
+        showSlide(0);
+
+        // Auto-progress indicator
+        let autoProgress = false;
+        let progressInterval;
+
+        function toggleAutoProgress() {
+            autoProgress = !autoProgress;
+            if (autoProgress) {
+                progressInterval = setInterval(() => {
+                    if (currentSlide < totalSlides - 1) {
+                        nextSlide();
+                    } else {
+                        clearInterval(progressInterval);
+                        autoProgress = false;
+                    }
+                }, 30000); // Change slide every 30 seconds
+            } else {
+                clearInterval(progressInterval);
+            }
+        }
+
+        // Code highlighting enhancement
+        document.querySelectorAll('.code').forEach(codeBlock => {
+            // Add line numbers
+            const lines = codeBlock.innerHTML.split('\n');
+            if (lines.length > 5) {
+                codeBlock.style.position = 'relative';
+                codeBlock.style.paddingLeft = '3rem';
+            }
+        });
+    </script>
+</body>
+</html>
