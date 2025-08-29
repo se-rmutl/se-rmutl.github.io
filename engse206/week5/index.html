@@ -1,0 +1,2455 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ENGSE206 Week 5: หลักการออกแบบและสถาปัตยกรรมภาพรวม (Presentation)</title>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <style>
+        /* --- General Styles --- */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            overflow: hidden;
+            /* Prevent scrolling on the body */
+        }
+
+        body {
+            font-family: 'Sarabun', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+            font-size: 28px;
+            line-height: 1.6;
+        }
+
+        .presentation {
+            /* --- MODIFIED FOR WIDER VIEW --- */
+            width: 95vw;
+            /* Use 95% of the viewport width */
+            max-width: 1600px;
+            /* Increase max-width for very large screens */
+            margin: 0 auto;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .slide {
+            background: rgba(255, 255, 255, 0.95);
+            margin: 0;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            width: 100%;
+            height: calc(100vh - 120px);
+            overflow-y: auto;
+        }
+
+        /* --- Presentation Logic Styles --- */
+        .slide {
+            display: none;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        .slide.active {
+            display: block;
+        }
+
+        .title-slide.active {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 0;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(15px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* --- Progress Bar Styles --- */
+        .progress-bar-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 8px;
+            background-color: rgba(255, 255, 255, 0.2);
+            z-index: 2000;
+        }
+
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(120deg, #a8edea 0%, #fed6e3 100%);
+            transition: width 0.3s ease-out;
+        }
+
+        /* --- Navigation Controls Styles --- */
+        .presentation-controls {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            background: rgba(45, 49, 66, 0.8);
+            padding: 10px 25px;
+            border-radius: 50px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(5px);
+            z-index: 1000;
+        }
+
+        .nav-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .nav-btn:hover:not(:disabled) {
+            background: #5a67d8;
+            transform: translateY(-2px);
+        }
+
+        .nav-btn:disabled {
+            background-color: #555;
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        #slide-counter {
+            color: white;
+            font-weight: 500;
+            font-size: 16px;
+            min-width: 60px;
+            text-align: center;
+        }
+
+        /* --- NEW Fullscreen Button Style --- */
+        #fullscreen-btn {
+            margin-left: 10px;
+            font-size: 20px;
+            /* Make icon larger */
+            padding: 8px 15px;
+            /* Adjust padding */
+        }
+
+        /* --- Original Content Styles --- */
+        .slide h1 {
+            color: #667eea;
+            font-weight: 700;
+            font-size: 2.2em;
+            text-align: center;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .slide h2 {
+            color: #667eea;
+            font-weight: 600;
+            font-size: 1.8em;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 8px;
+            margin-bottom: 20px;
+        }
+
+        .slide h3 {
+            color: #764ba2;
+            font-weight: 500;
+            font-size: 1.3em;
+            margin-bottom: 15px;
+        }
+
+        .slide h4 {
+            color: #333;
+            font-weight: 600;
+            font-size: 1.1em;
+            margin-bottom: 10px;
+        }
+
+        .slide h5 {
+            color: #555;
+            font-weight: 500;
+            font-size: 1em;
+            margin-bottom: 8px;
+        }
+
+        .highlight {
+            background: linear-gradient(120deg, #a8edea 0%, #fed6e3 100%);
+            padding: 3px 8px;
+            border-radius: 5px;
+            font-weight: 600;
+        }
+
+        .code-container {
+            background: #2d3142;
+            color: #fff;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 15px 0;
+            position: relative;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+
+        .code-container::before {
+            content: "💻 Code Example";
+            position: absolute;
+            top: -10px;
+            left: 15px;
+            background: #667eea;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 15px;
+            font-size: 0.8em;
+            font-weight: 600;
+        }
+
+        .architecture-box {
+            background: linear-gradient(45deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 15px 0;
+            text-align: center;
+            font-weight: 600;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .tier-box {
+            background: linear-gradient(45deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            text-align: center;
+            font-weight: 600;
+            font-size: 0.95em;
+        }
+
+        .principle-card {
+            background: white;
+            border: 2px solid #667eea;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 10px 0;
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.1);
+        }
+
+        .good-practice {
+            border-left: 4px solid #4CAF50;
+            background: #f1f8e9;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 0 10px 10px 0;
+        }
+
+        .bad-practice {
+            border-left: 4px solid #f44336;
+            background: #ffebee;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 0 10px 10px 0;
+        }
+
+        .activity-box {
+            background: linear-gradient(45deg, #ff9a9e 0%, #fecfef 100%);
+            color: #333;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 15px 0;
+        }
+
+        .objective-list {
+            background: #e8f5e8;
+            border-left: 4px solid #4CAF50;
+            padding: 15px;
+            border-radius: 0 10px 10px 0;
+        }
+
+        .flow-arrow {
+            text-align: center;
+            font-size: 2em;
+            color: #667eea;
+            margin: 15px 0;
+        }
+
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+            font-size: 0.9em;
+        }
+
+        .comparison-table th {
+            background: #667eea;
+            color: white;
+            padding: 12px;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .comparison-table td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: center;
+        }
+
+        .comparison-table tr:nth-child(even) {
+            background: #f9f9f9;
+        }
+
+        .diagram-container {
+            background: #f8f9fa;
+            border: 2px dashed #667eea;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 15px 0;
+            text-align: center;
+        }
+
+        .workshop-task {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 10px 0;
+        }
+
+        .tech-stack {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        .tech-item {
+            background: #667eea;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: 500;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 15px 0;
+        }
+
+        .grid-3 {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 15px;
+            margin: 15px 0;
+        }
+
+        ul {
+            margin: 10px 0;
+            padding-left: 0;
+        }
+
+        ul li {
+            margin: 8px 0;
+            list-style: none;
+            position: relative;
+            padding-left: 25px;
+            font-size: 0.95em;
+        }
+
+        ul li::before {
+            content: "✦";
+            color: #667eea;
+            font-size: 1.2em;
+            position: absolute;
+            left: 0;
+            top: 0;
+        }
+
+        ol {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+
+        ol li {
+            margin: 8px 0;
+            font-size: 0.95em;
+        }
+
+        .api-endpoint {
+            background: #2d3142;
+            color: #fff;
+            padding: 6px 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            margin: 3px 0;
+            display: inline-block;
+            font-size: 0.8em;
+        }
+
+        .websocket-event {
+            background: #27ae60;
+            color: white;
+            padding: 6px 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            margin: 3px 0;
+            display: inline-block;
+            font-size: 0.8em;
+        }
+
+        .slide-number {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            background: rgba(102, 126, 234, 0.8);
+            color: white;
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 0.8em;
+            font-weight: 600;
+        }
+
+        pre {
+            background: #2d3142;
+            color: #fff;
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-size: 0.85em;
+            line-height: 1.4;
+        }
+
+        code {
+            font-family: 'Courier New', monospace;
+        }
+
+        .title-slide {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-align: center;
+        }
+
+        .title-slide h1 {
+            color: white;
+            font-size: 3em;
+            margin-bottom: 20px;
+        }
+
+        .title-slide h2 {
+            color: #a8edea;
+            border: none;
+            font-size: 2.2em;
+            margin-bottom: 15px;
+        }
+
+        .title-slide h3 {
+            color: #fed6e3;
+            font-weight: 400;
+            font-size: 1.5em;
+            margin-bottom: 40px;
+        }
+
+        @media (max-width: 768px) {
+            .presentation {
+                padding: 10px;
+                width: 100vw;
+            }
+
+            .slide {
+                padding: 20px;
+                height: calc(100vh - 100px);
+            }
+
+            .slide h1 {
+                font-size: 1.8em;
+            }
+
+            .slide h2 {
+                font-size: 1.5em;
+            }
+
+            .grid-2,
+            .grid-3 {
+                grid-template-columns: 1fr;
+            }
+
+            .tech-stack {
+                justify-content: center;
+            }
+
+            .presentation-controls {
+                gap: 10px;
+                padding: 8px 15px;
+            }
+
+            .nav-btn {
+                padding: 8px 12px;
+                font-size: 14px;
+            }
+
+            #slide-counter {
+                font-size: 14px;
+            }
+
+            #fullscreen-btn {
+                display: none;
+            }
+
+            /* Hide fullscreen button on mobile */
+        }
+
+        @media print {
+            body {
+                background: white;
+                overflow: visible;
+            }
+
+            .presentation-controls,
+            .progress-bar-container {
+                display: none;
+            }
+
+            .presentation {
+                height: auto;
+                width: 100%;
+            }
+
+            .slide {
+                display: block !important;
+                height: auto;
+                page-break-after: always;
+                box-shadow: none;
+                border: 1px solid #ddd;
+                overflow: hidden;
+            }
+        }
+
+        /* --- NEW CSS for Tree Diagram --- */
+/* --- NEW CSS for a clean and simple Tree Diagram --- */
+.clean-tree {
+    font-family: 'Courier New', monospace;
+    font-size: 0.9em;
+    line-height: 1.6;
+}
+.clean-tree ul, .clean-tree li {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+}
+.clean-tree ul {
+    /* ใช้ ch unit เพื่อให้ย่อหน้าสัมพันธ์กับความกว้างของตัวอักษร */
+    padding-left: 3ch;
+}
+.clean-tree li::before {
+    /* ให้สัญลักษณ์เป็นส่วนหนึ่งของ text flow ปกติ จะไม่ทับซ้อนกัน */
+    content: "├── ";
+    color: #555;
+    /* เพิ่ม margin เพื่อให้ข้อความหลักตรงกัน */
+    margin-left: -3ch;
+    width: 3ch;
+    display: inline-block;
+}
+.clean-tree li:last-child::before {
+    content: "└── ";
+}
+
+/* ให้ h4 ของ slide database schema เป็นสีขาว */
+.slide.db-schema .db-title {
+    color: #fff !important;
+}
+
+
+    </style>
+</head>
+
+<body>
+    <div class="progress-bar-container">
+        <div class="progress-bar" id="progress-bar"></div>
+    </div>
+
+    <div class="presentation">
+        <section class="slide title-slide">
+            <h1>🚀 สัปดาห์ที่ 5</h1>
+            <h2>หลักการออกแบบและสถาปัตยกรรมภาพรวม</h2>
+            <h3>Agent Wallboard System for SE-RMUTL Case Study</h3>
+            <div style="margin-top: 50px;">
+                <p style="font-size: 1.3em;">ENGSE206 - การกำหนดความต้องการและการออกแบบทางซอฟต์แวร์</p>
+                <p style="font-size: 1.1em; opacity: 0.8;">SE-RMUTL | 2025</p>
+            </div>
+            <div class="slide-number">1/35</div>
+        </section>
+
+        <section class="slide">
+            <h2>🎯 วัตถุประสงค์การเรียน</h2>
+            <div class="objective-list">
+                <ul>
+                    <li><strong>แปลง SRS สู่ภาพใหญ่ของสถาปัตยกรรม</strong> (High-Level Design)</li>
+                    <li><strong>เข้าใจหลักการพื้นฐาน</strong>ที่ทำให้การออกแบบมีคุณภาพ</li>
+                    <li><strong>ประยุกต์ใช้กับ Agent Wallboard System</strong> จริง</li>
+                    <li><strong>นำไปสู่การออกแบบและพัฒนา</strong> Agent Wallboard System ได้จริง</li>
+                </ul>
+            </div>
+
+            <div class="flow-arrow">⬇️</div>
+            <div class="architecture-box">
+                <!-- <strong>Requirements Analysis → System Design → Implementation</strong><br> -->
+                <span style="font-size: 1.2em;">Requirements Analysis → System Design → Implementation</span>
+            </div>
+             <div class="architecture-box">
+                <span style="font-size: 1.2em;">SRS → SDD → Code</span>
+            </div>
+
+            <div class="slide-number">2/35</div>
+        </section>
+
+        <section class="slide">
+            <h2>📚 Course Overview Week 5</h2>
+            <h3>จาก Requirements สู่ Design Document</h3>
+
+            <div class="grid-2">
+                <div class="principle-card">
+                    <h4>📋 เนื้อหาสัปดาห์นี้</h4>
+                    <ul>
+                        <li>Introduction to Software Design Document (SDD)</li>
+                        <li>หลักการออกแบบพื้นฐาน: SOLID, DRY, KISS, YAGNI</li>
+                        <li>3-Tier Architecture และ Component-based Design</li>
+                        <li>C4 Model สำหรับ Software Modeling</li>
+                    </ul>
+                </div>
+
+                <div class="principle-card">
+                    <h4>🏗️ Case Study</h4>
+                    <div class="highlight">Agent Wallboard System</div>
+                    <p style="margin-top: 10px;">
+                        ระบบติดตามและสื่อสาร Call Center Agents แบบ Real-time
+                    </p>
+                    <div class="tech-stack">
+                        <span class="tech-item">React.js</span>
+                        <span class="tech-item">Electron.js</span>
+                        <span class="tech-item">Node.js</span>
+                        <span class="tech-item">MSSQL</span>
+                        <span class="tech-item">MongoDB</span>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-number">3/35</div>
+        </section>
+
+        <section class="slide">
+            <h2>🖥️ Agent Wallboard System Overview</h2>
+            <h3>โครงงานตัวอย่างที่เราจะใช้เรียน</h3>
+
+            <div class="architecture-box">
+                <h4>Agent Wallboard System = ระบบจัดการงาน Call Center แบบ Real-time</h4>
+            </div>
+
+            <div class="grid-2">
+                <div>
+                    <h4>🎯 ฟีเจอร์หลัก</h4>
+                    <ul>
+                        <li><strong>Agent Status Monitoring:</strong> ติดตามสถานะ Available, Active, Wrap, Not Ready
+                        </li>
+                        <li><strong>Supervisor Communication:</strong> ส่งข้อความถึง agents แบบทันที</li>
+                        <li><strong>Real-time Dashboard:</strong> แสดงสถิติและข้อมูลแบบ real-time</li>
+                        <li><strong>System Administration:</strong> จัดการ configuration และ deployment</li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h4>⚡ เทคโนโลยี Stack</h4>
+                    <div class="tier-box">Frontend: React.js (Web) + Electron.js (Desktop Application)</div>
+                    <div class="tier-box">Backend: Node.js + Express.js</div>
+                    <div class="tier-box">Database: MSSQL + MongoDB</div>
+                    <div class="tier-box">Real-time: WebSocket</div>
+                </div>
+            </div>
+            <div class="slide-number">4/35</div>
+        </section>
+
+        <section class="slide">
+            <h2>📝 What is Software Design Document (SDD)?</h2>
+            <h3>เอกสารออกแบบซอฟต์แวร์คืออะไร?</h3>
+
+            <div class="principle-card">
+                <h4>📋 SDD = Software Design Document</h4>
+                <ul>
+                    <li>เป็น <strong>"พิมพ์เขียว" (Blueprint)</strong> สำหรับนักพัฒนา</li>
+                    <li>แปลงความต้องการจาก SRS เป็น<strong>แผนการพัฒนาที่ชัดเจน</strong></li>
+                    <li>เชื่อมต่อระหว่าง <strong>"สิ่งที่ต้องการ"</strong> และ <strong>"วิธีการทำ"</strong></li>
+                </ul>
+            </div>
+
+            <div class="good-practice">
+                <h4>✅ ความสำคัญ</h4>
+                <ul>
+                    <li>ลดความผิดพลาดในการพัฒนา</li>
+                    <li>ทีมพัฒนาเข้าใจตรงกัน</li>
+                    <li>ง่ายต่อการบำรุงรักษา</li>
+                    <li>เป็นเอกสารอ้างอิงในอนาคต</li>
+                </ul>
+            </div>
+
+            <div class="architecture-box">
+                <strong>ในบริบทของ Agent Wallboard System:</strong><br>
+                แปลงความต้องการ real-time monitoring เป็น technical architecture
+            </div>
+            <div class="slide-number">5/35</div>
+        </section>
+
+        <section class="slide">
+            <h2>⚖️ SRS vs SDD - ความแตกต่าง</h2>
+            <h3>เปรียบเทียบเอกสาร Requirements กับ Design</h3>
+
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>Aspect</th>
+                        <th>SRS (Requirements)</th>
+                        <th>SDD (Design)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Focus</strong></td>
+                        <td>WHAT (อะไร)</td>
+                        <td>HOW (อย่างไร)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Audience</strong></td>
+                        <td>Stakeholders, Users</td>
+                        <td>Developers, Architects</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Content</strong></td>
+                        <td>Functional Requirements</td>
+                        <td>Technical Architecture</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Level</strong></td>
+                        <td>Business Logic</td>
+                        <td>Technical Details</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="grid-2">
+                <div class="principle-card">
+                    <h4>📋 SRS Example</h4>
+                    <p>"Supervisor สามารถส่งข้อความไปยัง agent ที่เฉพาะเจาะจงได้"</p>
+                </div>
+
+                <div class="principle-card">
+                    <h4>⚙️ SDD Example</h4>
+                    <ul>
+                        <li>ใช้ WebSocket protocol สำหรับ real-time communication</li>
+                        <li>Message routing ผ่าน Node.js server</li>
+                        <li>Message format: JSON with agentId และ messageContent</li>
+                        <li>Error handling สำหรับ offline agents</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="slide-number">6/35</div>
+        </section>
+
+        <section class="slide">
+            <h2>🏗️ หลักการออกแบบพื้นฐาน - SOLID Principles</h2>
+            <h3>S.O.L.I.D = หลักการออกแบบที่ดี</h3>
+
+            <div class="grid-2">
+                <div>
+                    <div class="principle-card">
+                        <h4><strong>S</strong> - Single Responsibility</h4>
+                        <p>คลาสหนึ่งควรมีหน้าที่เดียว</p>
+                    </div>
+
+                    <div class="principle-card">
+                        <h4><strong>O</strong> - Open/Closed</h4>
+                        <p>เปิดสำหรับการขยาย, ปิดสำหรับการแก้ไข</p>
+                    </div>
+
+                    <div class="principle-card">
+                        <h4><strong>L</strong> - Liskov Substitution</h4>
+                        <p>Subclass ควรใช้แทน parent class ได้</p>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="principle-card">
+                        <h4><strong>I</strong> - Interface Segregation</h4>
+                        <p>แยก interface ตามความจำเป็น</p>
+                    </div>
+
+                    <div class="principle-card">
+                        <h4><strong>D</strong> - Dependency Inversion</h4>
+                        <p>พึ่งพา abstraction ไม่ใช่ concrete class</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="good-practice">
+                <strong>ทำไมสำคัญ?</strong> หลักการเหล่านี้ช่วยให้ code มีคุณภาพ, บำรุงรักษาง่าย, และขยายได้
+            </div>
+            <div class="slide-number">7/35</div>
+        </section>
+
+        <section class="slide">
+            <h2>💻 SOLID in Agent Wallboard System</h2>
+            <h3>ประยุกต์ใช้ SOLID ใน Agent Wallboard System</h3>
+
+            <div class="bad-practice">
+                <h4>❌ ไม่ดี - class ทำหลายอย่าง (Single Responsibility)</h4>
+                <pre><code>class AgentManager {
+  updateStatus() { /* ... */ }
+  sendNotification() { /* ... */ }
+  logToDatabase() { /* ... */ }
+  generateReport() { /* ... */ }
+}</code></pre>
+            </div>
+
+            <div class="good-practice">
+                <h4>✅ ดี - แยกหน้าที่ชัดเจน</h4>
+                <pre><code>class AgentStatusService {
+  updateStatus() { /* ... */ }
+}
+
+class NotificationService {
+  sendNotification() { /* ... */ }
+}
+
+class DatabaseService {
+  logToDatabase() { /* ... */ }
+}</code></pre>
+            </div>
+
+            <div class="good-practice">
+                <h4>✅ Dependency Inversion Example</h4>
+                <pre><code>// ดี - พึ่งพา interface
+class SupervisorController {
+  constructor(messageService) {
+    this.messageService = messageService; // Interface
+  }
+}</code></pre>
+            </div>
+            <div class="slide-number">8/35</div>
+        </section>
+
+        <section class="slide">
+            <h2>🎯 DRY, KISS, YAGNI Principles</h2>
+            <h3>หลักการออกแบบเพิ่มเติม</h3>
+
+            <div class="grid-3">
+                <div class="principle-card">
+                    <h4>🔄 DRY</h4>
+                    <p><strong>Don't Repeat Yourself</strong></p>
+                    <ul>
+                        <li>ไม่เขียนโค้ดซ้ำ</li>
+                        <li>สร้าง utility functions</li>
+                    </ul>
+                </div>
+
+                <div class="principle-card">
+                    <h4>😊 KISS</h4>
+                    <p><strong>Keep It Simple, Stupid</strong></p>
+                    <ul>
+                        <li>ทำให้ง่ายที่สุด</li>
+                        <li>หลีกเลี่ยงความซับซ้อนที่ไม่จำเป็น</li>
+                    </ul>
+                </div>
+
+                <div class="principle-card">
+                    <h4>🚫 YAGNI</h4>
+                    <p><strong>You Aren't Gonna Need It</strong></p>
+                    <ul>
+                        <li>ไม่ทำฟีเจอร์ที่ยังไม่ต้องการ</li>
+                        <li>Focus ที่ requirements ปัจจุบัน</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="architecture-box">
+                <h4>ตัวอย่างใน Agent Wallboard System:</h4>
+                <div class="grid-3">
+                    <div><strong>DRY:</strong> สร้าง WebSocket utility สำหรับ connection management</div>
+                    <div><strong>KISS:</strong> UI design เรียบง่าย, ใช้งานง่าย</div>
+                    <div><strong>YAGNI:</strong> ไม่ทำ advanced analytics ตั้งแต่แรก</div>
+                </div>
+            </div>
+            <div class="slide-number">9/35</div>
+        </section>
+
+        <section class="slide">
+            <h2>🏗️ 3-Tier Architecture Overview</h2>
+            <h3>สถาปัตยกรรม 3 ชั้นคืออะไร?</h3>
+
+            <div class="diagram-container">
+                <div class="tier-box" style="background: linear-gradient(45deg, #ff9a9e 0%, #fecfef 100%);">
+                    <strong>Presentation Tier</strong><br>
+                    (React.js Web App) & 
+                    (Electron.js Desktop App)<br>
+                    <em>User Interface - Agent & Supervisor</em>
+                </div>
+
+                <div class="flow-arrow">⬇️ HTTP/REST API + WebSocket</div>
+
+                <div class="tier-box" style="background: linear-gradient(45deg, #4facfe 0%, #00f2fe 100%);">
+                    <strong>Application Tier</strong><br>
+                    (Node.js + Express Server)<br>
+                    <em>Business Logic - API + WebSocket Server</em>
+                </div>
+
+                <div class="flow-arrow">⬇️ Database Queries</div>
+
+                <div class="tier-box" style="background: linear-gradient(45deg, #43e97b 0%, #38f9d7 100%);">
+                    <strong>Data Tier</strong><br>
+                    (MSSQL + MongoDB)<br>
+                    <em>Data Storage - Agent Data + Real-time Data</em>
+                </div>
+            </div>
+
+            <div class="good-practice">
+                <h4>แต่ละชั้นทำหน้าที่อะไร?</h4>
+                <ul>
+                    <li><strong>Presentation:</strong> แสดงผล UI, รับ input จากผู้ใช้</li>
+                    <li><strong>Application:</strong> ประมวลผล business logic, API handling</li>
+                    <li><strong>Data:</strong> เก็บและจัดการข้อมูล</li>
+                </ul>
+            </div>
+            <div class="slide-number">10/35</div>
+        </section>
+
+        <section class="slide">
+            <h2>🎯 Agent Wallboard System - 3-Tier Implementation</h2>
+            <h3>การนำ 3-Tier Architecture มาใช้จริง</h3>
+
+            <div class="principle-card">
+                <h4>🖥️ Tier 1: Presentation (React.js & Electron.js)</h4>
+                <ul>
+                    <li><strong>Agent Desktop App:</strong> Status management, message receiving</li>
+                    <li><strong>Supervisor Dashboard:</strong> Real-time monitoring, message sending</li>
+                    <li><strong>Manager Console:</strong> Reports and statistics</li>
+                </ul>
+            </div>
+
+            <div class="principle-card">
+                <h4>⚙️ Tier 2: Application (Node.js + Express)</h4>
+                <ul>
+                    <li><strong>REST APIs:</strong> <span class="api-endpoint">/api/agents</span> <span
+                            class="api-endpoint">/api/status</span> <span class="api-endpoint">/api/messages</span></li>
+                    <li><strong>WebSocket Server:</strong> Real-time communication hub</li>
+                    <li><strong>Business Logic:</strong> Agent management, message routing</li>
+                </ul>
+            </div>
+
+            <div class="principle-card">
+                <h4>💾 Tier 3: Data (MSSQL + MongoDB)</h4>
+                <ul>
+                    <li><strong>MSSQL:</strong> Agent master data, user accounts</li>
+                    <li><strong>MongoDB:</strong> Real-time status logs, message history</li>
+                    <li><strong>Indexes:</strong> Optimized for real-time queries</li>
+                </ul>
+            </div>
+
+            <div class="architecture-box">
+                <strong>การทำงานร่วมกัน:</strong><br>
+                1. Agent เปลี่ยนสถานะ → Desktop app → API → Database<br>
+                2. Database update → WebSocket broadcast → All connected clients
+            </div>
+            <div class="slide-number">11/35</div>
+        </section>
+
+        <section class="slide">
+            <h2>✨ ประโยชน์ของ 3-Tier Architecture</h2>
+            <h3>ทำไมต้องแบ่งเป็น 3 ชั้น?</h3>
+
+            <div class="grid-2">
+                <div>
+                    <div class="principle-card">
+                        <h4>🎯 1. Separation of Concerns</h4>
+                        <ul>
+                            <li>แต่ละชั้นมีหน้าที่ชัดเจน</li>
+                            <li>ไม่ปะปนกัน</li>
+                        </ul>
+                    </div>
+
+                    <div class="principle-card">
+                        <h4>📈 2. Scalability</h4>
+                        <ul>
+                            <li>ขยายแต่ละชั้นแยกกันได้</li>
+                            <li>เพิ่ม WebSocket server สำหรับ real-time</li>
+                        </ul>
+                    </div>
+
+                    <div class="principle-card">
+                        <h4>🔧 3. Maintainability</h4>
+                        <ul>
+                            <li>แก้ไขง่าย</li>
+                            <li>ผลกระทบต่อส่วนอื่นน้อย</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="principle-card">
+                        <h4>👥 4. Team Development</h4>
+                        <ul>
+                            <li>ทีม frontend/backend ทำงานแยกกันได้</li>
+                            <li>API เป็นจุดเชื่อมต่อที่ชัดเจน</li>
+                        </ul>
+                    </div>
+
+                    <div class="principle-card">
+                        <h4>🔄 5. Technology Flexibility</h4>
+                        <ul>
+                            <li>เปลี่ยน database ได้โดยไม่กระทบ UI</li>
+                            <li>อัพเกรด frontend ได้โดยไม่กระทบ backend</li>
+                        </ul>
+                    </div>
+
+                    <div class="good-practice">
+                        <h4>ตัวอย่างใน Agent Wallboard System:</h4>
+                        <ul>
+                            <li>เปลี่ยนจาก MSSQL เป็น PostgreSQL โดยไม่ต้องแก้ UI</li>
+                            <li>เพิ่ม mobile app โดยใช้ API เดิม</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-number">12/35</div>
+        </section>
+
+        <section class="slide">
+            <h2>🧩 Component-based Design</h2>
+            <h3>การออกแบบแบบ Component</h3>
+
+            <div class="architecture-box">
+                <strong>Component = หน่วยย่อยที่ทำงานได้อิสระ</strong>
+            </div>
+
+            <div class="grid-2">
+                <div>
+                    <h4>🎯 ลักษณะของ Component ที่ดี</h4>
+                    <div class="principle-card">
+                        <ul>
+                            <li><strong>High Cohesion:</strong> ส่วนประกอบภายในทำงานร่วมกันได้ดี</li>
+                            <li><strong>Loose Coupling:</strong> การพึ่งพาส่วนอื่นน้อย</li>
+                            <li><strong>Reusability:</strong> นำไปใช้ใหม่ได้</li>
+                            <li><strong>Encapsulation:</strong> ซ่อนรายละเอียดภายใน</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div>
+                    <h4>🏗️ ตัวอย่างใน Agent Wallboard System</h4>
+                    <div class="code-container">
+                        <pre><code>Agent Wallboard System
+├── Authentication Component
+├── Agent Status Component
+├── Message Communication Component
+├── Dashboard Component
+└── Admin Configuration Component</code></pre>
+                    </div>
+
+                    <div class="good-practice">
+                        <h5>การออกแบบ Component ที่ดี:</h5>
+                        <ul>
+                            <li>แต่ละ component มี interface ที่ชัดเจน</li>
+                            <li>สามารถทดสอบแยกได้</li>
+                            <li>เปลี่ยนแปลง implementation โดยไม่กระทบส่วนอื่น</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-number">13/35</div>
+        </section>
+
+        <section class="slide">
+            <h2>🔍 Agent Wallboard System Components Breakdown</h2>
+            <h3>แบ่ง Components ใน Agent Wallboard System</h3>
+
+            <div class="grid-2">
+                <div>
+                    <h4>🖥️ Frontend Components (React.js & Electron.js)</h4>
+                    <div class="code-container"> <br>
+                        <h5>Agent Desktop App</h5>
+                        <pre><code>├── Login Component
+├── Status Management Component
+├── Notification Component
+└── Profile Info Component</code></pre>
+
+                        <h5>Supervisor Dashboard</h5>
+                        <pre><code>├── Agent Monitor Component
+├── Message Sender Component
+├── Team Dashboard Component
+└── Reports Component</code></pre>
+                    </div>
+                </div>
+
+                <div>
+                    <h4>⚙️ Backend Components (Node.js)</h4>
+                    <div class="code-container"> <br>
+                        <h5>Application Server</h5>
+                        <pre><code>├── Authentication Service
+├── Agent Status Service
+├── Message Routing Service
+├── WebSocket Manager
+├── Database Service
+└── Configuration Service</code></pre>
+                    </div>
+
+                    <div class="good-practice">
+                        <h5>ข้อดีของการแบ่ง Components:</h5>
+                        <ul>
+                            <li>แต่ละ component รับผิดชอบงานเฉพาะ</li>
+                            <li>ทดสอบได้แยกจากกัน</li>
+                            <li>พัฒนาแบบ parallel ได้</li>
+                            <li>นำกลับมาใช้ใหม่ได้</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-number">14/35</div>
+        </section>
+
+        <section class="slide">
+            <h2>📊 Software Modeling - C4 Model Introduction</h2>
+            <h3>C4 Model คืออะไร?</h3>
+
+            <div class="architecture-box">
+                <h4>C4 = Context, Containers, Components, Code</h4>
+            </div>
+
+            <div class="grid-2">
+                <div>
+                    <h4>🎯 4 ระดับของการมอง System</h4>
+                    <div class="principle-card">
+                        <ol>
+                            <li><strong>Context (C1):</strong> ระบบในภาพใหญ่ - ใครใช้, ติดต่อกับระบบอะไรบ้าง</li>
+                            <li><strong>Container (C2):</strong> แอปพลิเคชันหลัก - เทคโนโลยีอะไรบ้าง</li>
+                            <li><strong>Component (C3):</strong> ส่วนประกอบภายใน - modules หลักๆ</li>
+                            <li><strong>Code (C4):</strong> รายละเอียดโค้ด - classes, functions</li>
+                        </ol>
+                    </div>
+                </div>
+
+                <div>
+                    <h4>✨ เหมาะสำหรับ</h4>
+                    <div class="good-practice">
+                        <ul>
+                            <li>สื่อสารกับ stakeholders ในระดับที่เหมาะสม</li>
+                            <li>วางแผน architecture</li>
+                            <li>เอกสารประกอบโครงการ</li>
+                        </ul>
+                    </div>
+
+                    <h4>🎓 ความสำคัญในการเรียน</h4>
+                    <div class="principle-card">
+                        <ul>
+                            <li>ช่วยให้คิด architecture เป็นระบบ</li>
+                            <li>เริ่มจากภาพใหญ่แล้วค่อยลงรายละเอียด</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-number">15/35</div>
+        </section>
+
+        <section class="slide">
+            <h2>🌐 C1 - System Context Diagram</h2>
+            <h3>Agent Wallboard System ในบริบทใหญ่</h3>
+
+            <div class="diagram-container">
+                <div style="display: flex; flex-direction: column; align-items: center; gap: 20px;">
+                    <div class="tier-box"
+                        style="background: linear-gradient(45deg, #a8edea 0%, #fed6e3 100%); color: #333;">
+                        <strong>Call Center Agents</strong><br>
+                        <em>ใช้งานผ่าน Desktop App</em>
+                    </div>
+
+                    <div class="flow-arrow">⬇️</div>
+
+                    <div class="architecture-box" style="font-size: 1.1em;">
+                        <strong>Agent Wallboard System</strong><br><br>
+                        • Real-time Agent Status Monitoring<br>
+                        • Supervisor-Agent Communication<br>
+                        • Management Dashboard & Reporting<br>
+                        • System Administration
+                    </div>
+
+                    <div class="flow-arrow">⬇️</div>
+
+                    <div style="display: flex; gap: 30px;">
+                        <div class="tier-box"
+                            style="background: linear-gradient(45deg, #ffecd2 0%, #fcb69f 100%); color: #333;">
+                            <strong>Supervisors & Team Leaders</strong>
+                        </div>
+                        <div class="tier-box"
+                            style="background: linear-gradient(45deg, #ffecd2 0%, #fcb69f 100%); color: #333;">
+                            <strong>Operations Managers</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="good-practice">
+                <h4>Key Points:</h4>
+                <ul>
+                    <li>แสดงผู้ใช้งานหลัก: Agents, Supervisors, Managers</li>
+                    <li>ระบุขอบเขตหลักของระบบ</li>
+                    <li>ไม่เจาะลึกเทคโนโลยี</li>
+                    <li>เข้าใจง่ายสำหรับทุกคน รวมทั้ง non-technical stakeholders</li>
+                </ul>
+            </div>
+            <div class="slide-number">16/35</div>
+        </section>
+
+        <section class="slide">
+            <h2>📦 C2 - Container Diagram</h2>
+            <h3>แสดงแอปพลิเคชันหลักใน Agent Wallboard System</h3>
+
+            <div class="diagram-container">
+                <div style="display: flex; flex-direction: column; align-items: center; gap: 15px;">
+                    <div class="tier-box"
+                        style="background: linear-gradient(45deg, #a8edea 0%, #fed6e3 100%); color: #333;">
+                        <strong>Users (Agents & Supervisors)</strong>
+                    </div>
+
+                    <div class="flow-arrow">⬇️ HTTPS + WebSocket</div>
+<div style="display: flex; gap: 30px;">
+                    <div class="tier-box" style="background: linear-gradient(45deg, #ff9a9e 0%, #fecfef 100%);">
+                        <strong>Web Application (React.js)</strong><br>
+                        • Supervisor dashboard
+                    </div>
+
+                    <div class="tier-box" style="background: linear-gradient(45deg, #ff9a9e 0%, #fecfef 100%);">
+                        <strong>Desktop Application (Electron.js)</strong><br>
+                        • Agent status management<br>
+                        • Real-time notifications<br>
+                    </div>
+</div>
+                    <div class="flow-arrow">⬇️ REST API + WebSocket JSON/HTTPS</div>
+
+                    <div class="tier-box" style="background: linear-gradient(45deg, #4facfe 0%, #00f2fe 100%);">
+                        <strong>API Application (Node.js + Express.js)</strong><br><br>
+                        • Authentication & Authorization<br>
+                        • Business Logic Processing<br>
+                        • WebSocket Connection Management<br>
+                        • API Endpoints
+                    </div>
+
+                    <div class="flow-arrow">⬇️ Database Queries TCP/IP</div>
+
+                    <div class="tier-box" style="background: linear-gradient(45deg, #43e97b 0%, #38f9d7 100%);">
+                        <strong>Database Layer (MSSQL + MongoDB)</strong><br><br>
+                        • Agent master data (MSSQL)<br>
+                        • Real-time status logs (MongoDB)<br>
+                        • Message history & configurations
+                    </div>
+                </div>
+            </div>
+
+            <div class="good-practice">
+                <strong>แต่ละ Container รับผิดชอบ:</strong><br>
+                <strong>Desktop App:</strong> UI และ user interactions<br>
+                <strong>API Application:</strong> Business logic และ data processing<br>
+                <strong>Database Layer:</strong> Data persistence และ management
+            </div>
+            <div class="slide-number">17/35</div>
+        </section>
+
+        <section class="slide">
+            <h2>🎯 ประโยชน์ของ C4 Model</h2>
+            <h3>ทำไมต้องใช้ C4 Model?</h3>
+
+            <div class="grid-2">
+                <div>
+                    <div class="principle-card">
+                        <h4>📊 1. Progressive Detail</h4>
+                        <ul>
+                            <li>เริ่มจากภาพใหญ่ → รายละเอียด</li>
+                            <li>เหมาะกับผู้ฟังแต่ละกลุ่ม</li>
+                        </ul>
+                    </div>
+
+                    <div class="principle-card">
+                        <h4>🗣️ 2. Clear Communication</h4>
+                        <ul>
+                            <li>ใช้สัญลักษณ์มาตรฐาน</li>
+                            <li>เข้าใจง่าย</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="principle-card">
+                        <h4>📝 3. Architecture Documentation</h4>
+                        <ul>
+                            <li>เอกสารประกอบการพัฒนา</li>
+                            <li>Reference สำหรับทีม</li>
+                        </ul>
+                    </div>
+
+                    <div class="principle-card">
+                        <h4>✅ 4. Design Validation</h4>
+                        <ul>
+                            <li>ตรวจสอบ architecture design</li>
+                            <li>หาจุดที่อาจมีปัญหา</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="architecture-box">
+                <h4>ประโยชน์สำหรับ Agent Wallboard System:</h4>
+                <div class="grid-2" style="margin-top: 10px;">
+                    <div>
+                        <strong>C1:</strong> อธิบายให้ management เข้าใจ business value<br>
+                        <strong>C2:</strong> วางแผน technology stack และ deployment
+                    </div>
+                    <div>
+                        <strong>C3:</strong> แผนการพัฒนา modules (ยังไม่ได้ทำใน workshop นี้)<br>
+                        <strong>C4:</strong> Code structure guidelines (ยังไม่ได้ทำใน workshop นี้)
+                    </div>
+                </div>
+            </div>
+            <div class="slide-number">18/35</div>
+        </section>
+
+        <section class="slide">
+            <h2>🛠️ เครื่องมือสำหรับวาด C4 Diagrams</h2>
+            <h3>Tools สำหรับสร้างแผนภาพสถาปัตยกรรม</h3>
+
+            <div class="grid-2">
+                <div>
+                    <div class="principle-card">
+                        <h4>1. Structurizr (Official C4 Tool)</h4>
+                        <ul>
+                            <li>DSL (Domain Specific Language)</li>
+                            <li>Auto-layout</li>
+                            <li>Version control friendly</li>
+                        </ul>
+                    </div>
+
+
+
+                    <div class="principle-card">
+                        <h4>2. Lucidchart</h4>
+                        <ul>
+                            <li>Web-based</li>
+                            <li>Collaborative</li>
+                            <li>Template สำเร็จรูป</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="principle-card">
+                        <h4>3. Draw.io (diagrams.net)</h4>
+                        <ul>
+                            <li>ฟรี</li>
+                            <li>ใช้งานง่าย</li>
+                            <li>Export หลายรูปแบบ</li>
+                        </ul>
+                    </div>
+
+                    <div class="principle-card">
+                        <h4>4. PlantUML</h4>
+                        <ul>
+                            <li>Text-based diagramming</li>
+                            <li>Integration กับ IDEs</li>
+                            <li>Version control friendly</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="good-practice">
+                <h4>แนะนำสำหรับ workshop นี้:</h4>
+                <ul>
+                    <li><strong>Draw.io:</strong> ฟรี, ใช้งานง่าย, เหมาะกับผู้เริ่มต้น</li>
+                    <li><strong>Lucidchart:</strong> Professional features, collaboration ดี</li>
+                </ul>
+            </div>
+            <div class="slide-number">19/35</div>
+        </section>
+
+        <section class="slide">
+            <h2>🎯 Workshop Activity - วาด C1 Diagram</h2>
+            <h3>กิจกรรมปฏิบัติ: System Context</h3>
+
+            <div class="activity-box">
+                <h4>📝 ให้นักศึกษาวาด C1 Diagram สำหรับโปรเจกต์ของตนเอง</h4>
+            </div>
+
+            <div class="grid-2">
+                <div>
+                    <h4>🔢 ขั้นตอน:</h4>
+                    <div class="workshop-task">
+                        <ol>
+                            <li>ระบุ System ของคุณ (ใส่ไว้กลาง diagram)</li>
+                            <li>ระบุ Users/Actors ที่เกี่ยวข้อง</li>
+                            <li>ระบุ External Systems (ถ้ามี)</li>
+                            <li>แสดงความสัมพันธ์และการไหลของข้อมูล</li>
+                        </ol>
+                    </div>
+
+                    <div class="principle-card">
+                        <h4>⏰ เวลา: 15 นาที</h4>
+                    </div>
+                </div>
+
+                <div>
+                    <h4>💡 Agent Wallboard System Example:</h4>
+                    <div class="good-practice">
+                        <ul>
+                            <li><strong>System:</strong> Agent Wallboard System (ตรงกลาง)</li>
+                            <li><strong>Users:</strong> Call Center Agents, Supervisors, Operations Managers</li>
+                            <li><strong>External Systems:</strong> ไม่มี (standalone system)</li>
+                            <li><strong>Relationships:</strong> การใช้งานผ่าน desktop application</li>
+                        </ul>
+                    </div>
+
+                    <div class="principle-card">
+                        <h4>🛠️ เครื่องมือแนะนำ:</h4>
+                        <ul>
+                            <li>Draw.io: https://draw.io</li>
+                            <li>Lucidchart: https://lucidchart.com</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-number">20/35</div>
+        </section>
+
+        <section class="slide">
+            <h2>📦 Workshop Activity - วาด C2 Diagram</h2>
+            <h3>กิจกรรมปฏิบัติ: Container Diagram</h3>
+
+            <div class="activity-box">
+                <h4>📝 ให้นักศึกษาวาด C2 Diagram</h4>
+            </div>
+
+            <div class="grid-2">
+                <div>
+                    <h4>🔢 ขั้นตอน:</h4>
+                    <div class="workshop-task">
+                        <ol>
+                            <li>แบ่ง System เป็น Container หลัก
+                                <ul>
+                                    <li>Frontend application</li>
+                                    <li>Backend application</li>
+                                    <li>Database</li>
+                                </ul>
+                            </li>
+                            <li>ระบุ Technology stack สำหรับแต่ละ container</li>
+                            <li>แสดงการสื่อสาร/protocol ระหว่าง containers</li>
+                        </ol>
+                    </div>
+
+                    <div class="principle-card">
+                        <h4>⏰ เวลา: 20 นาที</h4>
+                    </div>
+                </div>
+
+                <div>
+                    <h4>💡 Agent Wallboard System Example:</h4>
+                    <div class="good-practice">
+                        <ul>
+                            <li><strong>Web App (React.js):</strong> UI layer</li>
+                            <li><strong>Desktop App (Electron.js):</strong> UI layer</li>
+                            <li><strong>API Server (Node.js + Express):</strong> Business logic</li>
+                            <li><strong>Database (MSSQL + MongoDB):</strong> Data storage</li>
+                            <li><strong>Protocols:</strong> HTTPS, WebSocket, Database connections</li>
+                        </ul>
+                    </div>
+
+                    <div class="principle-card">
+                        <h4>📋 สิ่งที่ต้องระบุ:</h4>
+                        <ul>
+                            <li>ชื่อและเทคโนโลยีของแต่ละ container</li>
+                            <li>ทิศทางการไหลของข้อมูล</li>
+                            <li>Protocol ที่ใช้ในการสื่อสาร</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-number">21/35</div>
+        </section>
+
+        <section class="slide">
+            <h2>⚠️ Common Architecture Mistakes</h2>
+            <h3>ข้อผิดพลาดทั่วไปในการออกแบบ</h3>
+
+            <div class="code-container">
+                <h4>1. Tight Coupling</h4>
+            </div>
+
+            <div class="bad-practice">
+                <h5>❌ ไม่ดี - coupling สูง</h5>
+                <pre><code>class AgentService {
+  updateStatus(agent) {
+    // เขียน SQL โดยตรง
+    db.query('UPDATE agents SET status = ? WHERE id = ?', 
+             [agent.status, agent.id]);
+  }
+}</code></pre>
+            </div>
+
+            <div class="good-practice">
+                <h5>✅ ดี - loose coupling</h5>
+                <pre><code>class AgentService {
+  constructor(agentRepository) {
+    this.agentRepository = agentRepository;
+  }
+  
+  updateStatus(agent) {
+    return this.agentRepository.updateStatus(agent);
+  }
+}</code></pre>
+            </div>
+
+            <div class="grid-2">
+                <div class="bad-practice">
+                    <h4>❌ ข้อผิดพลาดอื่นๆ</h4>
+                    <ul>
+                        <li><strong>God Object/Component:</strong> Component ที่ทำหน้าที่มากเกินไป</li>
+                        <li><strong>No Clear Layering:</strong> Business logic ปะปนกับ UI</li>
+                        <li><strong>Ignoring Non-functional Requirements:</strong> ไม่คิดถึง performance, security</li>
+                        <li><strong>Over-engineering:</strong> ออกแบบซับซ้อนเกินความจำเป็น</li>
+                    </ul>
+                </div>
+
+                <div class="good-practice">
+                    <h4>✅ วิธีแก้ไข</h4>
+                    <ul>
+                        <li>ปฏิบัติตาม SOLID principles</li>
+                        <li>แยก layers อย่างชัดเจน</li>
+                        <li>พิจารณา quality attributes</li>
+                        <li>Keep it simple (KISS principle)</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="slide-number">22/35</div>
+        </section>
+
+        <section class="slide">
+            <h2>⭐ Architecture Quality Attributes</h2>
+            <h3>คุณลักษณะของ Architecture ที่ดี</h3>
+
+            <div class="grid-3">
+                <div class="principle-card">
+                    <h4>⚡ Performance</h4>
+                    <ul>
+                        <li>Response time < 500ms สำหรับ API calls</li>
+                        <li>Real-time updates < 1 second</li>
+                    </ul>
+                </div>
+
+                <div class="principle-card">
+                    <h4>📈 Scalability</h4>
+                    <ul>
+                        <li>รองรับ 100+ concurrent agents</li>
+                        <li>สามารถขยายได้เมื่อมีผู้ใช้เพิ่ม</li>
+                    </ul>
+                </div>
+
+                <div class="principle-card">
+                    <h4>🔧 Maintainability</h4>
+                    <ul>
+                        <li>แก้ไขง่าย</li>
+                        <li>เพิ่มฟีเจอร์ใหม่ได้</li>
+                    </ul>
+                </div>
+
+                <div class="principle-card">
+                    <h4>🔒 Security</h4>
+                    <ul>
+                        <li>Authentication และ authorization</li>
+                        <li>ข้อมูลปลอดภัย</li>
+                    </ul>
+                </div>
+
+                <div class="principle-card">
+                    <h4>😊 Usability</h4>
+                    <ul>
+                        <li>ใช้งานง่าย</li>
+                        <li>User experience ดี</li>
+                    </ul>
+                </div>
+
+                <div class="principle-card">
+                    <h4>🛡️ Reliability</h4>
+                    <ul>
+                        <li>System uptime ≥ 99%</li>
+                        <li>Graceful error handling</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="architecture-box">
+                <h4>การ Trade-off:</h4>
+                <p>บางครั้งต้องเลือกระหว่าง performance กับ maintainability, Security กับ usability<br>
+                    ต้องสมดุลตาม business priorities</p>
+            </div>
+            <div class="slide-number">23/35</div>
+        </section>
+
+        <section class="slide">
+            <h2>🎯 Agent Wallboard System Architecture Decisions</h2>
+            <h3>การตัดสินใจ Architecture ใน Agent Wallboard System</h3>
+
+            <div class="principle-card">
+                <h4>🖥️ Frontend: React.js</h4>
+                <p><strong>เหตุผล:</strong> Component-Based Architecture และ Virtual DOM ทำให้การอัปเดต UI เร็วและแม่นยำ รวมทั้งคอมมูนิตี้เยอะ<br>
+                    <strong>ทางเลือก:</strong> Vue.js หรือ Angular
+                </p>
+            </div>
+
+            <div class="principle-card">
+                <h4>🖥️ Frontend: Electron.js</h4>
+                <p><strong>เหตุผล:</strong> Cross-platform desktop app, ใช้ web technologies<br>
+                    <strong>ทางเลือก:</strong> Native Windows app, Web application
+                </p>
+            </div>
+
+            <div class="principle-card">
+                <h4>⚙️ Backend: Node.js + Express</h4>
+                <p><strong>เหตุผล:</strong> JavaScript ecosystem, excellent WebSocket support<br>
+                    <strong>ทางเลือก:</strong> Python Flask, Java Spring Boot
+                </p>
+            </div>
+
+            <div class="principle-card">
+                <h4>💾 Database: MSSQL + MongoDB</h4>
+                <p><strong>เหตุผล:</strong> MSSQL สำหรับ transactional data, MongoDB สำหรับ real-time logs<br>
+                    <strong>ทางเลือก:</strong> PostgreSQL only, MySQL + Redis
+                </p>
+            </div>
+
+            <div class="principle-card">
+                <h4>⚡ Real-time: WebSocket</h4>
+                <p><strong>เหตุผล:</strong> Bidirectional communication, low latency<br>
+                    <strong>ทางเลือก:</strong> Server-Sent Events, Polling
+                </p>
+            </div>
+
+            <div class="principle-card">
+                <h4>🏗️ Architecture Pattern: 3-Tier</h4>
+                <p><strong>เหตุผล:</strong> Clear separation, scalable, maintainable<br>
+                    <strong>ทางเลือก:</strong> Microservices, Monolithic
+                </p>
+            </div>
+
+            <div class="good-practice">
+                <h4>Decision Criteria:</h4>
+                <ul>
+                    <li>Project timeline และ team expertise</li>
+                    <li>Performance requirements</li>
+                    <li>Scalability needs</li>
+                    <li>Maintenance considerations</li>
+                </ul>
+            </div>
+            <div class="slide-number">24/35</div>
+        </section>
+
+<section class="slide db-schema">
+    <h2>🗄️ Agent Wallboard System Database Schema Preview</h2>
+    <h3>ภาพรวม Database Design</h3>
+
+    <div class="grid-2">
+        <div>
+            <div class="code-container">
+                <h4 class="db-title">MSSQL - Master Data</h4>
+            </div>
+            <pre><code>-- Agent master data
+    CREATE TABLE OnlineAgents (
+        AgentCode NVARCHAR(50) PRIMARY KEY,
+        AgentName NVARCHAR(100),
+        LoginTime DATETIME,
+        Status NVARCHAR(20),
+        LastUpdateTime DATETIME
+    );</code></pre>
+        </div>
+
+        <div>
+            <div class="code-container">
+                <h4 class="db-title">MongoDB - Real-time Data</h4>
+            </div>
+            <pre><code>// Status logs collection
+{
+    "_id": ObjectId,
+    "agentCode": "A001",
+    "status": "Available",
+    "timestamp": ISODate,
+    "sessionId": "abc123"
+}
+
+// Message history collection
+{
+    "_id": ObjectId,
+    "from": "supervisor1",
+    "to": "A001",
+    "message": "Please check queue",
+    "timestamp": ISODate,
+    "delivered": true
+}</code></pre>
+        </div>
+    </div>
+
+    <div class="architecture-box">
+        <h4>Design Rationale:</h4>
+        <strong>MSSQL:</strong> Structured data, referential integrity<br>
+        <strong>MongoDB:</strong> Fast reads/writes for real-time data, flexible schema
+    </div>
+    <div class="slide-number">25/35</div>
+</section>
+
+
+
+<section class="slide api-preview">
+    <h2>🔌 Agent Wallboard System API Design Preview</h2>
+    <h3>ตัวอย่าง API Endpoints</h3>
+
+    <div class="grid-2">
+        <div>
+            <h4>👤 Agent Management APIs</h4>
+            <div class="principle-card">
+                <div class="api-endpoint">GET /api/agents</div> ดูรายการ agents ทั้งหมด<br>
+                <div class="api-endpoint">POST /api/agents/:code/status</div> อัปเดตสถานะ agent<br>
+                <div class="api-endpoint">GET /api/agents/:code</div> ดูข้อมูล agent เฉพาะ<br>
+                <div class="api-endpoint">POST /api/agents/:code/login</div> Agent login<br>
+                <div class="api-endpoint">POST /api/agents/:code/logout</div> Agent logout
+            </div>
+
+            <h4>💬 Communication APIs</h4>
+            <div class="principle-card">
+                <div class="api-endpoint">POST /api/messages</div> ส่งข้อความ<br>
+                <div class="api-endpoint">GET /api/messages/:agentCode</div> ดูประวัติข้อความ
+            </div>
+
+            <h4>📊 Dashboard APIs</h4>
+            <div class="principle-card">
+                <div class="api-endpoint">GET /api/dashboard/stats</div> สถิติ real-time<br>
+                <div class="api-endpoint">GET /api/dashboard/agents</div> สถานะ agents ทั้งหมด
+            </div>
+        </div>
+
+        <div>
+            <h4>🔌 WebSocket Events</h4>
+            <div class="code-container">
+                <h5 class="ws-title">Agent status change</h5>
+            </div>
+            <pre><code>{
+  "event": "statusUpdate",
+  "data": {
+    "agentCode": "A001",
+    "status": "Available",
+    "timestamp": "2025-01-01T10:00:00Z"
+  }
+}</code></pre>
+
+            <div class="code-container">
+                <h5 class="ws-title">Message notification</h5>
+            </div>
+            <pre><code>{
+  "event": "newMessage",
+  "data": {
+    "to": "A001",
+    "from": "supervisor1",
+    "message": "Please check priority queue",
+    "timestamp": "2025-01-01T10:00:00Z"
+  }
+}</code></pre>
+        </div>
+    </div>
+    <div class="slide-number">26/35</div>
+</section>
+
+
+
+<section class="slide">
+    <h2>🚀 From Design to Implementation</h2>
+    <h3>จาก Design สู่การเขียนโค้ด</h3>
+
+    <div class="diagram-container">
+        <h4>Design Document → Code Structure</h4>
+        
+        <div style="display: flex; gap: 30px; flex-wrap: wrap; text-align: left;">
+            
+            <!-- SDD Components -->
+            <div style="flex: 1; min-width: 280px;">
+                <h5>SDD Components</h5>
+                <div class="clean-tree">
+                    <ul>
+                        <li>Frontend Components
+                            <ul>
+                                <li>Login</li>
+                                <li>StatusManager</li>
+                                <li>Dashboard</li>
+                            </ul>
+                        </li>
+                        <li>Backend Services
+                            <ul>
+                                <li>AuthService</li>
+                                <li>AgentService</li>
+                                <li>MessageService</li>
+                            </ul>
+                        </li>
+                        <li>API Endpoints
+                            <ul>
+                                <li>REST APIs</li>
+                            </ul>
+                        </li>
+                        <li>Database Schema
+                            <ul>
+                                <li>MSSQL Tables</li>
+                                <li>MongoDB Collections</li>
+                            </ul>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Code Structure -->
+            <div style="flex: 1; min-width: 320px;">
+                <h5>Code Structure</h5>
+                <div class="clean-tree">
+                    <ul>
+                        <li>src/components/
+                            <ul>
+                                <li>LoginForm.js</li>
+                                <li>StatusManager.js</li>
+                                <li>Dashboard.js</li>
+                            </ul>
+                        </li>
+                        <li>server/
+                            <ul>
+                                <li>services/
+                                    <ul>
+                                        <li>auth.js</li>
+                                        <li>agent.js</li>
+                                        <li>message.js</li>
+                                    </ul>
+                                </li>
+                                <li>routes/
+                                    <ul>
+                                        <li>agents.js</li>
+                                        <li>messages.js</li>
+                                    </ul>
+                                </li>
+                            </ul>
+                        </li>
+                        <li>database/
+                            <ul>
+                                <li>schema.sql</li>
+                                <li>collections.js</li>
+                            </ul>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+        </div>
+    </div>
+    
+    <div class="architecture-box">
+        <h4>🔄 ขั้นตอนต่อไป:</h4>
+        <div class="grid-2" style="margin-top: 15px; font-size: 0.95em;">
+            <div><strong>1. สร้าง Database Schema</strong><br><strong>2. พัฒนา Backend APIs</strong><br><strong>3. สร้าง Frontend Components</strong></div>
+            <div><strong>4. Integration Testing</strong><br><strong>5. Deployment</strong></div>
+        </div>
+    </div>
+
+    <div class="good-practice">
+        <h4>💡 Key Mapping Points:</h4>
+        <ul style="font-size: 0.9em;">
+            <li><strong>Design Components → Code Files:</strong> แต่ละ component ใน SDD จะกลายเป็นไฟล์โค้ดจริง</li>
+            <li><strong>Services → Business Logic:</strong> Services ในการออกแบบจะเป็น business logic layers</li>
+            <li><strong>APIs → Route Handlers:</strong> API specifications จะกลายเป็น route handlers</li>
+            <li><strong>Database Design → Schema Files:</strong> Database design จะเป็น SQL scripts และ collection definitions</li>
+        </ul>
+    </div>
+
+    <div class="slide-number">27/35</div>
+</section>
+
+
+        <section class="slide">
+            <h2>📈 Architecture Evolution & Scalability</h2>
+            <h3>การพัฒนา Architecture ต่อไป</h3>
+
+            <div class="grid-2">
+                <div>
+                    <div class="principle-card">
+                        <h4>🎯 Phase 1: MVP (ปัจจุบัน)</h4>
+                        <ul>
+                            <li>3-Tier Architecture</li>
+                            <li>Basic CRUD operations</li>
+                            <li>Single server deployment</li>
+                            <li>Support 50-100 concurrent agents</li>
+                        </ul>
+                    </div>
+
+                    <div class="principle-card">
+                        <h4>✨ Phase 2: Enhanced Features</h4>
+                        <ul>
+                            <li>Advanced dashboard analytics</li>
+                            <li>Mobile application support</li>
+                            <li>Integration APIs</li>
+                            <li>Performance optimization</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="principle-card">
+                        <h4>🔧 Phase 3: Scalability</h4>
+                        <ul>
+                            <li>Microservices architecture</li>
+                            <li>Load balancing</li>
+                            <li>Redis caching layer</li>
+                            <li>Support 500+ agents</li>
+                        </ul>
+                    </div>
+
+                    <div class="principle-card">
+                        <h4>🚀 Phase 4: Advanced Features</h4>
+                        <ul>
+                            <li>Machine learning analytics</li>
+                            <li>Predictive insights</li>
+                            <li>Advanced reporting</li>
+                            <li>Cloud-native deployment</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="good-practice">
+                <h4>Scalability Considerations:</h4>
+                <ul>
+                    <li>Database sharding strategies</li>
+                    <li>WebSocket connection pooling</li>
+                    <li>CDN for static assets</li>
+                    <li>Monitoring and alerting systems</li>
+                </ul>
+            </div>
+            <div class="slide-number">28/35</div>
+        </section>
+
+        <section class="slide">
+            <h2>⭐ Best Practices Summary</h2>
+            <h3>สรุปแนวทางปฏิบัติที่ดี</h3>
+
+            <div class="grid-2">
+                <div>
+                    <div class="principle-card">
+                        <h4>🏗️ Design Principles</h4>
+                        <ul>
+                            <li>ปฏิบัติตาม SOLID principles</li>
+                            <li>Keep it simple (KISS)</li>
+                            <li>Don't repeat yourself (DRY)</li>
+                            <li>You aren't gonna need it (YAGNI)</li>
+                        </ul>
+                    </div>
+
+                    <div class="principle-card">
+                        <h4>📊 Architecture Patterns</h4>
+                        <ul>
+                            <li>เลือกรูปแบบที่เหมาะสม</li>
+                            <li>3-Tier สำหรับระบบขนาดกลาง</li>
+                            <li>Component-based design</li>
+                        </ul>
+                    </div>
+
+                    <div class="principle-card">
+                        <h4>📝 Documentation</h4>
+                        <ul>
+                            <li>ใช้ C4 Model สำหรับ architecture documentation</li>
+                            <li>เอกสาร SDD ที่ครบถ้วน</li>
+                            <li>Update เมื่อมีการเปลี่ยนแปลง</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="principle-card">
+                        <h4>⭐ Quality Focus</h4>
+                        <ul>
+                            <li>Performance, Security, Scalability</li>
+                            <li>Maintainable code structure</li>
+                            <li>Comprehensive testing strategy</li>
+                        </ul>
+                    </div>
+
+                    <div class="principle-card">
+                        <h4>⚡ Real-time Systems Specific</h4>
+                        <ul>
+                            <li>WebSocket connection management</li>
+                            <li>Data consistency strategies</li>
+                            <li>Error handling and reconnection</li>
+                            <li>Performance monitoring</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="architecture-box">
+                <strong>จำไว้:</strong> Good architecture is the foundation of successful software projects!
+            </div>
+            <div class="slide-number">29/35</div>
+        </section>
+
+        <section class="slide">
+            <h2>📊 Workshop Evaluation Criteria</h2>
+            <h3>เกณฑ์การประเมิน Workshop</h3>
+
+            <div class="architecture-box">
+                <h4>Architecture Design Diagram (100%)</h4>
+            </div>
+
+            <div class="grid-2">
+                <div>
+                    <div class="principle-card">
+                        <h4>🌐 C1 - System Context (40%)</h4>
+                        <ul>
+                            <li>ความชัดเจนของ system boundary</li>
+                            <li>ระบุ actors และ external systems ครบ</li>
+                            <li>แสดงความสัมพันธ์ถูกต้อง</li>
+                            <li>เหมาะสมกับโปรเจกต์ที่เลือก</li>
+                        </ul>
+                    </div>
+
+                    <div class="principle-card">
+                        <h4>📦 C2 - Container Diagram (40%)</h4>
+                        <ul>
+                            <li>แบ่ง containers ตรงตาม technology stack</li>
+                            <li>แสดง protocols การสื่อสาร</li>
+                            <li>ความเหมาะสมของ architecture choice</li>
+                            <li>รายละเอียดเทคนิคที่ถูกต้อง</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="principle-card">
+                        <h4>📝 Documentation Quality (20%)</h4>
+                        <ul>
+                            <li>คำอธิบายประกอบแผนภาพ</li>
+                            <li>ความเป็นมืออาชีพ</li>
+                            <li>ความครบถ้วนของข้อมูล</li>
+                            <li>การใช้ terminology ที่ถูกต้อง</li>
+                        </ul>
+                    </div>
+
+                    <div class="good-practice">
+                        <h4>🌟 Bonus Points:</h4>
+                        <ul>
+                            <li>ความคิดสร้างสรรค์ในการออกแบบ</li>
+                            <li>การพิจารณา non-functional requirements</li>
+                            <li>การอธิบาย trade-offs ของการตัดสินใจ</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-number">30/35</div>
+        </section>
+
+        <section class="slide">
+            <h2>🔮 Next Week Preview</h2>
+            <h3>สัปดาห์หน้า: การออกแบบข้อมูลและฐานข้อมูล</h3>
+
+            <div class="grid-2">
+                <div>
+                    <h4>📚 เนื้อหาที่จะเรียน:</h4>
+                    <div class="principle-card">
+                        <ul>
+                            <li>Database Design Principles</li>
+                            <li>Entity-Relationship (ER) Diagram</li>
+                            <li>SQL vs NoSQL selection criteria</li>
+                            <li>Agent Wallboard System Database Implementation</li>
+                            <li>Data modeling best practices</li>
+                        </ul>
+                    </div>
+
+                    <h4>🎯 Assignment:</h4>
+                    <div class="workshop-task">
+                        <ul>
+                            <li>Complete Architecture Design (C1 + C2 Diagrams)</li>
+                            <li>Submit พร้อมคำอธิบาย architecture decisions</li>
+                            <li><strong>Due:</strong> ก่อนเรียนสัปดาห์หน้า</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div>
+                    <h4>🔧 เตรียมตัว:</h4>
+                    <div class="principle-card">
+                        <ul>
+                            <li>ทบทวน Database concepts</li>
+                            <li>ติดตั้ง MongoDB Compass และ SQL Server Management Studio</li>
+                            <li>ศึกษา ER Diagram basics</li>
+                        </ul>
+                    </div>
+
+                    <h4>📈 สิ่งที่จะได้เรียนต่อ:</h4>
+                    <div class="good-practice">
+                        <ul>
+                            <li>จากภาพใหญ่ของ architecture สู่รายละเอียด database design</li>
+                            <li>การออกแบบ schema ที่รองรับ real-time operations</li>
+                            <li>การเลือกใช้ database technology ที่เหมาะสม</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-number">31/35</div>
+        </section>
+
+        <section class="slide">
+            <h2>❓ Q&A Session</h2>
+            <h3>ถาม-ตอบ</h3>
+
+            <div class="principle-card">
+                <h4>Q: ทำไมต้องใช้ 3-Tier แทน Monolithic?</h4>
+                <p><strong>A:</strong> แยกหน้าที่ชัดเจน, scale ได้ดีกว่า, team ทำงานแยกกันได้, maintainability ดีกว่า
+                </p>
+            </div>
+
+            <div class="principle-card">
+                <h4>Q: C4 Model จำเป็นทุกโปรเจกต์ไหม?</h4>
+                <p><strong>A:</strong> ขึ้นกับขนาด - โปรเจกต์ใหญ่ควรใช้, เล็กอาจใช้แค่ C1-C2, ช่วยในการสื่อสารและวางแผน
+                </p>
+            </div>
+
+            <div class="principle-card">
+                <h4>Q: Agent Wallboard System ทำไมต้องใช้ทั้ง MSSQL และ MongoDB?</h4>
+                <p><strong>A:</strong> MSSQL = structured master data, referential integrity<br>
+                    MongoDB = fast read/write for real-time logs, flexible schema</p>
+            </div>
+
+            <div class="principle-card">
+                <h4>Q: WebSocket vs REST API ใช้เมื่อไร?</h4>
+                <p><strong>A:</strong> WebSocket = real-time, bidirectional (status updates, messages)<br>
+                    REST API = standard CRUD operations, stateless requests</p>
+            </div>
+
+            <div class="principle-card">
+                <h4>Q: หลักการ SOLID ใช้ได้จริงใน JavaScript ไหม?</h4>
+                <p><strong>A:</strong> ได้ แต่ต้องปรับเป็น functional programming และ module patterns</p>
+            </div>
+
+            <div class="architecture-box">
+                <strong>มีคำถามเพิ่มเติมไหม?</strong>
+            </div>
+            <div class="slide-number">32/35</div>
+        </section>
+
+        <section class="slide">
+            <h2>📝 Homework Assignment</h2>
+            <h3>งานที่มอบหมาย</h3>
+
+            <div class="activity-box">
+                <h4>การบ้าน: สร้าง Architecture Design สำหรับโปรเจกต์ของคุณ</h4>
+            </div>
+
+            <div class="grid-2">
+                <div>
+                    <h4>📋 สิ่งที่ต้องส่ง:</h4>
+                    <div class="workshop-task">
+                        <h5>1. C1 System Context Diagram</h5>
+                        <ul>
+                            <li>แสดงโปรเจกต์ในบริบทใหญ่</li>
+                            <li>ระบุ users และ external systems</li>
+                            <li>เขียนคำอธิบาย 1-2 ย่อหน้า</li>
+                        </ul>
+
+                        <h5>2. C2 Container Diagram</h5>
+                        <ul>
+                            <li>แบ่ง applications/containers หลัก</li>
+                            <li>ระบุ technology stack</li>
+                            <li>แสดง communication protocols</li>
+                            <li>เขียนคำอธิบาย architecture decisions</li>
+                        </ul>
+
+                        <h5>3. Architecture Decision Record</h5>
+                        <ul>
+                            <li>เหตุผลการเลือก technology stack</li>
+                            <li>Trade-offs ที่พิจารณา</li>
+                            <li>Alternative solutions ที่ไม่เลือก</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div>
+                    <h4>📤 Submission Details:</h4>
+                    <div class="principle-card">
+                        <ul>
+                            <li><strong>Format:</strong> PDF หรือ image files พร้อมคำอธิบาย</li>
+                            <li><strong>Due Date:</strong> ส่งก่อนเรียนสัปดาห์หน้า</li>
+                            <li><strong>Submission:</strong> Upload ผ่าน LMS</li>
+                        </ul>
+                    </div>
+
+                    <h4>🏆 เกณฑ์การให้คะแนน:</h4>
+                    <div class="good-practice">
+                        <ul>
+                            <li><strong>Technical accuracy (40%)</strong></li>
+                            <li><strong>Clarity of diagrams (30%)</strong></li>
+                            <li><strong>Quality of explanations (20%)</strong></li>
+                            <li><strong>Creativity and innovation (10%)</strong></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-number">33/35</div>
+        </section>
+
+        <section class="slide">
+            <h2>📚 Additional Resources</h2>
+            <h3>แหล่งเรียนรู้เพิ่มเติม</h3>
+
+            <div class="grid-2">
+                <div>
+                    <div class="principle-card">
+                        <h4>📖 Books:</h4>
+                        <ul>
+                            <li>"Software Architecture in Practice" - Bass, Clements, Kazman</li>
+                            <li>"Clean Architecture" - Robert C. Martin</li>
+                            <li>"Designing Data-Intensive Applications" - Martin Kleppmann</li>
+                        </ul>
+                    </div>
+
+                    <div class="principle-card">
+                        <h4>🌐 Online Resources:</h4>
+                        <ul>
+                            <li>C4 Model Official Website: https://c4model.com/</li>
+                            <li>Microsoft Architecture Center</li>
+                            <li>AWS Well-Architected Framework</li>
+                            <li>Google Cloud Architecture Center</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="principle-card">
+                        <h4>🛠️ Tools & Tutorials:</h4>
+                        <ul>
+                            <li>Draw.io templates for C4 Model</li>
+                            <li>Structurizr documentation</li>
+                            <li>Lucidchart architecture templates</li>
+                        </ul>
+                    </div>
+
+                    <div class="principle-card">
+                        <h4>🎯 For Agent Wallboard System specifically:</h4>
+                        <ul>
+                            <li>WebSocket.io documentation</li>
+                            <li>Electron.js best practices</li>
+                            <li>Node.js + Express.js patterns</li>
+                            <li>MongoDB schema design guidelines</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="architecture-box">
+                <h4>Next Learning Path:</h4>
+                สัปดาห์หน้า → Database Design → API Design → UI/UX Design → Testing Strategy
+            </div>
+            <div class="slide-number">34/35</div>
+        </section>
+
+        <section class="slide">
+            <h2>🎓 สรุปสัปดาห์ที่ 5</h2>
+            <h3>สิ่งที่เราได้เรียนรู้</h3>
+
+            <div class="architecture-box">
+                <h4>🎯 Key Takeaways:</h4>
+            </div>
+
+            <div class="grid-2">
+                <div>
+                    <div class="principle-card">
+                        <h4>📝 1. Software Design Document (SDD)</h4>
+                        <ul>
+                            <li>แปลง SRS เป็น technical blueprint</li>
+                            <li>เชื่อมต่อ requirements กับ implementation</li>
+                        </ul>
+                    </div>
+
+                    <div class="principle-card">
+                        <h4>🏗️ 2. Design Principles</h4>
+                        <ul>
+                            <li>SOLID, DRY, KISS, YAGNI</li>
+                            <li>ประยุกต์ใช้ใน Agent Wallboard System</li>
+                        </ul>
+                    </div>
+
+                    <div class="principle-card">
+                        <h4>🏢 3. 3-Tier Architecture</h4>
+                        <ul>
+                            <li>Presentation, Application, Data layers</li>
+                            <li>ข้อดีในการ scalability และ maintainability</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="principle-card">
+                        <h4>📊 4. C4 Model</h4>
+                        <ul>
+                            <li>Context → Containers → Components → Code</li>
+                            <li>Progressive detail สำหรับ different audiences</li>
+                        </ul>
+                    </div>
+
+                    <div class="principle-card">
+                        <h4>🎯 5. Real-world Application</h4>
+                        <ul>
+                            <li>Agent Wallboard System เป็น case study</li>
+                            <li>เห็นการใช้งานจริงของ principles และ patterns</li>
+                        </ul>
+                    </div>
+
+                    <div class="good-practice">
+                        <h4>🚀 Ready for Next Week:</h4>
+                        <ul>
+                            <li>Database Design และ ER Diagrams</li>
+                            <li>นำ Architecture Design ไปสู่ detailed implementation</li>
+                            <li>เริ่มต้นการเขียนโค้ดจริง</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="architecture-box" style="text-align: center; margin-top: 30px;">
+                <h3>🌟 Remember: Good architecture is the foundation of successful software projects! 🌟</h3>
+                <p style="margin-top: 20px; font-size: 1.1em;">ขอบคุณสำหรับความตั้งใจในการเรียน! 🙏</p>
+            </div>
+            <div class="slide-number">35/35</div>
+        </section>
+
+    </div>
+
+    <div class="presentation-controls">
+        <button id="prev-btn" class="nav-btn">⬅️ ก่อนหน้า</button>
+        <span id="slide-counter"></span>
+        <button id="next-btn" class="nav-btn">ถัดไป ➡️</button>
+        <button id="fullscreen-btn" class="nav-btn" title="เต็มจอ / ออกจากเต็มจอ">⛶</button>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- Element Selection ---
+            const slides = document.querySelectorAll('.slide');
+            const nextBtn = document.getElementById('next-btn');
+            const prevBtn = document.getElementById('prev-btn');
+            const slideCounter = document.getElementById('slide-counter');
+            const progressBar = document.getElementById('progress-bar');
+            const fullscreenBtn = document.getElementById('fullscreen-btn');
+
+            // --- State Management ---
+            let currentSlideIndex = 0;
+            const totalSlides = slides.length;
+
+            function showSlide(index) {
+                if (index < 0 || index >= totalSlides) return;
+
+                slides.forEach((slide, i) => {
+                    slide.classList.toggle('active', i === index);
+                });
+
+                if (slides[index].scrollTop > 0) {
+                    slides[index].scrollTop = 0;
+                }
+
+                currentSlideIndex = index;
+                updateControls();
+            }
+
+            function updateControls() {
+                slideCounter.textContent = `${currentSlideIndex + 1} / ${totalSlides}`;
+
+                const progressPercentage = ((currentSlideIndex + 1) / totalSlides) * 100;
+                progressBar.style.width = `${progressPercentage}%`;
+
+                prevBtn.disabled = currentSlideIndex === 0;
+                nextBtn.disabled = currentSlideIndex === totalSlides - 1;
+            }
+
+            // --- Fullscreen Toggle Function ---
+            function toggleFullscreen() {
+                if (!document.fullscreenElement) {
+                    document.documentElement.requestFullscreen().catch(err => {
+                        alert(`ไม่สามารถเข้าสู่โหมดเต็มจอได้: ${err.message}`);
+                    });
+                } else {
+                    if (document.exitFullscreen) {
+                        document.exitFullscreen();
+                    }
+                }
+            }
+
+            // --- Event Listeners ---
+
+            nextBtn.addEventListener('click', () => {
+                if (currentSlideIndex < totalSlides - 1) {
+                    showSlide(currentSlideIndex + 1);
+                }
+            });
+
+            prevBtn.addEventListener('click', () => {
+                if (currentSlideIndex > 0) {
+                    showSlide(currentSlideIndex - 1);
+                }
+            });
+
+            fullscreenBtn.addEventListener('click', toggleFullscreen);
+
+            document.addEventListener('keydown', (event) => {
+                if (event.key === 'ArrowRight') {
+                    nextBtn.click();
+                } else if (event.key === 'ArrowLeft') {
+                    prevBtn.click();
+                } else if (event.key === 'f') { // Add 'f' key for fullscreen
+                    toggleFullscreen();
+                }
+            });
+
+            // --- Initialization ---
+            showSlide(0);
+        });
+    </script>
+</body>
+
+</html>
