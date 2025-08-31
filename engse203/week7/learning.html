@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ENGSE203 ทบทวนสัปดาห์ที่ 7: Backend Development with Node.js</title>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #f4f7f9;
+            --primary-text: #2c3e50;
+            --secondary-text: #566573;
+            --primary-color: #3498db;
+            --secondary-color: #2980b9;
+            --accent-color: #e67e22;
+            --card-bg: #ffffff;
+            --card-shadow: 0 4px 15px rgba(0, 0, 0, 0.07);
+            --code-bg: #2d3142;
+            --code-text: #e0e0e0;
+            --border-color: #e0e4e8;
+        }
+
+        body {
+            font-family: 'Sarabun', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--primary-text);
+            line-height: 1.7;
+            margin: 0;
+            padding: 0;
+        }
+
+        .progress-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 5px;
+            background-color: transparent;
+            z-index: 1000;
+        }
+
+        #progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
+            transition: width 0.1s;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            padding: 40px 20px;
+            border-bottom: 2px solid var(--border-color);
+            margin-bottom: 30px;
+        }
+
+        header h1 {
+            font-size: 2.8em;
+            color: var(--primary-text);
+            margin: 0;
+        }
+
+        header p {
+            font-size: 1.2em;
+            color: var(--secondary-text);
+            margin-top: 10px;
+        }
+
+        .topic-section {
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: var(--card-shadow);
+            margin-bottom: 25px;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+        }
+
+        .topic-title {
+            padding: 20px 25px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #fff;
+            transition: background-color 0.2s ease;
+        }
+        
+        .topic-title:hover {
+            background-color: #fafafa;
+        }
+
+        .topic-title h2 {
+            font-size: 1.6em;
+            margin: 0;
+            color: var(--secondary-color);
+        }
+
+        .topic-title .toggle-icon {
+            font-size: 1.5em;
+            transition: transform 0.3s ease;
+        }
+        
+        .topic-section[open] .toggle-icon {
+            transform: rotate(90deg);
+        }
+
+        .topic-content {
+            padding: 0 25px 25px;
+            border-top: 1px solid var(--border-color);
+        }
+
+        h3 {
+            font-size: 1.3em;
+            color: var(--primary-color);
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 8px;
+            margin: 25px 0 15px;
+        }
+
+        p, ul, table {
+            font-size: 1.05em;
+            color: var(--secondary-text);
+        }
+        
+        strong { color: var(--primary-text); }
+        
+        code {
+            font-family: 'Courier New', monospace;
+            background-color: rgba(44, 62, 80, 0.08);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+
+        pre {
+            background-color: var(--code-bg);
+            color: var(--code-text);
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            position: relative;
+        }
+        pre code { background-color: transparent; padding: 0; }
+        
+        .copy-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: #4e5a65;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            opacity: 0.7;
+            transition: opacity 0.2s;
+        }
+        pre:hover .copy-btn { opacity: 1; }
+        .copy-btn:active { background-color: #6d7a86; }
+
+        .info-box {
+            background-color: #eaf5ff;
+            border-left: 5px solid var(--primary-color);
+            padding: 15px 20px;
+            margin: 20px 0;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .success-box { background-color: #e8f8f5; border-left: 5px solid #27ae60; padding: 15px 20px; margin: 20px 0; border-radius: 0 8px 8px 0; }
+        .error-box { background-color: #fdedec; border-left: 5px solid #c0392b; padding: 15px 20px; margin: 20px 0; border-radius: 0 8px 8px 0; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        table th, table td {
+            border: 1px solid var(--border-color);
+            padding: 12px 15px;
+            text-align: left;
+        }
+        table th {
+            background-color: var(--secondary-color);
+            color: white;
+            font-weight: 600;
+        }
+        table tr:nth-child(even) { background-color: #f8f9f9; }
+
+        .qa-card {
+            background: #fff;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 15px;
+        }
+        .qa-card .question {
+            font-weight: 600;
+            font-size: 1.1em;
+        }
+        .qa-card .answer {
+            display: none;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px dashed var(--border-color);
+        }
+        .reveal-btn {
+            background-color: var(--secondary-color);
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: background-color 0.2s;
+        }
+        .reveal-btn:hover { background-color: var(--primary-color); }
+        .citation {
+            font-size: 0.75em;
+            color: #999;
+            margin-left: 5px;
+        }
+
+        @media (max-width: 768px) {
+            body { font-size: 16px; }
+            header h1 { font-size: 2em; }
+            .topic-title h2 { font-size: 1.3em; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="progress-container">
+        <div id="progress-bar"></div>
+    </div>
+
+    <div class="container">
+        <header>
+            <h1>ENGSE203 - สัปดาห์ที่ 7</h1>
+            <p>ทบทวนเนื้อหา: Backend Development with Node.js</p>
+        </header>
+
+        <main>
+            <details class="topic-section" open>
+                <summary class="topic-title">
+                    <h2>🚀 1. ภาพรวมและเหตุผลที่ต้องมี Backend</h2>
+                    <span class="toggle-icon">▶</span>
+                </summary>
+                <div class="topic-content">
+                    [cite_start]<h3>Course Progression [cite: 1]</h3>
+                    <p>เราได้เดินทางจาก Frontend มาสู่การเป็น Full-Stack Developer:</p>
+                    <pre><code>สัปดาห์ที่ 5-6: Frontend (React.js)
+           ↓
+สัปดาห์ที่ 7: Backend (Node.js) ← You are here
+           ↓
+สัปดาห์ที่ 8: Database (MongoDB)</code></pre>
+
+                    [cite_start]<h3>ทำไม Agent Wallboard System ต้องมี Backend? [cite: 1]</h3>
+                    <div class="error-box">
+                        <strong>ปัญหาของ Frontend-Only:</strong>
+                        <ul>
+                            [cite_start]<li>ข้อมูลไม่ซิงค์กันระหว่างผู้ใช้ (Supervisor vs Agent) [cite: 1]</li>
+                            [cite_start]<li>ข้อมูลไม่ถูกบันทึกถาวร (ปิดแอปแล้วข้อมูลหาย) [cite: 1]</li>
+                            [cite_start]<li>ไม่สามารถสื่อสารแบบ Real-time ได้ [cite: 1]</li>
+                            [cite_start]<li>ไม่มี Business Logic ส่วนกลางสำหรับตรวจสอบข้อมูล [cite: 1]</li>
+                        </ul>
+                    </div>
+                    <div class="success-box">
+                        <strong>Backend ช่วยแก้ปัญหาโดย:</strong>
+                        <ul>
+                            [cite_start]<li><strong>Centralized Data:</strong> เป็นศูนย์กลางข้อมูลสำหรับทุกคน [cite: 1]</li>
+                            [cite_start]<li><strong>Data Persistence:</strong> บันทึกข้อมูลลงฐานข้อมูลอย่างถาวร [cite: 1]</li>
+                            [cite_start]<li><strong>Real-time Communication:</strong> เปิดช่องทางสื่อสารผ่าน WebSocket [cite: 1]</li>
+                            [cite_start]<li><strong>Security & Logic:</strong> จัดการสิทธิ์การเข้าถึงและ Logic ที่ซับซ้อน [cite: 1]</li>
+                        </ul>
+                    </div>
+                </div>
+            </details>
+
+            <details class="topic-section">
+                <summary class="topic-title">
+                    <h2>⚙️ 2. พื้นฐาน Node.js และ Express.js</h2>
+                    <span class="toggle-icon">▶</span>
+                </summary>
+                <div class="topic-content">
+                    [cite_start]<h3>Node.js คืออะไร? [cite: 1]</h3>
+                    [cite_start]<p>Node.js คือ JavaScript Runtime Environment ที่ทำให้เราสามารถรันโค้ด JavaScript นอกเว็บเบราว์เซอร์ได้ หรือพูดง่ายๆ คือ <strong>"JavaScript ที่รันบน Server"</strong> นั่นเอง [cite: 1]</p>
+                    <ul>
+                        [cite_start]<li><strong>ทำไมเหมาะกับ Case Study ของเรา?</strong> เพราะมีความสามารถด้าน Real-time ที่ยอดเยี่ยม เหมาะกับการอัปเดตสถานะ Agent แบบทันที และใช้ JavaScript เหมือนฝั่ง Frontend [cite: 1]</li>
+                    </ul>
+
+                    [cite_start]<h3>Event Loop และ Non-blocking I/O [cite: 1]</h3>
+                    [cite_start]<p>หัวใจที่ทำให้ Node.js ทำงานเร็ว คือ Event Loop ที่จัดการงานต่างๆ แบบไม่หยุดรอ (Non-blocking) ทำให้รับ Request จำนวนมากได้พร้อมกัน [cite: 1]</p>
+                    <pre><code>// ✅ Non-blocking (ไม่หยุดรอ)
+fs.readFile('data.txt', (err, data) => {
+  console.log('อ่านไฟล์เสร็จแล้ว'); // Callback นี้จะทำงานเมื่ออ่านเสร็จ
+});
+console.log('ทำงานอื่นต่อไปได้เลย...'); // บรรทัดนี้จะแสดงผลก่อน</code></pre>
+                    
+                    [cite_start]<h3>NPM (Node Package Manager) [cite: 1]</h3>
+                    [cite_start]<p>คือคลังเก็บ Package (Library) ของ JavaScript ที่ใหญ่ที่สุดในโลก และเป็นเครื่องมือจัดการ Dependencies ในโปรเจกต์ของเรา [cite: 1]</p>
+                    <pre><code># สร้างไฟล์ package.json
+npm init -y
+
+# ติดตั้ง Express.js สำหรับโปรเจกต์
+npm install express</code></pre>
+                    
+                    [cite_start]<h3>Express.js Framework [cite: 1]</h3>
+                    [cite_start]<p>เป็น Web Framework ที่เรียบง่ายและยืดหยุ่นสูงสำหรับ Node.js ช่วยให้การสร้าง Web Server และ API เป็นเรื่องง่าย [cite: 1]</p>
+                     <pre><code>const express = require('express');
+const app = express();
+
+app.get('/', (req, res) => {
+  res.send('Hello from Express!');
+});
+
+app.listen(3001, () => console.log('Server is running'));</code></pre>
+                </div>
+            </details>
+
+            <details class="topic-section">
+                <summary class="topic-title">
+                    <h2>🎨 3. การออกแบบ REST API</h2>
+                    <span class="toggle-icon">▶</span>
+                </summary>
+                <div class="topic-content">
+                    [cite_start]<h3>หลักการของ REST API [cite: 1]</h3>
+                    [cite_start]<p>REST (REpresentational State Transfer) คือสถาปัตยกรรมที่ใช้ HTTP Methods ในการจัดการกับข้อมูล (Resources) โดย URL ควรสื่อถึง "สิ่งของ" (Nouns) ไม่ใช่ "การกระทำ" (Verbs) [cite: 1]</p>
+                    [cite_start]<div class="success-box"><strong>ตัวอย่างที่ดี:</strong> <code>PATCH /api/agents/A001/status</code> [cite: 1]</div>
+                    [cite_start]<div class="error-box"><strong>ตัวอย่างที่ควรเลี่ยง:</strong> <code>POST /api/updateAgentStatus</code> [cite: 1]</div>
+
+                    [cite_start]<h3>HTTP Methods & Status Codes [cite: 1]</h3>
+                    <table>
+                        <thead>
+                            <tr><th>Method</th><th>Purpose</th><th>Status Code</th><th>Meaning</th></tr>
+                        </thead>
+                        <tbody>
+                            [cite_start]<tr><td><strong>GET</strong></td><td>ดึงข้อมูล [cite: 1][cite_start]</td><td><strong>200 OK</strong></td><td>สำเร็จ [cite: 1]</td></tr>
+                            [cite_start]<tr><td><strong>POST</strong></td><td>สร้างข้อมูลใหม่ [cite: 1][cite_start]</td><td><strong>201 Created</strong></td><td>สร้างสำเร็จ [cite: 1]</td></tr>
+                            [cite_start]<tr><td><strong>PATCH</strong></td><td>อัปเดตข้อมูลบางส่วน [cite: 1][cite_start]</td><td><strong>400 Bad Request</strong></td><td>Request ไม่ถูกต้อง [cite: 1]</td></tr>
+                            [cite_start]<tr><td><strong>DELETE</strong></td><td>ลบข้อมูล [cite: 1][cite_start]</td><td><strong>404 Not Found</strong></td><td>ไม่พบข้อมูล [cite: 1]</td></tr>
+                        </tbody>
+                    </table>
+
+                    [cite_start]<h3>Agent Wallboard API Endpoints [cite: 1]</h3>
+                    <ul>
+                        [cite_start]<li><code>GET /api/agents</code>: ดูรายชื่อ agents ทั้งหมด [cite: 1]</li>
+                        [cite_start]<li><code>PATCH /api/agents/:id/status</code>: เปลี่ยนสถานะ agent [cite: 1]</li>
+                        [cite_start]<li><code>POST /api/messages</code>: ส่งข้อความใหม่ [cite: 1]</li>
+                        [cite_start]<li><code>GET /api/dashboard/stats</code>: ดูสถิติ real-time [cite: 1]</li>
+                    </ul>
+
+                    [cite_start]<h3>JSON Response Pattern [cite: 1]</h3>
+                    [cite_start]<p>การมีโครงสร้าง Response ที่สอดคล้องกันทำให้ฝั่ง Frontend ทำงานง่ายขึ้น [cite: 1]</p>
+                    <pre><code>{
+  "success": true,
+  "message": "Status updated successfully",
+  "data": { "agentId": "A001", "newStatus": "Available" },
+  "error": null,
+  "timestamp": "2025-08-31T10:00:00Z"
+}</code></pre>
+                </div>
+            </details>
+            
+            <details class="topic-section">
+                <summary class="topic-title">
+                    <h2>⚡ 4. Real-time, Middleware และการจัดการ Error</h2>
+                    <span class="toggle-icon">▶</span>
+                </summary>
+                <div class="topic-content">
+                    [cite_start]<h3>Real-time: WebSocket vs HTTP Polling [cite: 1]</h3>
+                    [cite_start]<p>สำหรับ Agent Wallboard ที่ต้องการอัปเดตสถานะทันที, <strong>WebSocket</strong> คือทางเลือกที่ดีที่สุด เพราะ Server สามารถ "push" ข้อมูลไปหา Client ได้ทันทีเมื่อมีการเปลี่ยนแปลง ต่างจาก Polling ที่ Client ต้องคอยถามซ้ำๆ [cite: 1]</p>
+                    <pre><code>// ✅ WebSocket: Server-side push
+io.emit('agentStatusUpdate', { agentId: 'A001', status: 'Available' });
+
+// ❌ Polling: Client-side pull
+setInterval(fetchUpdates, 5000);</code></pre>
+                    
+                    [cite_start]<h3>Express Middleware [cite: 1]</h3>
+                    [cite_start]<p>Middleware คือฟังก์ชันที่ทำงานอยู่ระหว่าง Request และ Response เพื่อจัดการงานต่างๆ เช่น การตรวจสอบสิทธิ์, การบันทึก Log หรือการแปลงข้อมูล [cite: 1]</p>
+                    <pre><code>// Middleware สำหรับบันทึก Log ทุก Request
+app.use((req, res, next) => {
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
+  next(); // ส่งต่อไปยัง Middleware หรือ Route Handler ตัวถัดไป
+});</code></pre>
+
+                    [cite_start]<h3>CORS (Cross-Origin Resource Sharing) [cite: 1]</h3>
+                    [cite_start]<p>เป็น Middleware สำคัญที่ต้องตั้งค่าที่ Backend เพื่ออนุญาตให้ Frontend (ที่อยู่คนละ Origin เช่น `localhost:3000`) สามารถเรียกใช้ API ได้ [cite: 1]</p>
+                    <pre><code>const cors = require('cors');
+app.use(cors({ origin: 'http://localhost:3000' }));</code></pre>
+
+                    [cite_start]<h3>Error Handling [cite: 1]</h3>
+                    [cite_start]<p>ควรมี Global Error Handler เป็น Middleware ตัวสุดท้าย เพื่อดักจับ Error ทั้งหมดที่เกิดขึ้นใน Application และส่ง Response ที่เป็นมาตรฐานกลับไป [cite: 1]</p>
+                    <pre><code>app.use((error, req, res, next) => {
+  console.error(error.stack);
+  res.status(500).json({
+    success: false,
+    message: 'Internal Server Error'
+  });
+});</code></pre>
+                </div>
+            </details>
+            
+             <details class="topic-section">
+                <summary class="topic-title">
+                    <h2>🛠️ 5. Best Practices: Configuration, Logging, Security</h2>
+                    <span class="toggle-icon">▶</span>
+                </summary>
+                <div class="topic-content">
+                    [cite_start]<h3>Input Validation [cite: 1]</h3>
+                    [cite_start]<p>คือด่านแรกในการป้องกันข้อมูลขยะและลดโอกาสเกิดข้อผิดพลาด ควรตรวจสอบข้อมูลที่รับเข้ามาทุกครั้งก่อนนำไปประมวลผล [cite: 1]</p>
+                    <pre><code>const validStatuses = ['Available', 'Active', 'Not Ready'];
+if (!validStatuses.includes(req.body.status)) {
+  return res.status(400).json({ error: 'Invalid status' });
+}</code></pre>
+
+                    [cite_start]<h3>Environment Variables (.env) [cite: 1]</h3>
+                    [cite_start]<p>ใช้สำหรับเก็บข้อมูลสำคัญ (เช่น รหัสผ่าน, API keys) แยกออกจาก Source Code เพื่อความปลอดภัยและความยืดหยุ่นในการตั้งค่าแต่ละ Environment (Development vs. Production) [cite: 1]</p>
+                    <pre><code># .env file
+PORT=3001
+DATABASE_URL=mongodb://localhost:27017/callcenter_dev</code></pre>
+                    <pre><code>// server.js
+require('dotenv').config();
+const PORT = process.env.PORT || 3000;</code></pre>
+
+                    [cite_start]<h3>Logging และ Monitoring [cite: 1]</h3>
+                    [cite_start]<p>การบันทึก Log ที่ดีช่วยในการ Debug และตรวจสอบการทำงานของระบบ แนะนำให้ใช้ Library อย่าง Winston เพื่อจัดการ Log อย่างมืออาชีพ [cite: 1]</p>
+                    <pre><code>// ใช้ logger แทน console.log
+logger.info('Agent status updated', { agentId: 'A001', newStatus: 'Available' });
+logger.error('Database connection failed', { error: err.message });</code></pre>
+                    
+                    [cite_start]<h3>Security Checklist [cite: 1]</h3>
+                    <ul>
+                        [cite_start]<li><strong>Input Sanitization:</strong> ป้องกัน XSS โดยการ clean input [cite: 1]</li>
+                        [cite_start]<li><strong>Rate Limiting:</strong> ป้องกันการยิง request ถี่เกินไป [cite: 1]</li>
+                        [cite_start]<li><strong>Security Headers:</strong> ใช้ library อย่าง <code>helmet</code> เพื่อเพิ่มความปลอดภัย [cite: 1]</li>
+                    </ul>
+                </div>
+            </details>
+
+            <details class="topic-section">
+                <summary class="topic-title">
+                    <h2>🏗️ 6. โครงสร้างโปรเจกต์และการทดสอบ</h2>
+                    <span class="toggle-icon">▶</span>
+                </summary>
+                <div class="topic-content">
+                    [cite_start]<h3>Project Structure (MVC Pattern) [cite: 1]</h3>
+                    [cite_start]<p>การจัดโครงสร้างโปรเจกต์ที่ดี (เช่น Model-View-Controller) ช่วยให้โค้ดเป็นระเบียบและบำรุงรักษาง่าย [cite: 1]</p>
+                    <pre><code>/
+├── controllers/  # ส่วนจัดการ Business Logic
+├── models/       # ส่วนจัดการ Data Schema
+├── routes/       # ส่วนจัดการ URL Endpoints
+├── middleware/   # ส่วนจัดการ Middleware
+└── server.js     # ไฟล์หลัก</code></pre>
+
+                    [cite_start]<h3>API Testing with Postman [cite: 1]</h3>
+                    [cite_start]<p>Postman เป็นเครื่องมือสำคัญสำหรับ Backend Developer เพื่อทดสอบว่า API ทำงานได้ถูกต้องตามที่ออกแบบไว้ [cite: 1]</p>
+                    <div class="info-box">
+                        <strong>Workflow:</strong> สร้าง Collection สำหรับโปรเจกต์ -> เพิ่ม Request สำหรับแต่ละ Endpoint -> ตั้งค่า Method, URL, Body -> กดส่งและตรวจสอบ Response
+                    </div>
+                    
+                    [cite_start]<h3>Automated Testing in Postman [cite: 1]</h3>
+                    [cite_start]<p>เราสามารถเขียน Test Script ใน Postman เพื่อตรวจสอบ Response โดยอัตโนมัติได้ [cite: 1]</p>
+                    <pre><code>pm.test("Status code is 200", function () {
+    pm.response.to.have.status(200);
+});
+
+pm.test("Response is successful", function () {
+    const jsonData = pm.response.json();
+    pm.expect(jsonData.success).to.be.true;
+});</code></pre>
+                    
+                    [cite_start]<h3>API Documentation [cite: 1]</h3>
+                    [cite_start]<p>API Documentation คือ "คู่มือ" หรือ "สัญญา" (Contract) ระหว่างทีม Backend และ Frontend แนะนำให้ใช้เครื่องมืออย่าง Postman หรือ Swagger/OpenAPI ในการสร้าง [cite: 1]</p>
+                </div>
+            </details>
+            
+            <details class="topic-section">
+                <summary class="topic-title">
+                    <h2>🚀 7. การ Deployment และหัวข้อขั้นสูง</h2>
+                    <span class="toggle-icon">▶</span>
+                </summary>
+                <div class="topic-content">
+                    [cite_start]<h3>Deployment Considerations [cite: 1]</h3>
+                    [cite_start]<p>Environment สำหรับตอนพัฒนา (Development) และตอนใช้งานจริง (Production) ควรมีการตั้งค่าที่แตกต่างกัน โดยเฉพาะด้านความปลอดภัยและประสิทธิภาพ [cite: 1]</p>
+                     <pre><code>if (process.env.NODE_ENV === 'production') {
+  app.use(compression()); // บีบอัด Response
+  app.use(helmet());      // เพิ่ม Security Headers
+}</code></pre>
+
+                    [cite_start]<h3>Monitoring และ Maintenance [cite: 1]</h3>
+                    [cite_start]<p>หลังจาก Deploy แล้ว ควรมี Health Check Endpoint (เช่น <code>/health</code>) เพื่อให้ระบบ Monitoring สามารถตรวจสอบได้ว่า Server ยังทำงานปกติหรือไม่ [cite: 1]</p>
+                    
+                    [cite_start]<h3>Real-world Challenges [cite: 1]</h3>
+                    <ul>
+                        [cite_start]<li><strong>การจัดการ WebSocket Connections:</strong> ต้องจัดการ event <code>disconnect</code> และมี Heartbeat mechanism เพื่อป้องกัน Memory leak [cite: 1]</li>
+                        [cite_start]<li><strong>Race Conditions:</strong> ป้องกันข้อมูลผิดพลาดเมื่อมีหลาย requests เข้ามาทำงานพร้อมกันโดยใช้ Atomic operations [cite: 1]</li>
+                        [cite_start]<li><strong>Graceful Shutdown:</strong> เขียนโค้ดเพื่อให้ Server ปิดการเชื่อมต่อต่างๆ ให้เรียบร้อยก่อนปิดตัวเองลง [cite: 1]</li>
+                    </ul>
+                </div>
+            </details>
+
+            <div class="topic-section">
+                <div class="topic-title" style="cursor: default;">
+                    <h2>💡 คำถามทบทวนความเข้าใจ</h2>
+                </div>
+                <div class="topic-content" style="padding-top: 20px;">
+                    <div class="qa-card">
+                        [cite_start]<p class="question">Q1: ทำไม Node.js จึงเหมาะกับ Agent Wallboard System ที่ต้องการ Real-time? [cite: 1]</p>
+                        <button class="reveal-btn">คลิกเพื่อดูคำตอบ</button>
+                        <div class="answer">
+                            [cite_start]<p>เพราะ Node.js มีสถาปัตยกรรมแบบ Event-driven และ Non-blocking I/O ซึ่งทำงานร่วมกับ Event Loop ทำให้สามารถจัดการ I/O operations จำนวนมาก (เช่น การรับ-ส่งข้อมูลผ่าน WebSocket) ได้อย่างมีประสิทธิภาพโดยไม่หยุดรอ เหมาะอย่างยิ่งสำหรับการอัปเดตสถานะ Agent แบบทันที [cite: 1]</p>
+                        </div>
+                    </div>
+                    <div class="qa-card">
+                        [cite_start]<p class="question">Q2: REST API กับ WebSocket ต่างกันอย่างไร และควรใช้เมื่อไหร่ใน Case Study ของเรา? [cite: 1]</p>
+                        <button class="reveal-btn">คลิกเพื่อดูคำตอบ</button>
+                        <div class="answer">
+                            <ul>
+                                [cite_start]<li><strong>REST API:</strong> เป็น Request-Response Pattern ที่ Client เป็นผู้เริ่มการสื่อสาร เหมาะสำหรับงาน CRUD ทั่วไป เช่น การดึงข้อมูล Agent ทั้งหมด (<code>GET /api/agents</code>) หรือการ Login (<code>POST /api/login</code>) [cite: 1]</li>
+                                [cite_start]<li><strong>WebSocket:</strong> เป็นการสื่อสารแบบสองทิศทาง (Bidirectional) ที่ Server สามารถ "push" ข้อมูลไปหา Client ได้ เหมาะสำหรับการอัปเดตข้อมูลแบบ Real-time เช่น การแจ้งเตือนเมื่อสถานะ Agent เปลี่ยนแปลง หรือการส่งข้อความ Chat [cite: 1]</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="qa-card">
+                        [cite_start]<p class="question">Q3: Middleware ใน Express.js คืออะไร และยกตัวอย่างการใช้งานที่สำคัญ 2 อย่าง [cite: 1]</p>
+                        <button class="reveal-btn">คลิกเพื่อดูคำตอบ</button>
+                        <div class="answer">
+                            [cite_start]<p>Middleware คือฟังก์ชันที่ทำงานอยู่ระหว่าง Request และ Response เพื่อจัดการ Cross-cutting concerns (งานที่ต้องทำในหลายๆ ที่) [cite: 1]</p>
+                            <p><strong>ตัวอย่างการใช้งาน:</strong></p>
+                            <ol>
+                                [cite_start]<li><strong>Authentication:</strong> Middleware ที่ตรวจสอบ Token ใน Header เพื่อยืนยันว่าผู้ใช้มีสิทธิ์เข้าถึง Endpoint นั้นหรือไม่ [cite: 1]</li>
+                                [cite_start]<li><strong>Logging:</strong> Middleware ที่บันทึกรายละเอียดของทุก Request ที่เข้ามาในระบบ (เช่น IP, URL, Method) เพื่อใช้ในการตรวจสอบและ Debug [cite: 1]</li>
+                                [cite_start]<li><strong>CORS:</strong> Middleware ที่จัดการนโยบาย Cross-Origin Resource Sharing เพื่อให้ Frontend สามารถเรียกใช้ API ได้ [cite: 1]</li>
+                            </ol>
+                        </div>
+                    </div>
+                    <div class="qa-card">
+                        [cite_start]<p class="question">Q4: ทำไมการใช้ Environment Variables (.env) จึงมีความสำคัญอย่างยิ่งในการพัฒนา Backend? [cite: 1]</p>
+                        <button class="reveal-btn">คลิกเพื่อดูคำตอบ</button>
+                        <div class="answer">
+                            [cite_start]<p>เพราะช่วยแยกข้อมูลการตั้งค่า (Configuration) และข้อมูลสำคัญ (Sensitive data) ออกจาก Source Code ซึ่งมีข้อดีหลายอย่าง: [cite: 1]</p>
+                            <ul>
+                                [cite_start]<li><strong>Security:</strong> ไม่ทำให้รหัสผ่าน, API Keys หรือ Secret ต่างๆ หลุดขึ้นไปบน Git Repository [cite: 1]</li>
+                                [cite_start]<li><strong>Flexibility:</strong> สามารถตั้งค่าให้แตกต่างกันในแต่ละ Environment (เช่น Development, Testing, Production) ได้ง่ายโดยไม่ต้องแก้ไขโค้ด [cite: 1]</li>
+                                [cite_start]<li><strong>Deployment:</strong> ทำให้การ Deploy Application ง่ายขึ้น เพราะสามารถ inject ค่า config ที่ถูกต้องสำหรับแต่ละ Server ได้เลย [cite: 1]</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Accordion toggle
+            const detailsElements = document.querySelectorAll('.topic-section');
+            detailsElements.forEach(detail => {
+                const summary = detail.querySelector('.topic-title');
+                summary.addEventListener('click', (event) => {
+                    // This prevents the default toggle behavior if we want to handle it manually
+                    // For now, we let the default behavior happen.
+                });
+            });
+
+            // Reveal answer buttons
+            const revealButtons = document.querySelectorAll('.reveal-btn');
+            revealButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const answer = button.nextElementSibling;
+                    if (answer.style.display === 'block') {
+                        answer.style.display = 'none';
+                        button.textContent = 'คลิกเพื่อดูคำตอบ';
+                    } else {
+                        answer.style.display = 'block';
+                        button.textContent = 'ซ่อนคำตอบ';
+                    }
+                });
+            });
+
+            // Copy code buttons
+            const codeBlocks = document.querySelectorAll('pre');
+            codeBlocks.forEach(block => {
+                const copyButton = document.createElement('button');
+                copyButton.className = 'copy-btn';
+                copyButton.textContent = 'Copy';
+                block.appendChild(copyButton);
+
+                copyButton.addEventListener('click', () => {
+                    const code = block.querySelector('code').innerText;
+                    navigator.clipboard.writeText(code).then(() => {
+                        copyButton.textContent = 'Copied!';
+                        setTimeout(() => {
+                            copyButton.textContent = 'Copy';
+                        }, 2000);
+                    });
+                });
+            });
+            
+            // Progress bar
+            const progressBar = document.getElementById('progress-bar');
+            window.addEventListener('scroll', () => {
+                const scrollTop = document.documentElement.scrollTop || document.body.scrollTop;
+                const scrollHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+                const scrollPercent = (scrollTop / scrollHeight) * 100;
+                progressBar.style.width = scrollPercent + '%';
+            });
+
+        });
+    </script>
+</body>
+</html>
