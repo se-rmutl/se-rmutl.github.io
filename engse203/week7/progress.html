@@ -1,0 +1,1563 @@
+
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ENGSE203 | Lab Progress Assistant</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap');
+
+        :root {
+            --bg-color: #1a1b26;
+            --main-color: #c0caf5;
+            --accent-color: #7aa2f7;
+            --card-bg: #000000;
+            --border-color: #414868;
+            --header-bg: #1f2335;
+            --progress-bar-bg: #414868;
+            --progress-bar-fill: #7dcfff;
+            --code-bg: #292e42;
+            --success-color: #9ece6a;
+            --error-color: #f7768e;
+        }
+
+        body {
+            font-family: 'Sarabun', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--main-color);
+            margin: 0;
+            padding: 20px;
+            line-height: 1.7;
+        }
+
+        header {
+            background-color: var(--header-bg);
+            padding: 20px 30px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        header h1 {
+            margin: 0;
+            color: var(--accent-color);
+            font-size: 2em;
+        }
+        
+        header h1 span {
+            font-size: 0.7em;
+            color: var(--main-color);
+            opacity: 0.8;
+        }
+
+        header p {
+            margin: 5px 0 15px 0;
+            font-size: 1.1em;
+            opacity: 0.8;
+        }
+
+        .progress-container {
+            width: 100%;
+            background-color: var(--progress-bar-bg);
+            border-radius: 20px;
+            overflow: hidden;
+            height: 25px;
+            border: 1px solid #545c7e;
+        }
+
+        .progress-bar {
+            width: 0%;
+            height: 100%;
+            background: linear-gradient(90deg, #7aa2f7, #7dcfff);
+            transition: width 0.4s ease-in-out;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #1a1b26;
+            font-weight: 700;
+            font-size: 0.8em;
+        }
+        
+        #progress-text {
+            font-weight: 600;
+            margin-top: 8px;
+            text-align: right;
+        }
+
+        .container {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 20px;
+            height: calc(100vh - 180px);
+        }
+
+        .column {
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            padding: 25px;
+            border: 1px solid var(--border-color);
+            overflow-y: auto;
+        }
+        
+        .column h2 {
+            color: var(--accent-color);
+            margin-top: 0;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 10px;
+        }
+
+        /* Checklist Styles */
+        .checklist-section {
+            margin-bottom: 25px;
+        }
+
+        .checklist-section h3 {
+            color: var(--main-color);
+            margin-bottom: 15px;
+            padding-left: 10px;
+            border-left: 3px solid var(--progress-bar-fill);
+        }
+        
+        .task-item {
+            display: block;
+            position: relative;
+            padding: 10px 15px 10px 45px;
+            margin: 0 0 8px 0;
+            cursor: pointer;
+            font-size: 1.05em;
+            border-radius: 8px;
+            background-color: var(--code-bg);
+            transition: background-color 0.2s;
+        }
+        
+        .task-item:hover {
+            background-color: #3b4261;
+        }
+
+        .task-item input {
+            position: absolute;
+            opacity: 0;
+            cursor: pointer;
+            height: 0;
+            width: 0;
+        }
+
+        .checkmark {
+            position: absolute;
+            top: 50%;
+            left: 15px;
+            transform: translateY(-50%);
+            height: 22px;
+            width: 22px;
+            background-color: var(--bg-color);
+            border: 2px solid var(--border-color);
+            border-radius: 5px;
+        }
+        
+        .task-item:hover input ~ .checkmark {
+            background-color: #545c7e;
+        }
+
+        .task-item input:checked ~ .checkmark {
+            background-color: var(--success-color);
+            border-color: var(--success-color);
+        }
+
+        .checkmark:after {
+            content: "";
+            position: absolute;
+            display: none;
+        }
+
+        .task-item input:checked ~ .checkmark:after {
+            display: block;
+        }
+        
+        .task-item .checkmark:after {
+            left: 7px;
+            top: 3px;
+            width: 5px;
+            height: 10px;
+            border: solid white;
+            border-width: 0 3px 3px 0;
+            transform: rotate(45deg);
+        }
+
+        .task-item input:checked ~ .task-label {
+            text-decoration: line-through;
+            opacity: 0.6;
+        }
+        
+        .task-label-highlight {
+            font-weight: 700;
+            color: var(--progress-bar-fill);
+        }
+
+
+        /* Document Styles */
+        .document-column h1, .document-column h2, .document-column h3, .document-column h4 {
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 8px;
+            margin-top: 30px;
+        }
+        
+        .document-column hr {
+            border: none;
+            border-top: 2px solid var(--border-color);
+            margin: 40px 0;
+        }
+
+        .document-column code {
+            font-family: 'Courier New', Courier, monospace;
+            background-color: var(--code-bg);
+            padding: 3px 6px;
+            border-radius: 5px;
+            font-size: 0.9em;
+        }
+
+        .document-column pre {
+            background-color: var(--code-bg);
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            overflow-x: auto;
+            font-size: 0.95em;
+        }
+        
+        .document-column pre code {
+            background: none;
+            padding: 0;
+        }
+
+        .document-column ul {
+            padding-left: 20px;
+        }
+        
+        .document-column li {
+            margin-bottom: 8px;
+        }
+        
+        .document-column a {
+            color: var(--accent-color);
+            text-decoration: none;
+        }
+        .document-column a:hover {
+            text-decoration: underline;
+        }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .container {
+                grid-template-columns: 1fr;
+                height: auto;
+            }
+            .column {
+                max-height: 80vh;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>🚀 Agent Wallboard API <span>- Phase 1 Lab Progress</span></h1>
+        <p>ผู้ช่วยติดตามความคืบหน้า: ทำภารกิจให้สำเร็จและดู Progress ของคุณเติบโต!</p>
+        <div class="progress-container">
+            <div id="progressBar" class="progress-bar">0%</div>
+        </div>
+        <div id="progressText">0 / 15 Tasks Completed</div>
+    </header>
+
+    <main class="container">
+        <div class="column checklist-column">
+            <h2>✅ Your Mission Checklist</h2>
+            
+            <div class="checklist-section">
+                <h3>Hour 1: Setup & Foundation (4)</h3>
+                <label class="task-item">
+                    <input type="checkbox" class="task-checkbox">
+                    <span class="checkmark"></span>
+                    <span class="task-label">
+                        <span class="task-label-highlight">[Step 1-2]</span> Initialized Project & Structure
+                    </span>
+                </label>
+                <label class="task-item">
+                    <input type="checkbox" class="task-checkbox">
+                    <span class="checkmark"></span>
+                    <span class="task-label">
+                        <span class="task-label-highlight">[Step 3-4]</span> Configured .env, .gitignore & package.json
+                    </span>
+                </label>
+                 <label class="task-item">
+                    <input type="checkbox" class="task-checkbox">
+                    <span class="checkmark"></span>
+                    <span class="task-label">
+                        <span class="task-label-highlight">[Step 5]</span> Created Core Constants & API Response Helpers
+                    </span>
+                </label>
+                <label class="task-item">
+                    <input type="checkbox" class="task-checkbox">
+                    <span class="checkmark"></span>
+                    <span class="task-label">
+                        <span class="task-label-highlight">[Step 6]</span> Created Enhanced Agent Model
+                    </span>
+                </label>
+            </div>
+            
+            <div class="checklist-section">
+                <h3>Hour 2-3: Core Implementation (5)</h3>
+                <label class="task-item">
+                    <input type="checkbox" class="task-checkbox">
+                    <span class="checkmark"></span>
+                    <span class="task-label">
+                        <span class="task-label-highlight">[TODO #1]</span> Completed `getAllAgents` Controller
+                    </span>
+                </label>
+                <label class="task-item">
+                    <input type="checkbox" class="task-checkbox">
+                    <span class="checkmark"></span>
+                    <span class="task-label">
+                       <span class="task-label-highlight">[TODO #2]</span> Completed `createAgent` Controller
+                    </span>
+                </label>
+                <label class="task-item">
+                    <input type="checkbox" class="task-checkbox">
+                    <span class="checkmark"></span>
+                    <span class="task-label">
+                        <span class="task-label-highlight">[TODO #3]</span> Completed `updateAgentStatus` Controller (Advanced)
+                    </span>
+                </label>
+                <label class="task-item">
+                    <input type="checkbox" class="task-checkbox">
+                    <span class="checkmark"></span>
+                    <span class="task-label">
+                        <span class="task-label-highlight">[TODO #4]</span> Completed `statusUpdate` Joi Schema
+                    </span>
+                </label>
+                <label class="task-item">
+                    <input type="checkbox" class="task-checkbox">
+                    <span class="checkmark"></span>
+                    <span class="task-label">
+                        <span class="task-label-highlight">[TODO #5]</span> Completed `validateStatusUpdate` Middleware
+                    </span>
+                </label>
+            </div>
+
+            <div class="checklist-section">
+                <h3>Hour 4: Testing & Finalization (6)</h3>
+                 <label class="task-item">
+                    <input type="checkbox" class="task-checkbox">
+                    <span class="checkmark"></span>
+                    <span class="task-label">
+                        <span class="task-label-highlight">[Step 10-11]</span> Integrated All Routes & Server
+                    </span>
+                </label>
+                <label class="task-item">
+                    <input type="checkbox" class="task-checkbox">
+                    <span class="checkmark"></span>
+                    <span class="task-label">
+                       <span class="task-label-highlight">[Test Case 1]</span> System Health & Docs Endpoints
+                    </span>
+                </label>
+                <label class="task-item">
+                    <input type="checkbox" class="task-checkbox">
+                    <span class="checkmark"></span>
+                    <span class="task-label">
+                        <span class="task-label-highlight">[Test Case 2-3]</span> Get All & Create Agent
+                    </span>
+                </label>
+                <label class="task-item">
+                    <input type="checkbox" class="task-checkbox">
+                    <span class="checkmark"></span>
+                    <span class="task-label">
+                        <span class="task-label-highlight">[Test Case 4]</span> Validation & Error Handling
+                    </span>
+                </label>
+                <label class="task-item">
+                    <input type="checkbox" class="task-checkbox">
+                    <span class="checkmark"></span>
+                    <span class="task-label">
+                        <span class="task-label-highlight">[Step 13]</span> Status Management Logic
+                    </span>
+                </label>
+                <label class="task-item">
+                    <input type="checkbox" class="task-checkbox">
+                    <span class="checkmark"></span>
+                    <span class="task-label">
+                        <span class="task-label-highlight">[Step 14]</span> Completed `README.md` Documentation
+                    </span>
+                </label>
+            </div>
+        </div>
+
+        <div class="column document-column">
+            <h2>📖 Lab Guide & Reference</h2>
+            <div id="document-content">
+<h1>Phase 1 Enhanced (Revised): Agent Wallboard API with Professional Structure</h1>
+<h2>📋 <strong>Phase 1 ภาพรวม</strong></h2>
+<h3>🎯 <strong>Phase 1 ในระบบ Agent Wallboard ทั้งหมด</strong></h3>
+<pre><code>┌─────────────────────────────────┐
+│    Frontend (Desktop Apps)      │ ← Phase 4: Electron.js
+│  • Agent App • Supervisor App   │   
+└─────────────┬───────────────────┘
+              │ HTTP/REST + WebSocket  
+              ▼
+┌─────────────────────────────────┐
+│    Backend API (Phase 1 ตรงนี้!) │ ← Node.js + Express
+│  • REST APIs • Validation       │   
+└─────────────┬───────────────────┘
+              │ Database Connections
+              ▼  
+┌─────────────────────────────────┐
+│    Database (Phase 2-3)         │ ← MSSQL + MongoDB
+└─────────────────────────────────┘</code></pre>
+<h3>📚 <strong>สิ่งที่จะได้เรียนรู้ใน Phase 1:</strong></h3>
+<ul>
+<li>✅ <strong>Professional Node.js API Development</strong></li>
+<li>✅ <strong>MVC Architecture Pattern</strong></li>
+<li>✅ <strong>Input Validation with Joi</strong></li>
+<li>✅ <strong>Error Handling &amp; Middleware</strong></li>
+<li>✅ <strong>API Testing &amp; Documentation</strong></li>
+<li>✅ <strong>Code Organization Best Practices</strong></li>
+</ul>
+<h3>⏰ <strong>Time Allocation (4.5 ชั่วโมง):</strong></h3>
+<ul>
+<li><strong>Hour 1:</strong> Setup + Project Structure (70 นาที)</li>
+<li><strong>Hour 2:</strong> Models + Controllers (70 นาที)</li>
+<li><strong>Hour 3:</strong> Validation + Error Handling (70 นาที)</li>
+<li><strong>Hour 4:</strong> Testing + Integration (70 นาที)</li>
+</ul>
+<hr>
+<h2>⏰ <strong>HOUR 1: Project Setup &amp; Structure (70 นาที)</strong></h2>
+<h3>🚀 <strong>Step 1: Project Initialization (15 นาที)</strong></h3>
+<pre><code class="language-bash"># 1. สร้างโปรเจค
+mkdir agent-wallboard-api
+cd agent-wallboard-api
+
+# 2. Initialize npm
+npm init -y
+
+# 3. ติดตั้ง dependencies
+npm install express cors dotenv joi helmet morgan
+npm install --save-dev nodemon
+
+# 4. สร้าง folder structure
+mkdir controllers middleware models routes utils
+touch server.js .env .gitignore README.md
+</code></pre>
+<h3>📁 <strong>Step 2: Professional Project Structure (15 นาที)</strong></h3>
+<pre><code>agent-wallboard-api/
+├── 📁 controllers/          # Business logic
+│   └── agentController.js   
+├── 📁 middleware/          # Request processing
+│   ├── validation.js       
+│   └── errorHandler.js     
+├── 📁 models/             # Data models  
+│   └── Agent.js            
+├── 📁 routes/             # API routes
+│   ├── agents.js           
+│   └── index.js            
+├── 📁 utils/              # Helper functions
+│   ├── constants.js        
+│   └── apiResponse.js      
+├── 📄 server.js           # Main application
+├── 📄 package.json
+├── 📄 .env                # Environment variables
+├── 📄 .env.example        # Environment template
+└── 📄 README.md          # Documentation
+</code></pre>
+<h3>⚙️ <strong>Step 3: Environment Configuration (10 นาที)</strong></h3>
+<p><strong>สร้างไฟล์ <code>.env.example</code>:</strong></p>
+<pre><code class="language-env"># Server Configuration
+PORT=3001
+NODE_ENV=development
+
+# CORS Configuration  
+FRONTEND_URL=http://localhost:3000
+
+# Future: Database Configuration (Phase 2)
+# DB_CONNECTION_STRING=your-database-url
+# JWT_SECRET=your-super-secret-key
+</code></pre>
+<p><strong>สร้างไฟล์ <code>.env</code>:</strong></p>
+<pre><code class="language-env">PORT=3001
+NODE_ENV=development
+FRONTEND_URL=http://localhost:3000
+</code></pre>
+<p><strong>สร้างไฟล์ <code>.gitignore</code>:</strong></p>
+<pre><code class="language-gitignore">node_modules/
+.env
+.DS_Store
+*.log
+logs/
+dist/
+</code></pre>
+<h3>📦 <strong>Step 4: Package.json Scripts (10 นาที)</strong></h3>
+<p><strong>อัพเดท <code>package.json</code>:</strong></p>
+<pre><code class="language-json">{
+  "name": "agent-wallboard-api-enhanced",
+  "version": "1.0.0",
+  "description": "Agent Wallboard API with Professional Structure",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "test": "echo 'Run Postman tests - see README.md'",
+    "docs": "echo 'API Documentation: http://localhost:3001/api/docs'"
+  },
+  "keywords": ["agent", "wallboard", "api", "callcenter"],
+  "author": "Your Name",
+  "dependencies": {
+    "express": "^4.18.2", 
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "joi": "^17.11.0",
+    "helmet": "^7.1.0",
+    "morgan": "^1.10.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  }
+}
+</code></pre>
+<h3>🔧 <strong>Step 5: Core Constants (20 นาที)</strong></h3>
+<p><strong>สร้างไฟล์ <code>utils/constants.js</code>:</strong></p>
+<pre><code class="language-javascript">// utils/constants.js - ค่าคงที่ของระบบ
+const AGENT_STATUS = {
+  AVAILABLE: 'Available',
+  BUSY: 'Busy',
+  WRAP: 'Wrap', 
+  BREAK: 'Break',
+  NOT_READY: 'Not Ready',
+  OFFLINE: 'Offline'
+};
+
+const DEPARTMENTS = [
+  'Sales',
+  'Support', 
+  'Technical',
+  'General',
+  'Supervisor'
+];
+
+// กฎการเปลี่ยนสถานะที่อนุญาต
+const VALID_STATUS_TRANSITIONS = {
+  'Available': ['Busy', 'Break', 'Not Ready', 'Offline'],
+  'Busy': ['Available', 'Wrap', 'Not Ready'],
+  'Wrap': ['Available', 'Not Ready'],
+  'Break': ['Available', 'Not Ready'],
+  'Not Ready': ['Available', 'Offline'],
+  'Offline': ['Available']
+};
+
+const API_MESSAGES = {
+  AGENT_NOT_FOUND: 'Agent not found',
+  AGENT_CREATED: 'Agent created successfully',
+  AGENT_UPDATED: 'Agent updated successfully',
+  AGENT_DELETED: 'Agent deleted successfully',
+  STATUS_UPDATED: 'Agent status updated successfully',
+  VALIDATION_FAILED: 'Validation failed',
+  INTERNAL_ERROR: 'Internal server error'
+};
+
+module.exports = { 
+  AGENT_STATUS, 
+  DEPARTMENTS, 
+  VALID_STATUS_TRANSITIONS,
+  API_MESSAGES
+};
+</code></pre>
+<p><strong>สร้างไฟล์ <code>utils/apiResponse.js</code>:</strong></p>
+<pre><code class="language-javascript">// utils/apiResponse.js - Consistent API responses
+const sendSuccess = (res, message, data = null, statusCode = 200) => {
+  const response = {
+    success: true,
+    message,
+    timestamp: new Date().toISOString()
+  };
+
+  if (data !== null) {
+    if (Array.isArray(data)) {
+      response.count = data.length;
+    }
+    response.data = data;
+  }
+
+  return res.status(statusCode).json(response);
+};
+
+const sendError = (res, message, statusCode = 400, errors = null) => {
+  const response = {
+    success: false,
+    message,
+    timestamp: new Date().toISOString()
+  };
+
+  if (errors) {
+    response.errors = errors;
+  }
+
+  return res.status(statusCode).json(response);
+};
+
+module.exports = { sendSuccess, sendError };
+</code></pre>
+<hr>
+<h2>⏰ <strong>HOUR 2: Models &amp; Controllers (70 นาที)</strong></h2>
+<h3>📊 <strong>Step 6: Enhanced Agent Model (25 นาที - อธิบาย + ให้ code สำเร็จ)</strong></h3>
+<p><strong>สร้างไฟล์ <code>models/Agent.js</code>:</strong></p>
+<pre><code class="language-javascript">// models/Agent.js - Enhanced Agent model with methods
+class Agent {
+  constructor(data) {
+    this.id = data.id || this.generateId();
+    this.agentCode = data.agentCode;
+    this.name = data.name;
+    this.email = data.email;
+    this.department = data.department || 'General';
+    this.skills = data.skills || [];
+    this.status = data.status || 'Available';
+    this.isActive = data.isActive !== undefined ? data.isActive : true;
+    this.loginTime = data.loginTime || null;
+    this.lastStatusChange = new Date();
+    this.statusHistory = data.statusHistory || [];
+    this.createdAt = data.createdAt || new Date();
+    this.updatedAt = new Date();
+  }
+
+  generateId() {
+    return Date.now() + Math.random().toString(36).substr(2, 9);
+  }
+
+  updateStatus(newStatus, reason = null) {
+    // เก็บประวัติการเปลี่ยนสถานะ
+    this.statusHistory.push({
+      from: this.status,
+      to: newStatus,
+      reason,
+      timestamp: new Date()
+    });
+
+    this.status = newStatus;
+    this.lastStatusChange = new Date();
+    this.updatedAt = new Date();
+  }
+
+  toJSON() {
+    return {
+      id: this.id,
+      agentCode: this.agentCode,
+      name: this.name,
+      email: this.email,
+      department: this.department,
+      skills: this.skills,
+      status: this.status,
+      isActive: this.isActive,
+      loginTime: this.loginTime,
+      lastStatusChange: this.lastStatusChange,
+      createdAt: this.createdAt,
+      updatedAt: this.updatedAt
+    };
+  }
+
+  // สำหรับ admin ดูประวัติ
+  getStatusHistory() {
+    return this.statusHistory;
+  }
+}
+
+// In-memory storage (Phase 1) -&gt; จะเปลี่ยนเป็น Database ใน Phase 2
+const agents = new Map();
+
+function initializeSampleData() {
+  const sampleAgents = [
+    {
+      agentCode: 'A001',
+      name: 'John Doe', 
+      email: 'john.doe@company.com',
+      department: 'Sales',
+      skills: ['Thai', 'English', 'Sales'],
+      status: 'Available'
+    },
+    {
+      agentCode: 'A002',
+      name: 'Jane Smith',
+      email: 'jane.smith@company.com', 
+      department: 'Support',
+      skills: ['Thai', 'Technical Support'],
+      status: 'Busy'
+    },
+    {
+      agentCode: 'S001',
+      name: 'Sarah Wilson',
+      email: 'sarah.wilson@company.com',
+      department: 'Technical', 
+      skills: ['English', 'Technical', 'Supervisor'],
+      status: 'Available'
+    }
+  ];
+
+  sampleAgents.forEach(data =&gt; {
+    const agent = new Agent(data);
+    agents.set(agent.id, agent);
+  });
+
+  console.log(`✅ Initialized ${agents.size} sample agents`);
+}
+
+// Initialize sample data
+initializeSampleData();
+
+module.exports = { Agent, agents };
+</code></pre>
+<h3>🎮 <strong>Step 7: Controllers - นักศึกษาทำเอง (30 นาที)</strong></h3>
+<p><strong>สร้างไฟล์ <code>controllers/agentController.js</code>:</strong></p>
+<pre><code class="language-javascript">// controllers/agentController.js - Business logic ที่แยกจาก routes
+const { Agent, agents } = require('../models/Agent');
+const { AGENT_STATUS, VALID_STATUS_TRANSITIONS, API_MESSAGES } = require('../utils/constants');
+const { sendSuccess, sendError } = require('../utils/apiResponse');
+
+const agentController = {
+  // ✅ ให้ code สำเร็จเป็นตัวอย่าง
+  // GET /api/agents/:id
+  getAgentById: (req, res) => {
+    try {
+      const { id } = req.params;
+      const agent = agents.get(id);
+
+      if (!agent) {
+        return sendError(res, API_MESSAGES.AGENT_NOT_FOUND, 404);
+      }
+
+      console.log(`📋 Retrieved agent: ${agent.agentCode}`);
+      return sendSuccess(res, 'Agent retrieved successfully', agent.toJSON());
+    } catch (error) {
+      console.error('Error in getAgentById:', error);
+      return sendError(res, API_MESSAGES.INTERNAL_ERROR, 500);
+    }
+  },
+
+  // 🔄 TODO #1: นักศึกษาทำเอง (10 นาที)
+  // GET /api/agents
+  getAllAgents: (req, res) => {
+    try {
+      // TODO: ดึงข้อมูล agents ทั้งหมดจาก Map
+      // Hint: ใช้ Array.from(agents.values())
+      
+      // TODO: Filter ตาม query parameters
+      // Hint: req.query.status และ req.query.department
+      
+      // TODO: ส่ง response ด้วย sendSuccess
+      // Hint: sendSuccess(res, message, data)
+      
+      return sendError(res, 'TODO: Implement getAllAgents function', 501);
+    } catch (error) {
+      console.error('Error in getAllAgents:', error);
+      return sendError(res, API_MESSAGES.INTERNAL_ERROR, 500);
+    }
+  },
+
+  // 🔄 TODO #2: นักศึกษาทำเอง (15 นาที)  
+  // POST /api/agents
+  createAgent: (req, res) => {
+    try {
+      const agentData = req.body;
+
+      // TODO: ตรวจสอบว่า agentCode ซ้ำไหม
+      // Hint: ใช้ Array.from(agents.values()).find()
+      
+      // TODO: สร้าง Agent ใหม่
+      // Hint: const newAgent = new Agent(agentData);
+      
+      // TODO: เก็บลง Map
+      // Hint: agents.set(newAgent.id, newAgent);
+      
+      // TODO: ส่ง response พร้อม status 201
+      
+      return sendError(res, 'TODO: Implement createAgent function', 501);
+    } catch (error) {
+      console.error('Error in createAgent:', error);
+      return sendError(res, API_MESSAGES.INTERNAL_ERROR, 500);
+    }
+  },
+
+  // ✅ ให้ code สำเร็จเป็นตัวอย่าง
+  // PUT /api/agents/:id
+  updateAgent: (req, res) => {
+    try {
+      const { id } = req.params;
+      const agent = agents.get(id);
+
+      if (!agent) {
+        return sendError(res, API_MESSAGES.AGENT_NOT_FOUND, 404);
+      }
+
+      const { name, email, department, skills } = req.body;
+      
+      // Update allowed fields
+      if (name) agent.name = name;
+      if (email) agent.email = email;
+      if (department) agent.department = department;
+      if (skills) agent.skills = skills;
+      
+      agent.updatedAt = new Date();
+      
+      console.log(`✏️ Updated agent: ${agent.agentCode}`);
+      return sendSuccess(res, API_MESSAGES.AGENT_UPDATED, agent.toJSON());
+    } catch (error) {
+      console.error('Error in updateAgent:', error);
+      return sendError(res, API_MESSAGES.INTERNAL_ERROR, 500);
+    }
+  },
+
+  // 🔄 TODO #3: นักศึกษาทำเอง (15 นาที - ยากสุด)
+  // PATCH /api/agents/:id/status  
+  updateAgentStatus: (req, res) => {
+    try {
+      const { id } = req.params;
+      const { status, reason } = req.body;
+
+      // TODO: หา agent จาก id
+      // TODO: ตรวจสอบว่า agent มีอยู่ไหม
+      // TODO: validate status ด้วย AGENT_STATUS  
+      // TODO: ตรวจสอบ valid transition ด้วย VALID_STATUS_TRANSITIONS
+      // TODO: เรียก agent.updateStatus(status, reason)
+      // TODO: ส่ง response กลับ
+
+      return sendError(res, 'TODO: Implement updateAgentStatus function', 501);
+    } catch (error) {
+      console.error('Error in updateAgentStatus:', error);
+      return sendError(res, API_MESSAGES.INTERNAL_ERROR, 500);
+    }
+  },
+
+  // ✅ ให้ code สำเร็จ
+  // DELETE /api/agents/:id
+  deleteAgent: (req, res) => {
+    try {
+      const { id } = req.params;
+      const agent = agents.get(id);
+
+      if (!agent) {
+        return sendError(res, API_MESSAGES.AGENT_NOT_FOUND, 404);
+      }
+
+      agents.delete(id);
+      
+      console.log(`🗑️ Deleted agent: ${agent.agentCode} - ${agent.name}`);
+      return sendSuccess(res, API_MESSAGES.AGENT_DELETED);
+    } catch (error) {
+      console.error('Error in deleteAgent:', error);
+      return sendError(res, API_MESSAGES.INTERNAL_ERROR, 500);
+    }
+  },
+
+  // ✅ ให้ code สำเร็จ - Dashboard API
+  // GET /api/agents/status/summary
+  getStatusSummary: (req, res) => {
+    try {
+      const agentList = Array.from(agents.values());
+      const totalAgents = agentList.length;
+      
+      const statusCounts = {};
+      Object.values(AGENT_STATUS).forEach(status => {
+        statusCounts[status] = agentList.filter(agent => agent.status === status).length;
+      });
+
+      const statusPercentages = {};
+      Object.entries(statusCounts).forEach(([status, count]) => {
+        statusPercentages[status] = totalAgents > 0 ? Math.round((count / totalAgents) * 100) : 0;
+      });
+
+      const summary = {
+        totalAgents,
+        statusCounts,
+        statusPercentages,
+        lastUpdated: new Date().toISOString()
+      };
+
+      return sendSuccess(res, 'Status summary retrieved successfully', summary);
+    } catch (error) {
+      console.error('Error in getStatusSummary:', error);
+      return sendError(res, API_MESSAGES.INTERNAL_ERROR, 500);
+    }
+  }
+};
+
+module.exports = agentController;
+</code></pre>
+<h3>📝 <strong>TODO Completion Guide สำหรับนักศึกษา:</strong></h3>
+<h4><strong>TODO #1: getAllAgents (10 นาที)</strong></h4>
+<pre><code class="language-javascript">// Solution hints:
+getAllAgents: (req, res) => {
+  try {
+    const { status, department } = req.query;
+    let agentList = Array.from(agents.values());
+
+    // Filter by status
+    if (status) {
+      agentList = agentList.filter(agent => agent.status === status);
+    }
+    
+    // Filter by department  
+    if (department) {
+      agentList = agentList.filter(agent => agent.department === department);
+    }
+
+    console.log(`📋 Retrieved ${agentList.length} agents`);
+    return sendSuccess(res, 'Agents retrieved successfully', 
+      agentList.map(agent => agent.toJSON())
+    );
+  } catch (error) {
+    console.error('Error in getAllAgents:', error);
+    return sendError(res, API_MESSAGES.INTERNAL_ERROR, 500);
+  }
+}
+</code></pre>
+<hr>
+<h2>⏰ <strong>HOUR 3: Validation &amp; Error Handling (70 นาที)</strong></h2>
+<h3>✅ <strong>Step 8: Joi Validation - ผสมระหว่างให้ code และให้ทำเอง (35 นาที)</strong></h3>
+<p><strong>สร้างไฟล์ <code>middleware/validation.js</code>:</strong></p>
+<pre><code class="language-javascript">// middleware/validation.js - Professional validation with Joi
+const Joi = require('joi');
+const { AGENT_STATUS, DEPARTMENTS } = require('../utils/constants');
+const { sendError } = require('../utils/apiResponse');
+
+// Validation schemas
+const schemas = {
+  // ✅ ให้ code สำเร็จเป็นตัวอย่าง
+  agent: Joi.object({
+    agentCode: Joi.string()
+      .pattern(/^[A-Z]\d{3}$/)
+      .required()
+      .messages({
+        'string.pattern.base': 'Agent code must be in format A001 (letter + 3 digits)',
+        'any.required': 'Agent code is required'
+      }),
+    
+    name: Joi.string()
+      .min(2)
+      .max(100)
+      .required()
+      .messages({
+        'string.min': 'Name must be at least 2 characters',
+        'string.max': 'Name cannot exceed 100 characters',
+        'any.required': 'Name is required'
+      }),
+    
+    email: Joi.string()
+      .email()
+      .required()
+      .messages({
+        'string.email': 'Please provide a valid email address',
+        'any.required': 'Email is required'
+      }),
+    
+    department: Joi.string()
+      .valid(...DEPARTMENTS)
+      .default('General')
+      .messages({
+        'any.only': `Department must be one of: ${DEPARTMENTS.join(', ')}`
+      }),
+    
+    skills: Joi.array()
+      .items(Joi.string().min(2).max(50))
+      .default([])
+      .messages({
+        'array.base': 'Skills must be an array of strings'
+      })
+  }),
+
+  // 🔄 TODO #4: นักศึกษาทำเอง (15 นาที)
+  statusUpdate: Joi.object({
+    // TODO: สร้าง validation สำหรับ status update
+    // Requirements:
+    // 1. status ต้องเป็น valid AGENT_STATUS
+    // 2. reason เป็น optional string ไม่เกิน 200 ตัวอักษร
+    // 3. ใส่ error messages ที่เหมาะสม
+    
+    // Hint structure:
+    // status: Joi.string().valid(...).required().messages({...}),
+    // reason: Joi.string().max(200).optional().messages({...})
+  })
+};
+
+// Validation middleware functions
+const validateAgent = (req, res, next) => {
+  const { error, value } = schemas.agent.validate(req.body, {
+    abortEarly: false,
+    stripUnknown: true
+  });
+
+  if (error) {
+    const validationErrors = error.details.map(detail => ({
+      field: detail.path[0],
+      message: detail.message
+    }));
+
+    console.log('❌ Validation failed:', validationErrors);
+    return sendError(res, 'Validation failed', 400, validationErrors);
+  }
+
+  req.body = value;
+  next();
+};
+
+// 🔄 TODO #5: นักศึกษาทำเอง (10 นาที)
+const validateStatusUpdate = (req, res, next) => {
+  // TODO: implement ตาม pattern ของ validateAgent
+  // Hint: ใช้ schemas.statusUpdate แทน schemas.agent
+  
+  return sendError(res, 'TODO: Implement validateStatusUpdate middleware', 501);
+};
+
+module.exports = {
+  validateAgent,
+  validateStatusUpdate
+};
+</code></pre>
+<h3>⚠️ <strong>Step 9: Error Handling (20 นาที - ให้ code สำเร็จ)</strong></h3>
+<p><strong>สร้างไฟล์ <code>middleware/errorHandler.js</code>:</strong></p>
+<pre><code class="language-javascript">// middleware/errorHandler.js - Professional error handling
+const { sendError } = require('../utils/apiResponse');
+
+const globalErrorHandler = (err, req, res, next) => {
+  console.error('🚨 Global Error Handler:', {
+    error: err.message,
+    stack: process.env.NODE_ENV === 'development' ? err.stack : undefined,
+    url: req.originalUrl,
+    method: req.method
+  });
+
+  // Joi validation errors
+  if (err.isJoi) {
+    const validationErrors = err.details.map(detail => ({
+      field: detail.path[0],
+      message: detail.message
+    }));
+    return sendError(res, 'Validation failed', 400, validationErrors);
+  }
+
+  // Default server error
+  const message = process.env.NODE_ENV === 'production' 
+    ? 'Internal server error' 
+    : err.message;
+    
+  return sendError(res, message, 500);
+};
+
+const notFoundHandler = (req, res) => {
+  console.log(`🔍 404 Not Found: ${req.method} ${req.originalUrl}`);
+  return sendError(res, `Route ${req.originalUrl} not found`, 404);
+};
+
+// Performance monitoring middleware
+const performanceMonitor = (req, res, next) => {
+  const startTime = Date.now();
+  
+  res.on('finish', () => {
+    const duration = Date.now() - startTime;
+    
+    if (duration > 1000) {
+      console.warn(`🐌 Slow request: ${req.method} ${req.url} took ${duration}ms`);
+    }
+    
+    console.log(`⚡ ${req.method} ${req.url}: ${duration}ms - ${res.statusCode}`);
+  });
+  
+  next();
+};
+
+module.exports = { globalErrorHandler, notFoundHandler, performanceMonitor };
+</code></pre>
+<h3>📝 <strong>Learning Check Point - Hour 3:</strong></h3>
+<pre><code class="language-markdown">### ✅ **ตรวจสอบความเข้าใจ**
+1. **อธิบายความแตกต่างของ Joi validation กับ if/else validation**
+2. **Global error handler ช่วยอะไรบ้าง?** 3. **Performance monitor จะเป็นประโยชน์อย่างไรใน real-time system?**
+</code></pre>
+<h3>🛤️ <strong>Step 10: Routes Setup (15 นาที - ให้ code สำเร็จ)</strong></h3>
+<p><strong>สร้างไฟล์ <code>routes/agents.js</code>:</strong></p>
+<pre><code class="language-javascript">// routes/agents.js - เชื่อม routes กับ controllers
+const express = require('express');
+const agentController = require('../controllers/agentController');
+const { validateAgent, validateStatusUpdate } = require('../middleware/validation');
+
+const router = express.Router();
+
+// GET /api/agents - List all agents
+router.get('/', agentController.getAllAgents);
+
+// GET /api/agents/status/summary - ต้องมาก่อน /:id route
+router.get('/status/summary', agentController.getStatusSummary);
+
+// GET /api/agents/:id - Get specific agent
+router.get('/:id', agentController.getAgentById);
+
+// POST /api/agents - Create new agent (with validation)
+router.post('/', validateAgent, agentController.createAgent);
+
+// PUT /api/agents/:id - Update agent
+router.put('/:id', agentController.updateAgent);
+
+// PATCH /api/agents/:id/status - Update status (with validation)
+router.patch('/:id/status', validateStatusUpdate, agentController.updateAgentStatus);
+
+// DELETE /api/agents/:id - Delete agent
+router.delete('/:id', agentController.deleteAgent);
+
+module.exports = router;
+</code></pre>
+<p><strong>สร้างไฟล์ <code>routes/index.js</code>:</strong></p>
+<pre><code class="language-javascript">// routes/index.js - Routes aggregator
+const express = require('express');
+const agentRoutes = require('./agents');
+
+const router = express.Router();
+
+// API health check
+router.get('/health', (req, res) => {
+  res.json({
+    success: true,
+    status: 'OK',
+    uptime: Math.floor(process.uptime()),
+    timestamp: new Date().toISOString(),
+    version: '1.0.0',
+    environment: process.env.NODE_ENV || 'development'
+  });
+});
+
+// API documentation
+router.get('/docs', (req, res) => {
+  res.json({
+    title: 'Agent Wallboard API Documentation',
+    version: '1.0.0',
+    baseUrl: `${req.protocol}://${req.get('host')}`,
+    endpoints: {
+      'GET /api/health': 'API health check',
+      'GET /api/agents': 'List all agents (supports ?status= and ?department=)',
+      'POST /api/agents': 'Create new agent',
+      'GET /api/agents/:id': 'Get specific agent',
+      'PUT /api/agents/:id': 'Update agent information',
+      'PATCH /api/agents/:id/status': 'Update agent status',
+      'DELETE /api/agents/:id': 'Delete agent',
+      'GET /api/agents/status/summary': 'Agent status summary'
+    },
+    examples: {
+      createAgent: {
+        method: 'POST',
+        url: '/api/agents',
+        body: {
+          agentCode: 'A999',
+          name: 'John Doe',
+          email: 'john@company.com',
+          department: 'Sales',
+          skills: ['Thai', 'English']
+        }
+      }
+    }
+  });
+});
+
+// Mount agent routes
+router.use('/agents', agentRoutes);
+
+module.exports = router;
+</code></pre>
+<h3>🖥️ <strong>Step 11: Main Server (15 นาที - ให้ code สำเร็จ)</strong></h3>
+<p><strong>สร้างไฟล์ <code>server.js</code>:</strong></p>
+<pre><code class="language-javascript">// server.js - Main application server
+const express = require('express');
+const cors = require('cors');
+const helmet = require('helmet');
+const morgan = require('morgan');
+require('dotenv').config();
+
+// Import routes และ middleware
+const routes = require('./routes');
+const { globalErrorHandler, notFoundHandler, performanceMonitor } = require('./middleware/errorHandler');
+
+const app = express();
+const PORT = process.env.PORT || 3001;
+
+// Security middleware
+app.use(helmet());
+
+// CORS configuration
+app.use(cors({
+  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  credentials: true
+}));
+
+// Body parsing middleware
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true }));
+
+// Request logging (เฉพาะ development)
+if (process.env.NODE_ENV !== 'production') {
+  app.use(morgan('dev'));
+}
+
+// Performance monitoring
+app.use(performanceMonitor);
+
+// Root endpoint
+app.get('/', (req, res) => {
+  res.json({
+    success: true,
+    message: 'Agent Wallboard API Enhanced v1.0',
+    version: '1.0.0',
+    environment: process.env.NODE_ENV || 'development',
+    documentation: '/api/docs',
+    health: '/api/health',
+    endpoints: {
+      agents: '/api/agents',
+      health: '/api/health',
+      docs: '/api/docs'
+    }
+  });
+});
+
+// API routes
+app.use('/api', routes);
+
+// Error handlers (ต้องอยู่ท้ายสุด)
+app.use('*', notFoundHandler);
+app.use(globalErrorHandler);
+
+// Start server
+const server = app.listen(PORT, () => {
+  console.log('🚀 Agent Wallboard API Enhanced');
+  console.log(`📡 Server running on http://localhost:${PORT}`);
+  console.log(`📚 API Documentation: http://localhost:${PORT}/api/docs`);
+  console.log(`💚 Health Check: http://localhost:${PORT}/api/health`);
+  console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+});
+
+// Graceful shutdown (เตรียมสำหรับ Phase 3)
+process.on('SIGTERM', () => {
+  console.log('🛑 SIGTERM received, shutting down gracefully');
+  server.close(() => {
+    console.log('✅ Process terminated');
+  });
+});
+
+module.exports = app;
+</code></pre>
+<hr>
+<h2>⏰ <strong>HOUR 4: Testing &amp; Integration (70 นาที)</strong></h2>
+<h3>🧪 <strong>Step 12: Complete Testing Guide (35 นาที)</strong></h3>
+<h4><strong>Test Setup:</strong></h4>
+<ol>
+<li><strong>เปิด Terminal รัน server:</strong></li>
+</ol>
+<pre><code class="language-bash">npm run dev
+</code></pre>
+<ol start="2">
+<li><strong>เปิด Postman หรือใช้ curl</strong></li>
+<li><strong>Test ตาม sequence นี้:</strong></li>
+</ol>
+<h4><strong>Test Case 1: System Health (5 นาที)</strong></h4>
+<pre><code class="language-bash"># Request
+GET http://localhost:3001/
+
+# Expected Response (Status: 200)
+{
+  "success": true,
+  "message": "Agent Wallboard API Enhanced v1.0",
+  "version": "1.0.0",
+  "environment": "development",
+  "documentation": "/api/docs"
+}
+
+# Health Check
+GET http://localhost:3001/api/health
+
+# Expected Response (Status: 200)
+{
+  "success": true,
+  "status": "OK",
+  "uptime": 45,
+  "timestamp": "2025-01-01T10:00:00.000Z"
+}
+</code></pre>
+<h4><strong>Test Case 2: Get All Agents (10 นาที)</strong></h4>
+<pre><code class="language-bash"># Request
+GET http://localhost:3001/api/agents
+
+# Expected Response (Status: 200)
+{
+  "success": true,
+  "message": "Agents retrieved successfully",
+  "count": 3,
+  "data": [
+    {
+      "id": "generated-id-1",
+      "agentCode": "A001",
+      "name": "John Doe",
+      "email": "john.doe@company.com",
+      "department": "Sales",
+      "skills": ["Thai", "English", "Sales"],
+      "status": "Available"
+    }
+    // ... more agents
+  ]
+}
+
+# Test filtering
+GET http://localhost:3001/api/agents?status=Available
+GET http://localhost:3001/api/agents?department=Sales
+</code></pre>
+<h4><strong>Test Case 3: Create Agent - Success (10 นาที)</strong></h4>
+<pre><code class="language-bash"># Request
+POST http://localhost:3001/api/agents
+Content-Type: application/json
+
+{
+  "agentCode": "A999",
+  "name": "Test Agent",
+  "email": "test@company.com",
+  "department": "Sales",
+  "skills": ["Thai", "English"]
+}
+
+# Expected Response (Status: 201)
+{
+  "success": true,
+  "message": "Agent created successfully",
+  "data": {
+    "id": "auto-generated",
+    "agentCode": "A999",
+    "name": "Test Agent",
+    "email": "test@company.com",
+    "department": "Sales",
+    "skills": ["Thai", "English"],
+    "status": "Available",
+    "isActive": true,
+    "createdAt": "2025-01-01T10:00:00.000Z"
+  }
+}
+</code></pre>
+<h4><strong>Test Case 4: Validation Testing (10 นาที)</strong></h4>
+<pre><code class="language-bash"># Request - Invalid data (ทดสอบ Joi validation)
+POST http://localhost:3001/api/agents
+Content-Type: application/json
+
+{
+  "agentCode": "invalid-format",
+  "name": "X",
+  "email": "not-email"
+}
+
+# Expected Response (Status: 400)
+{
+  "success": false,
+  "message": "Validation failed",
+  "errors": [
+    {
+      "field": "agentCode",
+      "message": "Agent code must be in format A001 (letter + 3 digits)"
+    },
+    {
+      "field": "name",
+      "message": "Name must be at least 2 characters"
+    },
+    {
+      "field": "email",
+      "message": "Please provide a valid email address"
+    }
+  ]
+}
+</code></pre>
+<h3>📊 <strong>Step 13: Status Management Testing (20 นาที)</strong></h3>
+<h4><strong>Test Status Update - Valid Transition:</strong></h4>
+<pre><code class="language-bash"># Get agent ID first
+GET http://localhost:3001/api/agents
+
+# Copy agent ID และทดสอบ status update
+PATCH http://localhost:3001/api/agents/[AGENT-ID]/status
+Content-Type: application/json
+
+{
+  "status": "Busy",
+  "reason": "Handling customer call"
+}
+
+# Expected Response (Status: 200)
+{
+  "success": true,
+  "message": "Agent status updated to Busy",
+  "data": {
+    "id": "agent-id",
+    "agentCode": "A001", 
+    "status": "Busy",
+    "lastStatusChange": "2025-01-01T10:05:00.000Z"
+  }
+}
+</code></pre>
+<h4><strong>Test Invalid Status Transition:</strong></h4>
+<pre><code class="language-bash"># Try invalid transition (Available -&gt; Offline without proper flow)
+PATCH http://localhost:3001/api/agents/[AGENT-ID]/status
+Content-Type: application/json
+
+{
+  "status": "Wrap"
+}
+
+# Expected Response (Status: 400)
+{
+  "success": false,
+  "message": "Cannot change from Busy to Wrap. Valid transitions: Available, Wrap, Not Ready"
+}
+</code></pre>
+<h3>📚 <strong>Step 14: Documentation Creation (15 นาที)</strong></h3>
+<p><strong>สร้างไฟล์ <code>README.md</code>:</strong></p>
+<pre><code class="language-markdown"># Agent Wallboard API - Enhanced Phase 1
+
+&gt; Professional Node.js API สำหรับจัดการ Call Center Agents แบบ Real-time
+
+## ✨ Features Enhanced
+- 🏗️ Professional MVC project structure  
+- ✅ Input validation with Joi
+- 🛡️ Security middleware (Helmet)
+- 📝 Request logging และ performance monitoring
+- ⚠️ Global error handling
+- 📊 Consistent API response format
+
+## 🚀 Quick Start
+
+```bash
+# 1. Clone และ install dependencies
+npm install
+
+# 2. สร้าง environment file
+cp .env.example .env
+
+# 3. Start development server
+npm run dev
+
+# 4. Test API
+curl http://localhost:3001/api/health
+````
+
+## 🔗 API Endpoints
+
+### 📊 System Information
+
+  - `GET /` - API information
+  - `GET /api/health` - Health check
+  - `GET /api/docs` - API documentation
+
+### 👥 Agent Management
+
+  - `GET /api/agents` - List agents (supports `?status=` และ `?department=`)
+  - `GET /api/agents/:id` - Get specific agent
+  - `POST /api/agents` - Create agent (requires validation)
+  - `PUT /api/agents/:id` - Update agent information
+  - `DELETE /api/agents/:id` - Delete agent
+
+### 📈 Status Management
+
+  - `PATCH /api/agents/:id/status` - Update agent status (with transition validation)
+  - `GET /api/agents/status/summary` - Status summary statistics
+
+## 🧪 Testing
+
+### Manual Testing
+
+```bash
+# 1. Health check
+curl http://localhost:3001/api/health
+
+# 2. Get all agents
+curl http://localhost:3001/api/agents
+
+# 3. Create new agent
+curl -X POST http://localhost:3001/api/agents \
+  -H "Content-Type: application/json" \
+  -d '{"agentCode":"A999","name":"Test Agent","email":"test@company.com","department":"Sales"}'
+```
+
+### Postman Collection
+
+  - Import collection: `Agent_Wallboard_API_Enhanced.postman_collection.json`
+  - มี test cases ครอบคลุม success และ error scenarios
+
+## ⚙️ Configuration
+
+### Environment Variables
+
+```env
+PORT=3001                           # Server port
+NODE_ENV=development                # Environment mode
+FRONTEND_URL=http://localhost:3000  # CORS origin
+```
+
+### Agent Status Flow
+
+```
+Available → Busy → Wrap → Available
+    ↓        ↓       ↓
+  Break   Not Ready  ↓
+    ↓        ↓    Available  
+Not Ready  Available
+    ↓
+ Offline
+```
+
+## 🚨 Troubleshooting
+
+### Common Issues
+
+```bash
+# Issue: "AGENT_STATUS is not defined"
+# Solution: Check imports ใน constants.js
+
+# Issue: Validation ไม่ทำงาน
+# Solution: ตรวจสอบ middleware order ใน routes
+
+# Issue: CORS error
+# Solution: ตรวจสอบ FRONTEND_URL ใน .env
+```
+
+## 🎯 Next Steps (Phase 2)
+
+  - Database integration (MSSQL + MongoDB)
+  - JWT authentication
+  - WebSocket real-time features
+  - Advanced logging และ monitoring
+
+<!-- end list -->
+
+```</code></pre>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const checkboxes = document.querySelectorAll('.task-checkbox');
+            const progressBar = document.getElementById('progressBar');
+            const progressText = document.getElementById('progressText');
+            const totalTasks = checkboxes.length;
+
+            const updateProgress = () => {
+                const checkedTasks = document.querySelectorAll('.task-checkbox:checked').length;
+                const percentage = totalTasks > 0 ? (checkedTasks / totalTasks) * 100 : 0;
+                
+                progressBar.style.width = percentage + '%';
+                progressBar.textContent = Math.round(percentage) + '%';
+                
+                progressText.textContent = `${checkedTasks} / ${totalTasks} Tasks Completed`;
+            };
+
+            checkboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', updateProgress);
+            });
+
+            // Initial call to set progress on page load
+            updateProgress();
+        });
+    </script>
+</body>
+</html>
