@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LAB: Hands-on Security Testing & Implementation | ENGSE214</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        html {
+            scroll-behavior: smooth;
+        }
+        body {
+            font-family: 'Kanit', sans-serif;
+            background-color: #0d1117; /* GitHub Dark Dimmed */
+            color: #adbac7;
+        }
+        .container {
+            max-width: 1200px;
+        }
+        h1, h2, h3, h4 {
+            color: #ffffff;
+            font-weight: 600;
+        }
+        pre {
+            background-color: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            padding-top: 3rem;
+            overflow-x: auto;
+            position: relative;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        code {
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
+            font-size: 0.9em;
+        }
+        .code-header {
+            background-color: #21262d;
+            padding: 0.5rem 1rem;
+            border-bottom: 1px solid #30363d;
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            border-top-left-radius: 0.5rem;
+            border-top-right-radius: 0.5rem;
+            font-size: 0.8rem;
+            color: #768390;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .copy-btn {
+            background-color: #30363d;
+            color: #adbac7;
+            border: 1px solid #444c56;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.375rem;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .copy-btn:hover {
+            background-color: #444c56;
+        }
+        .timeline {
+            position: relative;
+            padding-left: 2.5rem;
+            border-left: 2px solid #30363d;
+        }
+        .timeline-item::before {
+            content: attr(data-step);
+            position: absolute;
+            left: -1rem;
+            top: 0rem;
+            width: 2rem;
+            height: 2rem;
+            border-radius: 50%;
+            background-color: #1f6feb;
+            border: 2px solid #0d1117;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+        .vulnerable-box {
+            border-left: 4px solid #f85149;
+            background-color: rgba(248, 81, 73, 0.05);
+        }
+        .secure-box {
+            border-left: 4px solid #3fb950;
+            background-color: rgba(63, 185, 80, 0.05);
+        }
+        .hint-box {
+            background-color: rgba(210, 153, 34, 0.1);
+            border: 1px solid #d29922;
+            padding: 1rem;
+            border-radius: 0.5rem;
+        }
+        .tab-button {
+            transition: all 0.2s;
+            border-bottom: 2px solid transparent;
+        }
+        .tab-button.active {
+            color: #388bfd;
+            border-bottom-color: #388bfd;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <div class="container mx-auto p-4 sm:p-6 lg:p-8">
+        
+        <!-- Header Section -->
+        <header class="text-center mb-16">
+            <h1 class="text-4xl md:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-sky-400 to-emerald-400">
+                LAB: Hands-on Security Testing & Implementation
+            </h1>
+            <p class="mt-4 text-lg text-gray-400">วิชา ENGSE214: ความมั่นคงปลอดภัยทางไซเบอร์เบื้องต้น</p>
+            <p class="mt-2 text-md text-gray-500">มหาวิทยาลัยเทคโนโลยีราชมงคลล้านนา</p>
+        </header>
+
+        <!-- Overview Card -->
+        <section id="overview" class="mb-16 bg-[#161b22] p-8 rounded-2xl shadow-lg border border-[#30363d] grid md:grid-cols-3 gap-8">
+            <div class="flex items-center gap-4">
+                <div class="bg-sky-600/20 text-sky-400 p-3 rounded-full">
+                    <i class="fa-solid fa-bullseye fa-xl"></i>
+                </div>
+                <div>
+                    <h3 class="text-xl">เป้าหมายหลัก (Goal)</h3>
+                    <p class="text-gray-400">สร้างเว็บแอปฯ ที่มีช่องโหว่ แล้วแก้ไขให้ปลอดภัย</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-4">
+                <div class="bg-sky-600/20 text-sky-400 p-3 rounded-full">
+                    <i class="fa-solid fa-clock fa-xl"></i>
+                </div>
+                <div>
+                    <h3 class="text-xl">เวลาที่คาดว่าจะใช้ (Time)</h3>
+                    <p class="text-gray-400">3 - 4 ชั่วโมง</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-4">
+                <div class="bg-sky-600/20 text-sky-400 p-3 rounded-full">
+                    <i class="fa-solid fa-microchip fa-xl"></i>
+                </div>
+                <div>
+                    <h3 class="text-xl">เทคโนโลยี (Tech Stack)</h3>
+                    <p class="text-gray-400">Node.js, Express, MSSQL, HTML, CSS, JS</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- LAB Roadmap -->
+        <section id="roadmap" class="mb-16">
+            <h2 class="text-3xl text-center mb-12">Roadmap: 4 ขั้นตอนสู่การเป็น Secure Developer</h2>
+            <div class="timeline space-y-16">
+                <div class="timeline-item" data-step="1">
+                    <h3 class="text-2xl text-sky-400">สร้าง & เจาะ (Build & Break)</h3>
+                    <p class="text-gray-400 mt-2">ลงมือสร้างเว็บแอปฯ ที่มีช่องโหว่ตามมาตรฐาน OWASP Top 10 จากนั้นสวมบทบาทแฮกเกอร์เพื่อเจาะระบบของตัวเอง ทำความเข้าใจกลไกการโจมตี SQL Injection, XSS, IDOR และผลกระทบที่เกิดขึ้นจริง</p>
+                </div>
+                <div class="timeline-item" data-step="2">
+                    <h3 class="text-2xl text-sky-400">แก้ไข & ป้องกัน (Fix & Fortify)</h3>
+                    <p class="text-gray-400 mt-2">กลับมาในฐานะวิศวกรซอฟต์แวร์เพื่อแก้ไขช่องโหว่ทั้งหมด โดยใช้ Security Best Practices เช่น Prepared Statements, Input Sanitization, Authorization checks และการใช้ Security Headers เพื่อสร้างเกราะป้องกันที่แข็งแกร่ง</p>
+                </div>
+                <div class="timeline-item" data-step="3">
+                    <h3 class="text-2xl text-sky-400">เปรียบเทียบ & วิเคราะห์ (Compare & Analyze)</h3>
+                    <p class="text-gray-400 mt-2">ทดสอบและเปรียบเทียบผลลัพธ์ระหว่างเวอร์ชันที่มีช่องโหว่ (Vulnerable) และเวอร์ชันที่ปลอดภัย (Secure) เพื่อให้เห็นความแตกต่างอย่างชัดเจน และเข้าใจถึงความสำคัญของการเขียนโค้ดที่ปลอดภัย</p>
+                </div>
+                <div class="timeline-item" data-step="4">
+                    <h3 class="text-2xl text-sky-400">รายงาน & สรุปผล (Report & Reflect)</h3>
+                    <p class="text-gray-400 mt-2">จัดทำรายงานการทดสอบ (Security Test Report) สรุปช่องโหว่ที่พบ วิธีการแก้ไข และองค์ความรู้ที่ได้รับจาก LAB เพื่อเตรียมความพร้อมสู่การทำงานจริงในสายงานวิศวกรรมซอฟต์แวร์</p>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Step-by-Step Guide -->
+        <section id="lab-steps">
+            <h2 class="text-3xl text-center mb-8">ขั้นตอนการปฏิบัติ LAB</h2>
+            
+            <!-- Tabs Navigation -->
+            <div class="border-b border-[#30363d] mb-8 sticky top-0 bg-[#0d1117] z-10">
+                <nav class="flex space-x-4 sm:space-x-8 overflow-x-auto" aria-label="Tabs">
+                    <button class="tab-button active flex-shrink-0 py-4 px-1 text-md sm:text-lg" data-target="setup">1. การเตรียมตัว</button>
+                    <button class="tab-button flex-shrink-0 py-4 px-1 text-md sm:text-lg" data-target="vulnerable">2. สร้าง Vulnerable App</button>
+                    <button class="tab-button flex-shrink-0 py-4 px-1 text-md sm:text-lg" data-target="attack">3. ทดลองโจมตี</button>
+                    <button class="tab-button flex-shrink-0 py-4 px-1 text-md sm:text-lg" data-target="secure">4. สร้าง Secure App</button>
+                    <button class="tab-button flex-shrink-0 py-4 px-1 text-md sm:text-lg" data-target="evaluation">5. การประเมินผล</button>
+                    <button class="tab-button flex-shrink-0 py-4 px-1 text-md sm:text-lg" data-target="resources">6. ทรัพยากรเพิ่มเติม</button>
+                </nav>
+            </div>
+
+            <!-- Tabs Content -->
+            <div id="tabs-content">
+                <!-- Setup Tab -->
+                <div id="setup" class="tab-content active space-y-8">
+                    <div>
+                        <h3 class="text-2xl mb-4"><i class="fa-solid fa-download mr-3 text-gray-500"></i>Step 1: ติดตั้ง Tools ที่จำเป็น</h3>
+                        <p class="mb-4">ตรวจสอบให้แน่ใจว่าได้ติดตั้ง <a href="https://nodejs.org/" target="_blank" class="text-sky-400 hover:underline">Node.js</a> และ <a href="https://www.microsoft.com/en-us/sql-server/sql-server-downloads" target="_blank" class="text-sky-400 hover:underline">SQL Server Express</a> บนเครื่องคอมพิวเตอร์ของคุณแล้ว จากนั้นสร้างโครงสร้างโปรเจคตามคำสั่ง</p>
+                        <pre><div class="code-header"><span>bash</span><button class="copy-btn"><i class="fa-regular fa-copy"></i> Copy</button></div><code># สร้างโฟลเดอร์โปรเจค
+mkdir security-lab
+cd security-lab
+
+# สร้างโครงสร้างโฟลเดอร์
+mkdir frontend backend database</code></pre>
+                    </div>
+                    <div>
+                        <h3 class="text-2xl mb-4"><i class="fa-solid fa-database mr-3 text-gray-500"></i>Step 2: สร้างและเตรียมฐานข้อมูล</h3>
+                        <p class="mb-4">สร้างฐานข้อมูลชื่อ `SecurityLab` พร้อมตารางและข้อมูลเริ่มต้นสำหรับทดสอบ โดยรันสคริปต์ SQL ที่ให้มาใน SQL Server Management Studio</p>
+                        <pre><div class="code-header"><span>database/setup.sql</span><button class="copy-btn"><i class="fa-regular fa-copy"></i> Copy</button></div><code>CREATE DATABASE SecurityLab;
+GO
+USE SecurityLab;
+GO
+
+-- ตาราง Users
+CREATE TABLE Users (
+    id INT IDENTITY(1,1) PRIMARY KEY,
+    username NVARCHAR(50) NOT NULL UNIQUE,
+    password NVARCHAR(255) NOT NULL,
+    email NVARCHAR(100) NOT NULL,
+    role NVARCHAR(20) DEFAULT 'user'
+);
+GO
+
+-- ตาราง Comments
+CREATE TABLE Comments (
+    id INT IDENTITY(1,1) PRIMARY KEY,
+    user_id INT FOREIGN KEY REFERENCES Users(id),
+    content NVARCHAR(MAX) NOT NULL,
+    created_at DATETIME DEFAULT GETDATE()
+);
+GO
+
+-- ตาราง Products
+CREATE TABLE Products (
+    id INT IDENTITY(1,1) PRIMARY KEY,
+    name NVARCHAR(100) NOT NULL,
+    price DECIMAL(10,2) NOT NULL,
+    description NVARCHAR(MAX)
+);
+GO
+
+-- ข้อมูลทดสอบ
+INSERT INTO Users (username, password, email, role) VALUES 
+('admin', 'admin123', 'admin@example.com', 'admin'),
+('john', 'password', 'john@example.com', 'user'),
+('jane', 'qwerty', 'jane@example.com', 'user');
+GO
+
+INSERT INTO Products (name, price, description) VALUES 
+('Laptop', 25000.00, 'Gaming Laptop'),
+('Mouse', 500.00, 'Wireless Mouse'),
+('Keyboard', 1200.00, 'Mechanical Keyboard');
+GO
+
+INSERT INTO Comments (user_id, content) VALUES 
+(2, 'สินค้าดีมาก ใช้งานได้ดี'),
+(3, 'ราคาสมเหตุสมผล แนะนำเลยครับ');
+GO</code></pre>
+                    </div>
+                </div>
+
+                <!-- Vulnerable App Tab -->
+                <div id="vulnerable" class="tab-content space-y-8">
+                    <h3 class="text-2xl mb-4">สร้างแอปพลิเคชันที่มีช่องโหว่</h3>
+                    <p>ในส่วนนี้ เราจะจงใจเขียนโค้ดที่ไม่ปลอดภัยเพื่อศึกษาช่องโหว่ประเภทต่างๆ</p>
+                    
+                    <div class="vulnerable-box p-6 rounded-lg">
+                        <h4 class="text-xl mb-4">Step 3: สร้าง Backend (Vulnerable Version)</h4>
+                        <p class="mb-4">สร้างไฟล์ <code class="bg-[#21262d] p-1 rounded-md">backend/server.js</code> และใส่โค้ดฉบับเต็มต่อไปนี้ โค้ดนี้มีช่องโหว่ SQL Injection, XSS, และ IDOR</p>
+                        <pre><div class="code-header"><span>backend/server.js - VULNERABLE</span><button class="copy-btn"><i class="fa-regular fa-copy"></i> Copy</button></div><code>// VULNERABLE VERSION
+const express = require('express');
+const sql = require('mssql');
+const cors = require('cors');
+const bodyParser = require('body-parser');
+
+const app = express();
+const PORT = 3000;
+
+app.use(cors());
+app.use(bodyParser.json());
+
+const dbConfig = {
+    user: 'your_username', // <-- แก้ไข
+    password: 'your_password', // <-- แก้ไข
+    server: 'localhost',
+    database: 'SecurityLab',
+    options: {
+        encrypt: false,
+        trustServerCertificate: true
+    }
+};
+
+sql.connect(dbConfig).then(() => console.log('Connected to SQL Server')).catch(err => console.log('DB Connection Failed', err));
+
+// 🚨 VULNERABLE: SQL Injection
+app.post('/login', async (req, res) => {
+    const { username, password } = req.body;
+    const query = \`SELECT * FROM Users WHERE username='\${username}' AND password='\${password}'\`;
+    const result = await sql.query(query);
+    if (result.recordset.length > 0) {
+        res.json({ success: true, user: result.recordset[0] });
+    } else {
+        res.status(401).json({ success: false, message: 'Invalid credentials' });
+    }
+});
+
+// 🚨 VULNERABLE: XSS in comments
+app.post('/comments', async (req, res) => {
+    const { userId, content } = req.body;
+    const query = \`INSERT INTO Comments (user_id, content) VALUES (\${userId}, '\${content}')\`;
+    await sql.query(query);
+    res.json({ success: true, message: 'Comment added' });
+});
+
+// 🚨 VULNERABLE: IDOR - Direct object reference
+app.get('/user/:id', async (req, res) => {
+    const userId = req.params.id;
+    const query = \`SELECT * FROM Users WHERE id=\${userId}\`;
+    const result = await sql.query(query);
+    res.json(result.recordset[0] || {});
+});
+
+// Get all comments (for display)
+app.get('/comments', async (req, res) => {
+    const query = 'SELECT c.*, u.username FROM Comments c JOIN Users u ON c.user_id = u.id ORDER BY c.created_at DESC';
+    const result = await sql.query(query);
+    res.json(result.recordset);
+});
+
+app.listen(PORT, () => console.log(\`🚨 Vulnerable server running on http://localhost:\${PORT}\`));
+</code></pre>
+                    </div>
+
+                    <div class="vulnerable-box p-6 rounded-lg">
+                        <h4 class="text-xl mb-4">Step 4: สร้าง Frontend (Vulnerable Version)</h4>
+                        <p class="mb-4">สร้างไฟล์ <code class="bg-[#21262d] p-1 rounded-md">frontend/index.html</code> และ <code class="bg-[#21262d] p-1 rounded-md">frontend/script.js</code> เพื่อเชื่อมต่อกับ Backend ที่มีช่องโหว่</p>
+                         <pre><div class="code-header"><span>frontend/index.html</span><button class="copy-btn"><i class="fa-regular fa-copy"></i> Copy</button></div><code>&lt;!DOCTYPE html&gt;
+&lt;html lang="th"&gt;
+&lt;head&gt;
+    &lt;meta charset="UTF-8"&gt;
+    &lt;title&gt;Vulnerable App&lt;/title&gt;
+    &lt;script src="https://cdn.tailwindcss.com"&gt;&lt;/script&gt;
+&lt;/head&gt;
+&lt;body class="bg-red-900/50 text-white p-8"&gt;
+    &lt;h1 class="text-3xl font-bold text-red-400"&gt;🚨 Vulnerable App&lt;/h1&gt;
+    
+    &lt;div class="grid md:grid-cols-2 gap-8 mt-8"&gt;
+        &lt;!-- Login --&gt;
+        &lt;div class="bg-gray-800 p-4 rounded-lg"&gt;
+            &lt;h2 class="text-xl font-bold mb-4"&gt;Login (SQL Injection)&lt;/h2&gt;
+            &lt;form id="login-form" class="space-y-2"&gt;
+                &lt;input type="text" id="username" placeholder="Username" class="bg-gray-700 w-full p-2 rounded"&gt;
+                &lt;input type="password" id="password" placeholder="Password" class="bg-gray-700 w-full p-2 rounded"&gt;
+                &lt;button type="submit" class="bg-red-600 p-2 rounded w-full"&gt;Login&lt;/button&gt;
+            &lt;/form&gt;
+             &lt;div id="login-result" class="mt-2 text-sm"&gt;&lt;/div&gt;
+        &lt;/div&gt;
+
+        &lt;!-- User Profile (IDOR) --&gt;
+        &lt;div class="bg-gray-800 p-4 rounded-lg"&gt;
+             &lt;h2 class="text-xl font-bold mb-4"&gt;User Profile (IDOR)&lt;/h2&gt;
+             &lt;input type="number" id="user-id-input" placeholder="Enter User ID (1, 2, 3)" class="bg-gray-700 w-full p-2 rounded"&gt;
+             &lt;button onclick="fetchUserProfile()" class="bg-red-600 p-2 rounded w-full mt-2"&gt;Get Profile&lt;/button&gt;
+             &lt;div id="profile-result" class="mt-2 text-sm"&gt;&lt;/div&gt;
+        &lt;/div&gt;
+    &lt;/div&gt;
+
+    &lt;!-- Comments (XSS) --&gt;
+    &lt;div class="bg-gray-800 p-4 rounded-lg mt-8"&gt;
+        &lt;h2 class="text-xl font-bold mb-4"&gt;Comments (XSS)&lt;/h2&gt;
+        &lt;form id="comment-form" class="space-y-2"&gt;
+            &lt;textarea id="comment-content" placeholder="Write a comment..." class="bg-gray-700 w-full p-2 rounded"&gt;&lt;/textarea&gt;
+            &lt;button type="submit" class="bg-red-600 p-2 rounded w-full"&gt;Post Comment&lt;/button&gt;
+        &lt;/form&gt;
+        &lt;div id="comments-display" class="mt-4 space-y-2"&gt;&lt;/div&gt;
+    &lt;/div&gt;
+    &lt;script src="script.js"&gt;&lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;</code></pre>
+                        <pre class="mt-4"><div class="code-header"><span>frontend/script.js</span><button class="copy-btn"><i class="fa-regular fa-copy"></i> Copy</button></div><code>const API_BASE = 'http://localhost:3000';
+let currentUser = null;
+
+// Login
+document.getElementById('login-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const username = document.getElementById('username').value;
+    const password = document.getElementById('password').value;
+    const res = await fetch(\`\${API_BASE}/login\`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password }),
+    });
+    const data = await res.json();
+    if (data.success) {
+        currentUser = data.user;
+        document.getElementById('login-result').innerHTML = \`Logged in as: &lt;b&gt;\${currentUser.username}&lt;/b&gt;\`;
+    } else {
+        document.getElementById('login-result').innerHTML = 'Login failed.';
+    }
+});
+
+// Get User Profile
+async function fetchUserProfile() {
+    const userId = document.getElementById('user-id-input').value;
+    const res = await fetch(\`\${API_BASE}/user/\${userId}\`);
+    const data = await res.json();
+    document.getElementById('profile-result').innerHTML = \`&lt;pre&gt;\${JSON.stringify(data, null, 2)}&lt;/pre&gt;\`;
+}
+
+// Comments
+document.getElementById('comment-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!currentUser) {
+        alert('Please login first.');
+        return;
+    }
+    const content = document.getElementById('comment-content').value;
+    await fetch(\`\${API_BASE}/comments\`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: currentUser.id, content }),
+    });
+    document.getElementById('comment-content').value = '';
+    loadComments();
+});
+
+async function loadComments() {
+    const res = await fetch(\`\${API_BASE}/comments\`);
+    const comments = await res.json();
+    const container = document.getElementById('comments-display');
+    container.innerHTML = comments.map(c => \`&lt;div class="bg-gray-700 p-2 rounded"&gt;&lt;b&gt;\${c.username}:&lt;/b&gt; \${c.content}&lt;/div&gt;\`).join('');
+}
+
+loadComments();</code></pre>
+                    </div>
+                </div>
+
+                <!-- Attack Tab -->
+                <div id="attack" class="tab-content space-y-8">
+                    <h3 class="text-2xl mb-4">สวมบทบาทแฮกเกอร์: ทดลองโจมตีช่องโหว่</h3>
+                    <p>หลังจากรัน Vulnerable App แล้ว ให้ลองใช้ Payloads ต่อไปนี้เพื่อเจาะระบบ</p>
+                    <div class="hint-box">
+                        <h4 class="font-bold text-xl text-yellow-300"><i class="fa-solid fa-user-secret mr-2"></i> ทดสอบ SQL Injection</h4>
+                        <p class="mt-2">ที่หน้า Login, ลองกรอกข้อมูลต่อไปนี้:</p>
+                        <ul class="list-disc list-inside ml-4 mt-2">
+                            <li><strong>Username:</strong> <code class="bg-gray-700 p-1 rounded text-yellow-300">admin'; --</code></li>
+                            <li><strong>Password:</strong> (กรอกอะไรก็ได้)</li>
+                        </ul>
+                        <p class="mt-2"><strong>ผลที่คาดว่าจะเกิด:</strong> คุณจะสามารถ Login เข้าระบบในฐานะ admin ได้สำเร็จ แม้จะไม่รู้รหัสผ่าน</p>
+                    </div>
+                     <div class="hint-box mt-6">
+                        <h4 class="font-bold text-xl text-yellow-300"><i class="fa-solid fa-code mr-2"></i> ทดสอบ Cross-Site Scripting (XSS)</h4>
+                        <p class="mt-2">หลังจาก Login, ไปที่หน้า Comment แล้วโพสต์ข้อความต่อไปนี้:</p>
+                        <pre class="mt-2"><code class="text-yellow-300">&lt;script&gt;alert('XSS Attack! Your session could be stolen.');&lt;/script&gt;</code></pre>
+                        <p class="mt-2"><strong>ผลที่คาดว่าจะเกิด:</strong> ทุกครั้งที่หน้าเว็บโหลด Comment นี้ขึ้นมา จะมีกล่องข้อความ (Alert Box) แสดงขึ้นมา ซึ่งพิสูจน์ว่าสามารถรัน JavaScript ในหน้าเว็บได้</p>
+                    </div>
+                     <div class="hint-box mt-6">
+                        <h4 class="font-bold text-xl text-yellow-300"><i class="fa-solid fa-fingerprint mr-2"></i> ทดสอบ Insecure Direct Object Reference (IDOR)</h4>
+                        <p class="mt-2">ที่ช่อง User Profile, ลองใส่ User ID ของคนอื่น เช่น 1, 2, หรือ 3</p>
+                        <p class="mt-2"><strong>ผลที่คาดว่าจะเกิด:</strong> คุณจะสามารถเห็นข้อมูลโปรไฟล์ทั้งหมดของผู้ใช้อื่นได้ (รวมถึงรหัสผ่านที่เก็บเป็น Plain text) โดยไม่มีการตรวจสอบสิทธิ์ใดๆ</p>
+                    </div>
+                </div>
+                
+                <!-- Secure App Tab -->
+                <div id="secure" class="tab-content space-y-8">
+                    <div class="secure-box p-6 rounded-lg">
+                        <h3 class="text-2xl mb-4">🛡️ การป้องกัน SQL Injection: ใช้ Prepared Statements</h3>
+                        <p class="mb-4">เราจะใช้ Parameterized Queries ซึ่งจะแยกคำสั่ง SQL ออกจากข้อมูล (Data) อย่างชัดเจน ทำให้ Database Engine รู้ว่าส่วนไหนคือคำสั่ง และส่วนไหนคือข้อมูลที่ต้องเปรียบเทียบเท่านั้น วิธีนี้จะป้องกันการแทรกโค้ด SQL ได้อย่างสมบูรณ์</p>
+                        <pre><div class="code-header"><span>backend/secure-server.js - SECURE</span><button class="copy-btn"><i class="fa-regular fa-copy"></i> Copy</button></div><code>// ✅ ใช้ Prepared Statement เพื่อความปลอดภัย
+const request = new sql.Request();
+request.input('username', sql.NVarChar, username);
+
+// ข้อมูล @username จะถูกส่งไปอย่างปลอดภัย ไม่สามารถแทรกโค้ดได้
+const result = await request.query('SELECT * FROM Users WHERE username = @username');
+
+const user = result.recordset[0];
+// จากนั้นค่อยเปรียบเทียบ password ที่ผ่านการ hash แล้วด้วย bcrypt
+const isValidPassword = await bcrypt.compare(password, user.password);
+if(isValidPassword) {
+    // Login successful
+}</code></pre>
+                    </div>
+                    <div class="secure-box p-6 rounded-lg">
+                        <h3 class="text-2xl mb-4">🛡️ การป้องกัน XSS & IDOR</h3>
+                        <p class="mb-4">ใช้หลักการ "Defense in Depth" คือป้องกันหลายชั้น: ตรวจสอบและกรองข้อมูลที่รับเข้ามา (Input Validation), แปลงอักขระพิเศษให้ปลอดภัยก่อนแสดงผล (Output Encoding), และที่สำคัญที่สุดคือการตรวจสอบสิทธิ์ (Authorization) ทุกครั้งที่มีการร้องขอข้อมูล</p>
+                        <pre><div class="code-header"><span>backend/secure-server.js - SECURE</span><button class="copy-btn"><i class="fa-regular fa-copy"></i> Copy</button></div><code>// Middleware ตรวจสอบ Token
+function authenticateToken(req, res, next) {
+    const token = req.headers['authorization']?.split(' ')[1];
+    if (!token) return res.sendStatus(401);
+    jwt.verify(token, JWT_SECRET, (err, user) => {
+        if (err) return res.sendStatus(403);
+        req.user = user;
+        next();
+    });
+}
+
+// ✅ ป้องกัน IDOR โดยตรวจสอบสิทธิ์ก่อนดึงข้อมูล
+app.get('/user/:id', authenticateToken, async (req, res) => {
+    const requestedUserId = parseInt(req.params.id);
+    // User ทั่วไปดูได้แค่โปรไฟล์ตัวเอง แต่ Admin ดูได้ทุกคน
+    if (req.user.userId !== requestedUserId && req.user.role !== 'admin') {
+        return res.status(403).json({ error: 'Access denied' });
+    }
+    // ... ดึงข้อมูลด้วย Prepared statement ...
+});
+
+// ✅ ป้องกัน XSS โดยการ Encode ข้อมูลก่อนบันทึก
+app.post('/comments', authenticateToken, async (req, res) => {
+    const sanitizedContent = htmlEncode(req.body.content);
+    // ... บันทึกข้อมูลที่ sanitized แล้วลง DB ...
+});</code></pre>
+                    </div>
+                </div>
+                
+                <!-- Evaluation Tab -->
+                <div id="evaluation" class="tab-content">
+                    <h3 class="text-2xl mb-4">เกณฑ์การประเมินผล</h3>
+                    <p class="mb-6">คะแนนจะถูกประเมินจากความเข้าใจในช่องโหว่, ความสามารถในการแก้ไขปัญหา, การวิเคราะห์เปรียบเทียบ, และการประยุกต์ใช้ความรู้</p>
+                    <div class="overflow-x-auto bg-[#161b22] border border-[#30363d] rounded-lg">
+                        <table class="min-w-full">
+                            <thead class="bg-[#21262d]">
+                                <tr>
+                                    <th class="p-4 text-left text-sm font-semibold uppercase tracking-wider">เกณฑ์การประเมิน</th>
+                                    <th class="p-4 text-left text-sm font-semibold uppercase tracking-wider">คะแนน</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-[#30363d]">
+                                <tr class="hover:bg-[#21262d]/50">
+                                    <td class="p-4">1. การเข้าใจและทดสอบช่องโหว่ (Vulnerability Understanding)</td>
+                                    <td class="p-4 font-bold text-sky-400">30%</td>
+                                </tr>
+                                <tr class="hover:bg-[#21262d]/50">
+                                    <td class="p-4">2. การแก้ไขช่องโหว่ (Vulnerability Mitigation)</td>
+                                    <td class="p-4 font-bold text-sky-400">40%</td>
+                                </tr>
+                                <tr class="hover:bg-[#21262d]/50">
+                                    <td class="p-4">3. การวิเคราะห์และเปรียบเทียบ (Analysis & Comparison)</td>
+                                    <td class="p-4 font-bold text-sky-400">20%</td>
+                                </tr>
+                                <tr class="hover:bg-[#21262d]/50">
+                                    <td class="p-4">4. การประยุกต์ใช้และตอบคำถาม (Application & Further Study)</td>
+                                    <td class="p-4 font-bold text-sky-400">10%</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="mt-8">
+                        <h4 class="text-xl mb-4">Deliverables: สิ่งที่ต้องส่ง</h4>
+                        <ul class="list-disc list-inside ml-4 space-y-2 text-gray-400">
+                            <li>Source Code ทั้งเวอร์ชัน Vulnerable และ Secure</li>
+                            <li>รายงานการทดสอบ (Security Test Report) ที่สรุปช่องโหว่, วิธีการโจมตี, และวิธีการแก้ไข</li>
+                            <li>วิดีโอสาธิตการโจมตีและการป้องกัน (ถ้ามี)</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Resources Tab -->
+                <div id="resources" class="tab-content">
+                     <h3 class="text-2xl mb-4">ทรัพยากรเพิ่มเติม (Further Resources)</h3>
+                     <p class="mb-6">เพื่อการศึกษาและฝึกฝนเพิ่มเติม ขอแนะนำเครื่องมือและเว็บไซต์เหล่านี้:</p>
+                     <div class="grid md:grid-cols-2 gap-6">
+                         <div class="bg-[#161b22] p-6 rounded-lg border border-[#30363d]">
+                             <h4 class="text-xl mb-3"><i class="fa-solid fa-wrench mr-2"></i> Tools ที่แนะนำ</h4>
+                             <ul class="list-disc list-inside space-y-2 text-gray-400">
+                                 <li><strong>OWASP ZAP:</strong> สำหรับสแกนหาช่องโหว่เว็บแอปพลิเคชันอัตโนมัติ</li>
+                                 <li><strong>Burp Suite:</strong> เครื่องมือยอดนิยมสำหรับทำ Manual Penetration Testing</li>
+                                 <li><strong>SQLMap:</strong> เครื่องมือสำหรับทดสอบและเจาะระบบ SQL Injection โดยเฉพาะ</li>
+                                 <li><strong>Postman:</strong> สำหรับทดสอบ API Security</li>
+                             </ul>
+                         </div>
+                         <div class="bg-[#161b22] p-6 rounded-lg border border-[#30363d]">
+                             <h4 class="text-xl mb-3"><i class="fa-solid fa-graduation-cap mr-2"></i> เว็บไซต์สำหรับเรียนรู้เพิ่มเติม</h4>
+                             <ul class="list-disc list-inside space-y-2 text-gray-400">
+                                  <li><a href="https://portswigger.net/web-security" target="_blank" class="text-sky-400 hover:underline">PortSwigger Web Security Academy</a></li>
+                                  <li><a href="https://owasp.org/www-project-webgoat/" target="_blank" class="text-sky-400 hover:underline">OWASP WebGoat</a></li>
+                                  <li><a href="http://www.dvwa.co.uk/" target="_blank" class="text-sky-400 hover:underline">Damn Vulnerable Web App (DVWA)</a></li>
+                                  <li><a href="https://tryhackme.com/" target="_blank" class="text-sky-400 hover:underline">TryHackMe</a></li>
+                             </ul>
+                         </div>
+                     </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="mt-24 pt-8 border-t border-[#30363d] text-center text-gray-500">
+            <p><strong><i class="fa-solid fa-triangle-exclamation text-yellow-500"></i> ข้อควรระวัง:</strong> Lab นี้จัดทำขึ้นเพื่อวัตถุประสงค์ทางการศึกษาเท่านั้น ห้ามนำความรู้ไปใช้ในการโจมตีระบบของผู้อื่นโดยไม่ได้รับอนุญาต ซึ่งถือเป็นความผิดตาม พ.ร.บ. ว่าด้วยการกระทำความผิดเกี่ยวกับคอมพิวเตอร์</p>
+            <p class="mt-4">ขอให้สนุกกับการเรียนรู้ครับ!</p>
+        </footer>
+
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Tabs functionality
+            const tabs = document.querySelectorAll('.tab-button');
+            const tabContents = document.querySelectorAll('.tab-content');
+
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    tabs.forEach(item => item.classList.remove('active'));
+                    tab.classList.add('active');
+
+                    const target = document.getElementById(tab.dataset.target);
+
+                    tabContents.forEach(content => {
+                        content.classList.remove('active');
+                    });
+                    target.classList.add('active');
+                });
+            });
+
+            // Copy button functionality
+            const copyButtons = document.querySelectorAll('.copy-btn');
+            copyButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const codeBlock = button.parentElement.nextElementSibling;
+                    const code = codeBlock.innerText;
+                    
+                    navigator.clipboard.writeText(code).then(() => {
+                        const originalContent = button.innerHTML;
+                        button.innerHTML = '<i class="fa-solid fa-check"></i> Copied!';
+                        setTimeout(() => {
+                            button.innerHTML = originalContent;
+                        }, 2000);
+                    }).catch(err => {
+                        console.error('Failed to copy: ', err);
+                    });
+                });
+            });
+        });
+    </script>
+</body>
+</html>
+
