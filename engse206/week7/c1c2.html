@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ENGSE206 - C4 Model: From Context to Components</title>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #0D204E; /* RMUTL Navy Blue */
+            --secondary-color: #D4A237; /* RMUTL Gold */
+            --accent-color: #10B981; /* Tech Green */
+            --background-gradient: linear-gradient(135deg, #0D204E 0%, #1a3a8a 100%);
+            --slide-bg: rgba(255, 255, 255, 0.98);
+            --text-color: #333;
+            --header-color: #0D204E;
+            --base-font-size: clamp(16px, 1.5vw, 24px);
+            --border-radius: 15px;
+            --code-font: 'Fira Code', 'Courier New', monospace;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { overflow: hidden; height: 100%; }
+
+        body {
+            font-family: 'Sarabun', sans-serif;
+            background: var(--background-gradient);
+            color: var(--text-color);
+            font-size: 16px; 
+            line-height: 1.7;
+        }
+        
+        .presentation {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2vh 3vw; 
+        }
+
+        .slide {
+            background: var(--slide-bg);
+            padding: 30px 40px 80px 40px;
+            border-radius: var(--border-radius);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+            width: 100%;
+            height: 100%;
+            font-size: var(--base-font-size);
+            overflow-y: auto;
+            display: none;
+            animation: fadeIn 0.5s ease-in-out;
+            position: relative;
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .slide::-webkit-scrollbar { display: none; }
+
+        .slide.active { display: block; }
+        
+        .title-slide.active {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            background: var(--background-gradient);
+            color: white;
+        }
+        
+        .title-slide h1, .title-slide h2, .title-slide h3, .title-slide p {
+            color: white !important;
+        }
+        .title-slide h1 { font-size: 3em; margin-bottom: 10px; border: none;}
+        .title-slide h2 { font-size: 2em; margin-bottom: 20px; border: none; }
+        .title-slide h3 { font-size: 1.5em; font-weight: 400; opacity: 0.9; }
+
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.98); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .progress-bar-container {
+            position: fixed; top: 0; left: 0; width: 100%; height: 8px;
+            background-color: rgba(255, 255, 255, 0.2); z-index: 2000;
+        }
+
+        .progress-bar {
+            height: 100%; width: 0%;
+            background: linear-gradient(120deg, var(--secondary-color) 0%, #f1c40f 100%);
+            transition: width 0.3s ease-out;
+        }
+
+        .presentation-controls {
+            position: fixed; bottom: 15px; left: 50%;
+            transform: translateX(-50%);
+            display: flex; align-items: center; gap: 10px;
+            background: rgba(13, 32, 78, 0.9);
+            padding: 10px 15px;
+            border-radius: 50px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(8px); z-index: 1000;
+        }
+
+        .nav-btn, .font-btn, .fullscreen-btn {
+            background: transparent; color: white; border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex; align-items: center; justify-content: center;
+            width: 45px; height: 45px;
+            font-size: 1.5rem;
+        }
+        .nav-btn:hover:not(:disabled), .font-btn:hover, .fullscreen-btn:hover { 
+            background: var(--secondary-color); 
+            transform: translateY(-2px); 
+        }
+        .nav-btn:disabled { background-color: transparent; color: #777; cursor: not-allowed; transform: none;}
+        
+        #slide-counter { 
+            color: white; 
+            font-weight: 500; 
+            font-size: 1.1em; 
+            min-width: 70px;
+            text-align: center; 
+        }
+
+        .slide-number {
+            position: absolute; top: 15px; right: 20px;
+            background: rgba(13, 32, 78, 0.8); color: white;
+            padding: 5px 12px; border-radius: 15px; font-size: 0.8em; font-weight: 600;
+        }
+        
+        .slide h2 { 
+            font-size: 2.2em; 
+            color: var(--header-color);
+            border-bottom: 3px solid var(--secondary-color); 
+            padding-bottom: 8px; 
+            margin-top: 1em; 
+            margin-bottom: 1em;
+            font-weight: 700;
+        }
+        .slide h3 { 
+            font-size: 1.6em; 
+            color: var(--primary-color);
+            margin-top: 1.5em; 
+            font-weight: 700;
+        }
+
+        p, ul, ol { font-size: 1em; max-width: 85ch; }
+
+        ul.checklist li::before {
+             content: "✅"; color: var(--accent-color);
+        }
+        
+        ul { list-style: none; padding-left: 0; }
+        ul li {
+            position: relative; padding-left: 30px; margin-bottom: 12px;
+        }
+        ul li::before {
+            content: "▶"; color: var(--primary-color); position: absolute;
+            left: 0; top: 0px; font-size: 1.1em;
+        }
+        
+        pre {
+            background: #2d3142; color: #e0e0e0; border-radius: 10px;
+            padding: 20px; margin: 15px 0; font-family: var(--code-font);
+            font-size: 0.85em; overflow-x: auto; line-height: 1.6;
+        }
+        code { font-family: var(--code-font); background-color: rgba(0,0,0,0.05); padding: 2px 5px; border-radius: 4px;}
+        
+        .solution { border-left: 4px solid var(--accent-color); background: #e8f8f5; padding: 15px; margin: 10px 0; border-radius: 0 8px 8px 0; }
+        .anti-pattern { border-left: 4px solid #c0392b; background: #fdedec; padding: 15px; margin: 10px 0; border-radius: 0 8px 8px 0;}
+
+        table {
+            width: 100%; border-collapse: collapse; margin: 20px 0; 
+            font-size: 0.8em; box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            border-radius: var(--border-radius);
+            overflow: hidden;
+        }
+        table th { background: var(--header-color); color: white; padding: 12px; text-align: left; }
+        table td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+        table tr:nth-child(even) { background: #f9f9f9; }
+        table td:first-child { font-weight: bold; }
+
+        .mermaid-container {
+            background-color: #f8f9fa;
+            border: 1px solid #e0e0e0;
+            border-radius: var(--border-radius);
+            padding: 20px;
+            margin-top: 20px;
+            /* display: flex; */
+            justify-content: center;
+            align-items: center;
+            min-height: 40vh;
+        }
+        .mermaid-container svg {
+            max-width: 100%;
+            height: auto;
+        }
+        pre.mermaid {
+            background: transparent;
+            text-align: center;
+        }
+
+        .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 25px; margin: 20px 0; align-items: stretch; }
+        .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; align-items: stretch;}
+
+        .infographic-card {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-top: 5px solid var(--primary-color);
+            border-radius: var(--border-radius);
+            padding: 25px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+        }
+        .infographic-card .icon {
+            font-size: 3.5em;
+            margin-bottom: 15px;
+            color: var(--primary-color);
+        }
+        .infographic-card h4 {
+            font-size: 1.2em;
+            color: var(--header-color);
+            margin: 0 0 10px;
+        }
+        .infographic-card p {
+            font-size: 0.9em;
+            color: #555;
+            flex-grow: 1;
+        }
+
+        .timeline {
+            position: relative;
+            max-width: 800px;
+            margin: 30px auto;
+        }
+        .timeline::after {
+            content: '';
+            position: absolute;
+            width: 6px;
+            background-color: #e0e0e0;
+            top: 0;
+            bottom: 0;
+            left: 50%;
+            margin-left: -3px;
+        }
+        .timeline-container {
+            padding: 10px 40px;
+            position: relative;
+            background-color: inherit;
+            width: 50%;
+        }
+        .timeline-container.left { left: 0; }
+        .timeline-container.right { left: 50%; }
+        .timeline-container::after {
+            content: '';
+            position: absolute;
+            width: 25px;
+            height: 25px;
+            right: -17px;
+            background-color: white;
+            border: 4px solid var(--secondary-color);
+            top: 15px;
+            border-radius: 50%;
+            z-index: 1;
+        }
+        .timeline-container.right::after { left: -14px; }
+        .timeline-container.current::after {
+            background-color: var(--secondary-color);
+            border: 4px solid var(--accent-color);
+        }
+        .timeline-content {
+            padding: 20px;
+            background-color: white;
+            position: relative;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            border-left: 5px solid var(--secondary-color);
+        }
+        .timeline-container.right .timeline-content {
+            border-left: none;
+            border-right: 5px solid var(--secondary-color);
+        }
+        .timeline-container.current .timeline-content {
+            border-color: var(--accent-color);
+            background-color: #e8f8f5;
+        }
+        .timeline-content h3 { font-size: 1.2em; margin-top: 0; }
+        .timeline-content p { font-size: 0.9em; margin-bottom: 0; }
+        
+        blockquote {
+            border-left: 5px solid var(--secondary-color);
+            margin: 1.5em 0;
+            padding: 1em 1.5em;
+            background-color: #fff9e6;
+            font-style: italic;
+        }
+
+    </style>
+</head>
+<body>
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+        mermaid.initialize({
+            startOnLoad: false, // Set to false to manually trigger rendering
+            flowchart: { htmlLabels: true }
+        });
+
+        // Expose mermaid to the global scope to be accessible in the other script
+        window.mermaid = mermaid;
+    </script>
+
+    <div class="progress-bar-container">
+        <div class="progress-bar" id="progress-bar"></div>
+    </div>
+
+    <div class="presentation">
+
+        <section class="slide title-slide active">
+            <h2>ENGSE206: Software Requirements Specification and Design</h2>
+            <h1>C4 Model Complete Guide</h1>
+            <h3 style="margin-top: 30px;">การออกแบบสถาปัตยกรรมจาก C1 ถึง C3<br/>กรณีศึกษา: Agent Wallboard System</h3>
+            <p style="font-size: 1.2em; opacity: 0.9;">มหาวิทยาลัยเทคโนโลยีราชมงคลล้านนา (ดอยสะเก็ด)</p>
+            <div class="slide-number">1/11</div>
+        </section>
+
+        <section id="slide-1" class="slide">
+            <h2>🎯 C4 Model คืออะไร?</h2>
+            <blockquote>"เริ่มจากภาพใหญ่ แล้วค่อยซูมเข้าไปในรายละเอียดทีละชั้น"</blockquote>
+            <p>C4 Model เป็นแนวทางการสร้างแผนภาพสถาปัตยกรรมซอฟต์แวร์ที่มี 4 ระดับที่เชื่อมโยงกัน ทำให้ทุกคนในทีม ตั้งแต่ผู้บริหารไปจนถึงนักพัฒนา สามารถเข้าใจภาพเดียวกันได้ในระดับความละเอียดที่เหมาะสม</p>
+            <div class="timeline">
+                <div class="timeline-container left current">
+                    <div class="timeline-content">
+                        <h3>C1: System Context</h3>
+                        <p>ภาพรวมที่สุด: ระบบของเราคืออะไร ใครใช้ และเชื่อมต่อกับอะไรบ้าง?</p>
+                    </div>
+                </div>
+                <div class="timeline-container right current">
+                    <div class="timeline-content">
+                        <h3>C2: Container</h3>
+                        <p>ภาพเทคโนโลยี: ระบบประกอบด้วยแอปพลิเคชันและฐานข้อมูลอะไรบ้าง?</p>
+                    </div>
+                </div>
+                <div class="timeline-container left current">
+                    <div class="timeline-content">
+                        <h3><strong>C3: Component</strong></h3>
+                        <p><strong>ภาพรายละเอียด: แต่ละแอปพลิเคชันมีส่วนประกอบย่อย (Modules) อะไรบ้าง?</strong></p>
+                    </div>
+                </div>
+                <div class="timeline-container right">
+                    <div class="timeline-content">
+                        <h3>C4: Code</h3>
+                        <p>ภาพโค้ด: แต่ละ Component ถูกสร้างขึ้นจาก Class หรือ Function อะไร?</p>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-number">2/11</div>
+        </section>
+
+        <section id="slide-2" class="slide">
+            <h2>📊 C1 - System Context Diagram</h2>
+            <h3>วัตถุประสงค์: แสดงภาพรวมของระบบ Agent Wallboard ในบริบทของ Call Center</h3>
+            <div class="grid-2">
+                <div>
+                    <h4>👥 ผู้ใช้งานและระบบที่เกี่ยวข้อง (Actors)</h4>
+                    <ul>
+                        <li><strong>Call Center Agents:</strong> ผู้ใช้งานหลัก ใช้ Desktop App จัดการสถานะงาน</li>
+                        <li><strong>Supervisors:</strong> หัวหน้าทีม ใช้ Web Dashboard ติดตามทีมแบบ Real-time</li>
+                        <li><strong>Operations Managers:</strong> ผู้บริหาร ดูรายงานและวิเคราะห์ภาพรวม</li>
+                        <li><strong>System Administrators:</strong> ผู้ดูแลระบบ กำหนดค่าและจัดการผู้ใช้</li>
+                    </ul>
+                    <h4>🎯 ขอบเขตของระบบ</h4>
+                    <ul>
+                        <li>เป็นระบบ Standalone สำหรับบริหารจัดการ Call Center ภายใน</li>
+                        <li>เน้นการติดตามสถานะ, การสื่อสาร, และการรายงานผล</li>
+                    </ul>
+                </div>
+                <div class="mermaid-container">
+                    <pre class="mermaid">
+                    graph TB
+                        Agent[👤 Call Center Agents]
+                        Supervisor[👨‍💼 Supervisors]
+                        Manager[👔 Operations Managers]
+                        Admin[🔧 System Administrators]
+                        AWS[🖥️ Agent Wallboard System<br/>Call Center Management Platform]
+
+                        Agent -.->|ใช้งาน Desktop App| AWS
+                        Supervisor -.->|ติดตามผ่าน Web Dashboard| AWS
+                        Manager -.->|ดูรายงาน Analytics| AWS
+                        Admin -.->|กำหนดค่าระบบ| AWS
+                    </pre>
+                </div>
+            </div>
+            <div class="slide-number">3/11</div>
+        </section>
+
+        <section id="slide-3" class="slide">
+            <h2>🏗️ C2 - Container Diagram</h2>
+            <h3>วัตถุประสงค์: แสดงสถาปัตยกรรมภายในและเทคโนโลยีหลักที่ใช้</h3>
+            <p>ในระดับ C2 เราจะ "ซูมเข้า" ไปในกล่อง Agent Wallboard System จาก C1 เพื่อดูว่ามันประกอบด้วย "ตู้คอนเทนเนอร์" (แอปพลิเคชัน, ฐานข้อมูล) อะไรบ้าง</p>
+            <div class="mermaid-container">
+                <pre class="mermaid">
+                graph TB
+                    subgraph "Users"
+                        direction LR
+                        Agents[Agents]
+                        Supervisors[Supervisors]
+                    end
+            
+                    subgraph "Presentation Tier"
+                        Desktop[🖥️ Desktop App<br/><b>Electron.js</b>]
+                        WebApp[🌐 Web Dashboard<br/><b>React.js</b>]
+                    end
+            
+                    subgraph "Application Tier"
+                        API[🔗 API Server<br/><b>Node.js</b>]
+                        WebSocket[⚡ WebSocket Server<br/><b>Socket.io</b>]
+                    end
+            
+                    subgraph "Data Tier"
+                        MSSQL[🗃️ MSSQL DB]
+                        MongoDB[📄 MongoDB]
+                    end
+            
+                    Agents --> Desktop
+                    Supervisors --> WebApp
+                    
+                    Desktop -->|HTTPS| API
+                    WebApp -->|HTTPS| API
+            
+                    Desktop -->|WSS| WebSocket
+                    WebApp -->|WSS| WebSocket
+                    
+                    API --> MSSQL
+                    API --> MongoDB
+                </pre>
+            </div>
+            <div class="slide-number">4/11</div>
+        </section>
+
+        <section id="slide-4" class="slide">
+            <h2>🧱 C2 - Container Breakdown</h2>
+            <h3>สถาปัตยกรรม 3-Tier Architecture ที่ชัดเจน</h3>
+            <div class="grid-3">
+                <div class="infographic-card">
+                    <div class="icon">🖼️</div>
+                    <h4>Presentation Tier</h4>
+                    <p><strong>Desktop App (Electron.js):</strong> สำหรับ Agent จัดการสถานะ<br/><strong>Web Dashboard (React.js):</strong> สำหรับ Supervisor/Manager ติดตามและจัดการทีม</p>
+                </div>
+                <div class="infographic-card" style="border-top-color: var(--secondary-color);">
+                    <div class="icon">⚙️</div>
+                    <h4>Application Tier</h4>
+                    <p><strong>API Server (Node.js):</strong> จัดการ Business Logic, Authentication และเป็นประตูสู่ฐานข้อมูล<br/><strong>WebSocket Server (Socket.io):</strong> จัดการการสื่อสารแบบ Real-time ทั้งหมด</p>
+                </div>
+                <div class="infographic-card" style="border-top-color: var(--accent-color);">
+                    <div class="icon">💾</div>
+                    <h4>Data Tier</h4>
+                    <p><strong>MSSQL:</strong> เก็บข้อมูลหลัก (Master Data) ที่มีโครงสร้างชัดเจน เช่น User Accounts, Teams<br/><strong>MongoDB:</strong> เก็บข้อมูลที่เกิดขึ้นบ่อยและมีปริมาณมาก (Time-series) เช่น Status Logs, Messages</p>
+                </div>
+            </div>
+            <div class="slide-number">5/11</div>
+        </section>
+
+        <section id="slide-5" class="slide">
+            <h2>🧩 C3 - Component Diagram</h2>
+            <h3>วัตถุประสงค์: แสดงส่วนประกอบย่อยภายในแต่ละ Container</h3>
+            <p>ในระดับ C3 เราจะซูมเข้าไปใน "Container" แต่ละตู้ เพื่อดูว่ามี "ส่วนประกอบ" (Components หรือ Modules) อะไรบ้างที่ทำงานร่วมกัน</p>
+            <blockquote>💡 Component คือหน่วยย่อยของซอฟต์แวร์ที่ทำงานได้ค่อนข้างอิสระและมีหน้าที่รับผิดชอบที่เฉพาะเจาะจง (Single Responsibility)</blockquote>
+            <div class="mermaid-container">
+                <pre class="mermaid">
+                graph TD
+                    C2["Container (e.g., API Server)"] --> C3a["Component A<br>(Authentication)"]
+                    C2 --> C3b["Component B<br>(Status Service)"]
+                    C2 --> C3c["Component C<br>(Database Layer)"]
+                    
+                    C3a --> C3c
+                    C3b --> C3c
+                    style C2 fill:#d5e8d4,stroke:#333,stroke-width:2px
+                </pre>
+            </div>
+            <div class="slide-number">6/11</div>
+        </section>
+
+        <section id="slide-6" class="slide">
+            <h2>⚙️ C3 - API Server Components</h2>
+            <h3>ส่วนประกอบภายใน API Server Container</h3>
+            <div class="mermaid-container">
+                <pre class="mermaid">
+                graph TD
+                    subgraph "API Server Container"
+                        Auth[Authentication Service]
+                        Status[Agent Status Service]
+                        Message[Message Routing Service]
+                        EventBus[Event Bus]
+                        DBLayer[Database Access Layer]
+                    end
+                    
+                    subgraph "External Dependencies"
+                        WebSocket((WebSocket Manager))
+                        Database((Database Tier))
+                    end
+
+                    Auth --> DBLayer
+                    Status --> DBLayer
+                    Message --> DBLayer
+
+                    Status -->|Publish Event| EventBus
+                    Message -->|Publish Event| EventBus
+                    
+                    EventBus -->|Notify| WebSocket
+                    DBLayer --> Database
+                </pre>
+            </div>
+            <p style="text-align:center; margin-top:10px;">Service ต่างๆ ไม่เรียกกันโดยตรง แต่สื่อสารผ่าน <strong>Event Bus</strong> เพื่อลดการพึ่งพากัน (Loose Coupling)</p>
+            <div class="slide-number">7/11</div>
+        </section>
+        
+        <section id="slide-7" class="slide">
+            <h2>🖥️ C3 - Desktop Application Components</h2>
+            <h3>ส่วนประกอบภายใน Agent Desktop App Container</h3>
+             <div class="mermaid-container">
+                <pre class="mermaid">
+                graph TD
+                    subgraph "Desktop Application Container"
+                        Auth["Authentication UI"]
+                        Status["Status Management UI"]
+                        Notify["Notification UI"]
+                        StateManager["UI State Manager"]
+                        APIClient["API Client"]
+                        WSClient["WebSocket Client"]
+                    end
+
+                    subgraph "External Services"
+                        APIServer((API Server))
+                        WSServer((WebSocket Server))
+                    end
+
+                    Auth -- HTTP --> APIClient
+                    Status -- HTTP --> APIClient
+                    APIClient --> APIServer
+                    
+                    WSClient -- WSS --> WSServer
+                    WSClient -->|Push Data| Notify
+                    
+                    Status --> StateManager
+                    Notify --> StateManager
+                </pre>
+            </div>
+            <p style="text-align:center; margin-top:10px;">แยกส่วนติดต่อ Backend (API/WS Client) ออกจากส่วนแสดงผล (UI) เพื่อให้ดูแลรักษาง่าย</p>
+            <div class="slide-number">8/11</div>
+        </section>
+
+        <section id="slide-8" class="slide">
+            <h2>🔄 การทำงานร่วมกัน: จาก C1 ถึง C3</h2>
+            <h3>ตัวอย่าง Flow การทำงาน: "Agent เปลี่ยนสถานะ"</h3>
+            <p>เราสามารถไล่ดูการทำงานของฟีเจอร์หนึ่งๆ ผ่านแผนภาพแต่ละระดับได้</p>
+            <ul>
+                <li><strong>C1 Level:</strong> Agent ใช้งาน System ทำให้ Supervisor เห็นการเปลี่ยนแปลง</li>
+                <li><strong>C2 Level:</strong> Desktop App ส่งข้อมูลไปที่ API Server และ WebSocket Server ก็ส่งข้อมูลต่อไปยัง Web Dashboard</li>
+                <li><strong>C3 Level:</strong> เจาะลึกถึงระดับ Component ที่รับผิดชอบในแต่ละขั้นตอน</li>
+            </ul>
+            <div class="mermaid-container">
+                <pre class="mermaid">
+                sequenceDiagram
+                    participant Agent
+                    participant Desktop App
+                    participant API Server
+                    participant DB
+                    participant Supervisor Dashboard
+                    
+                    Agent->>Desktop App: คลิกเปลี่ยนสถานะเป็น "Busy"
+                    Desktop App->>API Server: PUT /api/status (newStatus: "Busy")
+                    API Server->>API Server: Agent Status Service.updateStatus()
+                    API Server->>DB: UPDATE agents SET status='Busy'
+                    DB-->>API Server: Success
+                    API Server->>Supervisor Dashboard: WebSocket Event: 'status_changed'
+                    Supervisor Dashboard->>Supervisor Dashboard: อัปเดตหน้าจอ UI
+                    API Server-->>Desktop App: Response: 200 OK
+                </pre>
+            </div>
+            <div class="slide-number">9/11</div>
+        </section>
+
+        <section id="slide-9" class="slide">
+            <h2>🔌 Component Interface Design</h2>
+            <h3>"สัญญา" ที่กำหนดว่า Component ทำอะไรได้บ้าง</h3>
+            <p>การออกแบบ Interface ที่ดีเป็นหัวใจสำคัญของ C3 มันคือการกำหนด "ประตู" ที่ชัดเจนสำหรับให้ Component อื่นมาเรียกใช้ โดยไม่ต้องสนใจว่าข้างในทำงานอย่างไร</p>
+            <h4>ตัวอย่าง Interface ของ <code>AgentStatusService</code></h4>
+            <pre><code class="language-typescript">
+interface IAgentStatusService {
+  // เปลี่ยนสถานะของ Agent
+  updateStatus(agentId: string, newStatus: string): Promise<boolean>;
+  
+  // ดึงข้อมูลสถานะปัจจุบันของ Agent
+  getCurrentStatus(agentId: string): Promise<AgentStatusInfo>;
+  
+  // ดึงข้อมูลสถานะของทีมทั้งหมด
+  getTeamStatus(teamId: string): Promise<TeamStatusSummary>;
+
+  // สมัครรับการแจ้งเตือนเมื่อสถานะเปลี่ยน
+  subscribeToStatusChanges(
+      teamId: string, 
+      callback: (event: StatusChangeEvent) => void
+  ): void;
+}
+            </code></pre>
+            <div class="solution">
+                <strong>หลักการออกแบบที่ดี:</strong> ตั้งชื่อให้ชัดเจน, รับผิดชอบหน้าที่เดียว, มีรูปแบบ Error ที่เป็นมาตรฐาน
+            </div>
+            <div class="slide-number">10/11</div>
+        </section>
+
+        <section id="slide-10" class="slide">
+            <h2>🎬 สรุป C4 Model Journey</h2>
+            <h3>เรื่องราวการออกแบบ Agent Wallboard System</h3>
+
+            <div class="grid-3">
+                <div class="infographic-card">
+                    <div class="icon">🌎</div>
+                    <h4>C1 - The Big Picture</h4>
+                    <p>เข้าใจบริบท, ผู้ใช้, และขอบเขตของระบบ เหมาะสำหรับคุยกับผู้บริหารและ Stakeholders</p>
+                </div>
+                <div class="infographic-card" style="border-top-color: var(--secondary-color);">
+                    <div class="icon">🏗️</div>
+                    <h4>C2 - The Technology</h4>
+                    <p>เห็นภาพรวมเทคโนโลยีและโครงสร้างหลักของระบบ เหมาะสำหรับ Tech Leads และ DevOps</p>
+                </div>
+                <div class="infographic-card" style="border-top-color: var(--accent-color);">
+                    <div class="icon">🧩</div>
+                    <h4>C3 - The Details</h4>
+                    <p>เห็นส่วนประกอบย่อยและการทำงานร่วมกัน เป็นแผนที่สำหรับทีมพัฒนาในการแบ่งงานและเขียนโค้ด</p>
+                </div>
+            </div>
+            
+            <blockquote>การใช้ C4 Model ช่วยสร้างเอกสารสถาปัตยกรรมที่มีชีวิต (Living Documentation) ที่ทุกคนในทีมเข้าใจและนำไปใช้งานได้จริง</blockquote>
+            
+            <h3>🚀 Next Step: C4 - Code</h3>
+            <p>สัปดาห์หน้า เราจะซูมเข้าไปในระดับสุดท้ายเพื่อดูว่า Component แต่ละตัวถูกสร้างจาก Class และ Function อะไรบ้าง</p>
+            <div class="slide-number">11/11</div>
+        </section>
+
+    </div>
+
+    <div class="presentation-controls">
+        <button id="prev-btn" class="nav-btn" title="สไลด์ก่อนหน้า">‹</button>
+        <span id="slide-counter"></span>
+        <button id="next-btn" class="nav-btn" title="สไลด์ถัดไป">›</button>
+        <button id="font-decrease-btn" class="font-btn" title="ลดขนาดตัวอักษร">-</button>
+        <button id="font-increase-btn" class="font-btn" title="เพิ่มขนาดตัวอักษร">+</button>
+        <button id="fullscreen-btn" class="fullscreen-btn" title="เต็มจอ">⛶</button>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // This script block remains for general slide controls
+            
+            const slides = document.querySelectorAll('.slide');
+            const nextBtn = document.getElementById('next-btn');
+            const prevBtn = document.getElementById('prev-btn');
+            const fullscreenBtn = document.getElementById('fullscreen-btn');
+            const slideCounter = document.getElementById('slide-counter');
+            const progressBar = document.getElementById('progress-bar');
+            const fontIncreaseBtn = document.getElementById('font-increase-btn');
+            const fontDecreaseBtn = document.getElementById('font-decrease-btn');
+            const root = document.documentElement;
+
+            let currentFontSize = 1.5; 
+            let currentSlideIndex = 0;
+            const totalSlides = slides.length;
+
+            function updateFontSize() {
+                root.style.setProperty('--base-font-size', `clamp(16px, ${currentFontSize}vw, 24px)`);
+            }
+            
+            function showSlide(index) {
+                if (index < 0 || index >= totalSlides) return;
+
+                slides.forEach((slide, i) => {
+                    slide.classList.toggle('active', i === index);
+                });
+
+                const activeSlide = slides[index];
+
+                if (activeSlide.scrollTop > 0) {
+                    activeSlide.scrollTop = 0;
+                }
+                
+                // Manually render Mermaid diagrams on the active slide if not already rendered
+                if (window.mermaid && !activeSlide.dataset.mermaidRendered) {
+                    const mermaidElements = activeSlide.querySelectorAll('pre.mermaid');
+                    if (mermaidElements.length > 0) {
+                        try {
+                           window.mermaid.run({ nodes: mermaidElements });
+                           activeSlide.dataset.mermaidRendered = 'true';
+                        } catch (e) {
+                           console.error("Mermaid rendering failed:", e);
+                        }
+                    }
+                }
+
+                currentSlideIndex = index;
+                updateControls();
+            }
+
+            function updateControls() {
+                slideCounter.textContent = `${currentSlideIndex + 1} / ${totalSlides}`;
+                const progressPercentage = ((currentSlideIndex + 1) / totalSlides) * 100;
+                progressBar.style.width = `${progressPercentage}%`;
+                prevBtn.disabled = currentSlideIndex === 0;
+                nextBtn.disabled = currentSlideIndex === totalSlides - 1;
+            }
+
+            function toggleFullscreen() {
+                if (!document.fullscreenElement) {
+                    document.documentElement.requestFullscreen().catch(err => {
+                        alert(`ไม่สามารถเข้าสู่โหมดเต็มจอได้: ${err.message}`);
+                    });
+                } else {
+                    if (document.exitFullscreen) {
+                        document.exitFullscreen();
+                    }
+                }
+            }
+
+            fontIncreaseBtn.addEventListener('click', () => {
+                if (currentFontSize < 2.5) {
+                    currentFontSize += 0.1;
+                    updateFontSize();
+                }
+            });
+
+            fontDecreaseBtn.addEventListener('click', () => {
+                if (currentFontSize > 0.8) {
+                    currentFontSize -= 0.1;
+                    updateFontSize();
+                }
+            });
+
+            nextBtn.addEventListener('click', () => showSlide(currentSlideIndex + 1));
+            prevBtn.addEventListener('click', () => showSlide(currentSlideIndex - 1));
+            fullscreenBtn.addEventListener('click', toggleFullscreen);
+
+            document.addEventListener('keydown', (event) => {
+                if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA') return;
+
+                if (event.key === 'ArrowRight' || event.key === ' ') {
+                    event.preventDefault();
+                    nextBtn.click();
+                } else if (event.key === 'ArrowLeft') {
+                    event.preventDefault();
+                    prevBtn.click();
+                } else if (event.key === 'f') {
+                    event.preventDefault();
+                    toggleFullscreen();
+                }
+            });
+
+            showSlide(0); // Show the first slide initially
+        });
+    </script>
+</body>
+</html>
