@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>สัปดาห์ที่ 9: From Code to Audit (Final Lecture v2)</title>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #2c3e50; /* Dark Blue */
+            --secondary-color: #3498db; /* Bright Blue */
+            --background-gradient: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            --slide-bg: rgba(255, 255, 255, 1);
+            --text-color: #34495e;
+            --header-color: #2c3e50;
+            --accent-color: #e67e22; /* Orange */
+            --success-color: #27ae60; /* Green */
+            --danger-color: #c0392b; /* Red */
+            --base-font-size: clamp(16px, 1.6vw, 24px);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { overflow: hidden; }
+
+        body {
+            font-family: 'Sarabun', sans-serif;
+            background: var(--background-gradient);
+            min-height: 100vh;
+            color: var(--text-color);
+            font-size: 16px; 
+            line-height: 1.7;
+        }
+        
+        .presentation {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2vh 3vw; 
+        }
+
+        .slide {
+            background: var(--slide-bg);
+            padding: 30px 40px 80px 40px;
+            border-radius: 20px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            border: 1px solid rgba(0,0,0,0.05);
+            width: 100%;
+            height: 100%;
+            font-size: var(--base-font-size);
+            overflow-y: auto;
+            display: none;
+            animation: fadeIn 0.5s ease-in-out;
+            position: relative;
+        }
+
+        .slide.active { display: block; }
+
+        .title-slide.active {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .progress-bar-container {
+            position: fixed; top: 0; left: 0; width: 100%; height: 8px;
+            background-color: rgba(0, 0, 0, 0.1); z-index: 2000;
+        }
+
+        .progress-bar {
+            height: 100%; width: 0%;
+            background: linear-gradient(120deg, var(--accent-color) 0%, var(--secondary-color) 100%);
+            transition: width 0.3s ease-out;
+        }
+
+        .presentation-controls {
+            position: fixed; bottom: 15px; left: 50%;
+            transform: translateX(-50%);
+            display: flex; align-items: center; gap: 10px;
+            background: rgba(44, 62, 80, 0.95);
+            padding: 10px 15px;
+            border-radius: 50px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(8px); z-index: 1000;
+        }
+
+        .nav-btn, .font-btn {
+            background: var(--secondary-color); color: white; border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: flex; align-items: center; justify-content: center;
+            width: 40px; height: 40px;
+            font-size: 16px;
+        }
+        .nav-btn:hover:not(:disabled), .font-btn:hover { background: var(--accent-color); transform: translateY(-2px); }
+        .nav-btn:disabled { background-color: #7f8c8d; opacity: 0.6; cursor: not-allowed; }
+        
+        #slide-counter { 
+            color: white; 
+            font-weight: 500; 
+            font-size: 16px; 
+            min-width: 60px;
+            text-align: center; 
+        }
+        
+        h1, h2 { color: var(--header-color); font-weight: 700; margin-bottom: 20px; }
+        h1 { font-size: 2.2em; text-align: center; }
+        h2 { font-size: 1.8em; border-bottom: 3px solid var(--secondary-color); padding-bottom: 8px; }
+        
+        .slide-number {
+            position: absolute; top: 15px; right: 20px;
+            background: rgba(44, 62, 80, 0.8); color: white;
+            padding: 5px 12px; border-radius: 15px; font-size: 0.8em; font-weight: 600;
+        }
+
+        .title-slide { background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%); color: white; }
+        .title-slide h1, .title-slide h2 { color: white; }
+        .title-slide h1 { font-size: 2.8em; }
+        .title-slide h2 { font-size: 1.8em; border: none; opacity: 0.9; }
+        
+        .issue-box {
+            border: 1px solid #bdc3c7;
+            border-radius: 12px;
+            margin-top: 20px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            background-color: #ffffff;
+        }
+        .issue-header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 15px 20px;
+            font-size: 1.2em;
+            font-weight: 600;
+        }
+        .issue-body {
+            padding: 20px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            align-items: start;
+        }
+        .issue-body > div > h4 {
+            font-size: 1.1em;
+            color: var(--secondary-color);
+            margin-top: 0;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+        .issue-body > div > p, .issue-body > div > ul li, .issue-body > div > ol li {
+            font-size: 0.9em;
+        }
+        pre {
+            background: #2d3142; color: #e0e0e0; border-radius: 8px;
+            padding: 15px; margin: 10px 0; font-family: 'Courier New', monospace;
+            font-size: 0.8em; overflow-x: auto; line-height: 1.6;
+            white-space: pre-wrap; word-wrap: break-word;
+        }
+        .question-box {
+            background: #fffbe6;
+            border-left: 5px solid var(--accent-color);
+            padding: 20px; margin: 20px 0; border-radius: 8px;
+            cursor: pointer;
+            transition: box-shadow 0.3s;
+        }
+        .question-box:hover {
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .question-box h4 { color: #d68910; margin-top: 0; font-size: 1.1em; }
+        .question-box p { font-size: 0.9em; }
+        .answer { display: none; margin-top: 15px; padding-top: 15px; border-top: 1px dashed var(--accent-color); color: var(--success-color); font-weight: 500; font-size: 0.9em;}
+        ul li::before {
+             content: "🔹"; color: var(--secondary-color); position: absolute;
+             left: 0; top: 0px; font-size: 1.1em;
+        }
+        .text-large { font-size: 1.2em; font-weight: 600; }
+        .text-xlarge { font-size: 1.5em; font-weight: 700; text-align: center; color: var(--primary-color); margin: 15px 0;}
+        .text-accent { color: var(--accent-color); font-weight: 600; }
+        .text-danger { color: var(--danger-color); font-weight: 600; }
+        .text-success { color: var(--success-color); font-weight: 600; }
+        
+        .infographic-card {
+            background-color: #f8f9fa; border: 1px solid #dee2e6;
+            border-radius: 12px; padding: 20px; text-align: center;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        .infographic-card:hover {
+            transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        .infographic-card h4 { font-size: 1.1em; color: var(--header-color); margin: 0 0 10px; font-weight: 600; }
+        .infographic-card p { font-size: 0.9em; color: var(--text-color); }
+        .infographic-card .pros { color: var(--success-color); font-size: 0.8em; }
+        .infographic-card .cons { color: var(--danger-color); font-size: 0.8em; }
+
+    </style>
+</head>
+
+<body>
+    <div class="progress-bar-container">
+        <div class="progress-bar" id="progress-bar"></div>
+    </div>
+
+    <div class="presentation">
+       
+        <section class="slide title-slide active">
+            <h1>สัปดาห์ที่ 9</h1>
+            <h2>From Code to Audit<br>A Developer's Guide to Security Validation</h2>
+            <h3>ENGSE214: ความมั่นคงปลอดภัยทางไซเบอร์เบื้องต้น</h3>
+            <div class="slide-number">1/25</div>
+        </section>
+
+        <section class="slide">
+            <h2>เป้าหมายการเรียนรู้ (Learning Objectives)</h2>
+            <p>เมื่อจบบทเรียนนี้ เราจะตอบคำถามสำคัญเหล่านี้ได้:</p>
+            <div class="issue-box">
+                <div class="issue-header">Key Questions for Software Engineers</div>
+                <div class="issue-body">
+                    <ul style="font-size: 0.9em; columns: 2; gap: 20px;">
+                        <li>ทำไมการ "ตรวจสอบ" ถึงสำคัญ?</li>
+                        <li>จะ "หาจุดอ่อน" อย่างเป็นระบบได้อย่างไร?</li>
+                        <li>"Pen Test" ต่างจาก VA อย่างไร?</li>
+                        <li>เครื่องมืออะไรบ้างที่ Dev ควรใช้?</li>
+                        <li>"Log" ที่ดีหน้าตาเป็นอย่างไร?</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="slide-number">2/25</div>
+        </section>
+
+        <section class="slide">
+            <h2>Module 1: The "Why" - ทำไมต้องตรวจสอบ?</h2>
+            <div class="issue-box">
+                <div class="issue-header">ประเด็น: ซอฟต์แวร์ที่เราสร้างอาจมี "จุดอ่อน" ซ่อนอยู่โดยที่เราไม่รู้ตัว</div>
+                <div class="issue-body">
+                    <div>
+                        <h4>หลักการ: "ค้นหา" และ "เทียบมาตรฐาน"</h4>
+                        <p>เราใช้กระบวนการที่เป็นระบบเพื่อประเมินความปลอดภัย:</p>
+                        <ul>
+                            <li><strong class="text-large text-secondary">Vulnerability Assessment (VA):</strong> คือการ "สแกนหาจุดอ่อน" ที่เป็นที่รู้จัก เพื่อให้รู้ว่าเรามีความเสี่ยงอะไรบ้าง</li>
+                            <li><strong class="text-large text-secondary">Security Auditing:</strong> คือการ "ตรวจสุขภาพองค์รวม" เพื่อดูว่าระบบของเราสอดคล้องกับมาตรฐาน (เช่น PDPA) หรือไม่</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4>ตัวอย่างให้เห็นภาพ</h4>
+                        <ul>
+                            <li><strong>VA พบว่า:</strong> 💻 เราใช้ Library `log4j` เวอร์ชันเก่าที่มีช่องโหว่ Log4Shell ซึ่งเป็นความเสี่ยงระดับ <strong class="text-danger">Critical!</strong></li>
+                            <li><strong>Audit พบว่า:</strong> 📜 เราไม่มีการเข้ารหัสข้อมูลลูกค้าในฐานข้อมูล ซึ่ง "ไม่ผ่านมาตรฐาน" การคุ้มครองข้อมูลส่วนบุคคล</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-number">3/25</div>
+        </section>
+        
+        <section class="slide">
+            <h2>ประเภทของการ Audit [เนื้อหาเพิ่มเติม]</h2>
+            <p>การ Audit มีหลายมุมมอง ขึ้นอยู่กับว่าใครเป็นผู้ตรวจสอบ:</p>
+            <div class="infographic-card" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; padding: 15px;">
+                <div>
+                    <h4>🏢 Internal Audit</h4>
+                    <p>ทีมงาน <strong class="text-accent">ภายในองค์กร</strong> เป็นผู้ตรวจสอบ เพื่อปรับปรุงระบบอย่างต่อเนื่อง</p>
+                    <p class="pros"><strong>ข้อดี:</strong> เข้าใจระบบลึกซึ้ง, ต้นทุนต่ำ</p>
+                    <p class="cons"><strong>ข้อเสีย:</strong> อาจมีอคติ (Bias)</p>
+                </div>
+                <div>
+                    <h4>🕵️ External Audit</h4>
+                    <p>ผู้เชี่ยวชาญจาก <strong class="text-accent">ภายนอก</strong> เป็นผู้ตรวจสอบ เพื่อให้ได้มุมมองที่เป็นกลางและอิสระ</p>
+                     <p class="pros"><strong>ข้อดี:</strong> เชี่ยวชาญสูง, น่าเชื่อถือ</p>
+                    <p class="cons"><strong>ข้อเสีย:</strong> ค่าใช้จ่ายสูง</p>
+                </div>
+                <div>
+                    <h4>📜 Third-Party Audit</h4>
+                    <p>การตรวจสอบโดย <strong class="text-accent">หน่วยงานรับรองมาตรฐาน</strong> เพื่อให้ได้รับการรับรอง</p>
+                    <p class="pros"><strong>ตัวอย่าง:</strong> ISO 27001, PCI DSS</p>
+                </div>
+            </div>
+            <div class="slide-number">4/25</div>
+        </section>
+
+        <section class="slide">
+            <h2>VA Process & Prioritization</h2>
+            <div class="issue-box">
+                <div class="issue-header">ประเด็น: เมื่อเจอจุดอ่อนมากมาย เราจะรู้ได้อย่างไรว่าควรแก้ "อะไรก่อน"?</div>
+                <div class="issue-body">
+                    <div>
+                        <h4>หลักการ: "วิเคราะห์และจัดลำดับความสำคัญ"</h4>
+                        <p>ใช้มาตรฐาน <strong>CVSS (Common Vulnerability Scoring System)</strong> เพื่อให้คะแนนความรุนแรงของแต่ละช่องโหว่ ทำให้เราตัดสินใจได้อย่างมีข้อมูล </p>
+                    </div>
+                    <div>
+                        <h4>ตัวอย่างการตัดสินใจ</h4>
+                        <p>ผลสแกนพบ 2 ช่องโหว่:</p>
+                        <ul>
+                            <li><strong>A) SQL Injection:</strong> เข้าถึงฐานข้อมูลได้ -> <strong class="text-danger">CVSS 9.8 (Critical)</strong></li>
+                            <li><strong>B) Missing Security Header:</strong> เสี่ยงต่อ Clickjacking -> <strong class="text-accent">CVSS 4.3 (Medium)</strong></li>
+                        </ul>
+                        <p class="text-xlarge">ทีมต้องแก้ไข <strong class="text-danger">A</strong> ก่อนเสมอ!</p>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-number">5/25</div>
+        </section>
+        
+        <section class="slide">
+            <h2>Case Study: ผลกระทบจากการจัดลำดับความสำคัญผิด</h2>
+             <div class="issue-box">
+                <div class="issue-header">สถานการณ์: บริษัท E-Commerce แห่งหนึ่ง</div>
+                <div class="issue-body">
+                    <div>
+                        <h4>สิ่งที่ VA พบ</h4>
+                        <ul>
+                            <li>SQL Injection ในหน้า Admin (<strong class="text-danger">CVSS 9.1</strong>)</li>
+                            <li>Outdated Web Server (<strong class="text-accent">CVSS 7.5</strong>)</li>
+                            <li>Reflected XSS ในหน้าค้นหา (CVSS 6.1)</li>
+                        </ul>
+                        <p>ทีมพัฒนาเลือกที่จะอัปเดต Web Server และแก้ XSS ก่อน เพราะทำได้ง่ายกว่า</p>
+                    </div>
+                    <div>
+                        <h4>ผลลัพธ์ที่เกิดขึ้น</h4>
+                        <p class="text-large text-danger">สองสัปดาห์ต่อมา บริษัทถูกโจมตีผ่านช่องโหว่ SQL Injection ในหน้า Admin ทำให้ข้อมูลลูกค้ารั่วไหลทั้งหมด</p>
+                        <p><strong>บทเรียน:</strong> ต้องแก้ไขช่องโหว่ที่ "ความเสี่ยงสูงสุด" ก่อนเสมอ แม้ว่าจะทำได้ยากกว่าก็ตาม</p>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-number">6/25</div>
+        </section>
+
+        <section class="slide">
+            <h2>กิจกรรมที่ 1: Pop Quiz</h2>
+            <div class="question-box" onclick="toggleAnswer(this)">
+                <h4>คำถามชวนคิด 🤔</h4>
+                <p>สมมติว่าคุณพบช่องโหว่ <strong>"CVSS 7.5 (High)"</strong> บนเซิร์ฟเวอร์ทดสอบ (Staging) ที่เข้าถึงได้จากภายในเท่านั้น กับช่องโหว่ <strong>"CVSS 6.5 (Medium)"</strong> บนเซิร์ฟเวอร์จริง (Production) ที่ใครๆ ก็เข้าถึงได้ คุณจะเลือกแก้ไขอะไรก่อน?</p>
+                <div class="answer">
+                    <p><strong>คำตอบ:</strong> ควรแก้ไข <strong>CVSS 6.5 บน Production ก่อน</strong> ถึงแม้คะแนนจะต่ำกว่า แต่ "ความเสี่ยง (Risk)" โดยรวมสูงกว่ามาก เพราะมันอยู่บนระบบจริงที่เปิดให้คนภายนอกโจมตีได้ตลอดเวลา นี่คือเหตุผลว่าทำไมเราต้องพิจารณา "บริบท" ร่วมกับ "คะแนน" เสมอ</p>
+                </div>
+            </div>
+            <div class="slide-number">7/25</div>
+        </section>
+        
+        <section class="slide">
+            <h2>Module 2: The "How" - คิดแบบแฮกเกอร์</h2>
+            <div class="issue-box">
+                <div class="issue-header">ประเด็น: เรารู้ว่ามี "จุดอ่อน" แต่ไม่แน่ใจว่ามัน "อันตราย" แค่ไหนในโลกจริง</div>
+                <div class="issue-body">
+                    <div>
+                        <h4>หลักการ: "จำลองการโจมตี" อย่างมีจริยธรรม</h4>
+                        <p>ทำการ <strong>Penetration Testing (Pen Test)</strong> เพื่อพิสูจน์ว่าช่องโหว่สามารถถูกใช้ประโยชน์ได้จริงหรือไม่ และเพื่อประเมินผลกระทบทางธุรกิจที่แท้จริง</p>
+                        <p class="text-xlarge">VA คือ "การหา" ↔️ Pen Test คือ "การเจาะ"</p>
+                    </div>
+                    <div>
+                        <h4>ตัวอย่างให้เห็นภาพ</h4>
+                        <p><strong>VA Report บอกว่า:</strong> "ช่องโหว่ File Upload อาจไม่ปลอดภัย"</p>
+                        <p><strong>Pen Test Report พิสูจน์ว่า:</strong> "เราใช้ช่องโหว่ File Upload เพื่อ <strong class="text-danger">ยึดครองเซิร์ฟเวอร์ได้สำเร็จ (RCE)</strong> และนี่คือ Screenshot ของไฟล์ข้อมูลลูกค้าที่เราดึงออกมาได้"</p>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-number">8/25</div>
+        </section>
+        
+        <section class="slide">
+            <h2>VA vs. Pen Test: สรุปสำหรับนักพัฒนา</h2>
+             <div class="issue-box">
+                <div class="issue-header">ประเด็น: เราควรทำ VA หรือ Pen Test ตอนไหน?</div>
+                <div class="issue-body">
+                    <div>
+                        <h4>Vulnerability Assessment (VA)</h4>
+                        <ul>
+                            <li><strong>ทำตอนไหน?</strong> <span class="text-large text-secondary">ทำบ่อยๆ, ต่อเนื่อง</span> (เช่น ทุก Sprint)</li>
+                            <li><strong>ทำไม?</strong> เพื่อสุขอนามัยที่ดีของโค้ด (Code Hygiene) และจัดการความเสี่ยงในภาพรวม</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4>Penetration Testing (Pen Test)</h4>
+                         <ul>
+                            <li><strong>ทำตอนไหน?</strong> <span class="text-large text-secondary">ทำเป็นรอบ, ก่อน Release ใหญ่</span></li>
+                            <li><strong>ทำไม?</strong> เพื่อยืนยันความแข็งแกร่งของระบบในสถานการณ์จริง และตอบคำถามผู้บริหารว่า "เราปลอดภัยแค่ไหน?"</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-number">9/25</div>
+        </section>
+
+        <section class="slide">
+            <h2>ประเภทของ Pen Test</h2>
+             <div class="issue-box">
+                <div class="issue-header">ประเด็น: เราควรให้ข้อมูลผู้ทดสอบมากน้อยแค่ไหน?</div>
+                <div class="issue-body">
+                    <div class="infographic-card">
+                        <h4>⚫ Black Box</h4>
+                        <p>"ไม่ให้ข้อมูลอะไรเลย"</p>
+                        <p><strong>เป้าหมาย:</strong> จำลองแฮกเกอร์ภายนอก 100%</p>
+                    </div>
+                    <div class="infographic-card">
+                        <h4>🔘 Gray Box</h4>
+                        <p>"ให้ข้อมูลบางส่วน"</p>
+                        <p><strong>เป้าหมาย:</strong> สมดุลและนิยมที่สุด, จำลองผู้ใช้ที่มีสิทธิ์</p>
+                    </div>
+                    <div class="infographic-card">
+                        <h4>⚪ White Box</h4>
+                        <p>"ให้ข้อมูลทั้งหมด"</p>
+                        <p><strong>เป้าหมาย:</strong> ตรวจสอบโค้ดเชิงลึก (Secure Code Review)</p>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-number">10/25</div>
+        </section>
+        
+        <section class="slide">
+            <h2>กิจกรรมที่ 2: สถานการณ์สมมติ</h2>
+             <div class="question-box" onclick="toggleAnswer(this)">
+                <h4>Think Like a Developer 👨‍💻</h4>
+                <p>ถ้าคุณเพิ่งเขียนฟังก์ชัน API ใหม่เสร็จ และต้องการให้เพื่อนในทีมช่วยตรวจสอบความปลอดภัย คุณจะแนะนำให้เขาทำ Pen Test แบบไหน (Black/White/Gray) เพื่อให้ได้ประโยชน์กับ "ตัวคุณ" ในฐานะคนเขียนโค้ดมากที่สุด?</p>
+                <div class="answer">
+                    <p><strong>คำตอบ: White Box</strong> เพราะการให้เพื่อนเข้าถึง Source Code และความเข้าใจใน Logic จะช่วยให้เขาสามารถตรวจสอบช่องโหว่ในระดับโค้ดได้อย่างละเอียดและครอบคลุมทุกเส้นทาง (Code Path) ซึ่งอาจหาไม่เจอในการทดสอบแบบอื่น และจะช่วยให้คุณเรียนรู้และแก้ไขโค้ดได้ตรงจุดที่สุด</p>
+                </div>
+            </div>
+            <div class="slide-number">11/25</div>
+        </section>
+
+        <section class="slide">
+            <h2>ขั้นตอนการเจาะระบบ (Methodology)</h2>
+             <div class="issue-box">
+                <div class="issue-header">ประเด็น: แฮกเกอร์มีขั้นตอนการทำงานอย่างไร?</div>
+                <div class="issue-body">
+                    <div>
+                        <h4>ขั้นตอนที่เป็นสากล (PTES)</h4>
+                        <ol style="font-size:0.9em; padding-left:20px;">
+                            <li><strong>Reconnaissance:</strong> 🕵️ รวบรวมข้อมูล</li>
+                            <li><strong>Scanning:</strong> 📡 ค้นหาเป้าหมายที่น่าสนใจ</li>
+                            <li><strong>Gaining Access:</strong> 🔑 หาทางเจาะเข้าระบบ (Exploitation)</li>
+                            <li><strong>Maintaining Access:</strong> 🚪 สร้างช่องทางเพื่อกลับมาใหม่</li>
+                            <li><strong>Covering Tracks:</strong> 👣 ลบร่องรอย</li>
+                        </ol>
+                    </div>
+                    <div>
+                        <h4>ตัวอย่างขั้นตอน Reconnaissance</h4>
+                        <p>แฮกเกอร์ต้องการหาข้อมูลเกี่ยวกับ `example.com`:</p>
+                        <pre><code># ค้นหาเจ้าของโดเมน
+$ whois example.com
+
+# ค้นหา Subdomain ที่ซ่อนอยู่
+$ subfinder -d example.com
+
+# สแกนหา Port ที่เปิดอยู่
+$ nmap -sV example.com</code></pre>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-number">12/25</div>
+        </section>
+
+        <section class="slide">
+            <h2>Module 3: The "Tools" - อาวุธของนักพัฒนา</h2>
+             <div class="issue-box">
+                <div class="issue-header">ประเด็น: เราจะตรวจสอบความปลอดภัยเหล่านี้ได้เองโดยอัตโนมัติได้อย่างไร?</div>
+                <div class="issue-body">
+                    <div>
+                        <h4>หลักการ: ผสานเครื่องมือเข้ากับกระบวนการพัฒนา (DevSecOps)</h4>
+                        <p>ใช้เครื่องมือ 3 ประเภทสำคัญที่ตอบโจทย์ในแต่ละขั้นตอน:</p>
+                        <ul>
+                            <li><strong class="text-large">SCA:</strong> ตรวจสอบ "โค้ดที่เราไม่ได้เขียน" (Dependencies)</li>
+                            <li><strong class="text-large">SAST:</strong> ตรวจสอบ "โค้ดที่เราเขียน"</li>
+                            <li><strong class="text-large">DAST:</strong> ตรวจสอบ "แอปที่เรารัน"</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <p class="text-xlarge">"Shift Left" Security: หาเจอปัญหาให้เร็วที่สุด!</p>
+            <div class="slide-number">13/25</div>
+        </section>
+        
+        <section class="slide">
+            <h2>SCA - Software Composition Analysis</h2>
+            <div class="issue-box">
+                <div class="issue-header">ปัญหา: "Library ที่เรา import มาใช้งานนั้นปลอดภัยหรือไม่?"</div>
+                <div class="issue-body">
+                    <div>
+                        <h4>หลักการป้องกัน: "อย่าสร้างบ้านบนรากฐานที่ผุพัง"</h4>
+                        <p>ใช้เครื่องมือ SCA (เช่น `npm audit`, Snyk) เพื่อสแกน Dependencies ของเราเทียบกับฐานข้อมูลช่องโหว่ (CVE)</p>
+                    </div>
+                    <div>
+                        <h4>ตัวอย่าง: Log4Shell</h4>
+                        <p>ทีมที่ใช้ SCA สามารถรันสแกนแล้วรู้ได้ทันทีว่า "แอปของเรามีความเสี่ยงจาก `log4j`" และรีบอัปเดตเวอร์ชันได้ทันที</p>
+                        <pre><code>$ npm audit
+# Found 1 critical severity vulnerability in log4j</code></pre>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-number">14/25</div>
+        </section>
+
+        <section class="slide">
+            <h2>SAST - Static Application Security Testing</h2>
+            <div class="issue-box">
+                <div class="issue-header">ปัญหา: "เราจะหา Bug ด้านความปลอดภัยในโค้ดที่เราเขียนเองได้อย่างไร?"</div>
+                <div class="issue-body">
+                    <div>
+                        <h4>หลักการป้องกัน: "มีผู้ตรวจโค้ดอัตโนมัติ"</h4>
+                        <p>ใช้เครื่องมือ SAST (เช่น SonarQube, Semgrep) ที่จะวิเคราะห์ Source Code โดยตรงเพื่อค้นหารูปแบบโค้ดที่ไม่ปลอดภัย</p>
+                    </div>
+                    <div>
+                        <h4>ตัวอย่าง: SQL Injection</h4>
+                        <pre><code>$query = "SELECT * FROM users WHERE name = '$username'";</code></pre>
+                        <p>เครื่องมือ SAST จะแจ้งเตือนที่บรรทัดนี้ทันทีว่า <strong class="text-danger">"Potential SQL Injection"</strong> และแนะนำให้ใช้ Prepared Statement แทน</p>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-number">15/25</div>
+        </section>
+        
+        <section class="slide">
+            <h2>DAST - Dynamic Application Security Testing</h2>
+            <div class="issue-box">
+                <div class="issue-header">ปัญหา: "โค้ดอาจจะปลอดภัย แต่เมื่อนำไปรันจริง การตั้งค่า (Configuration) อาจสร้างปัญหาได้"</div>
+                <div class="issue-body">
+                    <div>
+                        <h4>หลักการป้องกัน: "ทดสอบเหมือนแฮกเกอร์"</h4>
+                        <p>ใช้เครื่องมือ DAST (เช่น OWASP ZAP) เพื่อทดสอบแอปพลิเคชัน "ที่กำลังทำงานอยู่" จากมุมมองภายนอก</p>
+                    </div>
+                    <div>
+                        <h4>ตัวอย่าง: Missing Security Header</h4>
+                        <p>โค้ดของคุณอาจจะดี แต่คุณลืมตั้งค่า Web Server ให้ส่ง `X-Frame-Options` header</p>
+                        <p>SAST จะมองไม่เห็นปัญหานี้ แต่ DAST จะแจ้งเตือนทันทีว่า <strong class="text-accent">"X-Frame-Options Header Not Set"</strong> ซึ่งทำให้แอปของคุณเสี่ยงต่อการโจมตีแบบ Clickjacking</p>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-number">16/25</div>
+        </section>
+        
+        <section class="slide">
+            <h2>Developer's Arsenal: คลังอาวุธที่ควรรู้จัก [เนื้อหาเพิ่มเติม]</h2>
+            <p>นอกจาก SAST/DAST/SCA แล้ว นี่คือเครื่องมืออื่นๆ ที่มีประโยชน์:</p>
+            <div class="issue-box">
+                <div class="issue-header">Tools Showcase</div>
+                <div class="issue-body">
+                    <div class="infographic-card">
+                        <h4>📡 Nmap</h4><p>สำหรับ "สำรวจ" เครือข่าย, ค้นหา Host และ Port ที่เปิดอยู่</p>
+                    </div>
+                     <div class="infographic-card">
+                        <h4>🕷️ OWASP ZAP / Burp Suite</h4><p>สำหรับ "ทดสอบ" เว็บแอปพลิเคชันอย่างละเอียด</p>
+                    </div>
+                     <div class="infographic-card">
+                        <h4>💉 SQLMap</h4><p>สำหรับ "เจาะจง" โจมตีและทดสอบ SQL Injection</p>
+                    </div>
+                     <div class="infographic-card">
+                        <h4>💥 Metasploit</h4><p>Framework สำหรับ "การเจาะระบบ" และพัฒนาระเบิด (Exploit)</p>
+                    </div>
+                     <div class="infographic-card">
+                        <h4>🦈 Wireshark</h4><p>สำหรับ "ดักจับและวิเคราะห์" ข้อมูลที่วิ่งในเครือข่าย</p>
+                    </div>
+                     <div class="infographic-card">
+                        <h4>✅ OpenVAS / Nessus</h4><p>สำหรับ "สแกน" หาช่องโหว่ของระบบโดยรวม</p>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-number">17/25</div>
+        </section>
+
+        <section class="slide">
+            <h2>กิจกรรมที่ 3: Interactive Quiz</h2>
+            <div class="question-box">
+                <h4>Mid-Lecture Knowledge Check!</h4>
+                <p>ตอนนี้เราจะมาทดสอบความสามารถในการ "แยกแยะภัยคุกคาม" กัน</p>
+                <p>อาจารย์จะเปิด **"แบบทดสอบ: คุณรู้ทันภัยไซเบอร์แค่ไหน?"** และเลือกสถานการณ์ที่น่าสนใจ 3-4 ข้อ ให้นักศึกษาทั้งห้องช่วยกันตอบและอภิปราย</p>
+                <p>(Link to Quiz: `lecture02_test.html`)</p>
+            </div>
+            <div class="slide-number">18/25</div>
+        </section>
+
+        <section class="slide">
+            <h2>Module 4: The "Evidence" - พลังของ Log</h2>
+             <div class="issue-box">
+                <div class="issue-header">ประเด็น: เมื่อเกิดปัญหาขึ้น เราจะย้อนรอยได้อย่างไรว่า "เกิดอะไรขึ้น, ใครทำ, และทำเมื่อไหร่"?</div>
+                <div class="issue-body">
+                    <div>
+                        <h4>หลักการ: "สร้าง Log ที่ดีและนำไปใช้เฝ้าระวัง"</h4>
+                        <p>Log ไม่ใช่แค่ข้อความ Debug แต่มันคือ <strong class="text-large">"หลักฐานทางดิจิทัล"</strong> ที่สำคัญที่สุด เราต้องออกแบบ Log ที่มีโครงสร้างชัดเจน (Structured Logging)</p>
+                    </div>
+                    <div>
+                        <h4>ตัวอย่าง Log ที่ไม่ดี vs. Log ที่ดี</h4>
+                        <p><strong>ไม่ดี (Useless):</strong></p>
+                        <pre><code>Login failed.</code></pre>
+                        <p><strong>ดี (Actionable):</strong></p>
+                        <pre><code>{
+ "event": "USER_LOGIN_FAILURE",
+ "username": "testuser",
+ "source_ip": "203.0.113.78",
+ "reason": "Invalid credentials"
+}</code></pre>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-number">19/25</div>
+        </section>
+
+        <section class="slide">
+            <h2>Logging Best Practices</h2>
+            <div class="issue-box">
+                <div class="issue-header">ประเด็น: เราควรบันทึก (Log) อะไร และ "ห้าม" บันทึกอะไร?</div>
+                <div class="issue-body">
+                    <div>
+                        <h4>✅ สิ่งที่ควร Log</h4>
+                        <ul>
+                           <li><strong>เหตุการณ์สำคัญ:</strong> Authentication, Authorization</li>
+                           <li><strong>การเปลี่ยนแปลงข้อมูล:</strong> Create, Update, Delete</li>
+                           <li><strong>Error และ Exception</strong> ทั้งหมด</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4>❌ สิ่งที่ห้าม Log เด็ดขาด</h4>
+                         <ul>
+                           <li><strong class="text-danger">รหัสผ่าน (Passwords)</strong></li>
+                           <li><strong class="text-danger">Session Tokens / API Keys</strong></li>
+                           <li><strong class="text-danger">ข้อมูลส่วนบุคคลที่ละเอียดอ่อน (PII)</strong></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-number">20/25</div>
+        </section>
+        
+        <section class="slide">
+            <h2>จาก Log สู่ Monitoring</h2>
+             <div class="issue-box">
+                <div class="issue-header">ประเด็น: เรามี Log จำนวนมหาศาล จะใช้ประโยชน์จากมันแบบ Real-time ได้อย่างไร?</div>
+                <div class="issue-body">
+                    <div>
+                        <h4>หลักการ: "รวบรวม, วิเคราะห์, และแจ้งเตือน"</h4>
+                        <p>ใช้ระบบ Centralized Logging และ Monitoring (เช่น ELK Stack, Splunk) เพื่อรวบรวมและวิเคราะห์ Log ทั้งหมดแบบ Real-time และสร้าง Dashboard กับ Alerting Rules</p>
+                    </div>
+                    <div>
+                        <h4>ตัวอย่าง Alert Rule</h4>
+                        <p>เราสามารถตั้งกฎในระบบ Monitoring ว่า:</p>
+                        <pre><code>-- ถ้า event 'USER_LOGIN_FAILURE'
+-- จาก 'source_ip' เดียวกัน
+-- เกิดขึ้นเกิน 5 ครั้งใน 1 นาที
+-- ให้ส่ง Alert ไปที่ทีม Security!
+</code></pre>
+                        <p>นี่คือการเปลี่ยน Log จาก "ข้อมูลดิบ" ให้กลายเป็น <strong class="text-accent">"สัญญาณเตือนภัย"</strong></p>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-number">21/25</div>
+        </section>
+        
+        <section class="slide">
+            <h2>กิจกรรมที่ 4: Log Analysis Challenge</h2>
+             <div class="question-box" onclick="toggleAnswer(this)">
+                <h4>Be a Cyber Detective 🕵️</h4>
+                <p>จาก Apache Access Log ต่อไปนี้ คุณเห็นร่องรอยที่น่าสงสัยอะไรบ้าง?</p>
+                 <pre><code>58.123.45.67 - "GET /products.php?id=1' or 1=1--"
+58.123.45.67 - "GET /wp-login.php"
+10.0.0.5 - "POST /api/v1/transfer"
+58.123.45.67 - "GET /search?q=&lt;script&gt;alert(1)&lt;/script&gt;"
+</code></pre>
+                <div class="answer">
+                    <p><strong>ร่องรอยที่พบ:</strong></p>
+                    <ul>
+                        <li><strong>บรรทัดที่ 1:</strong> IP `58.123.45.67` กำลังพยายามทำ <strong>SQL Injection</strong></li>
+                        <li><strong>บรรทัดที่ 2:</strong> IP เดิม กำลัง <strong>สแกนหาหน้า Login</strong> ของ WordPress</li>
+                        <li><strong>บรรทัดที่ 4:</strong> IP เดิม กำลังพยายามทำ <strong>Cross-Site Scripting (XSS)</strong></li>
+                    </ul>
+                    <p><strong>ข้อสรุป:</strong> IP `58.123.45.67` เป็นผู้ไม่ประสงค์ดี และควรถูกบล็อกทันที!</p>
+                </div>
+            </div>
+            <div class="slide-number">22/25</div>
+        </section>
+
+        <section class="slide">
+            <h2>บทสรุป: บทบาทของ Software Engineer</h2>
+             <div class="issue-box">
+                <div class="issue-header">ประเด็น: ทั้งหมดนี้ เกี่ยวกับ "คนเขียนโค้ด" อย่างเราอย่างไร?</div>
+                <div class="issue-body">
+                    <div>
+                        <h4>ความรับผิดชอบของเรา</h4>
+                        <ul>
+                            <li><strong>"สร้าง" ซอฟต์แวร์ที่ตรวจสอบได้:</strong> เขียน Log ที่มีคุณภาพเพื่อให้ทีม Security นำไปใช้ต่อได้</li>
+                            <li><strong>"ตรวจสอบ" งานของตัวเอง:</strong> ใช้เครื่องมือ SCA, SAST, DAST ในกระบวนการพัฒนาเพื่อหาช่องโหว่ตั้งแต่เนิ่นๆ</li>
+                            <li><strong>"ร่วมมือ" กับทีมอื่น:</strong> ทำงานร่วมกับทีม Security และ Infrastructure เพื่อออกแบบการป้องกันที่เหมาะสม</li>
+                        </ul>
+                        <p class="text-xlarge">ความปลอดภัยไม่ใช่ "Feature" แต่เป็น <strong class="text-success">"Quality"</strong></p>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-number">23/25</div>
+        </section>
+        
+        <section class="slide">
+            <h2>การประเมินผล: วัดความเข้าใจจริง</h2>
+            <h2>Post-Lecture Assessment Plan</h2>
+            <div class="issue-box">
+                <div class="issue-header">เราจะวัดผลการเรียนรู้ของนักศึกษาได้อย่างไร?</div>
+                <div class="issue-body">
+                    <div>
+                        <h4>1. Post-Lecture Online Quiz</h4>
+                         <p>มอบหมายให้นักศึกษาทำ <strong>"แบบทดสอบ Pre-Test / Post-Test"</strong> หลังจบคาบเรียน เพื่อวัดความรู้ความจำ</p>
+                        <p style="font-size:0.8em;">(Link to Quiz: `lecture03_test.html`)</p>
+                    </div>
+                    <div>
+                       <h4>2. Mini-Project: Case Study Analysis</h4>
+                       <p>มอบหมาย Case Study สั้นๆ ให้นักศึกษาวิเคราะห์และเสนอแผนแก้ไข เพื่อวัดทักษะการประยุกต์ใช้และการสื่อสาร</p>
+                       <p style="font-size:0.8em;"><strong>ตัวอย่างโจทย์:</strong> "จากรายงานผล Pen Test ที่แนบมา จงเขียนอีเมลสรุปความเสี่ยงให้ CTO ทราบ"</p>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-number">24/25</div>
+        </section>
+        
+        <section class="slide title-slide">
+            <h1>สรุปและ Q&A</h1>
+            <h2>Key Takeaways for Software Engineers</h2>
+             <ul style="font-size:0.8em; text-align:left; max-width: 800px; margin: 20px auto;">
+                <li style="color:white; font-size: 1.2em; margin-bottom: 15px;">🛡️ <strong>Security is a Mindset:</strong> คิดถึงความปลอดภัยในทุกขั้นตอน ไม่ใช่แค่ตอนสุดท้าย</li>
+                <li style="color:white; font-size: 1.2em; margin-bottom: 15px;">⚙️ <strong>Automate Everything:</strong> ผสานเครื่องมือ (SCA, SAST, DAST) เข้ากับ CI/CD Pipeline</li>
+                <li style="color:white; font-size: 1.2em; margin-bottom: 15px;">📜 <strong>Log Wisely:</strong> สร้าง Log ที่มีคุณภาพเพื่อเป็นหลักฐานและเครื่องมือในการเฝ้าระวัง</li>
+                <li style="color:white; font-size: 1.2em; margin-bottom: 15px;">📦 <strong>Update Your Dependencies:</strong> การอัปเดต Library อยู่เสมอคือการป้องกันที่ง่ายและได้ผลที่สุด</li>
+            </ul>
+            <div class="slide-number">25/25</div>
+        </section>
+        
+    </div>
+
+    <div class="presentation-controls">
+        <button id="prev-btn" class="nav-btn">⬅️</button>
+        <button id="font-decrease-btn" class="font-btn">-</button>
+        <span id="slide-counter"></span>
+        <button id="font-increase-btn" class="font-btn">+</button>
+        <button id="next-btn" class="nav-btn">➡️</button>
+        <button id="fullscreen-btn" class="nav-btn" title="เต็มจอ">⛶</button>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const slides = document.querySelectorAll('.slide');
+            const nextBtn = document.getElementById('next-btn');
+            const prevBtn = document.getElementById('prev-btn');
+            const fullscreenBtn = document.getElementById('fullscreen-btn');
+            const slideCounter = document.getElementById('slide-counter');
+            const progressBar = document.getElementById('progress-bar');
+            const fontIncreaseBtn = document.getElementById('font-increase-btn');
+            const fontDecreaseBtn = document.getElementById('font-decrease-btn');
+            const root = document.documentElement;
+
+            let currentFontSize = 1.6;
+
+            function updateFontSize() {
+                root.style.setProperty('--base-font-size', `clamp(16px, ${currentFontSize}vw, 24px)`);
+            }
+            
+            function toggleAnswer(element) {
+                const answer = element.querySelector('.answer');
+                if (answer) {
+                    const isDisplayed = answer.style.display === 'block';
+                    answer.style.display = isDisplayed ? 'none' : 'block';
+                    if (!isDisplayed) {
+                        element.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    }
+                }
+            }
+            
+            window.toggleAnswer = toggleAnswer;
+
+            fontIncreaseBtn.addEventListener('click', () => {
+                if (currentFontSize < 2.5) { currentFontSize += 0.1; updateFontSize(); }
+            });
+
+            fontDecreaseBtn.addEventListener('click', () => {
+                if (currentFontSize > 0.8) { currentFontSize -= 0.1; updateFontSize(); }
+            });
+
+            let currentSlideIndex = 0;
+            const totalSlides = slides.length;
+
+            function showSlide(index) {
+                if (index < 0 || index >= totalSlides) return;
+                slides.forEach((slide, i) => slide.classList.toggle('active', i === index));
+                if (slides[index].scrollTop > 0) slides[index].scrollTop = 0;
+                
+                slides.forEach(slide => {
+                    slide.querySelectorAll('.answer').forEach(ans => ans.style.display = 'none');
+                });
+
+                currentSlideIndex = index;
+                updateControls();
+            }
+
+            function updateControls() {
+                const progressPercentage = ((currentSlideIndex + 1) / totalSlides) * 100;
+                progressBar.style.width = `${progressPercentage}%`;
+                
+                slideCounter.textContent = `${currentSlideIndex + 1} / ${totalSlides}`;
+
+                prevBtn.disabled = currentSlideIndex === 0;
+                nextBtn.disabled = currentSlideIndex === totalSlides - 1;
+
+                slides.forEach((slide, index) => {
+                    const slideNumberEl = slide.querySelector('.slide-number');
+                    if(slideNumberEl) {
+                         slideNumberEl.textContent = `${index + 1}/${totalSlides}`;
+                    }
+                });
+            }
+
+            function toggleFullscreen() {
+                if (!document.fullscreenElement) {
+                    document.documentElement.requestFullscreen().catch(err => {
+                        alert(`ไม่สามารถเข้าสู่โหมดเต็มจอได้: ${err.message}`);
+                    });
+                } else {
+                    if (document.exitFullscreen) { document.exitFullscreen(); }
+                }
+            }
+
+            nextBtn.addEventListener('click', () => showSlide(currentSlideIndex + 1));
+            prevBtn.addEventListener('click', () => showSlide(currentSlideIndex - 1));
+            fullscreenBtn.addEventListener('click', toggleFullscreen);
+
+            document.addEventListener('keydown', (event) => {
+                if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA') return;
+                if (event.key === 'ArrowRight' || event.key === ' ') { event.preventDefault(); nextBtn.click(); } 
+                else if (event.key === 'ArrowLeft') { event.preventDefault(); prevBtn.click(); } 
+                else if (event.key === 'f') { event.preventDefault(); toggleFullscreen(); }
+            });
+            
+            showSlide(0);
+        });
+    </script>
+</body>
+
+</html>

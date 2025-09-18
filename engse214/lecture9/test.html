@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>แบบทดสอบ | ENGSE214 ภาคปฏิบัติจำลอง: VA & Pen Test</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        body {
+            font-family: 'Sarabun', sans-serif;
+            background-color: #111827; /* bg-gray-900 */
+        }
+        .answer-btn {
+            transition: all 0.2s ease-in-out;
+        }
+        .answer-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            background-color: #4b5563; /* hover:bg-gray-600 */
+        }
+        .answer-btn.selected {
+            background-color: #3b82f6; /* bg-blue-600 */
+            border-color: #2563eb; /* border-blue-700 */
+            color: white;
+        }
+        .answer-btn.correct {
+            background-color: #16a34a; /* bg-green-600 */
+            color: white;
+            border-color: #15803d;
+        }
+        .answer-btn.incorrect {
+            background-color: #dc2626; /* bg-red-600 */
+            color: white;
+            border-color: #b91c1c;
+        }
+        .btn-icon {
+            width: 1.25rem;
+            height: 1.25rem;
+            margin-right: 0.5rem;
+        }
+        #explanation-box {
+            transition: opacity 0.5s ease-in-out;
+        }
+    </style>
+</head>
+<body class="text-gray-200 flex items-center justify-center min-h-screen p-4">
+
+    <div class="w-full max-w-4xl mx-auto">
+
+        <div id="start-screen" class="bg-gray-800 p-8 rounded-2xl shadow-2xl text-center transition-opacity duration-500">
+            <div class="flex justify-center items-center gap-4 mb-4">
+                 <svg class="w-10 h-10 text-blue-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <h1 class="text-3xl md:text-4xl font-bold text-blue-400">แบบทดสอบ Pre-Test / Post-Test</h1>
+            </div>
+            <p class="text-lg md:text-xl text-gray-300 mb-1">ENGSE214: ความมั่นคงปลอดภัยทางไซเบอร์เบื้องต้น</p>
+            <p class="text-md text-gray-400 mb-8">ภาคปฏิบัติจำลอง: VA & Pen Test in Action</p>
+            
+            <form id="student-form" class="space-y-6">
+                <div>
+                    <label for="student-id" class="block text-left text-gray-300 mb-2 font-medium">รหัสนักศึกษา</label>
+                    <input type="text" id="student-id" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="เช่น 66xxxxxxxx" required>
+                </div>
+                <div>
+                    <label for="student-name" class="block text-left text-gray-300 mb-2 font-medium">ชื่อ - นามสกุล</label>
+                    <input type="text" id="student-name" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="เช่น สมชาย ใจดี" required>
+                </div>
+                <button type="submit" id="start-btn" class="w-full flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg transition duration-300 text-lg shadow-lg">
+                    <svg class="btn-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.59 14.37a6 6 0 01-5.84 7.38v-4.82m5.84-2.56a12.025 12.025 0 01-4.132 4.032m-4.132-4.032L6.91 9.51m1.36-2.56a12.025 12.025 0 014.132-4.032m4.132 4.032L17.09 9.51m-1.36 2.56a6 6 0 01-5.84-7.38v4.82" />
+                    </svg>
+                    เริ่มต้นทำแบบทดสอบ
+                </button>
+            </form>
+        </div>
+
+        <div id="quiz-screen" class="hidden bg-gray-800 p-6 md:p-8 rounded-2xl shadow-2xl transition-opacity duration-500">
+            <div class="mb-6">
+                <div class="flex justify-between items-center mb-2">
+                    <span class="text-sm font-medium text-gray-400">ความคืบหน้า</span>
+                    <span id="question-counter" class="text-sm font-bold text-blue-400">ข้อ 1 / 30</span>
+                </div>
+                <div class="w-full bg-gray-700 rounded-full h-2.5">
+                    <div id="progress-bar" class="bg-blue-600 h-2.5 rounded-full transition-all duration-300 ease-out"></div>
+                </div>
+            </div>
+
+            <div class="mb-6">
+                <h2 id="question-text" class="text-xl md:text-2xl font-bold mb-4" style="min-height: 6rem;"></h2>
+                <img id="question-image" class="hidden max-w-full md:max-w-md mx-auto rounded-lg my-4 shadow-lg" alt="รูปภาพประกอบคำถาม">
+            </div>
+
+            <div id="answer-buttons" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+
+            <div id="explanation-box" class="hidden mt-6"></div>
+
+            <div class="mt-8 flex justify-end">
+                <button id="next-btn" class="flex items-center justify-center bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 px-6 rounded-lg transition duration-300">
+                    <span id="next-btn-text">ข้อถัดไป</span>
+                    <svg class="w-5 h-5 ml-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <div id="result-screen-container" class="hidden">
+            <div id="result-screen" class="bg-gray-800 p-6 md:p-8 rounded-2xl shadow-2xl text-center transition-opacity duration-500">
+                <h2 class="text-3xl font-bold text-blue-400 mb-2">สรุปผลการทดสอบ</h2>
+                <p id="result-student-info" class="text-lg text-gray-300 mb-4"></p>
+                
+                <div id="result-summary-box" class="rounded-xl p-6 my-6">
+                    <p class="text-lg text-gray-300">คะแนนของคุณคือ</p>
+                    <p id="score-text" class="text-6xl font-bold text-white my-2">25 / 30</p>
+                    <p id="score-percentage" class="text-xl"></p>
+                    <p id="pass-fail-status" class="text-2xl font-bold mt-4"></p>
+                </div>
+
+                <div id="summary-container" class="space-y-4 text-left mt-8"></div>
+                
+                <div class="flex flex-col md:flex-row gap-4 mt-8">
+                    <button id="capture-btn" class="w-full md:w-1/2 flex items-center justify-center bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg transition duration-300 text-lg shadow-lg">
+                        <svg class="btn-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.776 48.776 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" /><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM18.75 10.5h.008v.008h-.008V10.5z" /></svg>
+                        Capture ผลคะแนน
+                    </button>
+                    <button id="retry-btn" class="w-full md:w-1/2 flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition duration-300 text-lg shadow-lg">
+                        <svg class="btn-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0011.667 0l3.181-3.183m-11.667 0l3.181-3.183a8.25 8.25 0 00-11.667 0l3.181 3.183" /></svg>
+                        ทำแบบทดสอบอีกครั้ง
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+<script>
+    // --- DATA ---
+    const quizData = [
+        {
+            question: "จากสถานการณ์จำลอง 'Meow-tastic Social' เป้าหมายหลักของ Phase 1: Vulnerability Assessment (VA) คืออะไร?",
+            answers: [
+                { text: "เพื่อเจาะเข้าระบบให้สำเร็จและขโมยข้อมูลแมว", correct: false },
+                { text: "เพื่อหาจุดอ่อนให้ครอบคลุมและเร็วที่สุด โดยใช้เครื่องมืออัตโนมัติเป็นหลัก", correct: true },
+                { text: "เพื่อเขียนรายงานสรุปให้ผู้บริหารโดยไม่ต้องลงรายละเอียดทางเทคนิค", correct: false },
+                { text: "เพื่อทดสอบเฉพาะฟังก์ชัน File Upload ที่มีความเสี่ยงสูง", correct: false }
+            ],
+            rationale: "VA มีเป้าหมายเพื่อสร้างรายการช่องโหว่ (To-do list) ในภาพรวมให้ได้มากที่สุด เพื่อนำไปจัดลำดับความสำคัญและวางแผนแก้ไขต่อไป"
+        },
+        {
+            question: "ข้อใดคือ 'Mindset' ที่ถูกต้องที่สุดของ VA Assessor?",
+            answers: [
+                { text: "เชื่อผลจากเครื่องมือสแกน 100% และส่งรายงานทันที", correct: false },
+                { text: "รัน Tool แล้วส่งต่อให้ Pen Tester จัดการ โดยไม่ต้องวิเคราะห์", correct: false },
+                { text: "ไม่ใช่แค่รัน Tool แต่ต้องตีความผลลัพธ์, ตรวจสอบ False Positive, และวิเคราะห์ในบริบทของธุรกิจ", correct: true },
+                { text: "เน้นหาช่องโหว่ Zero-day ที่ไม่มีใครรู้จักเท่านั้น", correct: false }
+            ],
+            rationale: "VA ที่ดีต้องอาศัยการวิเคราะห์ของมนุษย์ในการตีความผลจากเครื่องมือ เพื่อให้ได้ข้อมูลเชิงลึก (Insight) ที่นำไปใช้งานได้จริง ไม่ใช่แค่ข้อมูลดิบ (Data)"
+        },
+        {
+            question: "ในสถานการณ์จำลอง ผลสแกนจาก Nessus พบว่า Port 3306 (MySQL) เปิดเป็น Public เหตุใดสิ่งนี้จึงเป็นความเสี่ยงสูงสำหรับนักพัฒนา?",
+            answers: [
+                { text: "ทำให้เซิร์ฟเวอร์ทำงานช้าลง", correct: false },
+                { text: "เป็นการเพิ่มพื้นผิวการโจมตี (Attack Surface) และเสี่ยงต่อการถูก Brute-force รหัสผ่านโดยตรง", correct: true },
+                { text: "ผิดกฎหมาย PDPA โดยตรง", correct: false },
+                { text: "ทำให้การเชื่อมต่อจากแอปพลิเคชันทำได้ยากขึ้น", correct: false }
+            ],
+            rationale: "การเปิด Port Database สู่สาธารณะ เหมือนการเปิดประตูห้องนิรภัยทิ้งไว้ ทำให้แฮกเกอร์สามารถพยายามทายรหัสผ่านได้โดยตรงโดยไม่ต้องผ่านชั้นป้องกันของเว็บแอปพลิเคชัน"
+        },
+        {
+            question: "ช่องโหว่ SQL Injection ที่ ZAP พบในโค้ดของ 'Meow-tastic Social' เกิดจากสาเหตุใด?",
+            answers: [
+                { text: "การใช้ Library เวอร์ชันเก่า", correct: false },
+                { text: "การไม่ได้เข้ารหัสรหัสผ่าน", correct: false },
+                { text: "การนำ Input จากผู้ใช้ไปต่อกับ String ของ SQL Query โดยตรง (String Concatenation)", correct: true },
+                { text: "การตั้งค่า Firewall ผิดพลาด", correct: false }
+            ],
+            rationale: "SQL Injection เกิดขึ้นเมื่อแอปพลิเคชันไม่แยก 'คำสั่ง' SQL ออกจาก 'ข้อมูล' ที่มาจากผู้ใช้ ทำให้ผู้ใช้สามารถส่งข้อมูลที่ถูกตีความว่าเป็นคำสั่งได้ วิธีแก้คือใช้ Parameterized Queries เสมอ"
+        },
+        {
+            question: "ผลการรัน `npm audit` พบช่องโหว่ Critical ใน Library `express-fileupload` นี่คือการตรวจสอบความปลอดภัยประเภทใด?",
+            answers: [
+                { text: "SAST (Static Application Security Testing)", correct: false },
+                { text: "DAST (Dynamic Application Security Testing)", correct: false },
+                { text: "IAST (Interactive Application Security Testing)", correct: false },
+                { text: "SCA (Software Composition Analysis)", correct: true }
+            ],
+            rationale: "SCA คือการวิเคราะห์ 'ส่วนประกอบ' ของซอฟต์แวร์ ซึ่งก็คือ Library และ Framework ที่เรานำมาใช้ เพื่อตรวจสอบว่ามีช่องโหว่ที่เป็นที่รู้จัก (CVE) หรือไม่"
+        },
+        {
+            question: "หลังจากการทำ VA ทีม 'Meow-tastic Social' ได้รับรายการช่องโหว่มากมาย ขั้นตอนต่อไปที่ควรทำคืออะไร?",
+            answers: [
+                { text: "เริ่มแก้ไขจากช่องโหว่ที่แก้ง่ายที่สุดก่อน", correct: false },
+                { text: "จัดประชุม Remediation Huddle เพื่อจัดลำดับความสำคัญและมอบหมายงานแก้ไขตามความรุนแรง", correct: true },
+                { text: "ส่งรายงานทั้งหมดให้ผู้บริหารตัดสินใจ", correct: false },
+                { text: "จ้างบริษัทภายนอกมาทำ Pen Test ทันที", correct: false }
+            ],
+            rationale: "หลังจากได้ข้อมูลจาก VA แล้ว การทำงานร่วมกันระหว่างทีม (Dev, DevOps, QA) เพื่อวางแผนการแก้ไขตามลำดับความสำคัญ (Prioritization) คือขั้นตอนที่ถูกต้องและมีประสิทธิภาพ"
+        },
+        {
+            question: "เป้าหมายหลักของ Phase 2: Penetration Testing ในสถานการณ์จำลองคืออะไร?",
+            answers: [
+                { text: "เพื่อพิสูจน์ว่าช่องโหว่ที่พบใน VA สามารถถูกใช้ประโยชน์เพื่อสร้างผลกระทบได้จริงหรือไม่", correct: true },
+                { text: "เพื่อสแกนหาช่องโหว่ทั้งหมดอีกครั้งด้วยเครื่องมือที่ต่างออกไป", correct: false },
+                { text: "เพื่อแก้ไขช่องโว่ทั้งหมดที่พบใน VA", correct: false },
+                { text: "เพื่อเขียนรายงานความปลอดภัยฉบับสมบูรณ์", correct: false }
+            ],
+            rationale: "Pen Test มีเป้าหมายเพื่อ 'พิสูจน์ความเสี่ยง' (Prove the risk) โดยการจำลองการโจมตีและแสดงให้เห็นถึงผลกระทบที่แท้จริง ซึ่งต่างจาก VA ที่เน้น 'ค้นหาความเสี่ยง' (Find the risk)"
+        },
+        {
+            question: "'Chaining Vulnerabilities' ซึ่งเป็น Mindset ของ Pen Tester หมายถึงอะไร?",
+            answers: [
+                { text: "การรายงานช่องโหว่ทั้งหมดในรายงานฉบับเดียว", correct: false },
+                { text: "การใช้เครื่องมือหลายๆ ตัวต่อกันในการทดสอบ", correct: false },
+                { text: "การนำช่องโหว่เล็กๆ ที่ดูไม่ร้ายแรงหลายอันมาประกอบกันเพื่อสร้างการโจมตีที่รุนแรง", correct: true },
+                { text: "การทดสอบช่องโหว่ตามลำดับของ OWASP Top 10", correct: false }
+            ],
+            rationale: "Pen Tester ที่มีทักษะจะมองหาทางนำช่องโหว่ต่างๆ มาเชื่อมโยงกัน เช่น ใช้ Information Disclosure เพื่อหาข้อมูล แล้วใช้ข้อมูลนั้นไปทำ Social Engineering ต่อ"
+        },
+        {
+            question: "การที่ Pen Tester ค้นหาข้อมูลเกี่ยวกับ 'Meow-tastic Social' บน GitHub หรือ Google ก่อนเริ่มสแกน ถือเป็นขั้นตอนใด?",
+            answers: [
+                { text: "Exploitation", correct: false },
+                { text: "Passive Reconnaissance", correct: true },
+                { text: "Active Reconnaissance", correct: false },
+                { text: "Covering Tracks", correct: false }
+            ],
+            rationale: "Passive Reconnaissance คือการรวบรวมข้อมูลจากแหล่งสาธารณะโดยไม่มีการเชื่อมต่อโดยตรงไปยังเป้าหมาย ซึ่งไม่ทิ้งร่องรอยและเป็นขั้นตอนแรกๆ ที่แฮกเกอร์ทำ"
+        },
+        {
+            question: "ในสถานการณ์จำลอง Pen Tester ใช้ `sqlmap` เพื่อดึง Password Hash ออกมาได้สำเร็จ ขั้นตอนต่อไปที่แฮกเกอร์มักจะทำคืออะไร?",
+            answers: [
+                { text: "ลบฐานข้อมูลทิ้งทันที", correct: false },
+                { text: "นำ Hash ที่ได้ไปพยายามถอดรหัส (Crack) เพื่อให้ได้รหัสผ่านตัวจริง", correct: true },
+                { text: "แจ้งเตือนผู้ใช้ทั้งหมดให้เปลี่ยนรหัสผ่าน", correct: false },
+                { text: "รายงานช่องโหว่ให้เจ้าของระบบทราบ", correct: false }
+            ],
+            rationale: "เป้าหมายของการได้ Hash คือการแปลงกลับไปเป็นรหัสผ่าน (Plaintext) เพื่อนำไปใช้ล็อกอินและยกระดับสิทธิ์ (Privilege Escalation) ต่อไป"
+        },
+        {
+            question: "เส้นทางการโจมตี (Attack Chain) ที่เกิดขึ้นในสถานการณ์จำลองคือข้อใด?",
+            answers: [
+                { text: "Phishing -> Malware -> Ransomware", correct: false },
+                { text: "SQL Injection -> Dump Hashes -> Crack Password -> Login as Admin", correct: true },
+                { text: "Scan Port -> Brute-force SSH -> Get Root", correct: false },
+                { text: "File Upload -> RCE -> Lateral Movement", correct: false }
+            ],
+            rationale: "นี่คือเส้นทางการโจมตีที่สมบูรณ์ซึ่งเริ่มต้นจากช่องโหว่บนเว็บแอปพลิเคชัน และจบลงด้วยการยึดครองบัญชีผู้ดูแลระบบ"
+        },
+        {
+            question: "การที่ Pen Tester เปลี่ยนเป้าหมายไปโจมตีช่องโหว่ `express-fileupload` หลังจากที่ SQLi ถูกแก้ไขแล้ว เรียกว่าอะไร?",
+            answers: [
+                { text: "Pivoting", correct: true },
+                { text: "Pawning", correct: false },
+                { text: "Phreaking", correct: false },
+                { text: "Pinging", correct: false }
+            ],
+            rationale: "Pivoting ในบริบทของ Pen Test คือการเปลี่ยนทิศทางหรือวิธีการโจมตีเมื่อเจอทางตัน หรือเพื่อใช้ระบบที่ยึดได้แล้วเป็นฐานในการโจมตีระบบอื่นต่อไป"
+        },
+        {
+            question: "การที่แฮกเกอร์สามารถขโมยข้อมูลลูกค้าทั้งหมดของ 'Meow-tastic Social' ได้ ถือเป็นผลกระทบทางธุรกิจ (Business Impact) ในด้านใดมากที่สุด?",
+            answers: [
+                { text: "ด้านการเงิน (Financial)", correct: false },
+                { text: "ด้านปฏิบัติการ (Operational)", correct: false },
+                { text: "ด้านชื่อเสียงและกฎหมาย (Reputational & Legal)", correct: true },
+                { text: "ด้านเทคนิค (Technical)", correct: false }
+            ],
+            rationale: "แม้จะมีความเสียหายทางการเงินและปฏิบัติการ แต่ผลกระทบที่รุนแรงและยาวนานที่สุดของ Data Breach คือการสูญเสียความเชื่อมั่นจากลูกค้า และความเสี่ยงในการถูกฟ้องร้องตามกฎหมายคุ้มครองข้อมูลส่วนบุคคล (PDPA)"
+        },
+        {
+            question: "รายงาน Pen Test ที่ดีควรมีองค์ประกอบใดที่สำคัญที่สุดสำหรับนักพัฒนา?",
+            answers: [
+                { text: "รายชื่อเครื่องมือที่ผู้ทดสอบใช้", correct: false },
+                { text: "ประวัติการศึกษาของผู้ทดสอบ", correct: false },
+                { text: "ขั้นตอนการโจมตีที่ทำซ้ำได้ (Proof of Concept) และคำแนะนำการแก้ไขที่ชัดเจน", correct: true },
+                { text: "Executive Summary ที่เขียนให้ผู้บริหารอ่านเท่านั้น", correct: false }
+            ],
+            rationale: "นักพัฒนาต้องการทราบแน่ชัดว่าช่องโหว่อยู่ที่ไหน, โจมตีได้อย่างไร (เพื่อทดสอบซ้ำ) และต้องแก้ไขโค้ดอย่างไร (Actionable Recommendation) เพื่อปิดช่องโหว่นั้น"
+        },
+        {
+            question: "จากบทเรียนในสถานการณ์จำลอง หลักการ 'Defense in Depth' หมายถึงอะไร?",
+            answers: [
+                { text: "การใช้ Firewall ที่ดีที่สุดเพียงอย่างเดียว", correct: false },
+                { text: "การมีทีม Security ที่เก่งที่สุด", correct: false },
+                { text: "การป้องกันหลายชั้น เช่น แก้ไขโค้ด (SAST), อัปเดต Library (SCA), และตั้งค่า Firewall ให้ถูกต้องพร้อมกัน", correct: true },
+                { text: "การซื้อประกันภัยไซเบอร์วงเงินสูงสุด", correct: false }
+            ],
+            rationale: "Defense in Depth คือการไม่พึ่งพาการป้องกันเพียงจุดเดียว แต่สร้างชั้นป้องกันหลายๆ ชั้นซ้อนกัน หากชั้นหนึ่งพลาด ก็ยังมีอีกชั้นคอยป้องกัน"
+        },
+        {
+            question: "การที่ Pen Tester สามารถถอดรหัสผ่าน MD5 ของ Admin ได้อย่างง่ายดาย ให้บทเรียนอะไรกับนักพัฒนา?",
+            answers: [
+                { text: "MD5 เป็น Algorithm ที่เร็วและมีประสิทธิภาพ", correct: false },
+                { text: "Hashing ไม่มีความจำเป็นอีกต่อไป", correct: false },
+                { text: "ควรใช้ Hashing Algorithm ที่ช้าและซับซ้อนเช่น Bcrypt หรือ Argon2 แทน MD5/SHA1", correct: true },
+                { text: "ควรเก็บรหัสผ่านเป็น Plain text เพื่อให้ตรวจสอบง่าย", correct: false }
+            ],
+            rationale: "MD5 และ SHA1 ถือว่าไม่ปลอดภัยแล้วสำหรับการเก็บรหัสผ่าน เพราะสามารถถูก Crack ได้เร็วมาก ควรใช้ Algorithm สมัยใหม่ที่ออกแบบมาเพื่อต้านทานการ Brute-force โดยเฉพาะ"
+        },
+        {
+            question: "ข้อใดคือการนำหลักการ 'Assume Breach' มาใช้?",
+            answers: [
+                { text: "เชื่อว่า Firewall สามารถป้องกันได้ทุกอย่าง", correct: false },
+                { text: "ลงทุนกับการป้องกันที่ทางเข้า (Perimeter) ให้มากที่สุด", correct: false },
+                { text: "คิดเผื่อว่าแฮกเกอร์เข้ามาในระบบได้แล้ว และวางระบบ Logging/Monitoring เพื่อตรวจจับเขาให้ได้", correct: true },
+                { text: "ไม่จำเป็นต้องอัปเดตเซิร์ฟเวอร์ภายในเพราะเชื่อว่าปลอดภัย", correct: false }
+            ],
+            rationale: "Assume Breach คือ Mindset ที่ยอมรับว่าไม่มีระบบใดปลอดภัย 100% และเปลี่ยนจากการป้องกันแค่ 'ทางเข้า' มาเป็นการเฝ้าระวัง 'ข้างใน' เพื่อตรวจจับและตอบสนองต่อผู้บุกรุกให้เร็วที่สุด"
+        },
+        {
+            question: "การนำเครื่องมือ SCA/SAST เข้าไปเป็นส่วนหนึ่งของ CI/CD Pipeline คือแนวคิดของอะไร?",
+            answers: [
+                { text: "Agile Development", correct: false },
+                { text: "Waterfall Model", correct: false },
+                { text: "DevSecOps หรือ Shift-Left Security", correct: true },
+                { text: "Site Reliability Engineering (SRE)", correct: false }
+            ],
+            rationale: "DevSecOps คือการผสานความปลอดภัย (Sec) เข้าไปในทุกขั้นตอนของ DevOps โดย 'Shift Left' หมายถึงการเลื่อนกิจกรรมด้านความปลอดภัยให้ไปอยู่ใกล้กับขั้นตอนการพัฒนา (ด้านซ้ายของแผนภาพ SDLC) มากขึ้น"
+        },
+        {
+            question: "'Golden Rule' หรือกฎเหล็กที่สำคัญที่สุดของการทำ Security Testing คืออะไร?",
+            answers: [
+                { text: "ต้องหาช่องโหว่ให้เจออย่างน้อยหนึ่งอย่างเสมอ", correct: false },
+                { text: "ห้ามทดสอบระบบที่คุณไม่ได้รับอนุญาตเป็นลายลักษณ์อักษรเด็ดขาด", correct: true },
+                { text: "ต้องใช้เครื่องมือ Open Source เท่านั้น", correct: false },
+                { text: "ต้องเขียนรายงานให้ยาวกว่า 20 หน้าเสมอ", correct: false }
+            ],
+            rationale: "การทดสอบระบบโดยไม่ได้รับอนุญาตถือเป็นการกระทำที่ผิดกฎหมาย (พ.ร.บ. คอมพิวเตอร์) และเป็นเส้นแบ่งที่สำคัญระหว่าง Ethical Hacker และ Hacker ผู้ไม่ประสงค์ดี"
+        },
+        {
+            question: "ถ้าคุณสนใจสายงาน Offensive Security (Red Team) คุณควรจะเน้นพัฒนาทักษะและหา Certificate ใด?",
+            answers: [
+                { text: "การวิเคราะห์ Log, การตั้งค่าระบบ, และ Certificate CISSP", correct: false },
+                { text: "ความคิดสร้างสรรค์, ความเข้าใจใน Exploit, และ Certificate OSCP", correct: true },
+                { text: "การตรวจสอบตามมาตรฐาน, การประเมินความเสี่ยง, และ Certificate CISA", correct: false },
+                { text: "การเขียนโค้ดที่ปลอดภัย, CI/CD, และ Certificate GWEB", correct: false }
+            ],
+            rationale: "สาย Red Team เน้นการ 'บุก' จึงต้องใช้ความคิดสร้างสรรค์ในการหาช่องทางโจมตีและมีความเข้าใจใน Exploit อย่างลึกซึ้ง โดย OSCP เป็น Certificate ที่ได้รับการยอมรับอย่างสูงในสายงานนี้"
+        },
+        {
+            question: "การที่ VA Scanner รายงานว่ามีช่องโหว่ แต่เมื่อ Pen Tester ตรวจสอบด้วยตนเองแล้วพบว่าไม่มีอยู่จริง เรียกว่าอะไร?",
+            answers: [
+                { text: "True Positive", correct: false },
+                { text: "True Negative", correct: false },
+                { text: "False Negative", correct: false },
+                { text: "False Positive", correct: true }
+            ],
+            rationale: "False Positive คือ 'ผลบวกลวง' หรือการแจ้งเตือนที่ผิดพลาด ซึ่งเป็นเหตุผลสำคัญว่าทำไมจึงต้องมีการตรวจสอบยืนยัน (Validation) โดยมนุษย์เสมอ"
+        },
+        {
+            question: "ในขั้นตอน Reconnaissance ของ Pen Test, การใช้ Shodan.io มีประโยชน์อย่างไร?",
+            answers: [
+                { text: "ใช้ค้นหาอีเมลของพนักงานในบริษัทเป้าหมาย", correct: false },
+                { text: "ใช้ค้นหาอุปกรณ์ที่เชื่อมต่ออินเทอร์เน็ต (เช่น เซิร์ฟเวอร์, กล้องวงจรปิด) และดูข้อมูลทางเทคนิคโดยไม่ต้องสแกนโดยตรง", correct: true },
+                { text: "ใช้ค้นหา Source Code ที่อาจหลุดบน GitHub", correct: false },
+                { text: "ใช้ถอดรหัส Password Hash", correct: false }
+            ],
+            rationale: "Shodan ถูกเรียกว่า 'Search Engine for Hackers' เพราะมันสแกนอินเทอร์เน็ตทั้งหมดและทำ Index ข้อมูลของอุปกรณ์ต่างๆ ไว้ ทำให้สามารถค้นหาเป้าหมายที่มีช่องโหว่ได้อย่างรวดเร็ว"
+        },
+        {
+            question: "การที่แฮกเกอร์ใช้เซิร์ฟเวอร์ที่ยึดได้แล้วเป็นฐานในการโจมตีเซิร์ฟเวอร์อื่นในเครือข่ายเดียวกัน เรียกว่าอะไร?",
+            answers: [
+                { text: "Privilege Escalation", correct: false },
+                { text: "Persistence", correct: false },
+                { text: "Lateral Movement", correct: true },
+                { text: "Pivoting", correct: false }
+            ],
+            rationale: "Lateral Movement คือการเคลื่อนที่ 'ด้านข้าง' จากระบบหนึ่งไปยังอีกระบบหนึ่งภายในเครือข่ายเดียวกัน เป็นเทคนิคสำคัญที่แฮกเกอร์ใช้เพื่อเข้าถึงเป้าหมายที่แท้จริง (เช่น Database Server) ซึ่งมักจะไม่ได้เปิดให้เข้าถึงจากอินเทอร์เน็ตโดยตรง"
+        },
+        {
+            question: "โค้ดที่ปลอดภัยสำหรับ Query ฐานข้อมูลใน Node.js ควรมีลักษณะอย่างไร?",
+            answers: [
+                { text: "ใช้ String Interpolation (Template Literals) เพื่อความสะดวก", correct: false },
+                { text: "เข้ารหัส Input ของผู้ใช้ด้วย Base64 ก่อนนำไปต่อ String", correct: false },
+                { text: "ใช้ Parameterized Queries (ใช้ '?' เป็น placeholder)", correct: true },
+                { text: "สร้าง Stored Procedure สำหรับทุก Query", correct: false }
+            ],
+            rationale: "การใช้ Parameterized Queries หรือ Prepared Statements เป็นวิธีมาตรฐานและปลอดภัยที่สุดในการป้องกัน SQL Injection เพราะมันจะแยก 'คำสั่ง' และ 'ข้อมูล' ออกจากกันอย่างชัดเจน ทำให้ Database ไม่ตีความข้อมูลจากผู้ใช้เป็นส่วนหนึ่งของคำสั่ง"
+        },
+        {
+            question: "CVSS ย่อมาจากอะไร?",
+            answers: [
+                { text: "Cyber Vulnerability Scoring Software", correct: false },
+                { text: "Critical Vulnerability Scoring Standard", correct: false },
+                { text: "Common Vulnerability Scoring System", correct: true },
+                { text: "Cyber Vector Severity Score", correct: false }
+            ],
+            rationale: "CVSS (Common Vulnerability Scoring System) เป็นมาตรฐานสากลที่ใช้ในการให้คะแนนและจัดระดับความรุนแรงของช่องโหว่ความปลอดภัยทางไซเบอร์"
+        },
+        {
+            question: "ข้อใดคือความเสี่ยงของการที่รายงาน VA พบว่า 'Directory Listing is Enabled' บนเว็บเซิร์ฟเวอร์?",
+            answers: [
+                { text: "ทำให้แฮกเกอร์สามารถรันโค้ดบนเซิร์ฟเวอร์ได้ทันที", correct: false },
+                { text: "ทำให้แฮกเกอร์สามารถเห็นโครงสร้างไฟล์และอาจพบไฟล์ที่น่าสนใจ (เช่น ไฟล์ Backup, ไฟล์ Config) ได้ง่ายขึ้น", correct: true },
+                { text: "ทำให้เซิร์ฟเวอร์ใช้ Bandwidth มากขึ้นโดยไม่จำเป็น", correct: false },
+                { text: "ทำให้ผู้ใช้ไม่สามารถเข้าถึงไฟล์ที่ต้องการได้", correct: false }
+            ],
+            rationale: "Directory Listing เปรียบเสมือนการเปิดเผย 'แผนผัง' ของบ้านให้โจรดู ซึ่งอาจไม่ได้อันตรายในตัวเอง แต่เป็นการให้ข้อมูล (Information Disclosure) ที่ช่วยให้ผู้โจมตีวางแผนขั้นตอนต่อไปได้ง่ายขึ้น"
+        },
+        {
+            question: "การที่ทีมพัฒนานำผลจาก VA report มาประชุมร่วมกับทีม DevOps เพื่อวางแผนแก้ไข ถือเป็นกิจกรรมที่เรียกว่าอะไร?",
+            answers: [
+                { text: "Incident Response", correct: false },
+                { text: "Threat Hunting", correct: false },
+                { text: "Remediation Planning", correct: true },
+                { text: "Forensic Analysis", correct: false }
+            ],
+            rationale: "Remediation คือกระบวนการ 'แก้ไข' หรือ 'บรรเทา' ช่องโหว่ที่ถูกค้นพบ ซึ่งการวางแผน (Planning) เป็นขั้นตอนแรกที่สำคัญเพื่อให้การแก้ไขเป็นไปอย่างมีระบบและมีประสิทธิภาพ"
+        },
+        {
+            question: "ทำไม Pen Tester จึงให้ความสำคัญกับการเขียน 'Executive Summary' ในรายงาน?",
+            answers: [
+                { text: "เพื่อให้รายงานดูมีความยาวและน่าเชื่อถือมากขึ้น", correct: false },
+                { text: "เพื่อสรุปความเสี่ยงทางเทคนิคให้เป็นภาษาที่ผู้บริหาร (ที่ไม่ใช่สายเทคนิค) เข้าใจและใช้ตัดสินใจได้", correct: true },
+                { text: "เพื่อเป็นที่สำหรับใส่ประวัติและ Certificate ของผู้ทดสอบ", correct: false },
+                { text: "เพื่อเป็นการขอบคุณลูกค้าที่ให้โอกาสในการทดสอบ", correct: false }
+            ],
+            rationale: "Executive Summary คือส่วนที่สำคัญที่สุดของรายงานสำหรับผู้มีอำนาจตัดสินใจ มันต้องสามารถสื่อสาร 'ความเสี่ยงทางธุรกิจ' ได้อย่างชัดเจนและกระชับ เพื่อให้องค์กรอนุมัติทรัพยากรที่จำเป็นในการแก้ไข"
+        },
+        {
+            question: "การนำโค้ด `npm audit fix` มาใช้ เป็นการแก้ไขช่องโหว่ที่มาจากแหล่งใด?",
+            answers: [
+                { text: "ช่องโหว่ในโค้ดที่ทีมเขียนขึ้นเอง", correct: false },
+                { text: "ช่องโหว่ในการตั้งค่าเว็บเซิร์ฟเวอร์", correct: false },
+                { text: "ช่องโหว่ใน Library หรือ Dependencies ที่โปรเจกต์ใช้งาน", correct: true },
+                { text: "ช่องโหว่ในระบบปฏิบัติการของเซิร์ฟเวอร์", correct: false }
+            ],
+            rationale: "`npm audit` เป็นเครื่องมือประเภท SCA ที่ใช้ตรวจสอบช่องโหว่ใน 'node_modules' หรือ Dependencies ต่างๆ คำสั่ง `fix` จะพยายามอัปเดตเวอร์ชันของ Library ที่มีปัญหาให้เป็นเวอร์ชันที่ปลอดภัยโดยอัตโนมัติ"
+        },
+        {
+            question: "หลักการ 'Shift-Left Security' มีเป้าหมายหลักเพื่ออะไร?",
+            answers: [
+                { text: "เลื่อนการทดสอบความปลอดภัยไปทำหลังสุดเพื่อให้มีเวลามากที่สุด", correct: false },
+                { text: "ย้ายทีม Security ให้นั่งทำงานด้านซ้ายของออฟฟิศ", correct: false },
+                { text: "เลื่อนกิจกรรมด้านความปลอดภัยให้เข้ามาอยู่ในขั้นตอนต้นๆ ของกระบวนการพัฒนาซอฟต์แวร์ให้มากที่สุด", correct: true },
+                { text: "ให้ความสำคัญกับความปลอดภัยของ Server ที่อยู่ฝั่งซ้ายของ Network Diagram", correct: false }
+            ],
+            rationale: "แนวคิด 'Shift Left' คือการค้นหาและแก้ไขปัญหาความปลอดภัยให้เร็วที่สุดเท่าที่จะทำได้ในวงจรการพัฒนา (SDLC) เพราะยิ่งเจอเร็วเท่าไหร่ ต้นทุนในการแก้ไขก็จะยิ่งถูกลงเท่านั้น"
+        }
+    ]
+
+    // --- DOM ELEMENTS ---
+    const startScreen = document.getElementById('start-screen');
+    const quizScreen = document.getElementById('quiz-screen');
+    const resultScreenContainer = document.getElementById('result-screen-container');
+    const resultScreen = document.getElementById('result-screen');
+    const studentForm = document.getElementById('student-form');
+    const studentIdInput = document.getElementById('student-id');
+    const studentNameInput = document.getElementById('student-name');
+    const questionText = document.getElementById('question-text');
+    const questionImage = document.getElementById('question-image');
+    const answerButtons = document.getElementById('answer-buttons');
+    const nextBtn = document.getElementById('next-btn');
+    const nextBtnText = document.getElementById('next-btn-text');
+    const questionCounter = document.getElementById('question-counter');
+    const progressBar = document.getElementById('progress-bar');
+    const scoreText = document.getElementById('score-text');
+    const scorePercentage = document.getElementById('score-percentage');
+    const resultStudentInfo = document.getElementById('result-student-info');
+    const summaryContainer = document.getElementById('summary-container');
+    const retryBtn = document.getElementById('retry-btn');
+    const captureBtn = document.getElementById('capture-btn');
+    const explanationBox = document.getElementById('explanation-box');
+    const passFailStatus = document.getElementById('pass-fail-status');
+    const resultSummaryBox = document.getElementById('result-summary-box');
+
+    // --- STATE VARIABLES ---
+    let shuffledQuestions, currentQuestionIndex;
+    let score = 0;
+    let userAnswers = [];
+    let studentId = '';
+    let studentName = '';
+    const passingScore = 25;
+
+    // --- EVENT LISTENERS ---
+    studentForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        studentId = studentIdInput.value.trim();
+        studentName = studentNameInput.value.trim();
+        if (studentId && studentName) {
+            startQuiz();
+        }
+    });
+
+    nextBtn.addEventListener('click', () => {
+        currentQuestionIndex++;
+        if (currentQuestionIndex < shuffledQuestions.length) {
+            setNextQuestion();
+        } else {
+            showResults();
+        }
+    });
+
+    retryBtn.addEventListener('click', resetQuiz);
+
+    captureBtn.addEventListener('click', () => {
+        // Hide buttons before capture
+        captureBtn.style.visibility = 'hidden';
+        retryBtn.style.visibility = 'hidden';
+        
+        html2canvas(resultScreen, {
+            backgroundColor: '#1f2937', // bg-gray-800
+            onclone: (document) => {
+                // Ensure visibility is restored on the clone if needed for some browsers
+                document.getElementById('capture-btn').style.visibility = 'hidden';
+                document.getElementById('retry-btn').style.visibility = 'hidden';
+            }
+        }).then(canvas => {
+            const link = document.createElement('a');
+            link.download = `quiz-result-${studentId}-${new Date().toISOString().slice(0,10)}.png`;
+            link.href = canvas.toDataURL();
+            link.click();
+
+            // Show buttons again after capture
+            captureBtn.style.visibility = 'visible';
+            retryBtn.style.visibility = 'visible';
+        }).catch(err => {
+            console.error('oops, something went wrong!', err);
+            // Show buttons again even if capture fails
+            captureBtn.style.visibility = 'visible';
+            retryBtn.style.visibility = 'visible';
+        });
+    });
+
+
+    // --- FUNCTIONS ---
+    function startQuiz() {
+        shuffledQuestions = quizData.sort(() => Math.random() - 0.5);
+        currentQuestionIndex = 0;
+        score = 0;
+        userAnswers = [];
+        startScreen.classList.add('hidden');
+        resultScreenContainer.classList.add('hidden');
+        quizScreen.classList.remove('hidden');
+        setNextQuestion();
+    }
+
+    function resetQuiz() {
+        resultScreenContainer.classList.add('hidden');
+        startScreen.classList.remove('hidden');
+        studentIdInput.value = '';
+        studentNameInput.value = '';
+    }
+
+    function setNextQuestion() {
+        resetState();
+        showQuestion(shuffledQuestions[currentQuestionIndex]);
+        updateProgress();
+    }
+
+    function updateProgress() {
+        const questionNumber = currentQuestionIndex + 1;
+        questionCounter.innerText = `ข้อ ${questionNumber} / ${shuffledQuestions.length}`;
+        const progressPercentage = (questionNumber / shuffledQuestions.length) * 100;
+        progressBar.style.width = `${progressPercentage}%`;
+    }
+
+    function showQuestion(question) {
+        questionText.innerText = question.question;
+        
+        if (question.imageUrl) {
+            questionImage.src = question.imageUrl;
+            questionImage.classList.remove('hidden');
+            questionImage.onerror = () => { questionImage.classList.add('hidden'); };
+        } else {
+            questionImage.classList.add('hidden');
+        }
+
+        question.answers.forEach(answer => {
+            const button = document.createElement('button');
+            button.innerText = answer.text;
+            button.classList.add('answer-btn', 'w-full', 'bg-gray-700', 'border', 'border-gray-600', 'text-gray-200', 'font-medium', 'py-4', 'px-4', 'rounded-lg', 'text-left');
+            if (answer.correct) {
+                button.dataset.correct = answer.correct;
+            }
+            button.addEventListener('click', selectAnswer);
+            answerButtons.appendChild(button);
+        });
+    }
+
+    function resetState() {
+        nextBtn.classList.add('opacity-50', 'cursor-not-allowed');
+        nextBtn.disabled = true;
+        while (answerButtons.firstChild) {
+            answerButtons.removeChild(answerButtons.firstChild);
+        }
+        explanationBox.classList.add('hidden');
+        explanationBox.innerHTML = '';
+    }
+
+    function selectAnswer(e) {
+        Array.from(answerButtons.children).forEach(button => {
+            button.disabled = true;
+            button.classList.add('cursor-not-allowed');
+        });
+
+        const selectedButton = e.target;
+        const correct = selectedButton.dataset.correct === "true";
+        
+        userAnswers.push({
+            question: shuffledQuestions[currentQuestionIndex].question,
+            selected: selectedButton.innerText,
+            correctAnswer: shuffledQuestions[currentQuestionIndex].answers.find(a => a.correct).text,
+            isCorrect: correct,
+            rationale: shuffledQuestions[currentQuestionIndex].rationale
+        });
+
+        if (correct) {
+            score++;
+        }
+        
+        Array.from(answerButtons.children).forEach(button => {
+            if (button.dataset.correct === "true") {
+                button.classList.add('correct');
+            }
+        });
+        if (!correct) {
+            selectedButton.classList.add('incorrect');
+        }
+
+        showExplanation();
+
+        nextBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+        nextBtn.disabled = false;
+        
+        if (shuffledQuestions.length > currentQuestionIndex + 1) {
+            nextBtnText.innerText = 'ข้อถัดไป';
+        } else {
+            nextBtnText.innerText = 'ดูผลลัพธ์';
+        }
+    }
+
+    function showExplanation() {
+        const rationale = shuffledQuestions[currentQuestionIndex].rationale;
+        explanationBox.innerHTML = `
+            <div class="bg-gray-900/50 p-4 rounded-lg border-l-4 border-blue-400">
+                <h3 class="font-bold text-lg text-blue-300 mb-2">คำอธิบาย</h3>
+                <p class="text-gray-300">${rationale}</p>
+            </div>
+        `;
+        explanationBox.classList.remove('hidden');
+    }
+
+    function showResults() {
+        quizScreen.classList.add('hidden');
+        resultScreenContainer.classList.remove('hidden');
+
+        resultStudentInfo.innerText = `รหัสนักศึกษา: ${studentId} | ชื่อ: ${studentName}`;
+        scoreText.innerText = `${score} / ${shuffledQuestions.length}`;
+        const percentage = Math.round((score / shuffledQuestions.length) * 100);
+        scorePercentage.innerText = `คิดเป็น ${percentage}%`;
+
+        // Pass/Fail Logic
+        if (score >= passingScore) {
+            passFailStatus.innerText = '🎉 ยินดีด้วย คุณผ่านการทดสอบ! 🎉';
+            passFailStatus.className = 'text-2xl font-bold mt-4 text-green-400';
+            resultSummaryBox.className = 'rounded-xl p-6 my-6 bg-green-900/20 border border-green-500';
+        } else {
+            passFailStatus.innerText = '⚠️ ยังไม่ผ่านเกณฑ์ ลองทบทวนแล้วสู้ใหม่อีกครั้ง! ⚠️';
+            passFailStatus.className = 'text-2xl font-bold mt-4 text-yellow-400';
+            resultSummaryBox.className = 'rounded-xl p-6 my-6 bg-yellow-900/20 border border-yellow-500';
+        }
+
+
+        summaryContainer.innerHTML = ''; // Clear previous summary
+        const correctIcon = `<svg class="w-6 h-6 text-green-400 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>`;
+        const incorrectIcon = `<svg class="w-6 h-6 text-red-400 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9.75 9.75l4.5 4.5m0-4.5l-4.5 4.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>`;
+
+        userAnswers.forEach((answer, index) => {
+            const summaryItem = document.createElement('div');
+            summaryItem.classList.add('bg-gray-700', 'p-4', 'rounded-lg', 'border-l-4');
+            summaryItem.classList.add(answer.isCorrect ? 'border-green-500' : 'border-red-500');
+            
+            summaryItem.innerHTML = `
+                <div class="flex justify-between items-start">
+                    <p class="font-bold text-white mb-2 flex-1 pr-4">ข้อ ${index + 1}: ${answer.question}</p>
+                    ${answer.isCorrect ? correctIcon : incorrectIcon}
+                </div>
+                <div class="text-sm space-y-1">
+                    <p class="text-gray-400">คุณตอบ: <span class="font-medium ${answer.isCorrect ? 'text-green-400' : 'text-red-400'}">${answer.selected}</span></p>
+                    ${!answer.isCorrect ? `<p class="text-gray-400">คำตอบที่ถูก: <span class="font-medium text-green-400">${answer.correctAnswer}</span></p>` : ''}
+                </div>
+                <div class="mt-3 pt-3 border-t border-gray-600 bg-gray-900/50 p-3 rounded-md">
+                    <p class="text-sm text-blue-300"><strong class="font-semibold text-blue-200">คำอธิบาย:</strong> ${answer.rationale}</p>
+                </div>
+            `;
+            summaryContainer.appendChild(summaryItem);
+        });
+    }
+
+</script>
+
+</body>
+</html>
