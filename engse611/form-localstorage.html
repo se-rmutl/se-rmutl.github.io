@@ -1,0 +1,1407 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ENGSE611 - Day 2: Form Validation & Local Storage</title>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #0D204E; /* RMUTL Navy Blue */
+            --secondary-color: #D4A237; /* RMUTL Gold */
+            --accent-color: #10B981; /* Tech Green */
+            --error-color: #c0392b;
+            --success-color: #27ae60;
+            --background-gradient: linear-gradient(135deg, #0D204E 0%, #1a3a8a 100%);
+            --slide-bg: #f8f9fa;
+            --text-color: #212529;
+            --header-color: #0D204E;
+            --base-font-size: clamp(16px, 1.5vw, 22px);
+            --border-radius: 15px;
+            --code-font: 'Fira Code', 'Courier New', monospace;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { overflow: hidden; height: 100%; }
+
+        body {
+            font-family: 'Sarabun', sans-serif;
+            background: var(--background-gradient);
+            color: var(--text-color);
+            font-size: 16px; 
+            line-height: 1.7;
+        }
+        
+        .presentation {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2vh 3vw; 
+        }
+
+        .slide {
+            background: var(--slide-bg);
+            padding: 30px 40px 80px 40px;
+            border-radius: var(--border-radius);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+            width: 100%;
+            height: 100%;
+            font-size: var(--base-font-size);
+            overflow-y: auto;
+            display: none;
+            animation: fadeIn 0.5s ease-in-out;
+            position: relative;
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .slide::-webkit-scrollbar { display: none; }
+
+        .slide.active { display: block; }
+        
+        .title-slide.active {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            background: var(--background-gradient);
+            color: white;
+        }
+        
+        .title-slide h1, .title-slide h2, .title-slide h3, .title-slide p { color: white !important; }
+        .title-slide h1 { font-size: 3em; margin-bottom: 10px; border: none;}
+        .title-slide h2 { font-size: 2em; margin-bottom: 20px; border: none; }
+        .title-slide h3 { font-size: 1.5em; font-weight: 400; opacity: 0.9; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.98); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .progress-bar-container { position: fixed; top: 0; left: 0; width: 100%; height: 8px; background-color: rgba(255, 255, 255, 0.2); z-index: 2000; }
+        .progress-bar { height: 100%; width: 0%; background: linear-gradient(120deg, var(--secondary-color) 0%, #f1c40f 100%); transition: width 0.3s ease-out; }
+
+        .presentation-controls {
+            position: fixed; bottom: 15px; left: 50%;
+            transform: translateX(-50%);
+            display: flex; align-items: center; gap: 10px;
+            background: rgba(13, 32, 78, 0.9);
+            padding: 10px 15px;
+            border-radius: 50px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(8px); z-index: 1000;
+        }
+
+        .nav-btn, .font-btn, .fullscreen-btn {
+            background: transparent; color: white; border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex; align-items: center; justify-content: center;
+            width: 45px; height: 45px;
+            font-size: 1.5rem;
+        }
+        .nav-btn:hover:not(:disabled), .font-btn:hover, .fullscreen-btn:hover { background: var(--secondary-color); transform: translateY(-2px); }
+        .nav-btn:disabled { background-color: transparent; color: #777; cursor: not-allowed; transform: none;}
+        
+        #slide-counter { color: white; font-weight: 500; font-size: 1.1em; min-width: 70px; text-align: center; }
+
+        .slide-number { position: absolute; bottom: 15px; right: 20px; background: rgba(13, 32, 78, 0.8); color: white; padding: 5px 12px; border-radius: 15px; font-size: 0.8em; font-weight: 600; }
+        
+        .slide h2 { font-size: 2.2em; color: var(--header-color); border-bottom: 3px solid var(--secondary-color); padding-bottom: 8px; margin-bottom: 1em; font-weight: 700; }
+        .slide h3 { font-size: 1.6em; color: var(--primary-color); margin-top: 1.5em; font-weight: 700; }
+
+        p, ul, ol { font-size: 1em; max-width: 85ch; }
+        
+        ul { list-style: none; padding-left: 0; }
+        ul li { position: relative; padding-left: 35px; margin-bottom: 12px; }
+        ul li i { position: absolute; left: 0; top: 6px; color: var(--primary-color); }
+        ol { padding-left: 30px; }
+        ol li { margin-bottom: 12px; }
+        
+        pre { background: #2d3142; color: #e0e0e0; border-radius: 10px; padding: 1em; margin: 1em 0; font-family: var(--code-font); font-size: 0.85em; overflow-x: auto; line-height: 1.6; }
+        code { font-family: var(--code-font); background-color: rgba(0,0,0,0.05); padding: 2px 5px; border-radius: 4px;}
+        pre code { background-color: transparent; padding: 0; }
+        
+        .solution { border-left: 4px solid var(--accent-color); background: #e8f8f5; padding: 15px; margin: 10px 0; border-radius: 0 8px 8px 0; }
+        
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; margin: 20px 0; align-items: start; }
+        .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 25px; margin-top: 20px; }
+        
+        blockquote { border-left: 5px solid var(--secondary-color); margin: 1.5em 0; padding: 1em 1.5em; background-color: #fff9e6; font-style: italic; }
+        .highlight { background-color: #D4A23733; padding: 2px 6px; border-radius: 4px; font-weight: 500; }
+
+        .live-preview-container { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 1em; height: 60vh; align-items: start; }
+        .code-pane, .preview-pane { display: flex; flex-direction: column; height: 100%; background: #fff; padding: 15px; border-radius: var(--border-radius); box-shadow: var(--shadow-light);}
+        .pane-title { font-size: 1.1em; font-weight: 700; margin-bottom: 10px; color: var(--primary-color); text-align: center; }
+        .code-pane pre { flex-grow: 1; margin: 0; display: flex; flex-direction: column; }
+        .code-pane pre code { flex-grow: 1; }
+        .preview-pane-content { flex-grow: 1; border: 1px solid #ccc; border-radius: var(--border-radius); background: white; padding: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.1) inset; overflow: hidden; }
+
+        /* Interactive Demo Styles */
+        .demo-form .form-group { margin-bottom: 10px; }
+        .demo-form label { display: block; font-weight: 500; margin-bottom: 5px; font-size: 0.9em;}
+        .demo-form input, .demo-form textarea, .demo-form select {
+            width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 5px; font-family: 'Sarabun', sans-serif;
+            font-size: 0.9em;
+        }
+        .demo-form .error-message { font-size: 0.8em; color: var(--error-color); min-height: 1.2em; margin-top: 4px;}
+        .demo-form .success-message { font-size: 0.8em; color: var(--success-color); min-height: 1.2em; margin-top: 4px;}
+        .demo-form input.invalid { border-color: var(--error-color); }
+        .demo-form input.valid { border-color: var(--success-color); }
+        .demo-form button { background: var(--primary-color); color: white; padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer; transition: background 0.3s; margin-top: 10px;}
+        .demo-form button:hover { background: var(--secondary-color); }
+        .status-box { margin-top: 15px; padding: 10px; border-radius: 5px; text-align: center; font-weight: 500;}
+        .status-box.info { background: #e3f2fd; color: #1976d2; }
+        .status-box.success { background: #e8f5e8; color: #2e7d2e; }
+        .status-box.error { background: #ffebee; color: #c62828; }
+
+        /* Shopping Cart Demo */
+        .product-list .product { border: 1px solid #ddd; padding: 10px; border-radius: 8px; margin-bottom: 10px; }
+        .cart-demo { font-size: 0.9em; }
+        #js-cartItems div { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid #eee; }
+        #js-cartTotal { font-weight: bold; margin-top: 10px; text-align: right; }
+        
+        @media (max-width: 900px) {
+            .live-preview-container, .grid-2 { grid-template-columns: 1fr; height: auto; }
+        }
+    </style>
+</head>
+<body>
+    <div class="progress-bar-container"><div class="progress-bar" id="progress-bar"></div></div>
+
+    <div class="presentation">
+        
+        <section class="slide title-slide active">
+            <h2>ENGSE611 - วันที่ 2 - หัวข้อที่ 3</h2>
+            <h1>Form Validation & Local Storage</h1>
+            <h3 style="margin-top: 30px;">ทำให้เว็บของคุณฉลาดและจำข้อมูลได้! 🧠💾</h3>
+            <p style="font-size: 1.2em; opacity: 0.9;">เป้าหมาย: สร้างฟอร์มที่ปลอดภัยและมอบประสบการณ์ที่ดีให้ผู้ใช้</p>
+            <div class="slide-number">1/32</div>
+        </section>
+
+        <section class="slide">
+            <h2>🎯 จุดประสงค์การเรียนรู้</h2>
+            <p>หลังจากจบหัวข้อนี้ นักศึกษาจะสามารถ:</p>
+            <div class="grid-2">
+                <div>
+                    <h3><i class="fas fa-check-circle" style="color: var(--accent-color);"></i> Form Validation</h3>
+                    <ul>
+                        <li><i class="fas fa-tasks"></i>ตรวจสอบข้อมูลฟอร์มแบบ Real-time</li>
+                        <li><i class="fas fa-spell-check"></i>ใช้ Regular Expressions (RegEx) เบื้องต้น</li>
+                        <li><i class="fas fa-comment-dots"></i>แสดงข้อความแจ้งเตือนที่เหมาะสม</li>
+                        <li><i class="fas fa-shield-alt"></i>ป้องกันการส่งข้อมูลที่ไม่ถูกต้อง</li>
+                    </ul>
+                </div>
+                <div>
+                    <h3><i class="fas fa-database" style="color: var(--secondary-color);"></i> Local Storage</h3>
+                    <ul>
+                        <li><i class="fas fa-save"></i>บันทึกข้อมูลในเบราว์เซอร์</li>
+                        <li><i class="fas fa-undo"></i>เรียกคืนข้อมูลเมื่อเปิดเว็บใหม่</li>
+                        <li><i class="fas fa-code"></i>จัดการข้อมูลแบบ JSON</li>
+                        <li><i class="fas fa-exchange-alt"></i>เข้าใจความแตกต่าง localStorage vs sessionStorage</li>
+                    </ul>
+                </div>
+            </div>
+            <p class="solution" style="text-align: center;"><i class="fas fa-link"></i> <strong>Integration:</strong> ผสานทั้งสองเทคนิคเพื่อสร้างฟอร์มที่จำค่าได้ และมอบ UX ที่ดีขึ้น</p>
+            <div class="slide-number">2/32</div>
+        </section>
+
+        <section class="slide">
+            <h2>🤔 ทำไมต้อง Validate ฟอร์ม?</h2>
+            <p>การตรวจสอบข้อมูลในฟอร์มเป็นสิ่งจำเป็นอย่างยิ่ง เพื่อป้องกันปัญหาต่างๆ ที่อาจเกิดขึ้น</p>
+            <div class="grid-3">
+                <div>
+                    <h3><i class="fas fa-user-secret" style="color: #c0392b;"></i> Security Issues</h3>
+                    <p>ป้องกันการโจมตีเช่น <span class="highlight">SQL Injection</span> หรือ <span class="highlight">Cross-Site Scripting (XSS)</span> จากข้อมูลอันตรายที่ผู้ใช้กรอกเข้ามา</p>
+                </div>
+                <div>
+                    <h3><i class="fas fa-frown" style="color: #e67e22;"></i> User Experience (UX) แย่</h3>
+                    <p>หากไม่ validate ผู้ใช้อาจส่งข้อมูลผิดพลาดไปที่เซิร์ฟเวอร์ และต้องกลับมากรอกใหม่ทั้งหมดโดยไม่รู้ว่าผิดตรงไหน</p>
+                </div>
+                <div>
+                    <h3><i class="fas fa-server" style="color: #3498db;"></i> Performance</h3>
+                    <p>ลดภาระของเซิร์ฟเวอร์โดยการกรองข้อมูลขยะหรือไม่ถูกต้องออกไปตั้งแต่ฝั่ง Client ไม่ต้องส่งไปประมวลผลให้เสียเวลา</p>
+                </div>
+            </div>
+            <blockquote>การ Validation ที่ดีที่สุดคือการทำ <span class="highlight">ทั้ง Client-side</span> (เพื่อ UX ที่ดี) และ <span class="highlight">Server-side</span> (เพื่อความปลอดภัยสูงสุด)</blockquote>
+            <div class="slide-number">3/32</div>
+        </section>
+
+        <section class="slide">
+            <h2>🏗️ HTML5 Built-in Validation</h2>
+            <p>HTML5 มี attributes ที่ช่วยในการตรวจสอบข้อมูลเบื้องต้นมาให้ในตัว ทำให้เราสามารถ validation ง่ายๆ ได้โดยไม่ต้องเขียน JavaScript เลย</p>
+            <div class="live-preview-container" style="height: auto;">
+                <div class="code-pane">
+                    <div class="pane-title">HTML Code</div>
+                    <pre><code class="language-html">&lt;form&gt;
+  &lt;!-- Required Field --&gt;
+  &lt;input type="text" required placeholder="ชื่อ (บังคับ)"&gt;
+  
+  &lt;!-- Email Validation --&gt;
+  &lt;input type="email" placeholder="อีเมล"&gt;
+  
+  &lt;!-- Number Range --&gt;
+  &lt;input type="number" min="18" max="99" placeholder="อายุ (18-99)"&gt;
+  
+  &lt;!-- Pattern Matching (RegEx) --&gt;
+  &lt;input type="text" pattern="[0-9]{10}" 
+   placeholder="เบอร์โทร (10 หลัก)"&gt;
+           
+  &lt;button type="submit"&gt;ส่งข้อมูล&lt;/button&gt;
+&lt;/form&gt;
+
+&lt;style&gt;
+  input:valid { border-color: green; }
+  input:invalid { border-color: red; }
+&lt;/style&gt;</code></pre>
+                </div>
+                <div class="preview-pane">
+                    <div class="pane-title">Live Preview (ลองกรอกข้อมูลผิดๆ)</div>
+                    <div class="preview-pane-content demo-form">
+                        <form onsubmit="event.preventDefault(); alert('ส่งข้อมูลสำเร็จ (จำลอง)');">
+                            <div class="form-group">
+                                <label>ชื่อ (บังคับ)</label>
+                                <input type="text" required>
+                            </div>
+                             <div class="form-group">
+                                <label>อีเมล</label>
+                                <input type="email">
+                            </div>
+                             <div class="form-group">
+                                <label>อายุ (18-99)</label>
+                                <input type="number" min="18" max="99">
+                            </div>
+                            <div class="form-group">
+                                <label>เบอร์โทร (10 หลัก)</label>
+                                <input type="text" pattern="[0-9]{10}">
+                            </div>
+                            <button type="submit">ส่งข้อมูล</button>
+                        </form>
+                         <style>
+                           .demo-form input:focus:invalid { outline: 1px solid red; }
+                           .demo-form input:valid { border-color: green; }
+                        </style>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-number">4/32</div>
+        </section>
+
+        <section class="slide">
+            <h2>💻 Custom Validation ด้วย JavaScript</h2>
+            <p>เมื่อ HTML5 ไม่เพียงพอ เราสามารถใช้ JavaScript เพื่อสร้าง Logic การตรวจสอบที่ซับซ้อนและแสดงข้อความแจ้งเตือนที่สวยงามเป็นของเราเองได้</p>
+             <div class="live-preview-container" style="height: auto;">
+                <div class="code-pane">
+                    <div class="pane-title">JavaScript Code</div>
+                    <pre><code class="language-javascript">const username = document.getElementById('js-username');
+const errorDiv = document.getElementById('js-username-error');
+
+username.addEventListener('blur', function() {
+    if (this.value.length < 3) {
+        errorDiv.textContent = 'ชื่อผู้ใช้ต้องมีอย่างน้อย 3 ตัวอักษร';
+        this.classList.add('invalid');
+        this.classList.remove('valid');
+    } else {
+        errorDiv.textContent = '';
+        this.classList.add('valid');
+        this.classList.remove('invalid');
+    }
+});</code></pre>
+                </div>
+                <div class="preview-pane">
+                    <div class="pane-title">Live Preview (ลองพิมพ์ 1-2 ตัวอักษรแล้วคลิกออก)</div>
+                    <div class="preview-pane-content demo-form">
+                        <form onsubmit="event.preventDefault();">
+                            <div class="form-group">
+                                <label for="js-username">ชื่อผู้ใช้</label>
+                                <input type="text" id="js-username" placeholder="ต้องมีอย่างน้อย 3 ตัวอักษร">
+                                <div class="error-message" id="js-username-error"></div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-number">5/32</div>
+        </section>
+
+        <section class="slide">
+            <h2>🔄 Real-time Validation</h2>
+            <p>เราสามารถให้ Feedback กับผู้ใช้ได้ทันทีที่พวกเขากำลังพิมพ์โดยใช้ Event <code>'input'</code> ซึ่งจะช่วยสร้างประสบการณ์การใช้งาน (UX) ที่ดีมาก</p>
+             <div class="live-preview-container" style="height: auto;">
+                <div class="code-pane">
+                    <div class="pane-title">JavaScript Code</div>
+                    <pre><code class="language-javascript">const emailInput = document.getElementById('js-email');
+const emailError = document.getElementById('js-email-error');
+const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+emailInput.addEventListener('input', function() {
+    const email = this.value;
+    if (email === '') {
+        emailError.textContent = '';
+        return;
+    }
+    
+    if (emailPattern.test(email)) {
+        emailError.textContent = '✓ รูปแบบอีเมลถูกต้อง';
+        emailError.className = 'success-message';
+        this.className = 'valid';
+    } else {
+        emailError.textContent = '✗ รูปแบบอีเมลไม่ถูกต้อง';
+        emailError.className = 'error-message';
+        this.className = 'invalid';
+    }
+});</code></pre>
+                </div>
+                <div class="preview-pane">
+                    <div class="pane-title">Live Preview (ลองพิมพ์อีเมล)</div>
+                    <div class="preview-pane-content demo-form">
+                        <form onsubmit="event.preventDefault();">
+                            <div class="form-group">
+                                <label for="js-email">อีเมล</label>
+                                <input type="text" id="js-email" placeholder="เช่น user@example.com">
+                                <div id="js-email-error"></div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-number">6/32</div>
+        </section>
+
+        <section class="slide">
+            <h2>🔍 Regular Expressions (RegEx) เบื้องต้น</h2>
+            <p>RegEx คือ <span class="highlight">รูปแบบ (Pattern)</span> ที่ใช้อธิบายและค้นหากลุ่มของข้อความ ใช้ในการตรวจสอบข้อมูลที่ซับซ้อนได้อย่างแม่นยำ</p>
+            <h3>ตัวอย่างที่ใช้บ่อย:</h3>
+            <pre><code class="language-javascript">// เบอร์โทรศัพท์ไทย (10 หลัก)
+const phonePattern = /^[0-9]{10}$/;
+phonePattern.test('0812345678'); // true
+
+// อีเมล (รูปแบบพื้นฐาน)
+const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+emailPattern.test('user@example.com'); // true
+
+// รหัสผ่าน (อย่างน้อย 8 ตัว, มีตัวอักษรและตัวเลข)
+const passwordPattern = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/;
+passwordPattern.test('password123'); // true
+
+// รหัสไปรษณีย์ไทย (5 หลัก)
+const zipcodePattern = /^[0-9]{5}$/;
+zipcodePattern.test('10900'); // true</code></pre>
+             <p class="solution"><i class="fas fa-tools"></i> <strong>เคล็ดลับ:</strong> ใช้เครื่องมือออนไลน์อย่าง <a href="https://regex101.com" target="_blank">regex101.com</a> เพื่อช่วยสร้างและทดสอบ RegEx ของคุณ</p>
+            <div class="slide-number">7/32</div>
+        </section>
+
+        <section class="slide">
+            <h2>📤 การจัดการ Form Submit</h2>
+            <p>เราต้องป้องกันไม่ให้ฟอร์มถูกส่งไปยังเซิร์ฟเวอร์ ถ้าข้อมูลที่ผู้ใช้กรอกยังไม่ถูกต้องทั้งหมด โดยใช้ <code>event.preventDefault()</code></p>
+            <pre><code class="language-javascript">const myForm = document.getElementById('myForm');
+
+myForm.addEventListener('submit', function(event) {
+    // หยุดการส่งฟอร์ม (Refresh หน้า) ไว้ก่อนเสมอ
+    event.preventDefault();
+    
+    // เรียกฟังก์ชันเพื่อตรวจสอบข้อมูลทุกช่อง
+    const isFormValid = validateAllFields();
+    
+    if (isFormValid) {
+        console.log('✅ ข้อมูลถูกต้อง! กำลังส่งข้อมูล...');
+        // ณ จุดนี้ เราสามารถส่งข้อมูลด้วย Fetch API ได้
+        alert('ข้อมูลถูกต้อง กำลังส่ง... (จำลอง)');
+    } else {
+        console.log('❌ ข้อมูลไม่ถูกต้อง กรุณาตรวจสอบ');
+        alert('ข้อมูลบางส่วนยังไม่ถูกต้อง!');
+    }
+});
+
+function validateAllFields() {
+    // ... ทำการตรวจสอบข้อมูลทุกช่องที่นี่ ...
+    // return true ถ้าถูกต้องทั้งหมด, false ถ้ามีข้อผิดพลาด
+    const name = document.getElementById('name').value;
+    const email = document.getElementById('email').value;
+    return name.length > 2 && email.includes('@');
+}
+</code></pre>
+            <div class="slide-number">8/32</div>
+        </section>
+        
+        <section class="slide">
+            <h2>💬 แสดงข้อความ Error ที่ดี</h2>
+            <p>ข้อความแจ้งเตือนที่ดีควรจะ <span class="highlight">ชัดเจน</span>, <span class="highlight">สั้นกระชับ</span>, และ <span class="highlight">บอกแนวทางแก้ไข</span>ให้ผู้ใช้</p>
+            <div class="grid-2">
+                <div>
+                    <h3><i class="fas fa-times-circle" style="color: var(--error-color);"></i> แบบไม่ดี</h3>
+                    <ul>
+                        <li><i class="fas fa-comment"></i>"ข้อมูลผิดพลาด" (ไม่บอกว่าผิดอะไร)</li>
+                        <li><i class="fas fa-comment"></i>"รหัสผ่านไม่ตรงตามนโยบายความปลอดภัยของบริษัท" (ยาวและซับซ้อนเกินไป)</li>
+                    </ul>
+                </div>
+                <div>
+                    <h3><i class="fas fa-check-circle" style="color: var(--success-color);"></i> แบบดี</h3>
+                     <ul>
+                        <li><i class="fas fa-comment"></i>"รูปแบบอีเมลไม่ถูกต้อง" (ชัดเจน)</li>
+                        <li><i class="fas fa-comment"></i>"รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร" (บอกวิธีแก้)</li>
+                    </ul>
+                </div>
+            </div>
+            <h3>ตัวอย่างฟังก์ชันช่วยแสดง Error:</h3>
+            <pre><code class="language-javascript">function showError(inputId, message) {
+    const input = document.getElementById(inputId);
+    const errorDiv = document.getElementById(inputId + 'Error');
+    input.classList.add('invalid');
+    errorDiv.textContent = message;
+}
+
+function hideError(inputId) {
+    const input = document.getElementById(inputId);
+    const errorDiv = document.getElementById(inputId + 'Error');
+    input.classList.remove('invalid');
+    errorDiv.textContent = '';
+}
+</code></pre>
+            <div class="slide-number">9/32</div>
+        </section>
+
+        <section class="slide">
+            <h2>คำถาม: Validation Strategy 🤔</h2>
+            <blockquote>คุณกำลังสร้างฟอร์มสมัครสมาชิกที่มี 5 ช่อง และทุกช่องต้องกรอกข้อมูลให้ถูกต้อง<br>คุณคิดว่าควรจะทำการตรวจสอบข้อมูล <span class="highlight">เมื่อไหร่</span> เพื่อให้ผู้ใช้ได้รับประสบการณ์ที่ดีที่สุด?</blockquote>
+            <ul>
+                <li><strong>A)</strong> ตรวจสอบเมื่อผู้ใช้กดปุ่ม "ส่งข้อมูล" เท่านั้น</li>
+                <li><strong>B)</strong> ตรวจสอบทุกครั้งที่ผู้ใช้พิมพ์ (ใช้ `input` event)</li>
+                <li><strong>C)</strong> ตรวจสอบเมื่อผู้ใช้ออกจากช่องกรอกข้อมูลนั้นๆ (ใช้ `blur` event)</li>
+                <li><strong>D)</strong> ใช้ทั้ง `input` และ `blur` event ร่วมกัน เพื่อให้ feedback ที่เหมาะสมในแต่ละจังหวะ</li>
+            </ul>
+            <p style="text-align:center; margin-top:1em;">คิด 60 วินาที...</p>
+            <div class="slide-number">10/32</div>
+        </section>
+
+        <section class="slide">
+            <h2>เฉลย 🎯</h2>
+            <h3>คำตอบ: D) ใช้ทั้ง `input` และ `blur` event ร่วมกัน</h3>
+            <p>นี่คือ Strategy ที่มอบประสบการณ์ผู้ใช้ (UX) ที่ดีที่สุด:</p>
+            <ul>
+                <li><i class="fas fa-keyboard" style="color: var(--primary-color);"></i><strong>`input` event:</strong> ใช้เพื่อให้ feedback แบบ real-time สำหรับการตรวจสอบที่ไม่รบกวนการพิมพ์ เช่น การนับจำนวนตัวอักษร หรือการแสดงสถานะ "รหัสผ่านคาดเดาง่าย/ปานกลาง/ยาก"</li>
+                <li><i class="fas fa-mouse-pointer" style="color: var(--secondary-color);"></i><strong>`blur` event:</strong> ใช้เพื่อทำการตรวจสอบขั้นสุดท้ายเมื่อผู้ใช้ออกจากช่องนั้นๆ เหมาะสำหรับการแสดงข้อความ Error ที่ชัดเจน เช่น "รูปแบบอีเมลไม่ถูกต้อง" เพื่อไม่ให้รบกวนขณะที่ผู้ใช้ยังพิมพ์ไม่เสร็จ</li>
+            </ul>
+            <pre><code class="language-javascript">// ตัวอย่างการผสมผสาน
+usernameInput.addEventListener('input', checkUsernameLength); // ให้ feedback ทันที
+usernameInput.addEventListener('blur', finalUsernameValidation); // ตรวจสอบครั้งสุดท้าย
+</code></pre>
+            <p class="solution"><strong>ผลลัพธ์:</strong> ผู้ใช้ได้รับ feedback ที่รวดเร็วแต่ไม่น่ารำคาญ และมั่นใจได้ว่าข้อมูลถูกต้องก่อนจะไปยังช่องถัดไป</p>
+            <div class="slide-number">11/32</div>
+        </section>
+
+        <section class="slide">
+            <h2>💾 ทำความรู้จัก Browser Storage</h2>
+            <p>เคยไหม? กรอกฟอร์มยาวๆ แล้วเน็ตตัด ข้อมูลหายหมด! หรือตั้งค่า Dark Mode แล้วพอเปิดเว็บใหม่ก็กลับเป็น Light Mode เหมือนเดิม... Browser Storage คือทางแก้!</p>
+            <h3>ประเภทหลักๆ ของ Storage ในเบราว์เซอร์:</h3>
+            <div class="grid-2">
+                <div>
+                    <h3>1. localStorage <i class="fas fa-building" style="color: var(--primary-color);"></i></h3>
+                    <p><strong>ข้อมูลถาวร:</strong> เก็บข้อมูลไว้ในเบราว์เซอร์อย่างถาวร ข้อมูลจะยังคงอยู่แม้จะปิด-เปิดเบราว์เซอร์ใหม่ หรือรีสตาร์ทเครื่องก็ตาม จะหายไปก็ต่อเมื่อผู้ใช้ล้างแคช หรือเราสั่งลบด้วยโค้ดเท่านั้น</p>
+                    <p><strong>เหมาะสำหรับ:</strong> การตั้งค่าผู้ใช้ (เช่น Theme), ตะกร้าสินค้า, ข้อมูลโปรไฟล์</p>
+                </div>
+                 <div>
+                    <h3>2. sessionStorage <i class="fas fa-door-open" style="color: var(--secondary-color);"></i></h3>
+                    <p><strong>ข้อมูลชั่วคราว:</strong> เก็บข้อมูลเฉพาะใน Session หรือ Tab นั้นๆ เท่านั้น เมื่อผู้ใช้ปิด Tab หรือปิดเบราว์เซอร์ ข้อมูลทั้งหมดใน sessionStorage จะถูกลบหายไปทันที</p>
+                     <p><strong>เหมาะสำหรับ:</strong> ข้อมูลที่กรอกในฟอร์มที่ยังไม่ส่ง, สถานะการล็อคอินชั่วคราว</p>
+                </div>
+            </div>
+            <p>นอกจากนี้ยังมี Cookies และ IndexedDB สำหรับกรณีที่ซับซ้อนขึ้นไป แต่วันนี้เราจะเน้นที่ <strong>localStorage</strong> และ <strong>sessionStorage</strong></p>
+            <div class="slide-number">12/32</div>
+        </section>
+        
+        <section class="slide">
+            <h2>🏦 localStorage - การเก็บข้อมูลถาวร</h2>
+            <p>API ของ localStorage นั้นใช้งานง่ายมาก มี method หลักๆ แค่ไม่กี่ตัว</p>
+            <pre><code class="language-javascript">// 1. บันทึกข้อมูล (key, value) - value ต้องเป็น String
+localStorage.setItem('username', 'สมศรี');
+localStorage.setItem('theme', 'dark');
+
+// 2. ดึงข้อมูลออกมาใช้
+const username = localStorage.getItem('username'); // ได้ค่า "สมศรี"
+console.log(username);
+
+// 3. ลบข้อมูลทีละรายการ
+localStorage.removeItem('theme');
+
+// 4. ลบข้อมูลทั้งหมด! (ทุก key ที่อยู่ใน domain เดียวกัน)
+localStorage.clear();
+
+// สามารถดูข้อมูลได้ที่ Developer Tools -> Application -> Local Storage
+</code></pre>
+            <div class="solution">
+                <i class="fas fa-exclamation-triangle"></i> <strong>ข้อควรระวัง:</strong>
+                <ul>
+                    <li>localStorage เก็บข้อมูลได้เฉพาะ <span class="highlight">String</span> เท่านั้น</li>
+                    <li>มีขนาดจำกัดประมาณ 5-10MB</li>
+                    <li><span class="highlight">ไม่มีความปลอดภัย!</span> อย่าเก็บข้อมูลสำคัญ เช่น รหัสผ่าน หรือข้อมูลบัตรเครดิต</li>
+                </ul>
+            </div>
+            <div class="slide-number">13/32</div>
+        </section>
+        
+        <section class="slide">
+            <h2>⏱️ sessionStorage - ข้อมูลชั่วคราว</h2>
+            <p><code>sessionStorage</code> มีวิธีการใช้งานเหมือนกับ <code>localStorage</code> ทุกประการ แค่เปลี่ยนชื่อเรียกเท่านั้น สิ่งที่ต่างกันมีเพียงอย่างเดียวคือ <span class="highlight">อายุของข้อมูล</span></p>
+            <h3>เปรียบเทียบชัดๆ:</h3>
+            <table style="width: 100%; border-collapse: collapse; font-size: 0.9em;">
+                <tr style="background: var(--primary-color); color: white;">
+                    <th style="padding: 10px; border: 1px solid #ddd;">คุณสมบัติ</th>
+                    <th style="padding: 10px; border: 1px solid #ddd;">localStorage</th>
+                    <th style="padding: 10px; border: 1px solid #ddd;">sessionStorage</th>
+                </tr>
+                <tr>
+                    <td style="padding: 10px; border: 1px solid #ddd;">อายุข้อมูล</td>
+                    <td style="padding: 10px; border: 1px solid #ddd;"><strong>ถาวร</strong> (จนกว่าจะลบ)</td>
+                    <td style="padding: 10px; border: 1px solid #ddd;"><strong>ชั่วคราว</strong> (หายเมื่อปิด Tab)</td>
+                </tr>
+                 <tr style="background: #f2f2f2;">
+                    <td style="padding: 10px; border: 1px solid #ddd;">การแชร์ข้อมูลระหว่าง Tabs</td>
+                    <td style="padding: 10px; border: 1px solid #ddd;"><strong>แชร์กันได้</strong> (ถ้าเปิดจาก Domain เดียวกัน)</td>
+                    <td style="padding: 10px; border: 1px solid #ddd;"><strong>แยกกันโดยสิ้นเชิง</strong></td>
+                </tr>
+            </table>
+            <h3>ตัวอย่างการใช้งาน:</h3>
+            <pre><code class="language-javascript">// การใช้งานเหมือนกันเป๊ะ!
+sessionStorage.setItem('temp_filter', 'electronics');
+const filter = sessionStorage.getItem('temp_filter');
+console.log(filter); // "electronics"
+</code></pre>
+            <div class="slide-number">14/32</div>
+        </section>
+
+        <section class="slide">
+            <h2>📋 การเก็บข้อมูลซับซ้อนด้วย JSON</h2>
+            <p>เนื่องจาก Storage เก็บได้แค่ String ถ้าเราต้องการเก็บ Object หรือ Array เราต้องแปลงมันเป็น <span class="highlight">JSON String</span> ก่อน</p>
+            <div class="grid-2">
+                <div>
+                    <h3>บันทึกข้อมูล (Object → JSON)</h3>
+                    <pre><code class="language-javascript">// 1. สร้าง Object
+const user = {
+  name: 'สมชาย',
+  age: 30,
+  isAdmin: true
+};
+
+// 2. แปลงเป็น JSON String
+const userJSON = JSON.stringify(user);
+
+// 3. บันทึกลง localStorage
+localStorage.setItem('userData', userJSON);</code></pre>
+                </div>
+                 <div>
+                    <h3>ดึงข้อมูล (JSON → Object)</h3>
+                     <pre><code class="language-javascript">// 1. ดึง JSON String ออกมา
+const savedUserJSON = localStorage.getItem('userData');
+ 
+// 2. แปลงกลับเป็น Object
+const savedUser = JSON.parse(savedUserJSON);
+ 
+// 3. ใช้งานได้เหมือน Object ปกติ
+console.log(savedUser.name); // "สมชาย"
+console.log(savedUser.age); // 30</code></pre>
+                </div>
+            </div>
+            <p class="solution" style="text-align: center;"><i class="fas fa-lightbulb"></i> <code>JSON.stringify()</code> และ <code>JSON.parse()</code> คือคู่หูที่ขาดกันไม่ได้สำหรับการทำงานกับ Storage</p>
+            <div class="slide-number">15/32</div>
+        </section>
+        
+        <section class="slide">
+            <h2>🛡️ Error Handling สำหรับ Storage</h2>
+            <p>ในบางสถานการณ์ เช่น ผู้ใช้เปิดเว็บในโหมด Private/Incognito หรือ Storage เต็ม, การพยายามเขียนข้อมูลอาจทำให้เกิด Error ได้ เราจึงควรเขียนโค้ดดักจับไว้เสมอ</p>
+            <h3>ตัวอย่างฟังก์ชันที่ปลอดภัย:</h3>
+            <pre><code class="language-javascript">function saveToStorage(key, data) {
+    try {
+        localStorage.setItem(key, JSON.stringify(data));
+        return true; // สำเร็จ
+    } catch (error) {
+        console.error("ไม่สามารถบันทึกข้อมูลได้:", error);
+        // อาจแจ้งเตือนผู้ใช้ว่าการตั้งค่าจะไม่ถูกบันทึก
+        return false; // ล้มเหลว
+    }
+}
+
+function loadFromStorage(key, defaultValue = null) {
+    try {
+        const data = localStorage.getItem(key);
+        // ถ้าไม่มีข้อมูล ให้ return ค่าเริ่มต้น
+        return data ? JSON.parse(data) : defaultValue;
+    } catch (error) {
+        console.error("ไม่สามารถโหลดข้อมูลได้:", error);
+        // คืนค่าเริ่มต้นไปแทน
+        return defaultValue;
+    }
+}
+
+// การใช้งาน
+const userSettings = loadFromStorage('settings', { theme: 'light' });
+saveToStorage('settings', { theme: 'dark', fontSize: 16 });
+</code></pre>
+            <div class="slide-number">16/32</div>
+        </section>
+        
+        <section class="slide">
+            <h2>💾 Interactive: Form Auto-Save</h2>
+            <p>ลองกรอกข้อมูลในฟอร์มด้านล่าง ข้อมูลของคุณจะถูกบันทึกอัตโนมัติ ลองพิมพ์แล้ว Refresh หน้าเว็บดูสิ!</p>
+             <div class="live-preview-container" style="height: auto;">
+                <div class="code-pane">
+                    <div class="pane-title">JavaScript Code</div>
+                    <pre><code class="language-javascript">const form = document.getElementById('js-auto-save-form');
+const fields = ['name', 'email', 'message'];
+const status = document.getElementById('js-draft-status');
+
+// โหลดข้อมูลเมื่อเปิดหน้า
+fields.forEach(field => {
+    const el = document.getElementById(`js-${field}`);
+    const saved = localStorage.getItem(`draft_${field}`);
+    if (saved) el.value = saved;
+});
+
+// บันทึกข้อมูลเมื่อมีการพิมพ์
+form.addEventListener('input', (e) => {
+    localStorage.setItem(`draft_${e.target.name}`, e.target.value);
+    status.textContent = `💾 บันทึกแบบร่างแล้ว...`;
+    status.className = 'status-box info';
+});
+
+// ล้างข้อมูลเมื่อส่งสำเร็จ
+form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    fields.forEach(f => localStorage.removeItem(`draft_${f}`));
+    form.reset();
+    status.textContent = `✅ ส่งข้อความสำเร็จ!`;
+    status.className = 'status-box success';
+});</code></pre>
+                </div>
+                <div class="preview-pane">
+                    <div class="pane-title">Live Preview</div>
+                    <div class="preview-pane-content demo-form">
+                        <form id="js-auto-save-form">
+                            <div class="form-group">
+                                <label for="js-name">ชื่อ</label>
+                                <input type="text" id="js-name" name="name">
+                            </div>
+                             <div class="form-group">
+                                <label for="js-email">อีเมล</label>
+                                <input type="email" id="js-email" name="email">
+                            </div>
+                             <div class="form-group">
+                                <label for="js-message">ข้อความ</label>
+                                <textarea id="js-message" name="message" rows="4"></textarea>
+                            </div>
+                            <button type="submit">ส่งข้อความ</button>
+                        </form>
+                        <div id="js-draft-status"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-number">17/32</div>
+        </section>
+
+        <section class="slide">
+            <h2>🎨 Interactive: การจัดการ User Preferences</h2>
+            <p>เราสามารถใช้ localStorage เพื่อบันทึกการตั้งค่าของผู้ใช้ เช่น Theme, ขนาดตัวอักษร เพื่อให้เว็บจดจำและปรับการแสดงผลได้ในการเข้าชมครั้งถัดไป</p>
+             <div class="live-preview-container" style="height: auto;">
+                <div class="code-pane">
+                    <div class="pane-title">JavaScript Code</div>
+                    <pre><code class="language-javascript">const settingsPanel = document.getElementById('js-settings');
+const previewBox = document.getElementById('js-preview-box');
+
+function applySettings() {
+    const saved = localStorage.getItem('userPrefs');
+    const settings = saved ? JSON.parse(saved) : { theme: 'light' };
+    
+    previewBox.className = settings.theme; // 'light' or 'dark'
+    document.querySelector(`input[value=${settings.theme}]`).checked = true;
+}
+
+settingsPanel.addEventListener('change', (e) => {
+    if (e.target.name === 'theme') {
+        const newSettings = { theme: e.target.value };
+        localStorage.setItem('userPrefs', JSON.stringify(newSettings));
+        applySettings();
+    }
+});
+
+applySettings(); // โหลดการตั้งค่าเมื่อเริ่ม
+</code></pre>
+                </div>
+                <div class="preview-pane">
+                    <div class="pane-title">Live Preview (ลองเปลี่ยนแล้ว Refresh)</div>
+                    <div class="preview-pane-content demo-form">
+                        <div id="js-settings">
+                            <label>
+                                <input type="radio" name="theme" value="light"> 
+                                <i class="fas fa-sun"></i> Light Theme
+                            </label>
+                            <label>
+                                <input type="radio" name="theme" value="dark"> 
+                                <i class="fas fa-moon"></i> Dark Theme
+                            </label>
+                        </div>
+                        <hr style="margin: 15px 0;">
+                        <div id="js-preview-box" style="padding: 20px; border-radius: 8px; transition: all 0.3s;">
+                            นี่คือกล่องแสดงผล
+                        </div>
+                        <style>
+                            #js-preview-box.light { background: #fff; color: #333; border: 1px solid #ddd; }
+                            #js-preview-box.dark { background: #333; color: #fff; border: 1px solid #555;}
+                        </style>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-number">18/32</div>
+        </section>
+
+        <section class="slide">
+            <h2>🛒 Interactive: Shopping Cart ด้วย localStorage</h2>
+            <p>สร้างตะกร้าสินค้าที่จำรายการได้ แม้ผู้ใช้จะปิดเบราว์เซอร์ไปแล้วก็ตาม</p>
+            <div class="live-preview-container" style="height: auto;">
+                <div class="code-pane">
+                    <div class="pane-title">JavaScript (Concept)</div>
+                    <pre><code class="language-javascript">class ShoppingCart {
+    constructor() {
+        this.items = this.loadCart();
+        this.updateDisplay();
+    }
+    
+    loadCart() {
+        // ดึงข้อมูลจาก localStorage และ parse JSON
+        // ถ้าไม่มี ให้ return array ว่าง
+    }
+    
+    saveCart() {
+        // stringify this.items แล้วบันทึกลง localStorage
+    }
+
+    addItem(product) {
+        // ตรวจสอบว่ามีสินค้านี้ในตะกร้าหรือยัง
+        // ถ้ามี: เพิ่ม quantity, ถ้าไม่มี: push object ใหม่
+        //_ this.saveCart() และ this.updateDisplay()
+    }
+
+    updateDisplay() {
+        // วาด HTML ของตะกร้าใหม่ทั้งหมด
+        // คำนวณราคารวม
+    }
+}
+</code></pre>
+                </div>
+                <div class="preview-pane">
+                    <div class="pane-title">Live Preview</div>
+                    <div class="preview-pane-content cart-demo">
+                        <div class="product-list">
+                            <div class="product" data-id="1" data-name="iPhone 15" data-price="35000">
+                                iPhone 15 (฿35,000) <button class="add-to-cart">เพิ่ม</button>
+                            </div>
+                             <div class="product" data-id="2" data-name="MacBook Pro" data-price="65000">
+                                MacBook Pro (฿65,000) <button class="add-to-cart">เพิ่ม</button>
+                            </div>
+                        </div>
+                        <hr style="margin: 15px 0;">
+                        <h3>ตะกร้าสินค้า (<span id="js-cartCount">0</span>)</h3>
+                        <div id="js-cartItems"></div>
+                        <div id="js-cartTotal">รวม: ฿0</div>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-number">19/32</div>
+        </section>
+        
+        <section class="slide">
+            <h2>🔄 การผสาน Validation + Storage</h2>
+            <p>เราสามารถรวมพลังของทั้งสองเทคนิคเพื่อสร้างฟอร์มลงทะเบียนที่สมบูรณ์แบบ: <span class="highlight">ตรวจสอบข้อมูล</span> และ <span class="highlight">บันทึกร่างอัตโนมัติ</span> เพื่อป้องกันข้อมูลสูญหาย</p>
+            <h3>แนวทางการทำงาน:</h3>
+            <ol>
+                <li><strong>On Page Load:</strong>
+                    <ul>
+                        <li><i class="fas fa-download"></i>เรียกใช้ฟังก์ชัน <code>loadDraft()</code> เพื่อดึงข้อมูลที่เคยกรอกค้างไว้จาก <code>localStorage</code> มาใส่ในฟอร์ม</li>
+                    </ul>
+                </li>
+                 <li><strong>On User Input:</strong>
+                    <ul>
+                        <li><i class="fas fa-keyboard"></i>เมื่อผู้ใช้พิมพ์ (<code>input</code> event), ให้บันทึกค่าลง <code>localStorage</code> (Auto-Save)</li>
+                        <li><i class="fas fa-check"></i>พร้อมกันนั้น ก็ทำการ Real-time validation เพื่อให้ feedback ทันที</li>
+                    </ul>
+                </li>
+                 <li><strong>On Form Submit:</strong>
+                    <ul>
+                        <li><i class="fas fa-shield-alt"></i>ทำการ <code>validateAllFields()</code> อีกครั้งเพื่อความมั่นใจ</li>
+                        <li><i class="fas fa-paper-plane"></i>ถ้าข้อมูลถูกต้องทั้งหมด, ทำการส่งข้อมูล (จำลอง)</li>
+                        <li><i class="fas fa-trash"></i>หลังจากส่งสำเร็จ, ให้ลบข้อมูลร่างออกจาก <code>localStorage</code> และเคลียร์ฟอร์ม</li>
+                    </ul>
+                </li>
+            </ol>
+            <p class="solution">นี่คือหัวใจของการสร้างฟอร์มที่มอบประสบการณ์ที่ดีและปลอดภัยให้กับผู้ใช้</p>
+            <div class="slide-number">20/32</div>
+        </section>
+
+        <section class="slide">
+            <h2>📡 การจัดการ Storage Events</h2>
+            <p>เบราว์เซอร์มี Event ชื่อ <code>'storage'</code> ที่จะทำงานใน Tab อื่นๆ เมื่อ <code>localStorage</code> ใน Tab ใด Tab หนึ่งมีการเปลี่ยนแปลง สิ่งนี้ช่วยให้เราสามารถ Sync ข้อมูลข้าม Tab ได้</p>
+            <blockquote>ตัวอย่าง: ผู้ใช้เพิ่มสินค้าลงตะกร้าใน Tab A, ตะกร้าใน Tab B ก็จะอัปเดตตามไปด้วย!</blockquote>
+            <pre><code class="language-javascript">window.addEventListener('storage', function(e) {
+    console.log('Storage ถูกเปลี่ยนแปลงใน Tab อื่น!');
+    console.log('Key ที่เปลี่ยน:', e.key);
+    console.log('ค่าเก่า:', e.oldValue);
+    console.log('ค่าใหม่:', e.newValue);
+    
+    // ตัวอย่างการอัปเดตตะกร้าสินค้า
+    if (e.key === 'shoppingCart') {
+        const newCartData = JSON.parse(e.newValue || '[]');
+        // เรียกฟังก์ชันเพื่อวาด UI ของตะกร้าใหม่
+        updateCartDisplay(newCartData); 
+        alert('ตะกร้าสินค้าของคุณถูกอัปเดตจากอีกแท็บหนึ่ง!');
+    }
+});</code></pre>
+             <p class="solution"><i class="fas fa-info-circle"></i> Event นี้จะทำงานเฉพาะในหน้าที่ไม่ได้เป็นตัวเริ่มต้นการเปลี่ยนแปลงเท่านั้น เพื่อป้องกันการทำงานซ้ำซ้อน</p>
+            <div class="slide-number">21/32</div>
+        </section>
+        
+        <section class="slide">
+            <h2>⚡ Performance และ Best Practices</h2>
+            <p>เพื่อให้การใช้งาน Storage มีประสิทธิภาพและไม่สร้างปัญหา เราควรคำนึงถึง:</p>
+            <div class="grid-2">
+                <div>
+                    <h3>1. Debouncing สำหรับ Auto-Save</h3>
+                    <p>แทนที่จะบันทึกทุกครั้งที่พิมพ์ (ซึ่งอาจทำงานถี่เกินไป) ให้ใช้เทคนิค <span class="highlight">Debounce</span> เพื่อรอให้ผู้ใช้หยุดพิมพ์สักครู่ (เช่น 300-500ms) แล้วจึงบันทึกข้อมูลเพียงครั้งเดียว</p>
+                    <pre><code class="language-javascript">// หลักการของ Debounce
+let timeoutId;
+input.addEventListener('input', () => {
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(saveData, 500);
+});</code></pre>
+                </div>
+                <div>
+                    <h3>2. การจัดการ Storage ขนาดใหญ่</h3>
+                    <p>ควรมีการวางแผนลบข้อมูลเก่าที่ไม่จำเป็นออกไปเป็นระยะๆ เพื่อไม่ให้ Storage เต็ม เช่น ข้อมูลร่างที่เก่าเกิน 7 วัน หรือ Log ที่ไม่ใช้แล้ว การทำเช่นนี้ช่วยป้องกัน Error <code>QuotaExceededError</code></p>
+                     <pre><code class="language-javascript">// แนวคิดการลบข้อมูลเก่า
+function cleanOldStorage() {
+    const oneWeekAgo = Date.now() - (7 * 24 * 60 * 60 * 1000);
+    // วนลูป localStorage เพื่อหา key ที่มี timestamp เก่ากว่า
+    // แล้วใช้ localStorage.removeItem() ลบออกไป
+}</code></pre>
+                </div>
+            </div>
+            <div class="slide-number">22/32</div>
+        </section>
+
+        <section class="slide">
+            <h2>🔒 Security Considerations</h2>
+            <p>ความปลอดภัยเป็นสิ่งสำคัญที่สุด! <code>localStorage</code> และ <code>sessionStorage</code> <span class="highlight">ไม่มีการเข้ารหัสและสามารถเข้าถึงได้ง่ายผ่าน JavaScript</span> (เช่นการโจมตีแบบ XSS)</p>
+            <h3>ข้อควรจำ:</h3>
+            <ul>
+                <li><i class="fas fa-exclamation-triangle" style="color: var(--error-color);"></i><strong>ห้ามเก็บข้อมูลลับเด็ดขาด!</strong>
+                    <ul>
+                        <li>❌ รหัสผ่าน, API Keys, Token ที่สำคัญ</li>
+                        <li>❌ ข้อมูลบัตรเครดิต, เลขบัตรประชาชน</li>
+                    </ul>
+                </li>
+                <li><i class="fas fa-check-circle" style="color: var(--success-color);"></i><strong>สิ่งที่เก็บได้:</strong>
+                    <ul>
+                        <li>✅ การตั้งค่า UI (Theme, Language)</li>
+                        <li>✅ ข้อมูลสาธารณะ (ID สินค้าในตะกร้า)</li>
+                        <li>✅ ข้อมูลร่างของฟอร์ม (ที่ไม่ใช่ข้อมูลลับ)</li>
+                    </ul>
+                </li>
+                 <li><i class="fas fa-shield-alt" style="color: var(--primary-color);"></i><strong>Sanitize Input:</strong>
+                    <ul>
+                        <li>ก่อนจะนำข้อมูลจาก Storage มาแสดงผลบนหน้าเว็บ ควรทำการ <span class="highlight">Sanitize</span> (กรองโค้ดอันตราย) ก่อนเสมอ เพื่อป้องกันการโจมตี XSS</li>
+                    </ul>
+                </li>
+            </ul>
+            <div class="slide-number">23/32</div>
+        </section>
+        
+        <section class="slide">
+            <h2>คำถาม: เลือก Storage ให้เหมาะสม 🤔</h2>
+            <blockquote>จากสถานการณ์ต่อไปนี้ คุณคิดว่าควรจะใช้ Storage ประเภทใด (<code>localStorage</code> หรือ <code>sessionStorage</code>) ถึงจะเหมาะสมที่สุด?</blockquote>
+            <ol>
+                 <li><strong>A)</strong> บันทึกการตั้งค่าธีมเว็บไซต์ (Dark/Light Mode) ที่ผู้ใช้เลือก</li>
+                 <li><strong>B)</strong> เก็บข้อมูลที่ผู้ใช้กรอกในฟอร์มสมัครงานหลายขั้นตอนที่ยังกรอกไม่เสร็จ</li>
+                 <li><strong>C)</strong> จดจำรายการสินค้าที่ลูกค้าเพิ่มไว้ในตะกร้า สำหรับร้านค้า E-commerce</li>
+                 <li><strong>D)</strong> เก็บผลลัพธ์การค้นหาล่าสุด เพื่อให้ผู้ใช้สามารถกลับมาดูได้ใน Tab นั้นๆ</li>
+            </ol>
+             <p style="text-align:center; margin-top:1em;">คิด 90 วินาที...</p>
+            <div class="slide-number">24/32</div>
+        </section>
+
+        <section class="slide">
+            <h2>เฉลย: Storage Selection 🎯</h2>
+            <h3>คำตอบที่เหมาะสมที่สุด:</h3>
+            <ul style="font-size: 0.9em;">
+                <li><i class="fas fa-check" style="color: var(--success-color);"></i>
+                    <strong>A) การตั้งค่าธีม → <code>localStorage</code></strong><br>
+                    <strong>เหตุผล:</strong> เราต้องการให้เว็บไซต์ "จำ" ธีมที่ผู้ใช้ชอบได้ถาวร แม้จะปิดเบราว์เซอร์ไปแล้วกลับมาใหม่ ก็ควรจะเป็นธีมเดิม
+                </li>
+                 <li><i class="fas fa-check" style="color: var(--success-color);"></i>
+                    <strong>B) ข้อมูลฟอร์มที่กรอกอยู่ → <code>localStorage</code></strong><br>
+                    <strong>เหตุผล:</strong> เพื่อป้องกันข้อมูลหายหากผู้ใช้เผลอปิดเบราว์เซอร์หรือไฟดับ การใช้ localStorage จะช่วยให้ผู้ใช้กลับมากรอกต่อได้โดยไม่ต้องเริ่มใหม่ทั้งหมด
+                </li>
+                 <li><i class="fas fa-check" style="color: var(--success-color);"></i>
+                    <strong>C) Shopping Cart → <code>localStorage</code></strong><br>
+                    <strong>เหตุผล:</strong> ลูกค้าคาดหวังว่าสินค้าที่เลือกไว้จะยังคงอยู่ในตะกร้า แม้ว่าพวกเขาจะปิดเว็บไปแล้วกลับมาดูในวันพรุ่งนี้ก็ตาม
+                </li>
+                 <li><i class="fas fa-check" style="color: var(--success-color);"></i>
+                    <strong>D) ผลลัพธ์การค้นหาล่าสุด → <code>sessionStorage</code></strong><br>
+                    <strong>เหตุผล:</strong> ข้อมูลนี้เป็นข้อมูลชั่วคราว มีประโยชน์แค่ใน Session ปัจจุบันเท่านั้น ไม่จำเป็นต้องเก็บข้ามวัน และควรถูกล้างไปเมื่อผู้ใช้ปิด Tab
+                </li>
+            </ul>
+             <p class="solution"><strong>หลักการเลือก:</strong> ข้อมูลที่ต้องการความ <span class="highlight">"ถาวร"</span> ใช้ <code>localStorage</code>, ข้อมูลที่ <span class="highlight">"ชั่วคราว"</span> และผูกกับ Tab นั้นๆ ใช้ <code>sessionStorage</code></p>
+            <div class="slide-number">25/32</div>
+        </section>
+
+        <section class="slide">
+            <h2>🔍 Debugging Storage</h2>
+            <p>เครื่องมือที่ดีที่สุดในการตรวจสอบข้อมูลใน Storage คือ Browser Developer Tools</p>
+            <h3>วิธีเปิดดู:</h3>
+            <ol>
+                <li>กด <strong>F12</strong> (หรือ Ctrl+Shift+I / Cmd+Opt+I) เพื่อเปิด Developer Tools</li>
+                <li>ไปที่แท็บ <strong>Application</strong></li>
+                <li>มองหาเมนูด้านซ้ายใต้หัวข้อ <strong>Storage</strong></li>
+                <li>คลิกที่ <strong>Local Storage</strong> หรือ <strong>Session Storage</strong></li>
+                <li>คุณจะเห็นรายการ Key-Value ทั้งหมดที่ถูกเก็บไว้ใน Domain ปัจจุบัน</li>
+            </ol>
+            <div style="text-align: center; margin-top: 1em;">
+                 
+            </div>
+             <h3>ใช้ Console ช่วย Debug:</h3>
+            <pre><code class="language-javascript">// ดูข้อมูลทั้งหมดในรูปแบบตารางที่สวยงาม
+console.table(localStorage);
+
+// ล้าง localStorage ของเว็บปัจจุบันอย่างรวดเร็ว
+localStorage.clear();
+</code></pre>
+            <div class="slide-number">26/32</div>
+        </section>
+
+        <section class="slide">
+            <h2>🛠️ Lab 2.3 - สร้างฟอร์มติดต่อที่สมบูรณ์</h2>
+            <h3 style="color: var(--secondary-color);">โจทย์: สร้างฟอร์มติดต่อที่มีคุณสมบัติครบครัน (เวลา 60 นาที)</h3>
+            <div class="grid-2">
+                <div>
+                    <h4><i class="fas fa-tasks"></i> Features ที่ต้องมี:</h4>
+                    <ol>
+                        <li><strong>Validation:</strong>
+                            <ul>
+                                <li>ชื่อ: ไม่ว่าง, อย่างน้อย 2 ตัวอักษร</li>
+                                <li>อีเมล: รูปแบบถูกต้อง</li>
+                                <li>เบอร์โทร: 10 หลัก (ตัวเลขเท่านั้น)</li>
+                                <li>ข้อความ: อย่างน้อย 10 ตัวอักษร</li>
+                            </ul>
+                        </li>
+                        <li><strong>Auto-Save:</strong>
+                            <ul>
+                                <li>บันทึกข้อมูลทุกช่องลง <code>localStorage</code> ทันทีที่พิมพ์</li>
+                                <li>เมื่อเปิดหน้าใหม่ ข้อมูลที่เคยกรอกต้องถูกโหลดกลับมา</li>
+                            </ul>
+                        </li>
+                    </ol>
+                </div>
+                <div>
+                     <h4><i class="fas fa-smile-beam"></i> User Experience:</h4>
+                    <ol>
+                        <li><strong>Real-time Validation:</strong> แสดงสถานะถูก/ผิดทันที</li>
+                        <li><strong>User-friendly Messages:</strong> ข้อความแจ้งเตือนที่ชัดเจน</li>
+                        <li><strong>Clear Draft:</strong> มีปุ่มสำหรับลบข้อมูลร่างทั้งหมด</li>
+                        <li><strong>Status Display:</strong> แสดงสถานะการบันทึกหรือการส่งข้อความ</li>
+                    </ol>
+                </div>
+            </div>
+             <p class="solution">เราจะใช้ความรู้ทั้งหมดที่เรียนมาในวันนี้ เพื่อสร้างฟอร์มนี้ขึ้นมาด้วยกัน!</p>
+            <div class="slide-number">27/32</div>
+        </section>
+        
+        <section class="slide">
+            <h2>💡 เฉลย Lab 2.3 (โครงสร้างหลัก)</h2>
+            <p>นี่คือแนวคิดและโครงสร้างของ JavaScript ที่ใช้ในการแก้โจทย์ Lab 2.3</p>
+            <pre><code class="language-javascript">class ContactForm {
+    constructor() {
+        this.form = document.getElementById('contactForm');
+        this.fields = ['name', 'email', 'phone', 'message'];
+        // ... ผูก event listeners ที่นี่
+        this.bindEvents();
+        this.loadDraft();
+    }
+
+    bindEvents() {
+        // 1. Event listener สำหรับ 'input' ในแต่ละช่อง
+        //    - เรียก saveDraft()
+        //    - เรียก validateField()
+        
+        // 2. Event listener สำหรับ 'submit' ฟอร์ม
+        //    - เรียก preventDefault()
+        //    - เรียก submitForm()
+        
+        // 3. Event listener สำหรับ 'click' ปุ่มลบ
+        //    - เรียก clearDraft()
+    }
+
+    loadDraft() { /* ... โหลดข้อมูลจาก localStorage ... */ }
+    saveDraft(field, value) { /* ... บันทึกข้อมูลลง localStorage ... */ }
+    validateField(field, value) { /* ... ตรวจสอบข้อมูลและแสดงผล ... */ }
+    validateAllFields() { /* ... ตรวจสอบทุกช่องก่อนส่ง ... */ }
+    submitForm() { /* ... ถ้า valid ให้ลบ draft และรีเซ็ตฟอร์ม ... */ }
+    clearDraft() { /* ... ลบข้อมูลจาก localStorage และ UI ... */ }
+}
+
+new ContactForm();
+</code></pre>
+            <p>การใช้ Class ช่วยให้โค้ดเป็นระเบียบ จัดการง่าย และสามารถนำกลับมาใช้ใหม่ได้</p>
+            <div class="slide-number">28/32</div>
+        </section>
+
+        <section class="slide">
+            <h2>🚀 สรุปและเทคนิคขั้นสูง</h2>
+            <h3><i class="fas fa-check-circle"></i> สิ่งที่เราได้เรียนรู้:</h3>
+            <div class="grid-2">
+                <div>
+                    <h4>Form Validation</h4>
+                    <ul>
+                        <li><i class="fab fa-html5"></i>HTML5 built-in validation</li>
+                        <li><i class="fab fa-js-square"></i>Custom JavaScript validation</li>
+                        <li><i class="fas fa-spell-check"></i>Regular Expressions พื้นฐาน</li>
+                        <li><i class="fas fa-user-friends"></i>การสร้าง UX ที่ดีด้วย Real-time feedback</li>
+                    </ul>
+                </div>
+                <div>
+                    <h4>Browser Storage</h4>
+                    <ul>
+                        <li><i class="fas fa-hdd"></i><code>localStorage</code> vs <code>sessionStorage</code></li>
+                        <li><i class="fas fa-code"></i>การใช้ <code>JSON</code> กับ Storage</li>
+                        <li><i class="fas fa-exclamation-triangle"></i>Error Handling และ Security</li>
+                        <li><i class="fas fa-cogs"></i>ตัวอย่างการใช้งานจริง (Auto-Save, Preferences)</li>
+                    </ul>
+                </div>
+            </div>
+             <h3><i class="fas fa-arrow-up"></i> เทคนิคขั้นสูงที่น่าสนใจ:</h3>
+             <ul>
+                 <li><strong>Offline-First Approach:</strong> ใช้ Service Workers ร่วมกับ Storage เพื่อสร้างเว็บที่ทำงานได้แม้ไม่มีอินเทอร์เน็ต</li>
+                 <li><strong>Web Crypto API:</strong> หากจำเป็นต้องเก็บข้อมูลที่ sensitive (ซึ่งไม่แนะนำ) สามารถใช้ API นี้เพื่อเข้ารหัสข้อมูลก่อนบันทึกลง localStorage ได้</li>
+             </ul>
+            <div class="slide-number">29/32</div>
+        </section>
+        
+        <section class="slide">
+            <h2 style="text-align: center;">🎯 ท้าทายและก้าวต่อไป</h2>
+            <h3 style="text-align: center; color: var(--secondary-color);">ตอนนี้คุณสามารถสร้างเว็บแอปพลิเคชันที่มีปฏิสัมพันธ์กับผู้ใช้และจดจำข้อมูลได้แล้ว!</h3>
+            
+            <h3><i class="fas fa-lightbulb"></i> โปรเจคที่แนะนำให้ลองทำต่อ:</h3>
+            <div class="grid-3">
+                <div style="text-align:center;">
+                    <i class="fas fa-clipboard-list" style="font-size: 3em; color: var(--primary-color);"></i>
+                    <h4>Note-taking App</h4>
+                    <p>แอปจดโน้ตที่บันทึกข้อมูลลง localStorage</p>
+                </div>
+                 <div style="text-align:center;">
+                    <i class="fas fa-chart-line" style="font-size: 3em; color: var(--secondary-color);"></i>
+                    <h4>Habit Tracker</h4>
+                    <p>แอปติดตามกิจวัตรประจำวันที่บันทึกความคืบหน้า</p>
+                </div>
+                 <div style="text-align:center;">
+                    <i class="fas fa-cogs" style="font-size: 3em; color: var(--accent-color);"></i>
+                    <h4>Personal Dashboard</h4>
+                    <p>แดชบอร์ดที่ผู้ใช้ปรับแต่งและบันทึก widgets ที่ชอบได้</p>
+                </div>
+            </div>
+
+            <h3><i class="fas fa-arrow-right"></i> ในวันถัดไป:</h3>
+            <p>เราจะก้าวเข้าสู่โลกของ Modern Frontend Development อย่างเต็มตัวด้วย <strong>React.js</strong> ซึ่งเป็น Library ที่จะเปลี่ยนวิธีการสร้างเว็บของคุณไปตลอดกาล!</p>
+            <div class="slide-number">30/32</div>
+        </section>
+        
+        <section class="slide">
+            <h2 style="text-align: center;">📚 สรุปการเรียนวันที่ 2</h2>
+            <h3 style="text-align: center; color: var(--secondary-color);">จากหน้าเว็บนิ่งๆ สู่เว็บแอปพลิเคชันที่โต้ตอบได้!</h3>
+            <div class="grid-3">
+                 <div style="text-align:center;">
+                    <i class="fab fa-js-square" style="font-size: 4em; color: #f7df1e;"></i>
+                    <h4>JavaScript</h4>
+                    <p>ตรรกะและการทำงาน</p>
+                </div>
+                 <div style="text-align:center;">
+                    <i class="fas fa-hand-pointer" style="font-size: 4em; color: var(--primary-color);"></i>
+                    <h4>DOM & Events</h4>
+                    <p>การโต้ตอบกับผู้ใช้</p>
+                </div>
+                 <div style="text-align:center;">
+                    <i class="fas fa-database" style="font-size: 4em; color: var(--accent-color);"></i>
+                    <h4>Storage</h4>
+                    <p>ความจำและความฉลาด</p>
+                </div>
+            </div>
+            <h3><i class="fas fa-brain"></i> Mindset ที่ได้เรียนรู้: Event-driven Programming</h3>
+            <p>เราได้เปลี่ยนวิธีคิดจากการสร้างเว็บแบบ "แสดงผลแล้วจบ" ไปสู่การคิดแบบ "เมื่อ X เกิดขึ้น, ให้ทำ Y" ซึ่งเป็นหัวใจสำคัญของการพัฒนาแอปพลิเคชันสมัยใหม่</p>
+            <p class="solution">คุณพร้อมแล้วสำหรับก้าวที่ใหญ่ที่สุด: <strong>React.js!</strong></p>
+            <div class="slide-number">31/32</div>
+        </section>
+
+        <section class="slide title-slide">
+             <h2 style="font-size: 4em;">🎉</h2>
+             <h1>ขอบคุณและเตรียมตัวสำหรับ React.js!</h1>
+             <h3 style="margin-top: 30px;">คุณได้สร้างพื้นฐานที่แข็งแกร่งของ Frontend Development เรียบร้อยแล้ว!</h3>
+             <p style="font-size: 1.2em; opacity: 0.9;">เจอกันในวันถัดไป สำหรับการผจญภัยครั้งใหม่! 👋</p>
+            <div class="slide-number">32/32</div>
+        </section>
+
+    </div>
+
+    <div class="presentation-controls">
+        <button id="prev-btn" class="nav-btn" title="สไลด์ก่อนหน้า">‹</button>
+        <span id="slide-counter"></span>
+        <button id="next-btn" class="nav-btn" title="สไลด์ถัดไป">›</button>
+        <button id="font-decrease-btn" class="font-btn" title="ลดขนาดตัวอักษร">-</button>
+        <button id="font-increase-btn" class="font-btn" title="เพิ่มขนาดตัวอักษร">+</button>
+        <button id="fullscreen-btn" class="fullscreen-btn" title="เต็มจอ">⛶</button>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const slides = document.querySelectorAll('.slide');
+            const nextBtn = document.getElementById('next-btn');
+            const prevBtn = document.getElementById('prev-btn');
+            const fullscreenBtn = document.getElementById('fullscreen-btn');
+            const slideCounter = document.getElementById('slide-counter');
+            const progressBar = document.getElementById('progress-bar');
+            const fontIncreaseBtn = document.getElementById('font-increase-btn');
+            const fontDecreaseBtn = document.getElementById('font-decrease-btn');
+            const root = document.documentElement;
+
+            const totalSlides = slides.length;
+            let currentFontSize = 1.5; 
+            let currentSlideIndex = 0;
+            
+            function showSlide(index) {
+                if (index < 0 || index >= totalSlides) return;
+                slides.forEach((slide, i) => slide.classList.toggle('active', i === index));
+                const activeSlide = slides[index];
+                if (activeSlide.scrollTop > 0) activeSlide.scrollTop = 0;
+                currentSlideIndex = index;
+                updateControls();
+            }
+
+            function updateControls() {
+                slideCounter.textContent = `${currentSlideIndex + 1} / ${totalSlides}`;
+                const progressPercentage = ((currentSlideIndex + 1) / totalSlides) * 100;
+                progressBar.style.width = `${progressPercentage}%`;
+                prevBtn.disabled = currentSlideIndex === 0;
+                nextBtn.disabled = currentSlideIndex === totalSlides - 1;
+            }
+
+            function toggleFullscreen() {
+                if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+                else if (document.exitFullscreen) document.exitFullscreen();
+            }
+
+            fontIncreaseBtn.addEventListener('click', () => {
+                if (currentFontSize < 2.5) {
+                    currentFontSize += 0.1;
+                    root.style.setProperty('--base-font-size', `clamp(16px, ${currentFontSize}vw, 22px)`);
+                }
+            });
+            fontDecreaseBtn.addEventListener('click', () => {
+                if (currentFontSize > 0.8) {
+                    currentFontSize -= 0.1;
+                    root.style.setProperty('--base-font-size', `clamp(16px, ${currentFontSize}vw, 22px)`);
+                }
+            });
+
+            nextBtn.addEventListener('click', () => showSlide(currentSlideIndex + 1));
+            prevBtn.addEventListener('click', () => showSlide(currentSlideIndex - 1));
+            fullscreenBtn.addEventListener('click', toggleFullscreen);
+            document.addEventListener('keydown', (e) => {
+                if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) return;
+                if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); nextBtn.click(); } 
+                else if (e.key === 'ArrowLeft') { e.preventDefault(); prevBtn.click(); } 
+                else if (e.key === 'f') { e.preventDefault(); toggleFullscreen(); }
+            });
+            
+            // --- INTERACTIVE SLIDES JAVASCRIPT ---
+
+            // Slide 5: Custom Validation
+            const jsUsername = document.getElementById('js-username');
+            if(jsUsername) {
+                const errorDiv = document.getElementById('js-username-error');
+                jsUsername.addEventListener('blur', function() {
+                    if (this.value.length < 3) {
+                        errorDiv.textContent = 'ชื่อผู้ใช้ต้องมีอย่างน้อย 3 ตัวอักษร';
+                        this.classList.add('invalid');
+                        this.classList.remove('valid');
+                    } else {
+                        errorDiv.textContent = '';
+                        this.classList.add('valid');
+                        this.classList.remove('invalid');
+                    }
+                });
+            }
+
+            // Slide 6: Real-time Validation
+            const jsEmailRealtime = document.getElementById('js-email');
+            if (jsEmailRealtime) {
+                 const emailError = document.getElementById('js-email-error');
+                 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                 jsEmailRealtime.addEventListener('input', function() {
+                    const email = this.value;
+                    if (email === '') {
+                        emailError.textContent = '';
+                        this.className = '';
+                        return;
+                    }
+                    if (emailPattern.test(email)) {
+                        emailError.textContent = '✓ รูปแบบอีเมลถูกต้อง';
+                        emailError.className = 'success-message';
+                        this.className = 'valid';
+                    } else {
+                        emailError.textContent = '✗ รูปแบบอีเมลไม่ถูกต้อง';
+                        emailError.className = 'error-message';
+                        this.className = 'invalid';
+                    }
+                });
+            }
+            
+            // Slide 17: Form Auto-Save
+            const autoSaveForm = document.getElementById('js-auto-save-form');
+            if (autoSaveForm) {
+                const fields = ['name', 'email', 'message'];
+                const status = document.getElementById('js-draft-status');
+
+                fields.forEach(field => {
+                    const el = document.getElementById(`js-${field}`);
+                    const saved = localStorage.getItem(`draft_${field}`);
+                    if (saved) {
+                        el.value = saved;
+                    }
+                });
+
+                if(fields.some(f => localStorage.getItem(`draft_${f}`))){
+                    status.textContent = `📝 โหลดแบบร่างที่บันทึกไว้`;
+                    status.className = 'status-box info';
+                }
+
+                autoSaveForm.addEventListener('input', (e) => {
+                    if (fields.includes(e.target.name)) {
+                        localStorage.setItem(`draft_${e.target.name}`, e.target.value);
+                        status.textContent = `💾 กำลังบันทึกแบบร่าง...`;
+                        status.className = 'status-box info';
+                    }
+                });
+
+                autoSaveForm.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    fields.forEach(f => localStorage.removeItem(`draft_${f}`));
+                    autoSaveForm.reset();
+                    status.textContent = `✅ ส่งข้อความสำเร็จ! (จำลอง)`;
+                    status.className = 'status-box success';
+                });
+            }
+
+            // Slide 18: User Preferences
+            const settingsPanel = document.getElementById('js-settings');
+            if (settingsPanel) {
+                const previewBox = document.getElementById('js-preview-box');
+                const applySettings = () => {
+                    const saved = localStorage.getItem('userPrefs');
+                    const settings = saved ? JSON.parse(saved) : { theme: 'light' };
+                    previewBox.className = settings.theme;
+                    const radioToCheck = document.querySelector(`input[name="theme"][value="${settings.theme}"]`);
+                    if(radioToCheck) radioToCheck.checked = true;
+                };
+
+                settingsPanel.addEventListener('change', (e) => {
+                    if (e.target.name === 'theme') {
+                        const newSettings = { theme: e.target.value };
+                        localStorage.setItem('userPrefs', JSON.stringify(newSettings));
+                        applySettings();
+                    }
+                });
+
+                applySettings();
+            }
+            
+            // Slide 19: Shopping Cart
+            class ShoppingCart {
+                constructor() {
+                    this.items = this.loadCart();
+                    this.cartCountEl = document.getElementById('js-cartCount');
+                    this.cartItemsEl = document.getElementById('js-cartItems');
+                    this.cartTotalEl = document.getElementById('js-cartTotal');
+                    this.updateDisplay();
+                    this.bindEvents();
+                }
+
+                loadCart() {
+                    const saved = localStorage.getItem('shoppingCart');
+                    return saved ? JSON.parse(saved) : [];
+                }
+
+                saveCart() {
+                    localStorage.setItem('shoppingCart', JSON.stringify(this.items));
+                }
+
+                addItem(product) {
+                    const existing = this.items.find(item => item.id === product.id);
+                    if (existing) {
+                        existing.quantity += 1;
+                    } else {
+                        this.items.push({ ...product, quantity: 1 });
+                    }
+                    this.saveCart();
+                    this.updateDisplay();
+                }
+
+                removeItem(productId) {
+                    this.items = this.items.filter(item => item.id !== productId);
+                    this.saveCart();
+                    this.updateDisplay();
+                }
+
+                updateDisplay() {
+                    if(!this.cartCountEl) return;
+
+                    const totalItems = this.items.reduce((sum, item) => sum + item.quantity, 0);
+                    this.cartCountEl.textContent = totalItems;
+
+                    this.cartItemsEl.innerHTML = '';
+                    this.items.forEach(item => {
+                        const itemDiv = document.createElement('div');
+                        itemDiv.innerHTML = `
+                            <span>${item.name} x ${item.quantity}</span>
+                            <span>฿${(item.price * item.quantity).toLocaleString()}</span>
+                            <button onclick="cart.removeItem('${item.id}')" style="background:var(--error-color); color:white; border:none; border-radius:3px; cursor:pointer;">ลบ</button>
+                        `;
+                        this.cartItemsEl.appendChild(itemDiv);
+                    });
+                    
+                    const total = this.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+                    this.cartTotalEl.textContent = `รวม: ฿${total.toLocaleString()}`;
+                }
+
+                bindEvents() {
+                    document.querySelectorAll('.add-to-cart').forEach(button => {
+                        button.addEventListener('click', (e) => {
+                            const productDiv = e.target.closest('.product');
+                            const product = {
+                                id: productDiv.dataset.id,
+                                name: productDiv.dataset.name,
+                                price: parseInt(productDiv.dataset.price)
+                            };
+                            this.addItem(product);
+                        });
+                    });
+                }
+            }
+            // Make cart instance global so onclick can access it
+            if (document.getElementById('js-cartCount')) {
+                window.cart = new ShoppingCart();
+            }
+
+            showSlide(0);
+        });
+    </script>
+</body>
+</html>

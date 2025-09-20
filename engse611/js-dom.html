@@ -1,0 +1,2157 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ENGSE611 - Day 2: JavaScript & DOM Manipulation</title>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #0D204E;
+            /* RMUTL Navy Blue */
+            --secondary-color: #D4A237;
+            /* RMUTL Gold */
+            --accent-color: #10B981;
+            /* Tech Green */
+            --background-gradient: linear-gradient(135deg, #0D204E 0%, #1a3a8a 100%);
+            --slide-bg: #f8f9fa;
+            --text-color: #212529;
+            --header-color: #0D204E;
+            /* === START EDIT === */
+            --responsive-font-size: clamp(16px, 1.5vw, 22px);
+            /* ขนาดพื้นฐานที่ปรับตามจอ */
+            --font-scale-multiplier: 1;
+            /* ตัวคูณสำหรับปุ่มกด */
+            --border-radius: 15px;
+            --code-font: 'Fira Code', 'Courier New', monospace;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            overflow: hidden;
+            height: 100%;
+        }
+
+        body {
+            font-family: 'Sarabun', sans-serif;
+            background: var(--background-gradient);
+            color: var(--text-color);
+            font-size: 16px;
+            line-height: 1.7;
+        }
+
+        .presentation {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2vh 3vw;
+        }
+
+        .slide {
+            background: var(--slide-bg);
+            padding: 30px 40px 80px 40px;
+            border-radius: var(--border-radius);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+            width: 100%;
+            height: 100%;
+            /* === START EDIT === */
+            font-size: calc(var(--responsive-font-size) * var(--font-scale-multiplier));
+            /* === END EDIT === */
+            overflow-y: auto;
+            display: none;
+            animation: fadeIn 0.5s ease-in-out;
+            position: relative;
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        .slide::-webkit-scrollbar {
+            display: none;
+        }
+
+        .slide.active {
+            display: block;
+        }
+
+        .title-slide.active {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            background: var(--background-gradient);
+            color: white;
+        }
+
+        .title-slide h1,
+        .title-slide h2,
+        .title-slide h3,
+        .title-slide p {
+            color: white !important;
+        }
+
+        .title-slide h1 {
+            font-size: 3em;
+            margin-bottom: 10px;
+            border: none;
+        }
+
+        .title-slide h2 {
+            font-size: 2em;
+            margin-bottom: 20px;
+            border: none;
+        }
+
+        .title-slide h3 {
+            font-size: 1.5em;
+            font-weight: 400;
+            opacity: 0.9;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: scale(0.98);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .progress-bar-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 8px;
+            background-color: rgba(255, 255, 255, 0.2);
+            z-index: 2000;
+        }
+
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(120deg, var(--secondary-color) 0%, #f1c40f 100%);
+            transition: width 0.3s ease-out;
+        }
+
+        .presentation-controls {
+            position: fixed;
+            bottom: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(13, 32, 78, 0.9);
+            padding: 10px 15px;
+            border-radius: 50px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(8px);
+            z-index: 1000;
+        }
+
+        .nav-btn,
+        .font-btn,
+        .fullscreen-btn {
+            background: transparent;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 45px;
+            height: 45px;
+            font-size: 1.5rem;
+        }
+
+        .nav-btn:hover:not(:disabled),
+        .font-btn:hover,
+        .fullscreen-btn:hover {
+            background: var(--secondary-color);
+            transform: translateY(-2px);
+        }
+
+        .nav-btn:disabled {
+            background-color: transparent;
+            color: #777;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        #slide-counter {
+            color: white;
+            font-weight: 500;
+            font-size: 1.1em;
+            min-width: 70px;
+            text-align: center;
+        }
+
+        .slide-number {
+            position: absolute;
+            bottom: 15px;
+            right: 20px;
+            background: rgba(13, 32, 78, 0.8);
+            color: white;
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 0.8em;
+            font-weight: 600;
+        }
+
+        .slide h2 {
+            font-size: 2.2em;
+            color: var(--header-color);
+            border-bottom: 3px solid var(--secondary-color);
+            padding-bottom: 8px;
+            margin-bottom: 1em;
+            font-weight: 700;
+        }
+
+        .slide h3 {
+            font-size: 1.6em;
+            color: var(--primary-color);
+            margin-top: 1.5em;
+            font-weight: 700;
+        }
+
+        p,
+        ul,
+        ol {
+            font-size: 1em;
+            max-width: 85ch;
+        }
+
+        ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        ul li {
+            position: relative;
+            padding-left: 35px;
+            margin-bottom: 12px;
+        }
+
+        ul li i {
+            position: absolute;
+            left: 0;
+            top: 6px;
+            color: var(--primary-color);
+        }
+
+        ol {
+            padding-left: 30px;
+        }
+
+        ol li {
+            margin-bottom: 12px;
+        }
+
+        pre {
+            background: #2d3142;
+            color: #e0e0e0;
+            border-radius: 10px;
+            padding: 1em;
+            margin: 1em 0;
+            font-family: var(--code-font);
+            font-size: 0.85em;
+            overflow-x: auto;
+            line-height: 1.6;
+            position: relative;
+        }
+
+        code {
+            font-family: var(--code-font);
+            background-color: rgba(0, 0, 0, 0.05);
+            padding: 2px 5px;
+            border-radius: 4px;
+        }
+
+        pre code {
+            background-color: transparent;
+            padding: 0;
+        }
+
+        .solution {
+            border-left: 4px solid var(--accent-color);
+            background: #e8f8f5;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+            margin: 20px 0;
+            align-items: start;
+        }
+
+        blockquote {
+            border-left: 5px solid var(--secondary-color);
+            margin: 1.5em 0;
+            padding: 1em 1.5em;
+            background-color: #fff9e6;
+            font-style: italic;
+        }
+
+        .highlight {
+            background-color: #D4A23733;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+
+        .live-preview-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 1em;
+            height: 65vh;
+        }
+
+        .code-pane,
+        .preview-pane {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .pane-title {
+            font-size: 1.1em;
+            font-weight: 700;
+            margin-bottom: 10px;
+            color: var(--primary-color);
+            text-align: center;
+        }
+
+        .code-pane pre {
+            flex-grow: 1;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .code-pane pre code {
+            flex-grow: 1;
+        }
+
+        .preview-pane-content {
+            flex-grow: 1;
+            border: 1px solid #ccc;
+            border-radius: var(--border-radius);
+            background: white;
+            padding: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1) inset;
+            overflow: auto;
+            position: relative;
+        }
+
+        .run-code-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-family: 'Sarabun';
+            z-index: 10;
+        }
+
+        .run-code-btn:hover {
+            background: #0e8e6b;
+        }
+
+        .simulated-console {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            font-family: var(--code-font);
+            padding: 10px;
+            border-radius: 5px;
+            height: 100%;
+            overflow-y: auto;
+            font-size: 0.9em;
+        }
+
+        .simulated-console .log {
+            color: #d4d4d4;
+            border-bottom: 1px solid #333;
+            padding: 2px 0;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
+        .simulated-console .error {
+            color: #f48771;
+            font-weight: bold;
+        }
+
+        .simulated-console .warn {
+            color: #ffd700;
+        }
+
+        .simulated-console .info {
+            color: #6495ed;
+        }
+
+        .simulated-alert {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 20px;
+            border: 1px solid #ccc;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            z-index: 20;
+            text-align: center;
+        }
+
+        .simulated-alert button {
+            margin-top: 10px;
+            padding: 5px 10px;
+        }
+
+        .final-slide {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+
+        .final-slide i {
+            font-size: 4em;
+            color: var(--accent-color);
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 900px) {
+
+            .live-preview-container,
+            .grid-2 {
+                grid-template-columns: 1fr;
+                height: auto;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="progress-bar-container">
+        <div class="progress-bar" id="progress-bar"></div>
+    </div>
+
+    <div class="presentation">
+
+        <section class="slide title-slide active" data-slide-id="1">
+            <h2>ENGSE611 - การพัฒนาเว็บด้วยเทคโนโลยีสมัยใหม่</h2>
+            <h1>วันที่ 2: JavaScript พื้นฐานและ DOM Manipulation</h1>
+            <h3 style="margin-top: 30px;">ทำให้เว็บไซต์มีชีวิตชีวา! ⚡</h3>
+            <p style="font-size: 1.2em; opacity: 0.9;">เป้าหมาย: เข้าใจ JavaScript และสามารถทำให้เว็บไซต์มีชีวิตชีวาได้!
+            </p>
+            <div class="slide-number">1/52</div>
+        </section>
+
+        <section class="slide" data-slide-id="2">
+            <h2>JavaScript คืออะไร? 🤔</h2>
+            <h3>เปรียบเทียบกับสิ่งที่เรียนมา:</h3>
+            <ul>
+                <li><i class="fab fa-html5"></i><strong>HTML</strong> = โครงสร้างบ้าน 🏗️ (ผนัง, หลังคา, ประตู)</li>
+                <li><i class="fab fa-css3-alt"></i><strong>CSS</strong> = การตกแต่งบ้าน 🎨 (สี, เฟอร์นิเจอร์, แสงไฟ)
+                </li>
+                <li><i class="fab fa-js-square"></i><strong>JavaScript</strong> = ระบบไฟฟ้าและเครื่องใช้ ⚡ (สวิตช์,
+                    ลิฟต์, เตาไมโครเวฟ)</li>
+            </ul>
+            <h3>JavaScript ทำอะไรได้บ้าง?</h3>
+            <ul>
+                <li><i class="fas fa-edit"></i>เปลี่ยนข้อความและรูปภาพ</li>
+                <li><i class="fas fa-mouse-pointer"></i>ตอบสนองการคลิกและการพิมพ์</li>
+                <li><i class="fas fa-calculator"></i>คำนวณและประมวลผลข้อมูล</li>
+                <li><i class="fas fa-gamepad"></i>สร้างเกม แอนิเมชัน และเอฟเฟกต์</li>
+            </ul>
+            <p class="solution"><strong>JavaScript ทำให้เว็บไซต์ "มีชีวิต" และ "ฉลาด"!</strong></p>
+            <div class="slide-number">2/52</div>
+        </section>
+
+        <section class="slide" data-slide-id="3">
+            <h2>ทำไมต้องเรียน JavaScript? ✨</h2>
+            <h3>สถิติที่น่าสนใจ:</h3>
+            <ul>
+                <li><i class="fas fa-globe"></i><strong>97%</strong> ของเว็บไซต์ใช้ JavaScript</li>
+                <li><i class="fas fa-trophy"></i><strong>ภาษาโปรแกรมยอดนิยม #1</strong> ในโลก 7 ปีซ้อน</li>
+                <li><i class="fas fa-money-bill-wave"></i><strong>ค่าจ้างสูง</strong> - JavaScript Developer เฉลี่ย
+                    50,000-100,000 บาท/เดือน</li>
+                <li><i class="fas fa-cogs"></i>ใช้ได้ทั้ง **Frontend, Backend, Mobile App**</li>
+            </ul>
+            <h3>ตัวอย่างเว็บไซต์ที่ใช้ JavaScript:</h3>
+            <p><strong>Facebook</strong> (Like, Comment), <strong>Google Maps</strong> (ซูม, ลาก, ค้นหา),
+                <strong>Netflix</strong> (เล่นวิดีโอ), <strong>Shopee/Lazada</strong> (ตะกร้าสินค้า)
+            </p>
+            <p class="solution"><strong>JavaScript = ทักษะที่หางานง่ายที่สุดในสายงาน IT!</strong></p>
+            <div class="slide-number">3/52</div>
+        </section>
+
+        <section class="slide" data-slide-id="4">
+            <h2>การเขียน JavaScript ครั้งแรก 📝</h2>
+            <h3>1. Inline JavaScript (ใน HTML Tag) - <span class="highlight">ไม่แนะนำ</span></h3>
+            <pre><code class="language-html">&lt;button onclick="alert('สวัสดี!')"&gt;คลิกฉัน&lt;/button&gt;</code></pre>
+            <button onclick="alert('สวัสดี!')">คลิกฉัน</button>
+
+            <h3>2. Internal JavaScript (ใน <code>&lt;script&gt;</code>) - <span class="highlight">ใช้สำหรับทดลอง</span>
+            </h3>
+            <pre><code class="language-html">&lt;script&gt;
+    console.log('สวัสดีจาก JavaScript!');
+&lt;/script&gt;</code></pre>
+
+            <h3>3. External JavaScript (ไฟล์แยก) ⭐ <span class="highlight">แนะนำ</span></h3>
+            <p>ใน <strong>index.html</strong> (ควรวางไว้ท้ายสุดก่อนปิด <code>&lt;/body&gt;</code>):</p>
+            <pre><code class="language-html">&lt;script src="script.js"&gt;&lt;/script&gt;</code></pre>
+            <p>ใน <strong>script.js</strong>:</p>
+            <pre><code class="language-javascript">console.log('สวัสดีจากไฟล์ script.js');</code></pre>
+            <div class="slide-number">4/52</div>
+        </section>
+
+        <section class="slide" data-slide-id="5">
+            <h2>Hello World ใน JavaScript 👋</h2>
+            <div class="live-preview-container" style="height: 70vh;">
+                <div class="code-pane">
+                    <h4 class="pane-title">โค้ด (script.js)</h4>
+                    <pre class="code-block" data-slide="5"><button class="run-code-btn">Run Code</button><code class="language-javascript" id="code-template-5">// นี่คือ comment - บรรทัดนี้ไม่ทำงาน
+console.log('สวัสดีชาวโลก!');
+alert('ยินดีต้อนรับสู่ JavaScript!');
+
+/* Comment หลายบรรทัด
+   เขียนได้แบบนี้
+*/</code></pre>
+                </div>
+                <div class="preview-pane">
+                    <h4 class="pane-title">ผลลัพธ์</h4>
+                    <div class="simulated-console" data-slide="5"></div>
+                    <div class="preview-content" data-slide="5"></div>
+                </div>
+            </div>
+            <p><strong>วิธีดูผลลัพธ์:</strong> <code>console.log()</code> จะแสดงใน Console, <code>alert()</code>
+                จะแสดงเป็น popup</p>
+            <div class="slide-number">5/52</div>
+        </section>
+
+        <section class="slide" data-slide-id="6">
+            <h2>ตัวแปร (Variables) - ที่เก็บข้อมูล 📦</h2>
+            <div class="live-preview-container" style="height: 70vh;">
+                <div class="code-pane">
+                    <h4 class="pane-title">โค้ด</h4>
+                    <pre class="code-block" data-slide="6"><button class="run-code-btn">Run Code</button><code class="language-javascript" id="code-template-6">let studentName = 'สมชาย';
+let age = 20;
+let isStudent = true;
+const university = 'มหาวิทยาลัยเทคโนโลยี';
+
+console.log('ชื่อ:', studentName);
+console.log('อายุ:', age);
+
+// ลองเปลี่ยนค่า let
+age = 21;
+console.log('อายุใหม่:', age);
+
+// ลองเปลี่ยนค่า const (จะเกิด Error!)
+try {
+  university = 'มหาวิทยาลัยใหม่';
+} catch(e) {
+  console.error(e.message);
+}
+</code></pre>
+                </div>
+                <div class="preview-pane">
+                    <h4 class="pane-title">Console Output</h4>
+                    <div class="simulated-console" data-slide="6"></div>
+                </div>
+            </div>
+            <p><strong>let:</strong> เปลี่ยนค่าได้, <strong>const:</strong> ค่าคงที่ เปลี่ยนไม่ได้,
+                <strong>var:</strong> แบบเก่า (ควรเลี่ยง)
+            </p>
+            <div class="slide-number">6/52</div>
+        </section>
+
+        <section class="slide" data-slide-id="7">
+            <h2>ชนิดของข้อมูล (Data Types) 🏷️</h2>
+            <div class="live-preview-container" style="height: 70vh;">
+                <div class="code-pane">
+                    <h4 class="pane-title">โค้ด</h4>
+                    <pre class="code-block" data-slide="7"><button class="run-code-btn">Run Code</button><code class="language-javascript" id="code-template-7">let aString = 'สวัสดี'; // String
+let aNumber = 99.5; // Number
+let aBoolean = true; // Boolean
+let anUndefined; // undefined
+let aNull = null; // null
+
+console.log('Type of aString:', typeof aString);
+console.log('Type of aNumber:', typeof aNumber);
+console.log('Type of aBoolean:', typeof aBoolean);
+console.log('Type of anUndefined:', typeof anUndefined);
+console.log('Type of aNull:', typeof aNull); // (จะแสดง 'object' ซึ่งเป็น quirk ของ JS)
+</code></pre>
+                </div>
+                <div class="preview-pane">
+                    <h4 class="pane-title">Console Output</h4>
+                    <div class="simulated-console" data-slide="7"></div>
+                </div>
+            </div>
+            <div class="slide-number">7/52</div>
+        </section>
+
+        <section class="slide" data-slide-id="8">
+            <h2>การทำงานกับ String ขั้นสูง 📝</h2>
+            <div class="live-preview-container" style="height: 70vh;">
+                <div class="code-pane">
+                    <h4 class="pane-title">โค้ด</h4>
+                    <pre class="code-block" data-slide="8"><button class="run-code-btn">Run Code</button><code class="language-javascript" id="code-template-8">let text = 'JavaScript เจ๋งมาก';
+let firstName = 'สมชาย';
+
+// Template Literal (แนะนำ)
+console.log(`สวัสดี ${firstName}!`);
+
+// String Methods
+console.log('ความยาว:', text.length);
+console.log('ตัวใหญ่:', text.toUpperCase());
+console.log('ตัวเล็ก:', text.toLowerCase());
+console.log('มี "Java"?', text.includes('Java'));
+console.log('ตำแหน่ง "Script":', text.indexOf('Script'));
+console.log('ตัดคำ (0-4):', text.slice(0, 4));
+console.log('แทนที่:', text.replace('เจ๋ง', 'สุดยอด'));
+</code></pre>
+                </div>
+                <div class="preview-pane">
+                    <h4 class="pane-title">Console Output</h4>
+                    <div class="simulated-console" data-slide="8"></div>
+                </div>
+            </div>
+            <div class="slide-number">8/52</div>
+        </section>
+
+        <section class="slide" data-slide-id="9">
+            <h2>การทำงานกับ Number และ Math 🔢</h2>
+            <div class="live-preview-container" style="height: 70vh;">
+                <div class="code-pane">
+                    <h4 class="pane-title">โค้ด</h4>
+                    <pre class="code-block" data-slide="9"><button class="run-code-btn">Run Code</button><code class="language-javascript" id="code-template-9">let a = 10;
+let b = 3;
+
+console.log('a + b =', a + b);  // บวก
+console.log('a % b =', a % b);  // เศษจากการหาร
+console.log('a ** b =', a ** b); // ยกกำลัง
+
+// Math Object
+console.log('ปัดเศษ 3.7:', Math.round(3.7));
+console.log('ปัดลง 3.7:', Math.floor(3.7));
+console.log('ปัดขึ้น 3.2:', Math.ceil(3.2));
+console.log('สุ่ม 0-1:', Math.random());
+
+// สุ่มเลข 1-6 (ลูกเต๋า)
+let dice = Math.floor(Math.random() * 6) + 1;
+console.log('ทอยลูกเต๋าได้:', dice);
+</code></pre>
+                </div>
+                <div class="preview-pane">
+                    <h4 class="pane-title">Console Output</h4>
+                    <div class="simulated-console" data-slide="9"></div>
+                </div>
+            </div>
+            <div class="slide-number">9/52</div>
+        </section>
+
+        <section class="slide" data-slide-id="10">
+            <h2>Scope ของตัวแปร 🏠</h2>
+            <div class="live-preview-container" style="height: 70vh;">
+                <div class="code-pane">
+                    <h4 class="pane-title">โค้ด</h4>
+                    <pre class="code-block" data-slide="10"><button class="run-code-btn">Run Code</button><code class="language-javascript" id="code-template-10">let globalName = 'สมชาย'; // Global Scope
+
+function showInfo() {
+    let localAge = 20; // Local Scope
+    console.log('ข้างในฟังก์ชัน:', globalName);
+    console.log('ข้างในฟังก์ชัน:', localAge);
+}
+
+showInfo();
+
+console.log('ข้างนอกฟังก์ชัน:', globalName);
+
+try {
+  console.log('ข้างนอกฟังก์ชัน:', localAge);
+} catch(e) {
+  console.error('Error:', e.message);
+}
+</code></pre>
+                </div>
+                <div class="preview-pane">
+                    <h4 class="pane-title">Console Output</h4>
+                    <div class="simulated-console" data-slide="10"></div>
+                </div>
+            </div>
+            <p class="solution"><strong>หลักการ:</strong> ใช้ <code>let</code> และ <code>const</code> เสมอ
+                เพื่อป้องกันปัญหาเรื่อง Scope</p>
+            <div class="slide-number">10/52</div>
+        </section>
+
+        <section class="slide" data-slide-id="11">
+            <h2>Arrays - รายการข้อมูล 📋</h2>
+            <div class="live-preview-container" style="height: 70vh;">
+                <div class="code-pane">
+                    <h4 class="pane-title">โค้ด</h4>
+                    <pre class="code-block" data-slide="11"><button class="run-code-btn">Run Code</button><code class="language-javascript" id="code-template-11">let fruits = ['แอปเปิล', 'กล้วย', 'ส้ม'];
+
+console.log('ผลไม้ชิ้นแรก:', fruits[0]);
+console.log('จำนวนผลไม้:', fruits.length);
+
+// เพิ่มข้อมูลท้าย Array
+fruits.push('มะม่วง');
+console.log('เพิ่มมะม่วง:', fruits);
+
+// ลบข้อมูลท้าย Array
+let removedFruit = fruits.pop();
+console.log('เอาออก:', removedFruit);
+console.log('ผลไม้ล่าสุด:', fruits);
+
+console.log('มีกล้วยไหม?', fruits.includes('กล้วย'));
+</code></pre>
+                </div>
+                <div class="preview-pane">
+                    <h4 class="pane-title">Console Output</h4>
+                    <div class="simulated-console" data-slide="11"></div>
+                </div>
+            </div>
+            <div class="slide-number">11/52</div>
+        </section>
+
+        <section class="slide" data-slide-id="12">
+            <h2>Objects - กลุ่มข้อมูลที่มีความหมาย 🏷️</h2>
+            <div class="live-preview-container" style="height: 70vh;">
+                <div class="code-pane">
+                    <h4 class="pane-title">โค้ด</h4>
+                    <pre class="code-block" data-slide="12"><button class="run-code-btn">Run Code</button><code class="language-javascript" id="code-template-12">let student = {
+    name: 'สมชาย ใจดี',
+    age: 20,
+    major: 'วิศวกรรมซอฟต์แวร์'
+};
+
+// การเข้าถึงข้อมูล
+console.log('ชื่อ:', student.name);
+console.log('อายุ:', student['age']);
+
+// เปลี่ยนแปลงข้อมูล
+student.age = 21;
+console.log('อายุใหม่:', student.age);
+
+// เพิ่ม property ใหม่
+student.gpa = 3.50;
+console.log('นักเรียน:', student);
+
+// ลบ property
+delete student.major;
+console.log('หลังลบสาขา:', student);
+</code></pre>
+                </div>
+                <div class="preview-pane">
+                    <h4 class="pane-title">Console Output</h4>
+                    <div class="simulated-console" data-slide="12"></div>
+                </div>
+            </div>
+            <div class="slide-number">12/52</div>
+        </section>
+
+        <section class="slide" data-slide-id="13">
+            <h2>Functions - ชุดคำสั่งที่ใช้ซ้ำได้ 🔧</h2>
+            <div class="live-preview-container" style="height: 70vh;">
+                <div class="code-pane">
+                    <h4 class="pane-title">โค้ด</h4>
+                    <pre class="code-block" data-slide="13"><button class="run-code-btn">Run Code</button><code class="language-javascript" id="code-template-13">// Function Declaration
+function greetPerson(name) {
+    console.log(`สวัสดี ${name}!`);
+}
+
+function calculateArea(width, height) {
+    return width * height;
+}
+
+// การเรียกใช้
+greetPerson('สมชาย');
+let area = calculateArea(5, 4);
+console.log('พื้นที่:', area);
+
+// Arrow Function (แบบสั้น)
+const square = x => x * x;
+console.log('5 ยกกำลัง 2:', square(5));
+</code></pre>
+                </div>
+                <div class="preview-pane">
+                    <h4 class="pane-title">Console Output</h4>
+                    <div class="simulated-console" data-slide="13"></div>
+                </div>
+            </div>
+            <div class="slide-number">13/52</div>
+        </section>
+
+        <section class="slide" data-slide-id="14">
+            <h2>คำถาม 🤔</h2>
+            <blockquote>ถ้าคุณต้องการสร้างฟังก์ชันคำนวณคะแนนเฉลี่ยจาก Array ของคะแนน คุณจะเขียนอย่างไร?</blockquote>
+            <h3>A)</h3>
+            <pre><code class="language-javascript">function average(scores) {
+    return scores.sum() / scores.length;
+}</code></pre>
+            <h3>B)</h3>
+            <pre><code class="language-javascript">function average(scores) {
+    let sum = 0;
+    for(let i = 0; i < scores.length; i++) {
+        sum += scores[i];
+    }
+    return sum / scores.length;
+}</code></pre>
+            <div class="slide-number">14/52</div>
+        </section>
+
+        <section class="slide" data-slide-id="15">
+            <h2>เฉลย 🎯</h2>
+            <h3>คำตอบ: B)</h3>
+            <div class="live-preview-container" style="height: 70vh;">
+                <div class="code-pane">
+                    <h4 class="pane-title">โค้ดที่ถูกต้อง</h4>
+                    <pre class="code-block" data-slide="15"><button class="run-code-btn">Run Code</button><code class="language-javascript" id="code-template-15">function average(scores) {
+    let sum = 0;
+    for(let i = 0; i < scores.length; i++) {
+        sum += scores[i];
+    }
+    return sum / scores.length;
+}
+
+// ทดสอบ
+let myScores = [85, 92, 78, 96, 88];
+console.log(average(myScores));
+</code></pre>
+                </div>
+                <div class="preview-pane">
+                    <h4 class="pane-title">Console Output</h4>
+                    <div class="simulated-console" data-slide="15"></div>
+                </div>
+            </div>
+            <p><strong>เหตุผล:</strong> JavaScript Array ไม่มี <code>.sum()</code> method ดังนั้นเราจึงต้องใช้ for loop
+                เพื่อคำนวณผลรวมเอง</p>
+            <div class="slide-number">15/52</div>
+        </section>
+
+        <section class="slide" data-slide-id="16">
+            <h2>Conditional Statements - การตัดสินใจ 🤔</h2>
+            <div class="live-preview-container" style="height: 70vh;">
+                <div class="code-pane">
+                    <h4 class="pane-title">โค้ด</h4>
+                    <pre class="code-block" data-slide="16"><button class="run-code-btn">Run Code</button><code class="language-javascript" id="code-template-16">let score = 85;
+let grade;
+
+if (score >= 80) {
+    grade = 'A';
+} else if (score >= 70) {
+    grade = 'B';
+} else {
+    grade = 'F';
+}
+console.log(`คะแนน ${score} ได้เกรด ${grade}`);
+
+// Comparison Operators
+let age = 20;
+console.log('age === 20:', age === 20); // true
+console.log("age === '20':", age === '20'); // false (เช็คชนิดข้อมูลด้วย)
+console.log("age == '20':", age == '20'); // true (ไม่เช็คชนิดข้อมูล)
+console.log('age > 18:', age > 18); // true
+</code></pre>
+                </div>
+                <div class="preview-pane">
+                    <h4 class="pane-title">Console Output</h4>
+                    <div class="simulated-console" data-slide="16"></div>
+                </div>
+            </div>
+            <p class="solution"><strong>แนะนำ:</strong> ใช้ <code>===</code> (Strict Equality) แทน <code>==</code>
+                เสมอเพื่อป้องกันข้อผิดพลาด</p>
+            <div class="slide-number">16/52</div>
+        </section>
+
+        <section class="slide" data-slide-id="17">
+            <h2>Logical Operators และ Switch Statement 🔀</h2>
+            <div class="live-preview-container" style="height: 70vh;">
+                <div class="code-pane">
+                    <h4 class="pane-title">โค้ด</h4>
+                    <pre class="code-block" data-slide="17"><button class="run-code-btn">Run Code</button><code class="language-javascript" id="code-template-17">let age = 20;
+let hasLicense = true;
+
+// AND (&&) - ต้องเป็นจริงทั้งหมด
+if (age >= 18 && hasLicense) {
+    console.log('ขับรถได้');
+}
+
+// OR (||) - อย่างน้อยหนึ่งเงื่อนไขเป็นจริง
+let isWeekend = true;
+let isHoliday = false;
+if (isWeekend || isHoliday) {
+    console.log('เป็นวันหยุด!');
+}
+
+// Switch Statement
+let day = 'จันทร์';
+switch (day) {
+    case 'เสาร์':
+    case 'อาทิตย์':
+        console.log('วันหยุดสุดสัปดาห์');
+        break;
+    default:
+        console.log('วันทำงาน');
+}
+</code></pre>
+                </div>
+                <div class="preview-pane">
+                    <h4 class="pane-title">Console Output</h4>
+                    <div class="simulated-console" data-slide="17"></div>
+                </div>
+            </div>
+            <div class="slide-number">17/52</div>
+        </section>
+
+        <section class="slide" data-slide-id="18">
+            <h2>Loops - การทำซ้ำ 🔄</h2>
+            <div class="live-preview-container" style="height: 70vh;">
+                <div class="code-pane">
+                    <h4 class="pane-title">โค้ด</h4>
+                    <pre class="code-block" data-slide="18"><button class="run-code-btn">Run Code</button><code class="language-javascript" id="code-template-18">console.log('--- for loop ---');
+for (let i = 0; i < 3; i++) {
+    console.log(`รอบที่ ${i}`);
+}
+
+let fruits = ['แอปเปิล', 'กล้วย', 'ส้ม'];
+console.log('--- for...of loop ---');
+for (let fruit of fruits) {
+    console.log(fruit);
+}
+
+let student = { name: 'สมชาย', age: 20 };
+console.log('--- for...in loop ---');
+for (let key in student) {
+    console.log(`${key}: ${student[key]}`);
+}
+
+console.log('--- while loop ---');
+let count = 0;
+while (count < 3) {
+    console.log(`Count: ${count}`);
+    count++;
+}
+</code></pre>
+                </div>
+                <div class="preview-pane">
+                    <h4 class="pane-title">Console Output</h4>
+                    <div class="simulated-console" data-slide="18"></div>
+                </div>
+            </div>
+            <div class="slide-number">18/52</div>
+        </section>
+
+        <section class="slide" data-slide-id="19">
+            <h2>Array Methods ขั้นสูง 🔧</h2>
+            <div class="live-preview-container" style="height: 70vh;">
+                <div class="code-pane">
+                    <h4 class="pane-title">โค้ด</h4>
+                    <pre class="code-block" data-slide="19"><button class="run-code-btn">Run Code</button><code class="language-javascript" id="code-template-19">let numbers = [1, 2, 3, 4, 5];
+
+// .map() - สร้าง Array ใหม่
+let doubled = numbers.map(num => num * 2);
+console.log('map (x2):', doubled);
+
+// .filter() - กรองข้อมูล
+let evenNumbers = numbers.filter(num => num % 2 === 0);
+console.log('filter (เลขคู่):', evenNumbers);
+
+// .find() - หาตัวแรกที่ตรงเงื่อนไข
+let firstEven = numbers.find(num => num % 2 === 0);
+console.log('find (เลขคู่ตัวแรก):', firstEven);
+
+// .reduce() - รวมค่าทั้งหมด
+let sum = numbers.reduce((total, num) => total + num, 0);
+console.log('reduce (ผลรวม):', sum);
+</code></pre>
+                </div>
+                <div class="preview-pane">
+                    <h4 class="pane-title">Console Output</h4>
+                    <div class="simulated-console" data-slide="19"></div>
+                </div>
+            </div>
+            <div class="slide-number">19/52</div>
+        </section>
+
+        <section class="slide" data-slide-id="20">
+            <h2>Error Handling พื้นฐาน 🐛</h2>
+            <div class="live-preview-container" style="height: 70vh;">
+                <div class="code-pane">
+                    <h4 class="pane-title">โค้ด</h4>
+                    <pre class="code-block" data-slide="20"><button class="run-code-btn">Run Code</button><code class="language-javascript" id="code-template-20">function riskyFunction() {
+    let random = Math.random();
+    if (random < 0.5) {
+        throw new Error('โชคไม่ดี! เลขน้อยเกินไป');
+    }
+    return 'สำเร็จ!';
+}
+
+try {
+    let result = riskyFunction();
+    console.log('ผลลัพธ์:', result);
+} catch (error) {
+    console.error('เกิดข้อผิดพลาด:', error.message);
+} finally {
+    console.info('ทำงานจบแล้ว (finally ทำงานเสมอ)');
+}
+</code></pre>
+                </div>
+                <div class="preview-pane">
+                    <h4 class="pane-title">Console Output (ลอง Run หลายๆ ครั้ง)</h4>
+                    <div class="simulated-console" data-slide="20"></div>
+                </div>
+            </div>
+            <div class="slide-number">20/52</div>
+        </section>
+
+        <section class="slide" data-slide-id="21">
+            <h2>Demo Time - JavaScript Calculator! 💻</h2>
+            <div class="live-preview-container" style="height: 70vh;">
+                <div class="code-pane">
+                    <h4 class="pane-title">โค้ด</h4>
+                    <pre class="code-block" data-slide="21"><button class="run-code-btn">Run Code</button><code class="language-javascript" id="code-template-21">let calculator = {
+    result: 0,
+    add: function(num) { this.result += num; return this; },
+    subtract: function(num) { this.result -= num; return this; },
+    multiply: function(num) { this.result *= num; return this; },
+    divide: function(num) { this.result /= num; return this; },
+    clear: function() { this.result = 0; return this; },
+    getResult: function() { return this.result; }
+};
+
+// ทดสอบ (Method Chaining)
+let answer = calculator.clear()
+    .add(10)
+    .multiply(5)
+    .subtract(20)
+    .divide(2)
+    .getResult();
+
+console.log('ผลลัพธ์:', answer);
+</code></pre>
+                </div>
+                <div class="preview-pane">
+                    <h4 class="pane-title">Console Output</h4>
+                    <div class="simulated-console" data-slide="21"></div>
+                </div>
+            </div>
+            <div class="slide-number">21/52</div>
+        </section>
+
+        <section class="slide" data-slide-id="22">
+            <h2>การ Debug JavaScript 🔍</h2>
+            <div class="live-preview-container" style="height: 70vh;">
+                <div class="code-pane">
+                    <h4 class="pane-title">โค้ด</h4>
+                    <pre class="code-block" data-slide="22"><button class="run-code-btn">Run Code</button><code class="language-javascript" id="code-template-22">console.log('ข้อความปกติ');
+console.error('นี่คือข้อผิดพลาด');
+console.warn('นี่คือคำเตือน');
+console.info('นี่คือข้อมูล');
+
+let student = {name: 'สมชาย', age: 20};
+console.log('Student:', student);
+// console.table(student); // .table แสดงผลสวยใน console จริง
+
+console.assert(5 > 3, '5 ควรมากกว่า 3'); // ไม่แสดงอะไร
+console.assert(5 < 3, 'Assertion failed: 5 ไม่ได้น้อยกว่า 3');
+</code></pre>
+                </div>
+                <div class="preview-pane">
+                    <h4 class="pane-title">Console Output</h4>
+                    <div class="simulated-console" data-slide="22"></div>
+                </div>
+            </div>
+            <div class="slide-number">22/52</div>
+        </section>
+
+        <section class="slide" data-slide-id="23">
+            <h2>คำถาม 🤔</h2>
+            <h3>ผลลัพธ์ของโค้ดนี้คืออะไร?</h3>
+            <pre><code class="language-javascript">let numbers = [1, 2, 3, 4, 5];
+let result = numbers
+    .filter(num => num > 2)
+    .map(num => num * 2)
+    .reduce((sum, num) => sum + num, 0);
+
+console.log(result);</code></pre>
+            <div class="grid-2" style="margin-top:2em; text-align:center; font-size:1.2em;">
+                <div class="solution">A) 30</div>
+                <div class="solution">B) 18</div>
+                <div class="solution">C) 24</div>
+                <div class="solution">D) 12</div>
+            </div>
+            <div class="slide-number">23/52</div>
+        </section>
+
+        <section class="slide" data-slide-id="24">
+            <h2>เฉลย 🎯</h2>
+            <h3>คำตอบ: C) 24</h3>
+            <div class="live-preview-container" style="height: 70vh;">
+                <div class="code-pane">
+                    <h4 class="pane-title">โค้ด</h4>
+                    <pre class="code-block" data-slide="24"><button class="run-code-btn">Run Code</button><code class="language-javascript" id="code-template-24">let numbers = [1, 2, 3, 4, 5];
+console.log('เริ่มต้น:', numbers);
+
+// ขั้นตอนที่ 1: filter (num > 2)
+let filtered = numbers.filter(num => num > 2);
+console.log('หลัง filter:', filtered); // [3, 4, 5]
+
+// ขั้นตอนที่ 2: map (num * 2) 
+let mapped = filtered.map(num => num * 2);
+console.log('หลัง map:', mapped); // [6, 8, 10]
+
+// ขั้นตอนที่ 3: reduce (sum + num)
+let result = mapped.reduce((sum, num) => sum + num, 0);
+console.log('ผลลัพธ์สุดท้าย:', result); // 24
+</code></pre>
+                </div>
+                <div class="preview-pane">
+                    <h4 class="pane-title">Console Output</h4>
+                    <div class="simulated-console" data-slide="24"></div>
+                </div>
+            </div>
+            <div class="slide-number">24/52</div>
+        </section>
+
+        <section class="slide" data-slide-id="25">
+            <h2>สรุป JavaScript พื้นฐาน (2.5 ชม.) 📚</h2>
+            <h3>สิ่งที่เราเรียนรู้:</h3>
+            <ul>
+                <li><i class="fas fa-check-circle"></i><strong>Variables & Data Types:</strong> let, const, String,
+                    Number, Boolean</li>
+                <li><i class="fas fa-check-circle"></i><strong>Functions:</strong> การสร้างและเรียกใช้ฟังก์ชัน</li>
+                <li><i class="fas fa-check-circle"></i><strong>Arrays & Objects:</strong> การจัดเก็บและจัดการข้อมูล</li>
+                <li><i class="fas fa-check-circle"></i><strong>Conditions & Loops:</strong> if/else, switch, for/while
+                </li>
+                <li><i class="fas fa-check-circle"></i><strong>Error Handling & Debugging:</strong> try/catch, console
+                </li>
+            </ul>
+            <h3><i class="fas fa-arrow-right"></i> ถัดไป...</h3>
+            <p>เราจะนำความรู้ JavaScript ทั้งหมดนี้ไปใช้ควบคุมหน้าเว็บจริงๆ ในหัวข้อ <strong>DOM Manipulation!</strong>
+            </p>
+            <div class="slide-number">25/52</div>
+        </section>
+
+        <section class="slide" data-slide-id="26">
+            <h2>ก้าวสู่ DOM Manipulation! 🌳</h2>
+            <h3>DOM = Document Object Model</h3>
+            <p>DOM คือโครงสร้างของหน้าเว็บที่ JavaScript สามารถเข้าไปจัดการได้
+                เปรียบเสมือนแผนผังของบ้านที่ทำให้เรารู้ว่าอะไรอยู่ตรงไหน</p>
+            <h3>ทำไม DOM สำคัญ?</h3>
+            <ul>
+                <li><i class="fas fa-tools"></i><strong>JavaScript พื้นฐาน</strong> = เครื่องมือ</li>
+                <li><i class="fas fa-bullseye"></i><strong>DOM</strong> = วิธีใช้เครื่องมือกับหน้าเว็บ</li>
+            </ul>
+            <pre><code class="language-html">&lt;!-- DOM เปรียบเหมือนต้นไม้ --&gt;
+&lt;body&gt;
+    &lt;header&gt;
+        &lt;h1&gt;หัวข้อ&lt;/h1&gt;
+    &lt;/header&gt;
+    &lt;main&gt;
+        &lt;p&gt;เนื้อหา&lt;/p&gt;
+    &lt;/main&gt;
+&lt;/body&gt;</code></pre>
+            <p class="solution"><strong>DOM ทำให้ JavaScript "คุยกับ HTML" ได้!</strong></p>
+            <div class="slide-number">26/52</div>
+        </section>
+
+        <section class="slide" data-slide-id="27">
+            <h2>การเลือก Elements - เป้าหมายแรก 🎯</h2>
+            <h3>HTML ตัวอย่าง:</h3>
+            <pre><code class="language-html">&lt;div id="container"&gt;
+    &lt;h1 class="title"&gt;หัวข้อหลัก&lt;/h1&gt;
+    &lt;button id="click-me"&gt;คลิกฉัน&lt;/button&gt;
+&lt;/div&gt;</code></pre>
+            <h3>การเลือกด้วยวิธีต่างๆ:</h3>
+            <pre><code class="language-javascript">// เลือกด้วย ID (ได้ 1 ตัว)
+let button = document.getElementById('click-me');
+
+// เลือกด้วย Class (ตัวแรกที่เจอ)
+let title = document.querySelector('.title');
+
+// เลือกด้วย Tag
+let container = document.querySelector('div');
+
+// เลือกหลายตัวด้วย Class
+let allTitles = document.querySelectorAll('.title');
+</code></pre>
+            <p class="solution"><code>querySelector</code> เป็นวิธีที่ทันสมัยและยืดหยุ่นที่สุด</p>
+            <div class="slide-number">27/52</div>
+        </section>
+
+        <section class="slide" data-slide-id="28">
+            <h2>การเปลี่ยนแปลงเนื้อหา 📝</h2>
+            <div class="live-preview-container">
+                <div class="code-pane">
+                    <h4 class="pane-title">โค้ด</h4>
+                    <pre class="code-block" data-slide="28"><button class="run-code-btn">Run Code</button><code class="language-javascript" id="code-template-28">const contentDiv = document.querySelector('#content');
+
+// .textContent - ปลอดภัย, แสดงแค่ข้อความ
+contentDiv.textContent = 'ข้อความใหม่จาก textContent';
+
+// .innerHTML - สามารถใส่ HTML tags ได้
+// (⚠️ ระวัง XSS Attack ถ้าใช้กับข้อมูลจาก user)
+setTimeout(() => {
+    contentDiv.innerHTML = '&lt;h2&gt;หัวข้อใหม่&lt;/h2&gt;&lt;p&gt;จาก innerHTML&lt;/p&gt;';
+}, 2000);</code></pre>
+                </div>
+                <div class="preview-pane">
+                    <h4 class="pane-title">ผลลัพธ์</h4>
+                    <div class="preview-content" data-slide="28">
+                        <div id="content">
+                            <p>ข้อความเดิม</p>
+                        </div>
+                    </div>
+                    <template data-slide="28">
+                        <div id="content">
+                            <p>ข้อความเดิม</p>
+                        </div>
+                    </template>
+                </div>
+            </div>
+            <div class="slide-number">28/52</div>
+        </section>
+
+        <section class="slide" data-slide-id="29">
+            <h2>การจัดการ CSS ด้วย JavaScript 🎨</h2>
+            <div class="live-preview-container">
+                <div class="code-pane">
+                    <h4 class="pane-title">โค้ด</h4>
+                    <pre class="code-block" data-slide="29"><button class="run-code-btn">Run Code</button><code class="language-javascript" id="code-template-29">const box = document.querySelector('#myBox');
+
+// 1. เปลี่ยน Inline Styles (ไม่ค่อยแนะนำ)
+box.style.backgroundColor = 'lightblue';
+box.style.border = '2px solid blue';
+
+// 2. จัดการ CSS Classes (⭐ แนะนำ)
+setTimeout(() => {
+    box.classList.add('highlight'); // เพิ่ม class
+}, 1500);
+
+setTimeout(() => {
+    box.classList.remove('highlight'); // ลบ class
+}, 3000);
+
+setTimeout(() => {
+    box.classList.toggle('active'); // สลับ class (toggle)
+}, 4500);
+</code></pre>
+                </div>
+                <div class="preview-pane">
+                    <h4 class="pane-title">ผลลัพธ์</h4>
+                    <div class="preview-content" data-slide="29">
+                        <style>
+                            .preview-content[data-slide="29"] #myBox {
+                                padding: 20px;
+                                transition: all 0.5s ease;
+                            }
+
+                            .preview-content[data-slide="29"] .highlight {
+                                box-shadow: 0 0 15px orange;
+                                transform: scale(1.05);
+                            }
+
+                            .preview-content[data-slide="29"] .active {
+                                background-color: lightcoral !important;
+                                color: white;
+                            }
+                        </style>
+                        <div id="myBox">กล่องทดสอบ</div>
+                    </div>
+                    <template data-slide="29">
+                        <style>
+                            .preview-content[data-slide="29"] #myBox {
+                                padding: 20px;
+                                transition: all 0.5s ease;
+                            }
+
+                            .preview-content[data-slide="29"] .highlight {
+                                box-shadow: 0 0 15px orange;
+                                transform: scale(1.05);
+                            }
+
+                            .preview-content[data-slide="29"] .active {
+                                background-color: lightcoral !important;
+                                color: white;
+                            }
+                        </style>
+                        <div id="myBox">กล่องทดสอบ</div>
+                    </template>
+                </div>
+            </div>
+            <div class="slide-number">29/52</div>
+        </section>
+
+        <section class="slide" data-slide-id="30">
+            <h2>DOM Navigation - การเดินทางใน Tree 🚶‍♂️</h2>
+            <div class="live-preview-container">
+                <div class="code-pane">
+                    <h4 class="pane-title">โค้ด</h4>
+                    <pre class="code-block" data-slide="30"><button class="run-code-btn">Run Code</button><code class="language-javascript" id="code-template-30">const parent = document.getElementById('parent');
+const p1 = document.querySelector('#p1');
+
+// หา Parent
+console.log('Parent ของ p1:', p1.parentElement.id);
+
+// หา Children
+console.log('Children ของ parent:', parent.children.length);
+console.log('Child ตัวแรก:', parent.firstElementChild.tagName);
+
+// หา Siblings (พี่น้อง)
+console.log('Element ถัดจาก h2:', 
+    document.querySelector('h2').nextElementSibling.id);
+console.log('Element ก่อนหน้า p1:', 
+    p1.previousElementSibling.tagName);
+</code></pre>
+                </div>
+                <div class="preview-pane">
+                    <h4 class="pane-title">Console Output</h4>
+                    <div class="preview-content" data-slide="30">
+                        <div id="parent">
+                            <h2>หัวข้อ</h2>
+                            <p id="p1">ย่อหน้าแรก</p>
+                            <p id="p2">ย่อหน้าที่สอง</p>
+                        </div>
+                    </div>
+                    <div class="simulated-console" data-slide="30"></div>
+                    <template data-slide="30">
+                        <div id="parent">
+                            <h2>หัวข้อ</h2>
+                            <p id="p1">ย่อหน้าแรก</p>
+                            <p id="p2">ย่อหน้าที่สอง</p>
+                        </div>
+                    </template>
+                </div>
+            </div>
+            <div class="slide-number">30/52</div>
+        </section>
+
+        <section class="slide" data-slide-id="31">
+            <h2>การสร้างและลบ Elements ➕➖</h2>
+            <div class="live-preview-container">
+                <div class="code-pane">
+                    <h4 class="pane-title">โค้ด</h4>
+                    <pre class="code-block" data-slide="31"><button class="run-code-btn">Run Code</button><code class="language-javascript" id="code-template-31">const container = document.getElementById('container-31');
+
+// สร้าง Element ใหม่
+const newP = document.createElement('p');
+newP.textContent = 'ย่อหน้าใหม่ที่สร้างโดย JS';
+newP.className = 'new-element';
+
+// เพิ่มเข้าไปในหน้าเว็บ
+container.appendChild(newP);
+
+// ลบ Element
+const oldP = document.getElementById('to-be-removed');
+if(oldP) {
+    setTimeout(() => {
+        oldP.remove(); // .remove() เป็นวิธีที่ง่ายที่สุด
+    }, 2000);
+}
+</code></pre>
+                </div>
+                <div class="preview-pane">
+                    <h4 class="pane-title">ผลลัพธ์</h4>
+                    <div class="preview-content" data-slide="31">
+                        <style>
+                            .preview-content[data-slide="31"] .new-element {
+                                color: green;
+                                font-weight: bold;
+                            }
+                        </style>
+                        <div id="container-31">
+                            <p id="to-be-removed">ย่อหน้านี้จะถูกลบใน 2 วินาที</p>
+                        </div>
+                    </div>
+                    <template data-slide="31">
+                        <style>
+                            .preview-content[data-slide="31"] .new-element {
+                                color: green;
+                                font-weight: bold;
+                            }
+                        </style>
+                        <div id="container-31">
+                            <p id="to-be-removed">ย่อหน้านี้จะถูกลบใน 2 วินาที</p>
+                        </div>
+                    </template>
+                </div>
+            </div>
+            <div class="slide-number">31/52</div>
+        </section>
+
+        <section class="slide" data-slide-id="32">
+            <h2>การลบ Elements และ Event Delegation 🗑️</h2>
+            <h3>การลบ Elements:</h3>
+            <ul>
+                <li><i class="fas fa-check"></i> <code>element.remove()</code>: วิธีที่ง่ายและทันสมัยที่สุดในการลบ
+                    element ตัวเอง</li>
+                <li><i class="fas fa-history"></i> <code>parent.removeChild(child)</code>: วิธีแบบเก่าที่ต้องใช้ parent
+                    ในการลบ child</li>
+            </ul>
+            <h3>การล้าง Container ทั้งหมด:</h3>
+            <pre><code class="language-javascript">// วิธีที่ 1: ง่าย แต่ performance อาจไม่ดีที่สุดสำหรับ element จำนวนมาก
+container.innerHTML = ''; 
+
+// วิธีที่ 2: Performance ดีกว่า
+while (container.firstChild) {
+    container.removeChild(container.firstChild);
+}</code></pre>
+            <p class="solution"><strong>Event Delegation:</strong> คือเทคนิคการใส่ event listener ที่ parent element
+                แทนที่จะใส่ที่ child ทุกตัว เพื่อจัดการ event ที่เกิดขึ้นจาก child วิธีนี้ช่วยเพิ่ม performance
+                และจัดการ element ที่สร้างขึ้นมาใหม่ได้ง่าย</p>
+            <div class="slide-number">32/52</div>
+        </section>
+
+        <section class="slide" data-slide-id="33">
+            <h2>Demo Time ใหญ่ - Dynamic Content! 💻</h2>
+            <h3>สร้าง Student List Manager</h3>
+            <p>ในสไลด์นี้เราจะลองสร้างแอปง่ายๆ สำหรับเพิ่ม ลบ และแสดงข้อมูลนักเรียนแบบไดนามิกด้วย JavaScript DOM
+                ทั้งหมดที่เรียนมา</p>
+            <p class="solution"><i class="fas fa-exclamation-triangle"></i> เนื่องจากโค้ดมีขนาดยาว
+                จะแสดงโค้ดส่วนสำคัญและผลลัพธ์สุดท้ายให้ดูเป็นตัวอย่าง (โค้ดเต็มอยู่ในไฟล์ประกอบการสอน)</p>
+            <div class="grid-2">
+                <div>
+                    <h4>HTML Structure</h4>
+                    <pre><code class="language-html">&lt;div id="student-app"&gt;
+    &lt;h2&gt;รายชื่อนักเรียน&lt;/h2&gt;
+    &lt;input type="text" id="student-name"&gt;
+    &lt;button onclick="addStudent()"&gt;เพิ่ม&lt;/button&gt;
+    &lt;div id="student-list"&gt;&lt;/div&gt;
+&lt;/div&gt;</code></pre>
+                </div>
+                <div>
+                    <h4>JavaScript (ส่วน render)</h4>
+                    <pre><code class="language-javascript">function displayStudents() {
+    let listContainer = document.getElementById('student-list');
+    listContainer.innerHTML = ''; // Clear list
+    
+    students.forEach(student => {
+        let studentDiv = document.createElement('div');
+        studentDiv.className = 'student-item';
+        studentDiv.innerHTML = `&lt;span&gt;${student.name}&lt;/span&gt;
+        &lt;button onclick="removeStudent(${student.id})"&gt;ลบ&lt;/button&gt;`;
+        listContainer.appendChild(studentDiv);
+    });
+}</code></pre>
+                </div>
+            </div>
+            <div class="slide-number">33/52</div>
+        </section>
+
+        <section class="slide" data-slide-id="34">
+            <h2>Element Properties และ Methods ที่ใช้บ่อย 📋</h2>
+            <h3>Properties:</h3>
+            <ul>
+                <li><i class="fas fa-file-alt"></i><code>.textContent</code>: ข้อความธรรมดา</li>
+                <li><i class="fas fa-code"></i><code>.innerHTML</code>: HTML รวมด้วย</li>
+                <li><i class="fas fa-tag"></i><code>.id</code> / <code>.className</code>: id และ class ของ element</li>
+                <li><i class="fas fa-ruler-combined"></i><code>.offsetWidth</code>, <code>.offsetHeight</code>: ขนาดรวม
+                    border, padding</li>
+            </ul>
+            <h3>Data Attributes:</h3>
+            <p>ใช้สำหรับเก็บข้อมูลพิเศษบน HTML element</p>
+            <pre><code class="language-html">&lt;div data-user-id="123" data-role="admin"&gt;User Info&lt;/div&gt;</code></pre>
+            <pre><code class="language-javascript">let userDiv = document.querySelector('div');
+console.log(userDiv.dataset.userId); // "123"
+console.log(userDiv.dataset.role);   // "admin"
+
+userDiv.dataset.lastLogin = '2025-01-15'; // เขียน data attribute ใหม่
+</code></pre>
+            <div class="slide-number">34/52</div>
+        </section>
+
+        <section class="slide" data-slide-id="35">
+            <h2>Performance และ Best Practices 🚀</h2>
+            <h3>การเลือก Elements อย่างมีประสิทธิภาพ:</h3>
+            <p>เลือก element ครั้งเดียวแล้วเก็บในตัวแปร แทนที่จะเลือกซ้ำๆ</p>
+            <pre><code class="language-javascript">// ❌ ไม่ดี - เลือกซ้ำๆ
+document.getElementById('btn1').style.color = 'red';
+document.getElementById('btn1').disabled = true;
+
+// ✅ ดี - เลือกครั้งเดียว
+let btn = document.getElementById('btn1');
+btn.style.color = 'red';
+btn.disabled = true;</code></pre>
+
+            <h3>การจัดการหลาย Elements:</h3>
+            <p>ใช้ CSS Class ในการเปลี่ยน style หลายๆ อย่างพร้อมกัน จะเร็วกว่าการเปลี่ยน style ทีละ property</p>
+            <pre><code class="language-javascript">// ❌ ช้า
+items.forEach(item => {
+    item.style.color = 'blue';
+    item.style.padding = '10px';
+});
+
+// ✅ เร็ว
+items.forEach(item => {
+    item.classList.add('item-styled');
+});
+</code></pre>
+            <div class="slide-number">35/52</div>
+        </section>
+
+        <section class="slide" data-slide-id="36">
+            <h2>การทำงานกับ Forms 📝</h2>
+            <h3>การอ่านข้อมูลจาก Form:</h3>
+            <div class="grid-2">
+                <div>
+                    <h4>HTML</h4>
+                    <pre><code class="language-html">&lt;form id="user-form"&gt;
+    &lt;input type="text" name="username"&gt;
+    &lt;input type="checkbox" name="newsletter"&gt;
+    &lt;button type="submit"&gt;ส่ง&lt;/button&gt;
+&lt;/form&gt;</code></pre>
+                </div>
+                <div>
+                    <h4>JavaScript</h4>
+                    <pre><code class="language-javascript">const form = document.getElementById('user-form');
+
+// ดึงค่าจาก input
+const username = form.username.value;
+
+// ดึงค่าจาก checkbox
+const wantsNewsletter = form.newsletter.checked;
+
+// อ่านข้อมูลทั้งหมดด้วย FormData (ใหม่)
+const formData = new FormData(form);
+const data = Object.fromEntries(formData.entries());
+console.log(data);
+</code></pre>
+                </div>
+            </div>
+            <p class="solution">เราจะเรียนรู้เรื่องการจัดการ event ของฟอร์ม (เช่น <code>submit</code>) ในบทเรียนถัดไป
+            </p>
+            <div class="slide-number">36/52</div>
+        </section>
+
+        <section class="slide" data-slide-id="37">
+            <h2>Animation ด้วย JavaScript 🎬</h2>
+            <p>แม้ว่า CSS Animation จะเป็นที่นิยม แต่ JavaScript ก็ให้การควบคุมที่ละเอียดกว่าผ่าน
+                <code>requestAnimationFrame</code>
+            </p>
+            <div class="live-preview-container">
+                <div class="code-pane">
+                    <h4 class="pane-title">โค้ด (Fade In)</h4>
+                    <pre class="code-block" data-slide="37"><button class="run-code-btn">Run Code</button><code class="language-javascript" id="code-template-37">function fadeIn(element, duration = 1000) {
+    element.style.opacity = 0;
+    element.style.display = 'block';
+    
+    let start = performance.now();
+    
+    function animate(currentTime) {
+        let elapsed = currentTime - start;
+        let progress = Math.min(elapsed / duration, 1);
+        element.style.opacity = progress;
+        
+        if (progress < 1) {
+            requestAnimationFrame(animate);
+        }
+    }
+    requestAnimationFrame(animate);
+}
+
+const box = document.getElementById('animated-box-37');
+fadeIn(box);</code></pre>
+                </div>
+                <div class="preview-pane">
+                    <h4 class="pane-title">ผลลัพธ์</h4>
+                    <div class="preview-content" data-slide="37">
+                        <style>
+                            .preview-content[data-slide="37"] #animated-box-37 {
+                                background: linear-gradient(45deg, #667eea, #764ba2);
+                                color: white;
+                                padding: 20px;
+                                border-radius: 10px;
+                                display: none;
+                            }
+                        </style>
+                        <div id="animated-box-37">Hello Animation!</div>
+                    </div>
+                    <template data-slide="37">
+                        <style>
+                            .preview-content[data-slide="37"] #animated-box-37 {
+                                background: linear-gradient(45deg, #667eea, #764ba2);
+                                color: white;
+                                padding: 20px;
+                                border-radius: 10px;
+                                display: none;
+                            }
+                        </style>
+                        <div id="animated-box-37">Hello Animation!</div>
+                    </template>
+                </div>
+            </div>
+            <div class="slide-number">37/52</div>
+        </section>
+
+        <section class="slide" data-slide-id="38">
+            <h2>ความปลอดภัยใน DOM Manipulation 🔒</h2>
+            <h3>XSS (Cross-site Scripting) Prevention:</h3>
+            <p>XSS คือการโจมตีที่ผู้ไม่หวังดีแทรก script ที่เป็นอันตรายเข้ามาในเว็บของเราผ่าน input ของผู้ใช้</p>
+            <pre><code class="language-javascript">// ❌ อันตราย - ใช้ innerHTML กับข้อมูลจาก user
+let userInput = '&lt;script&gt;alert("Hacked!")&lt;/script&gt;';
+// commentsDiv.innerHTML = userInput; // จะรันสคริปต์!
+
+// ✅ ปลอดภัย - ใช้ textContent
+let commentsDiv = document.createElement('div');
+commentsDiv.textContent = userInput;
+// ผลลัพธ์: แสดงข้อความ "&lt;script&gt;..." แต่ไม่รัน
+
+// ✅ ปลอดภัย - สร้าง Element แล้วใส่ค่า
+let p = document.createElement('p');
+p.textContent = userInput;
+document.body.appendChild(p);
+</code></pre>
+            <p class="solution"><strong>กฎเหล็ก:</strong> อย่าใช้ <code>.innerHTML</code>
+                กับข้อมูลที่มาจากผู้ใช้โดยตรงเด็ดขาด!</p>
+            <div class="slide-number">38/52</div>
+        </section>
+
+        <section class="slide" data-slide-id="39">
+            <h2>คำถาม 🤔</h2>
+            <h3>ถ้าคุณต้องการสร้างรายการ Todo ที่ผู้ใช้สามารถเพิ่ม-ลบได้ วิธีไหนปลอดภัยที่สุด?</h3>
+            <div class="grid-2" style="font-size: 1em;">
+                <div>A) ใช้ <code>innerHTML += '&lt;li&gt;...'</code> เพื่อเพิ่ม HTML โดยตรง</div>
+                <div>B) ใช้ <code>createElement('li')</code> และ <code>appendChild()</code></div>
+                <div>C) ใช้ <code>document.write()</code> เพื่อเขียนลงหน้าเว็บ</div>
+                <div>D) ใช้ <code>eval()</code> เพื่อรัน JavaScript code จาก user input</div>
+            </div>
+            <div class="slide-number">39/52</div>
+        </section>
+
+        <section class="slide" data-slide-id="40">
+            <h2>เฉลย 🎯</h2>
+            <h3>คำตอบ: B) ใช้ <code>createElement</code> และ <code>appendChild</code></h3>
+            <pre class="solution"><code class="language-javascript">// ✅ วิธีที่ปลอดภัยที่สุด
+function addTodoItem(todoText) {
+    // 1. สร้าง elements
+    let li = document.createElement('li');
+    let span = document.createElement('span');
+    let deleteBtn = document.createElement('button');
+    
+    // 2. ตั้งค่าเนื้อหา (ปลอดภัยจาก XSS)
+    span.textContent = todoText;
+    deleteBtn.textContent = 'ลบ';
+    
+    // 3. ประกอบ elements และเพิ่มเข้าไปใน list
+    li.appendChild(span);
+    li.appendChild(deleteBtn);
+    document.getElementById('todo-list').appendChild(li);
+}
+</code></pre>
+            <h3>เหตุผล:</h3>
+            <ul>
+                <li><i class="fas fa-shield-alt"></i><strong>ปลอดภัยจาก XSS</strong> - ไม่มีการ parse และรัน
+                    HTML/JavaScript จาก input</li>
+                <li><i class="fas fa-cogs"></i><strong>มีการควบคุม</strong> - สร้าง element ทีละตัว ทำให้จัดการได้ง่าย
+                </li>
+                <li><i class="fas fa-tachometer-alt"></i><strong>Performance ดี</strong> - ไม่ต้อง re-parse HTML
+                    ทั้งหมดของ container ใหม่</li>
+            </ul>
+            <div class="slide-number">40/52</div>
+        </section>
+
+        <section class="slide" data-slide-id="41">
+            <h2>Modern DOM APIs 🌟</h2>
+            <p>API ใหม่ๆ ที่ช่วยให้การทำงานกับ DOM มีประสิทธิภาพและง่ายขึ้น</p>
+            <h3>1. Intersection Observer</h3>
+            <p>ใช้ตรวจจับว่า element เข้ามาในหน้าจอ (viewport) แล้วหรือยัง เหมาะสำหรับทำ lazy loading รูปภาพ หรือ
+                animation เมื่อ scroll</p>
+            <pre><code class="language-javascript">const observer = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+        if (entry.isIntersecting) {
+            entry.target.classList.add('animate-in');
+        }
+    });
+});
+observer.observe(document.querySelector('.my-element'));</code></pre>
+
+            <h3>2. Resize Observer</h3>
+            <p>ใช้ตรวจจับเมื่อขนาดของ element เปลี่ยนไป เหมาะสำหรับทำ responsive components ที่ซับซ้อน</p>
+            <pre><code class="language-javascript">const resizeObserver = new ResizeObserver(entries => {
+    for (let entry of entries) {
+        // ทำอะไรบางอย่างเมื่อขนาดเปลี่ยน
+    }
+});
+resizeObserver.observe(document.querySelector('.responsive-box'));</code></pre>
+            <div class="slide-number">41/52</div>
+        </section>
+
+        <section class="slide" data-slide-id="42">
+            <h2>Web APIs ที่ใช้กับ DOM 🌐</h2>
+            <p>API ของเบราว์เซอร์ที่ช่วยให้เว็บไซต์มีความสามารถมากขึ้น</p>
+            <h3>1. Geolocation API</h3>
+            <p>ขอตำแหน่งปัจจุบันของผู้ใช้</p>
+            <pre><code class="language-javascript">navigator.geolocation.getCurrentPosition(position => {
+    console.log('ละติจูด:', position.coords.latitude);
+    console.log('ลองจิจูด:', position.coords.longitude);
+});</code></pre>
+
+            <h3>2. Clipboard API</h3>
+            <p>คัดลอกข้อความไปยัง clipboard ของผู้ใช้</p>
+            <pre><code class="language-javascript">async function copyText(text) {
+    await navigator.clipboard.writeText(text);
+    alert('คัดลอกแล้ว!');
+}</code></pre>
+
+            <h3>3. Notification API</h3>
+            <p>แสดง Notification ของระบบปฏิบัติการ</p>
+            <pre><code class="language-javascript">Notification.requestPermission().then(perm => {
+    if (perm === 'granted') {
+        new Notification('สวัสดี!', { body: 'นี่คือ Notification' });
+    }
+});</code></pre>
+            <div class="slide-number">42/52</div>
+        </section>
+
+        <section class="slide" data-slide-id="43">
+            <h2>Advanced Techniques: Virtual DOM (Concept)</h2>
+            <p>
+                นี่เป็นแนวคิดสำคัญที่อยู่เบื้องหลัง Framework สมัยใหม่อย่าง React.js
+            </p>
+            <h3>ปัญหาของ DOM จริง:</h3>
+            <ul>
+                <li><i class="fas fa-turtle"></i> การเปลี่ยนแปลง DOM จริงโดยตรงนั้น <span class="highlight">ช้า</span>
+                </li>
+                <li><i class="fas fa-redo-alt"></i> ทุกครั้งที่เปลี่ยนอะไรเล็กน้อย เบราว์เซอร์อาจต้องคำนวณ Layout
+                    และวาดหน้าจอใหม่ (Reflow/Repaint) ซึ่งใช้ทรัพยากรมาก</li>
+            </ul>
+            <h3>Virtual DOM แก้ปัญหานี้อย่างไร:</h3>
+            <ol>
+                <li><strong>สร้างสำเนา:</strong> Framework จะสร้าง "สำเนา" ของ DOM จริงเก็บไว้ในหน่วยความจำของ
+                    JavaScript (นี่คือ Virtual DOM) ซึ่งเป็นแค่ Object ธรรมดา</li>
+                <li><strong>คำนวณการเปลี่ยนแปลง:</strong> เมื่อข้อมูล (state) เปลี่ยน Framework จะสร้าง Virtual DOM
+                    ใหม่ขึ้นมาอีกชุด</li>
+                <li><strong>เปรียบเทียบ:</strong> Framework จะเปรียบเทียบ Virtual DOM ใหม่กับของเก่า
+                    เพื่อหาว่ามีอะไรเปลี่ยนแปลงไปบ้าง (ขั้นตอนนี้เร็วมากเพราะทำใน Memory)</li>
+                <li><strong>อัปเดตเฉพาะส่วน:</strong> Framework จะเข้าไปเปลี่ยนแปลง DOM จริง <span
+                        class="highlight">เฉพาะส่วนที่แตกต่าง</span> เท่านั้น ทำให้เกิด Reflow/Repaint น้อยที่สุด</li>
+            </ol>
+            <p class="solution"><strong>สรุป:</strong> Virtual DOM ช่วยเพิ่ม Performance โดยการลดการเปลี่ยนแปลง DOM
+                จริงที่ไม่จำเป็น</p>
+            <div class="slide-number">43/52</div>
+        </section>
+
+        <section class="slide" data-slide-id="44">
+            <h2>Performance Monitoring 📊</h2>
+            <p>การวัดประสิทธิภาพเป็นสิ่งสำคัญในการสร้างเว็บแอปพลิเคชันที่ดี</p>
+            <h3>การวัดเวลาด้วย <code>console.time</code>:</h3>
+            <p>ใช้วัดว่าโค้ดส่วนไหนทำงานใช้เวลานานเท่าไหร่</p>
+            <pre><code class="language-javascript">console.time('Loop 1M');
+for (let i = 0; i < 1000000; i++) {
+    // some code
+}
+console.timeEnd('Loop 1M'); // แสดงเวลาที่ใช้ไป</code></pre>
+
+            <h3>การใช้ Document Fragment:</h3>
+            <p>เมื่อต้องการเพิ่ม element จำนวนมากลงใน DOM ควรใช้ <code>DocumentFragment</code> เพื่อลดการ Reflow/Repaint
+            </p>
+            <pre><code class="language-javascript">const list = document.getElementById('my-list');
+const fragment = document.createDocumentFragment();
+
+for (let i = 0; i < 100; i++) {
+    const li = document.createElement('li');
+    li.textContent = `Item ${i}`;
+    fragment.appendChild(li); // เพิ่มเข้า fragment ก่อน (ไม่กระทบ DOM จริง)
+}
+
+list.appendChild(fragment); // เพิ่มเข้า DOM จริงแค่ครั้งเดียว!</code></pre>
+            <div class="slide-number">44/52</div>
+        </section>
+
+        <section class="slide" data-slide-id="45">
+            <h2>Debugging Advanced Techniques 🔧</h2>
+            <p>นอกจากการใช้ <code>console.log</code> แล้ว ยังมีเครื่องมืออื่นๆ ใน Developer Tools ที่ทรงพลัง</p>
+            <h3>1. Debugger (Breakpoints)</h3>
+            <p>เราสามารถสั่งให้โค้ดหยุดทำงานที่บรรทัดที่ต้องการได้โดยการใส่คำว่า <code>debugger;</code> ในโค้ด
+                หรือคลิกที่หมายเลขบรรทัดในหน้า Sources ของ DevTools</p>
+            <pre><code class="language-javascript">function calculateTotal(price, quantity) {
+    console.log('Starting calculation...');
+    debugger; // โค้ดจะหยุดที่นี่เมื่อเปิด DevTools
+    const total = price * quantity;
+    console.log('Calculation finished.');
+    return total;
+}
+calculateTotal(150, 3);</code></pre>
+
+            <h3>2. DOM Breakpoints</h3>
+            <p>ในหน้า Elements ของ DevTools เราสามารถคลิกขวาที่ element ใดๆ แล้วเลือก "Break on..."
+                เพื่อสั่งให้โค้ดหยุดเมื่อ:</p>
+            <ul>
+                <li><i class="fas fa-sitemap"></i> <strong>subtree modifications:</strong> มีการเพิ่ม/ลบ child element
+                </li>
+                <li><i class="fas fa-edit"></i> <strong>attribute modifications:</strong> มีการเปลี่ยน attribute</li>
+                <li><i class="fas fa-trash-alt"></i> <strong>node removal:</strong> element นี้ถูกลบ</li>
+            </ul>
+            <div class="slide-number">45/52</div>
+        </section>
+
+        <section class="slide" data-slide-id="46">
+            <h2>Project Structure และ Organization 📁</h2>
+            <p>เมื่อโปรเจคใหญ่ขึ้น การจัดระเบียบโค้ดเป็นสิ่งสำคัญมาก</p>
+            <h3>Module Pattern (แบบง่าย):</h3>
+            <p>เป็นวิธีหนึ่งในการจัดกลุ่มโค้ดที่เกี่ยวข้องกันไว้ด้วยกัน เพื่อไม่ให้ตัวแปรและฟังก์ชันไปปนกับส่วนอื่นๆ
+                (Global Scope)</p>
+            <pre><code class="language-javascript">// DOM Utility Module
+const DOMUtils = (function() {
+    // Private methods (ข้างนอกเรียกใช้ไม่ได้)
+    function validate(element) { /* ... */ }
+
+    // Public API (ข้างนอกเรียกใช้ได้)
+    return {
+        get: function(selector) {
+            return document.querySelector(selector);
+        },
+        addClass: function(element, className) {
+            element.classList.add(className);
+        },
+        setText: function(element, text) {
+            element.textContent = text;
+        }
+    };
+})();
+
+// การใช้งาน
+let title = DOMUtils.get('#title');
+DOMUtils.setText(title, 'หัวข้อใหม่');
+DOMUtils.addClass(title, 'highlight');
+</code></pre>
+            <p class="solution">เทคนิคนี้ช่วยให้โค้ดเป็นสัดส่วน, นำกลับมาใช้ใหม่ได้ง่าย, และลดข้อผิดพลาด</p>
+            <div class="slide-number">46/52</div>
+        </section>
+
+        <section class="slide" data-slide-id="47">
+            <h2>Final Project - Complete Web App! 🌟</h2>
+            <h3>สร้าง Task Management App ที่สมบูรณ์</h3>
+            <p>เป็นการนำความรู้ทั้งหมดที่เรียนในวันนี้มาสร้างเป็นแอปพลิเคชันจัดการงานที่ใช้งานได้จริง ซึ่งประกอบด้วย:
+            </p>
+            <ul>
+                <li><i class="fas fa-plus-circle"></i> การเพิ่มงานใหม่ (Create)</li>
+                <li><i class="fas fa-list-ul"></i> การแสดงรายการงาน (Read)</li>
+                <li><i class="fas fa-check-square"></i> การเปลี่ยนสถานะงาน (Update)</li>
+                <li><i class="fas fa-trash"></i> การลบงาน (Delete)</li>
+                <li><i class="fas fa-filter"></i> การกรองข้อมูล (Filter)</li>
+                <li><i class="fas fa-save"></i> การบันทึกข้อมูลลง Local Storage</li>
+            </ul>
+            <p class="solution">
+                โปรเจคนี้จะเป็นการบ้านใหญ่สำหรับสัปดาห์นี้ เพื่อให้นักศึกษาได้ทบทวนและฝึกฝนการใช้ JavaScript และ DOM
+                Manipulation อย่างเต็มที่
+            </p>
+            <div class="slide-number">47/52</div>
+        </section>
+
+        <section class="slide" data-slide-id="48">
+            <h2>สรุปและทบทวน 🎯</h2>
+            <h3>JavaScript พื้นฐาน (2.5 ชม.)</h3>
+            <ul>
+                <li><i class="fas fa-check"></i> <strong>Variables & Data Types:</strong> let, const, String, Number,
+                    Boolean, Arrays, Objects</li>
+                <li><i class="fas fa-check"></i> <strong>Control Flow:</strong> if/else, switch, for/while loops</li>
+                <li><i class="fas fa-check"></i> <strong>Functions:</strong> Declaration, Expression, Arrow Functions
+                </li>
+            </ul>
+            <h3>DOM Manipulation (1.5 ชม.)</h3>
+            <ul>
+                <li><i class="fas fa-check"></i> <strong>Element Selection:</strong> querySelector, querySelectorAll
+                </li>
+                <li><i class="fas fa-check"></i> <strong>Content & CSS Management:</strong> textContent, innerHTML,
+                    classList</li>
+                <li><i class="fas fa-check"></i> <strong>Element Creation & Deletion:</strong> createElement,
+                    appendChild, remove</li>
+                <li><i class="fas fa-check"></i> <strong>Security:</strong> การป้องกัน XSS</li>
+            </ul>
+            <div class="slide-number">48/52</div>
+        </section>
+
+        <section class="slide" data-slide-id="49">
+            <h2>เตรียมพร้อมสำหรับหัวข้อถัดไป 🚀</h2>
+            <h3>หัวข้อที่ 2: Event Handling และ Interactive Elements (2 ชม.)</h3>
+            <h4>สิ่งที่จะเรียนต่อ:</h4>
+            <ul>
+                <li><i class="fas fa-mouse-pointer"></i> <strong>Event Listeners:</strong> click, input, submit,
+                    keyboard events</li>
+                <li><i class="fas fa-hand-paper"></i> <strong>Event Object:</strong> target, preventDefault,
+                    stopPropagation</li>
+                <li><i class="fas fa-tasks"></i> <strong>Event Delegation:</strong> การจัดการ events อย่างมีประสิทธิภาพ
+                </li>
+            </ul>
+
+            <h3>หัวข้อที่ 3: Form Validation และ Local Storage (2 ชม.)</h3>
+            <h4>สิ่งที่จะเรียนต่อ:</h4>
+            <ul>
+                <li><i class="fas fa-check-double"></i> <strong>Form Validation:</strong> การตรวจสอบข้อมูลแบบ Real-time
+                </li>
+                <li><i class="fas fa-database"></i> <strong>Local Storage API:</strong> บันทึกข้อมูลในเบราว์เซอร์</li>
+                <li><i class="fas fa-file-code"></i> <strong>JSON:</strong> การแปลงข้อมูลเพื่อจัดเก็บ</li>
+            </ul>
+            <div class="slide-number">49/52</div>
+        </section>
+
+        <section class="slide" data-slide-id="50">
+            <h2>การบ้านและท้าทาย 📚</h2>
+            <h3>Level 1: พื้นฐาน (ต้องทำ)</h3>
+            <ol>
+                <li><strong>Personal Dashboard:</strong> แสดงเวลาปัจจุบัน, มีปุ่มเปลี่ยนธีม Dark/Light Mode
+                    และเก็บการตั้งค่าใน Local Storage</li>
+                <li><strong>Simple Quiz App:</strong> สร้างแอปคำถาม-คำตอบง่ายๆ 5 ข้อ พร้อมแสดงคะแนนเมื่อทำเสร็จ</li>
+            </ol>
+
+            <h3>Level 2: ท้าทาย (สำหรับผู้สนใจ)</h3>
+            <ol start="3">
+                <li><strong>Weather Dashboard:</strong> ใช้ Geolocation API หาตำแหน่ง แล้วแสดงข้อมูลสภาพอากาศ
+                    (จำลองข้อมูลได้)</li>
+                <li><strong>Memory Card Game:</strong> เกมจับคู่ภาพง่ายๆ</li>
+            </ol>
+
+            <h3>การส่งงาน:</h3>
+            <ul>
+                <li><i class="fab fa-github"></i> <strong>GitHub Repository</strong> พร้อม README.md</li>
+                <li><i class="fas fa-link"></i> <strong>Live Demo</strong> บน GitHub Pages</li>
+                <li><i class="fas fa-video"></i> <strong>Video Demo</strong> 2-3 นาที อธิบายฟีเจอร์</li>
+            </ul>
+            <div class="slide-number">50/52</div>
+        </section>
+
+        <section class="slide" data-slide-id="51">
+            <h2>Tips สำหรับการพัฒนาต่อ 💡</h2>
+            <h3>1. การเขียนโค้ดที่ดี:</h3>
+            <p>ตั้งชื่อตัวแปรและฟังก์ชันให้สื่อความหมาย</p>
+            <pre><code class="language-javascript">// ❌ ไม่ดี: function a(x) { ... }
+// ✅ ดี: function isValueValid(value) { ... }</code></pre>
+
+            <h3>2. Performance Tips:</h3>
+            <p>ลดการเข้าถึง DOM ให้น้อยที่สุด</p>
+            <pre><code class="language-javascript">// Debounce สำหรับ search input เพื่อลดการเรียกฟังก์ชันถี่ๆ
+function debounce(func, delay) {
+    let timeout;
+    return function(...args) {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(this, args), delay);
+    };
+}</code></pre>
+
+            <h3>3. แหล่งเรียนรู้เพิ่มเติม:</h3>
+            <ul>
+                <li><i class="fas fa-book"></i> <strong>MDN Web Docs</strong> - เอกสารอ้างอิงที่ดีที่สุด</li>
+                <li><i class="fas fa-graduation-cap"></i> <strong>JavaScript.info</strong> - บทเรียนละเอียดและทันสมัย
+                </li>
+                <li><i class="fas fa-laptop-code"></i> <strong>FreeCodeCamp</strong> - แบบฝึกหัดและโปรเจค</li>
+            </ul>
+            <div class="slide-number">51/52</div>
+        </section>
+
+        <!-- <section class="slide final-slide" data-slide-id="52">
+            <i class="fas fa-mug-hot"></i>
+            <h2>พักเบรก 15 นาที</h2>
+            <h3>เตรียมพร้อมสำหรับ Event Handling!</h3>
+            <p style="margin-top: 20px;">ในหัวข้อถัดไป เราจะเรียนรู้วิธีทำให้เว็บไซต์ "ตอบสนอง" ต่อการกระทำของผู้ใช้ เช่น การคลิกปุ่ม, การพิมพ์ข้อความ, และการส่งฟอร์ม</p>
+            <blockquote>ท้าทาย: คิดดูว่าเว็บไซต์ที่คุณใช้บ่อยๆ มี Events อะไรบ้าง? 🤔</blockquote>
+            <p class="solution"><strong>Get Ready to Make Web Interactive! 🎮</strong></p>
+            <div class="slide-number">52/52</div>
+        </section> -->
+
+    </div>
+
+    <div class="presentation-controls">
+        <button id="prev-btn" class="nav-btn" title="สไลด์ก่อนหน้า">‹</button>
+        <span id="slide-counter"></span>
+        <button id="next-btn" class="nav-btn" title="สไลด์ถัดไป">›</button>
+        <button id="font-decrease-btn" class="font-btn" title="ลดขนาดตัวอักษร">-</button>
+        <button id="font-increase-btn" class="font-btn" title="เพิ่มขนาดตัวอักษร">+</button>
+        <button id="fullscreen-btn" class="fullscreen-btn" title="เต็มจอ">⛶</button>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const slides = document.querySelectorAll('.slide');
+            const nextBtn = document.getElementById('next-btn');
+            const prevBtn = document.getElementById('prev-btn');
+            const fullscreenBtn = document.getElementById('fullscreen-btn');
+            const slideCounter = document.getElementById('slide-counter');
+            const progressBar = document.getElementById('progress-bar');
+            const fontIncreaseBtn = document.getElementById('font-increase-btn');
+            const fontDecreaseBtn = document.getElementById('font-decrease-btn');
+            const root = document.documentElement;
+
+            const totalSlides = slides.length;
+            // === START EDIT ===
+            let fontScale = 1; // ใช้ตัวแปรใหม่สำหรับควบคุมตัวคูณ
+            // === END EDIT ===
+
+            let currentFontSize = 1.5;
+            let currentSlideIndex = 0;
+
+            function showSlide(index) {
+                if (index < 0 || index >= totalSlides) return;
+                slides.forEach((slide, i) => slide.classList.toggle('active', i === index));
+                const activeSlide = slides[index];
+                if (activeSlide.scrollTop > 0) activeSlide.scrollTop = 0;
+                currentSlideIndex = index;
+                updateControls();
+            }
+
+            function updateControls() {
+                slideCounter.textContent = `${currentSlideIndex + 1} / ${totalSlides}`;
+                const progressPercentage = ((currentSlideIndex + 1) / totalSlides) * 100;
+                progressBar.style.width = `${progressPercentage}%`;
+                prevBtn.disabled = currentSlideIndex === 0;
+                nextBtn.disabled = currentSlideIndex === totalSlides - 1;
+            }
+
+            function toggleFullscreen() {
+                if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+                else if (document.exitFullscreen) document.exitFullscreen();
+            }
+
+            // fontIncreaseBtn.addEventListener('click', () => {
+            //     if (currentFontSize < 2.5) {
+            //         currentFontSize += 0.1;
+            //         root.style.setProperty('--base-font-size', `clamp(16px, ${currentFontSize}vw, 22px)`);
+            //     }
+            // });
+            // fontDecreaseBtn.addEventListener('click', () => {
+            //     if (currentFontSize > 0.8) {
+            //         currentFontSize -= 0.1;
+            //         root.style.setProperty('--base-font-size', `clamp(16px, ${currentFontSize}vw, 22px)`);
+            //     }
+            // });
+            // === START EDIT ===
+            fontIncreaseBtn.addEventListener('click', () => {
+                if (fontScale < 1.5) { // กำหนดค่าสูงสุด
+                    fontScale += 0.1;
+                    root.style.setProperty('--font-scale-multiplier', fontScale);
+                }
+            });
+            fontDecreaseBtn.addEventListener('click', () => {
+                if (fontScale > 0.7) { // กำหนดค่าต่ำสุด
+                    fontScale -= 0.1;
+                    root.style.setProperty('--font-scale-multiplier', fontScale);
+                }
+            });
+            // === END EDIT ===
+
+            nextBtn.addEventListener('click', () => showSlide(currentSlideIndex + 1));
+            prevBtn.addEventListener('click', () => showSlide(currentSlideIndex - 1));
+            fullscreenBtn.addEventListener('click', toggleFullscreen);
+            document.addEventListener('keydown', (e) => {
+                if (e.target.tagName === 'INPUT' || e.target.isContentEditable || e.target.tagName === 'TEXTAREA') return;
+                if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); nextBtn.click(); }
+                else if (e.key === 'ArrowLeft') { e.preventDefault(); prevBtn.click(); }
+                else if (e.key === 'f') { e.preventDefault(); toggleFullscreen(); }
+            });
+
+            // --- UNIFIED CODE RUNNER ---
+            const runButtons = document.querySelectorAll('.run-code-btn');
+            runButtons.forEach(button => {
+                button.addEventListener('click', (event) => {
+                    const slideNumber = event.target.closest('.code-block').dataset.slide;
+                    const codeBlock = document.querySelector(`#code-template-${slideNumber}`);
+                    const consoleOutput = document.querySelector(`.simulated-console[data-slide="${slideNumber}"]`);
+                    const previewContent = document.querySelector(`.preview-content[data-slide="${slideNumber}"]`);
+                    const previewTemplate = document.querySelector(`template[data-slide="${slideNumber}"]`);
+
+                    // Reset preview and console
+                    if (consoleOutput) consoleOutput.innerHTML = '';
+                    if (previewContent && previewTemplate) {
+                        previewContent.innerHTML = previewTemplate.innerHTML;
+                    }
+
+                    const codeToRun = codeBlock.textContent;
+
+                    const originalConsoleLog = console.log;
+                    const originalConsoleError = console.error;
+                    const originalConsoleWarn = console.warn;
+                    const originalConsoleInfo = console.info;
+                    const originalAlert = window.alert;
+
+                    const createLogEntry = (message, type) => {
+                        const logEntry = document.createElement('div');
+                        logEntry.className = type;
+                        logEntry.textContent = `> ${message}`;
+                        if (consoleOutput) consoleOutput.appendChild(logEntry);
+                    };
+
+                    const logToConsole = (...args) => {
+                        const message = args.map(arg => (typeof arg === 'object' && arg !== null) ? JSON.stringify(arg, null, 2) : String(arg)).join(' ');
+                        createLogEntry(message, 'log');
+                    };
+
+                    console.log = logToConsole;
+                    console.error = (...args) => createLogEntry(args.join(' '), 'error');
+                    console.warn = (...args) => createLogEntry(args.join(' '), 'warn');
+                    console.info = (...args) => createLogEntry(args.join(' '), 'info');
+
+                    window.alert = (message) => {
+                        const target = previewContent || document.body;
+                        const existingAlert = target.querySelector('.simulated-alert');
+                        if (existingAlert) existingAlert.remove();
+                        const alertBox = document.createElement('div');
+                        alertBox.className = 'simulated-alert';
+                        alertBox.innerHTML = `<p>${message}</p><button>OK</button>`;
+                        alertBox.querySelector('button').onclick = () => alertBox.remove();
+                        target.appendChild(alertBox);
+                    };
+
+                    try {
+                        // Create a sandboxed 'document' object for the code to run against.
+                        const documentProxy = {
+                            querySelector: (selector) => previewContent.querySelector(selector),
+                            getElementById: (id) => previewContent.querySelector(`#${id}`),
+                            querySelectorAll: (selector) => previewContent.querySelectorAll(selector),
+                            createElement: (tag) => document.createElement(tag),
+                            body: previewContent, // Redirect document.body to the preview pane
+                        };
+
+                        // Execute the code in a new function scope with the proxy
+                        const scopedFunction = new Function('document', 'console', 'alert', 'setTimeout', 'setInterval', 'performance', 'requestAnimationFrame', codeToRun);
+                        scopedFunction(documentProxy, console, window.alert, window.setTimeout, window.setInterval, window.performance, window.requestAnimationFrame);
+
+                    } catch (err) {
+                        console.error(`Error: ${err.message}`);
+                    } finally {
+                        // Restore original functions
+                        console.log = originalConsoleLog;
+                        console.error = originalConsoleError;
+                        console.warn = originalConsoleWarn;
+                        console.info = originalConsoleInfo;
+                        window.alert = originalAlert;
+                    }
+                });
+            });
+
+            showSlide(0);
+        });
+    </script>
+</body>
+
+</html>

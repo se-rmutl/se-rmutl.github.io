@@ -1,0 +1,1427 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ENGSE611 - วันที่ 2: Event Handling & Interactive Elements</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;700&family=Fira+Code&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-okaidia.min.css" rel="stylesheet" />
+
+    <style>
+        /* --- CSS Reset & Base Styles --- */
+        :root {
+            --primary-color: #4ecdc4;
+            --secondary-color: #2980b9;
+            --accent-color: #f39c12;
+            --danger-color: #e74c3c;
+            --success-color: #2ecc71;
+            --background-color: #2c3e50;
+            --text-color: #ecf0f1;
+            --slide-bg: #34495e;
+            --heading-font: 'Sarabun', sans-serif;
+            --body-font: 'Sarabun', sans-serif;
+            --code-font: 'Fira Code', monospace;
+            --base-font-size: 110%; /* Base font size for scaling */
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+            font-size: var(--base-font-size); /* Set base font size on root */
+        }
+
+        body {
+            font-family: var(--body-font);
+            background-color: var(--background-color);
+            color: var(--text-color);
+            overflow: hidden;
+            transition: background-color 0.3s;
+        }
+
+        /* --- Presentation Container --- */
+        #presentation {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+        }
+
+        /* --- Slide Styles --- */
+        .slide {
+            width: 100%;
+            height: 100%;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem 4rem;
+            text-align: center;
+            position: absolute;
+            top: 0;
+            left: 0;
+            opacity: 0;
+            transition: opacity 0.6s ease-in-out;
+            overflow-y: auto;
+        }
+
+        .slide.active {
+            display: flex;
+            opacity: 1;
+            z-index: 1;
+        }
+        
+        .slide-content {
+            max-width: 1200px;
+            width: 100%;
+        }
+
+        /* --- Typography (Increased default sizes) --- */
+        .slide h1, .slide h2, .slide h3 {
+            font-family: var(--heading-font);
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            color: var(--primary-color);
+        }
+        
+        .slide h1 { font-size: 3.5rem; }
+        .slide h2 { font-size: 2.8rem; border-bottom: 3px solid var(--primary-color); padding-bottom: 0.5rem; display: inline-block; }
+        .slide h3 { font-size: 2rem; color: var(--secondary-color); text-align: left; }
+        
+        .slide p {
+            font-size: 1.5rem;
+            line-height: 1.7;
+            margin-bottom: 1rem;
+            max-width: 900px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .slide ul, .slide ol {
+            text-align: left;
+            margin-left: 2.5rem;
+            font-size: 1.4rem;
+            line-height: 1.8;
+            max-width: 900px;
+            margin: 1rem auto;
+        }
+        
+        .slide li { margin-bottom: 0.75rem; }
+        .slide code:not(pre > code) {
+            background-color: rgba(0,0,0,0.3);
+            padding: 0.2em 0.4em;
+            border-radius: 4px;
+            font-family: var(--code-font);
+            font-size: 0.9em;
+        }
+        kbd {
+            background: #f1f1f1;
+            color: #333;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            padding: 2px 4px;
+            font-family: monospace;
+            font-size: 0.9em;
+        }
+
+        /* --- Code Blocks --- */
+        pre {
+            background-color: #272822;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            margin: 1.5rem auto;
+            max-width: 90%;
+            text-align: left;
+            font-size: 1.1rem;
+            overflow: auto;
+            max-height: 400px;
+        }
+        
+        /* --- Layout & Demo Styles --- */
+        .two-column {
+            display: flex;
+            gap: 2rem;
+            width: 100%;
+            align-items: flex-start;
+            margin-top: 1rem;
+        }
+        .column {
+            flex: 1;
+            text-align: left;
+        }
+        .demo-box {
+            background-color: #f0f0f0;
+            color: #333;
+            padding: 1.5rem;
+            border-radius: 10px;
+            min-height: 150px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.2);
+        }
+        
+        .demo-box button, .demo-box input, .demo-box select, .demo-box textarea {
+            padding: 10px 15px;
+            font-size: 1rem;
+            font-family: var(--body-font);
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            min-width: 200px;
+        }
+
+        /* --- Specific Demo Styles --- */
+        #demo22_container { display: flex; gap: 20px; padding: 20px; width: 100%; }
+        .draggable-items, .drop-zones { flex: 1; display: flex; flex-direction: column; gap: 10px; }
+        .dd-item { padding: 15px; background: #f8f9fa; border: 2px solid #dee2e6; border-radius: 5px; cursor: move; user-select: none; transition: all 0.2s ease; }
+        .dd-item.dragging { opacity: 0.5; transform: rotate(3deg); background: #cce5ff;}
+        .drop-zone { min-height: 100px; padding: 20px; border: 2px dashed #ccc; border-radius: 10px; background: #f8f9fa; text-align: center; font-weight: bold; color: #6c757d; transition: all 0.3s ease; }
+        .drop-zone.drag-over { border-color: #007bff; background: #e3f2fd; color: #007bff; transform: scale(1.02); }
+
+        /* --- Question & Answer Slides --- */
+        .slide-question { background-color: #2980b9; }
+        .slide-answer { background-color: #16a085; }
+        .options-grid { display: grid; grid-template-columns: 1fr; gap: 1rem; margin-top: 1rem; text-align: left; }
+        .option { background: rgba(0,0,0,0.2); padding: 1rem; border-radius: 8px; border-left: 5px solid var(--primary-color); }
+
+        /* --- UI Controls --- */
+        .nav-controls { position: fixed; bottom: 30px; right: 30px; z-index: 100; }
+        .nav-btn { background-color: var(--primary-color); color: white; border: none; width: 50px; height: 50px; border-radius: 50%; font-size: 2rem; cursor: pointer; margin-left: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.3); transition: all 0.2s ease; }
+        .nav-btn:hover { transform: scale(1.1); background-color: var(--secondary-color); }
+        
+        .view-controls {
+            position: fixed;
+            top: 20px;
+            right: 30px;
+            z-index: 100;
+            display: flex;
+            gap: 10px;
+        }
+        .view-btn {
+            background-color: rgba(0,0,0,0.4);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.3);
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .view-btn:hover {
+            background-color: var(--primary-color);
+            transform: scale(1.1);
+        }
+        
+        /* --- Progress Bar & Counter --- */
+        #progress-bar-container { position: fixed; bottom: 0; left: 0; width: 100%; height: 8px; background-color: rgba(0,0,0,0.3); z-index: 99; }
+        #progress-bar { width: 0; height: 100%; background: linear-gradient(90deg, var(--primary-color), var(--secondary-color)); transition: width 0.3s ease; }
+        #slide-counter { position: fixed; bottom: 15px; left: 30px; font-size: 1rem; font-weight: bold; color: #fff; background: rgba(0,0,0,0.4); padding: 5px 10px; border-radius: 5px; z-index: 100; }
+
+        /* --- Responsive Design --- */
+        @media (max-width: 992px) {
+            .slide { padding: 1.5rem; }
+            .slide h1 { font-size: 2.5rem; }
+            .slide h2 { font-size: 2rem; }
+            .slide p { font-size: 1.2rem; }
+            pre { font-size: 0.9rem; max-width: 100%; }
+            .two-column { flex-direction: column; }
+            .nav-controls { bottom: 15px; right: 15px; }
+            .nav-btn { width: 40px; height: 40px; font-size: 1.5rem; }
+            .view-controls { top: 10px; right: 15px; }
+            .view-btn { width: 35px; height: 35px; font-size: 1rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <main id="presentation">
+
+        <section class="slide active">
+            <div class="slide-content">
+                <h1>🎮 ยินดีต้อนรับสู่โลกของ Interactive Web!</h1>
+                <p>วันที่ 2 - หัวข้อที่ 2 (2 ชั่วโมง)</p>
+                <hr style="margin: 2rem auto; width: 50%;">
+                <h3>สิ่งที่เราจะเรียนรู้วันนี้</h3>
+                <ul>
+                    <li><strong>Event คืออะไร</strong> และทำไมสำคัญ</li>
+                    <li><strong>Event Listeners</strong> - การฟังการกระทำของผู้ใช้</li>
+                    <li><strong>Event Object</strong> - ข้อมูลเกี่ยวกับเหตุการณ์</li>
+                    <li><strong>Mouse, Keyboard และ Touch Events</strong></li>
+                    <li><strong>Event Delegation</strong> - เทคนิคขั้นสูง</li>
+                </ul>
+                <p style="margin-top:2rem; font-weight:bold;">เป้าหมาย: ทำให้เว็บไซต์ตอบสนองต่อการกระทำของผู้ใช้ได้อย่างลื่นไหล!</p>
+            </div>
+        </section>
+
+        <section class="slide">
+            <div class="slide-content">
+                <h2>Event คืออะไร? 🤔</h2>
+                <p><strong>Event</strong> = เหตุการณ์ที่เกิดขึ้นบนหน้าเว็บ</p>
+                <h3>เปรียบเทียบกับชีวิตจริง:</h3>
+                <ul>
+                    <li><strong>กดกริ่งบ้าน</strong> = Event เกิดขึ้น 🔔</li>
+                    <li><strong>เสียงกริ่งดัง</strong> = Browser ตรวจจับ Event 👂</li>
+                    <li><strong>คนในบ้านไปเปิดประตู</strong> = Event Handler ทำงาน 🚪</li>
+                </ul>
+                <h3>Events ในเว็บไซต์:</h3>
+                <ul>
+                    <li><strong>การคลิก</strong> - click ปุ่ม, ลิงก์</li>
+                    <li><strong>การพิมพ์</strong> - keypress, keydown, keyup</li>
+                    <li><strong>การเลื่อนหน้าจอ</strong> - scroll</li>
+                    <li><strong>การโหลดหน้าเว็บ</strong> - load, DOMContentLoaded</li>
+                </ul>
+                <p><strong>Event ทำให้เว็บไซต์ "มีชีวิต" และตอบสนองผู้ใช้!</strong></p>
+            </div>
+        </section>
+
+        <section class="slide">
+            <div class="slide-content">
+                <h2>วิธีการฟัง Events - Event Listeners 👂</h2>
+                <p>มี 3 วิธีหลักในการเพิ่ม Event Listener</p>
+                <div class="two-column">
+                    <div class="column">
+                        <h3>1. Inline Event (ใน HTML) - ไม่แนะนำ</h3>
+                        <pre><code class="language-html">&lt;button onclick="alert('สวัสดี!')"&gt;คลิกฉัน&lt;/button&gt;</code></pre>
+                        <h3>2. Element Property - ใช้ได้</h3>
+                        <pre><code class="language-javascript">let button = document.getElementById('myButton');
+button.onclick = function() {
+    alert('ปุ่มถูกคลิก!');
+};</code></pre>
+                    </div>
+                    <div class="column">
+                        <h3>3. addEventListener() - แนะนำมากที่สุด ⭐</h3>
+                        <pre><code class="language-javascript">let button = document.getElementById('myButton');
+button.addEventListener('click', function() {
+    alert('ปุ่มถูกคลิก!');
+});</code></pre>
+                        <p><strong>ทำไม addEventListener() ดีที่สุด?</strong></p>
+                        <ul>
+                            <li>เพิ่ม listener หลายตัวได้</li>
+                            <li>ควบคุมการทำงานได้มากกว่า (เช่น Bubbling/Capturing)</li>
+                            <li>ลบ listener ได้ง่าย</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="slide">
+            <div class="slide-content">
+                <h2>Click Events - การคลิกพื้นฐาน 👆</h2>
+                <div class="two-column">
+                    <div class="column">
+                        <h3>Code ตัวอย่าง:</h3>
+                        <pre><code class="language-html">&lt;button id="clickBtn"&gt;คลิกฉัน&lt;/button&gt;
+&lt;p id="output"&gt;ยังไม่ได้คลิก&lt;/p&gt;</code></pre>
+                        <pre><code class="language-javascript">let button = document.getElementById('clickBtn');
+let output = document.getElementById('output');
+let clickCount = 0;
+
+button.addEventListener('click', function() {
+    clickCount++;
+    output.textContent = `คลิกไปแล้ว ${clickCount} ครั้ง`;
+});</code></pre>
+                    </div>
+                    <div class="column">
+                        <h3>ผลลัพธ์:</h3>
+                        <div class="demo-box" id="demo4">
+                            <button id="clickBtn_demo">คลิกฉัน</button>
+                            <p id="output_demo">ยังไม่ได้คลิก</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="slide">
+            <div class="slide-content">
+                 <h2>Event Object - ข้อมูลเกี่ยวกับเหตุการณ์ 📋</h2>
+                 <p>ทุกๆ Event จะมี Object ที่บรรจุข้อมูลเกี่ยวกับเหตุการณ์นั้นๆ ติดมาด้วย</p>
+                <div class="two-column">
+                    <div class="column">
+                        <h3>Code ตัวอย่าง - Mouse Tracker:</h3>
+                        <pre><code class="language-javascript">document.addEventListener('mousemove', function(event) {
+    let mouseInfo = document.getElementById('mouseInfo');
+    
+    // event.clientX, event.clientY คือตำแหน่งของเมาส์
+    mouseInfo.textContent = 
+        `Mouse: (${event.clientX}, ${event.clientY})`;
+});</code></pre>
+                        <h4>Properties ที่ใช้บ่อย:</h4>
+                        <ul>
+                            <li><code>event.target</code> - element ที่ถูก trigger</li>
+                            <li><code>event.type</code> - ชนิดของ event (เช่น 'click')</li>
+                            <li><code>event.key</code> - ปุ่มที่ถูกกดบนคีย์บอร์ด</li>
+                        </ul>
+                    </div>
+                    <div class="column">
+                        <h3>ผลลัพธ์ (ลองเลื่อนเมาส์ในกรอบนี้):</h3>
+                        <div class="demo-box" id="demo5" style="height: 300px;">
+                           <p style="font-size: 1.5rem; font-weight: bold;" id="mouseInfo_demo">Mouse: (x, y)</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="slide">
+            <div class="slide-content">
+                <h2>preventDefault() และ stopPropagation() 🛑</h2>
+                <div class="two-column">
+                    <div class="column">
+                        <h3>preventDefault() - หยุดพฤติกรรมเริ่มต้น</h3>
+                        <p>เช่น หยุดการส่งฟอร์ม หรือหยุดการเปิดลิงก์</p>
+                        <pre><code class="language-javascript">form.addEventListener('submit', function(event) {
+    event.preventDefault(); // หยุดการส่งฟอร์ม
+    // แสดงผลลัพธ์บนจอแทน alert
+    result.textContent = 'ฟอร์มถูกหยุด!';
+});</code></pre>
+                        <div class="demo-box">
+                            <form id="myForm_demo" style="display:contents;">
+                                <input type="text" id="myInput_demo" placeholder="ลองพิมพ์แล้วกด Enter">
+                                <button type="submit">ส่ง</button>
+                            </form>
+                            <p id="form_result_demo" style="margin-top:10px; font-size:1rem; color: var(--success-color);"></p>
+                        </div>
+                    </div>
+                    <div class="column">
+                        <h3>stopPropagation() - หยุดการส่งต่อ Event</h3>
+                        <p>ป้องกันไม่ให้ Event ถูกส่งต่อไปยัง Element แม่ (Bubbling)</p>
+                        <pre><code class="language-javascript">child.addEventListener('click', function(event) {
+    event.stopPropagation(); // หยุด Event ที่นี่
+    console.log('เฉพาะ Child ถูกคลิก');
+});</code></pre>
+                        <div class="demo-box">
+                             <div id="parent_demo" style="background: #a9cce3; padding: 20px; border-radius: 5px; cursor:pointer;">
+                                Parent Element
+                                <button id="child_demo" style="margin-left:10px;">Child Button</button>
+                            </div>
+                            <p id="stopPropagation_output" style="margin-top:10px; font-size:1rem;">(ดูผลลัพธ์ใน Console)</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="slide">
+            <div class="slide-content">
+                <h2>Mouse Events - การทำงานกับเมาส์ 🖱️</h2>
+                <p>เราสามารถดักจับการกระทำต่างๆ ของเมาส์ได้</p>
+                <div class="two-column">
+                    <div class="column">
+                        <h3>Code สร้าง Hover Effect:</h3>
+                        <pre><code class="language-javascript">let box = document.getElementById('hoverBox');
+
+// เมื่อเมาส์เข้ามาในพื้นที่
+box.addEventListener('mouseenter', function() {
+    this.textContent = 'เมาส์เข้ามาแล้ว!';
+    this.style.backgroundColor = '#1abc9c';
+});
+
+// เมื่อเมาส์ออกจากพื้นที่
+box.addEventListener('mouseleave', function() {
+    this.textContent = 'ลองเอาเมาส์มาวางที่นี่';
+    this.style.backgroundColor = '#3498db';
+});
+
+// เมื่อคลิกขวา
+box.addEventListener('contextmenu', function(event) {
+    event.preventDefault();
+    this.textContent = 'คุณคลิกขวา!';
+});</code></pre>
+                    </div>
+                    <div class="column">
+                        <h3>ผลลัพธ์:</h3>
+                        <div class="demo-box">
+                            <div id="hoverBox_demo" style="width:300px; height:150px; background:#3498db; color:white; display:flex; justify-content:center; align-items:center; border-radius:10px; cursor:pointer; transition: all 0.3s ease;">
+                                ลองเอาเมาส์มาวางที่นี่
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <section class="slide">
+            <div class="slide-content">
+                <h2>Keyboard Events - การทำงานกับคีย์บอร์ด ⌨️</h2>
+                <p>ดักจับการกดปุ่มต่างๆ เพื่อสร้าง Shortcuts หรือตรวจสอบข้อมูล</p>
+                 <div class="two-column">
+                    <div class="column">
+                        <h3>Code ตรวจสอบการพิมพ์:</h3>
+                        <pre><code class="language-javascript">let input = document.getElementById('textInput');
+
+// เกิดขึ้นเมื่อกดปุ่มลง
+input.addEventListener('keydown', function(event) {
+    console.log('Key Down:', event.key);
+    if (event.key === 'Enter') {
+        alert('คุณกด Enter!');
+    }
+});
+
+// เกิดขึ้นเมื่อมีการเปลี่ยนแปลงข้อความ
+input.addEventListener('input', function(event) {
+    let output = document.getElementById('inputRealtime');
+    output.textContent = "Real-time: " + this.value;
+});</code></pre>
+                    </div>
+                    <div class="column">
+                        <h3>ผลลัพธ์ (ลองพิมพ์ในช่อง):</h3>
+                        <div class="demo-box" style="width:100%;">
+                            <input type="text" id="textInput_demo" placeholder="พิมพ์ที่นี่แล้วกด Enter">
+                            <p id="inputRealtime_demo" style="margin-top: 10px;">Real-time:</p>
+                            <p style="font-size:0.9rem;">(ดู Console สำหรับ event 'keydown')</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="slide slide-question">
+            <div class="slide-content">
+                <h2>คำถาม 🤔</h2>
+                <p>ถ้าคุณต้องการสร้างปุ่มที่เมื่อกด Space Bar จะทำงานเหมือนกับการคลิก คุณจะเขียนอย่างไร?</p>
+                <div class="options-grid">
+                    <div class="option">
+                        <strong>A)</strong>
+                        <pre><code class="language-javascript">button.addEventListener('keypress', function(event) {
+    if (event.key === ' ') button.click();
+});</code></pre>
+                    </div>
+                     <div class="option">
+                        <strong>B)</strong>
+                        <pre><code class="language-javascript">document.addEventListener('keydown', function(event) {
+    if (event.key === ' ') button.click();
+});</code></pre>
+                    </div>
+                    <div class="option">
+                        <strong>C)</strong>
+                        <pre><code class="language-javascript">button.addEventListener('keydown', function(event) {
+    if (event.key === ' ' || event.code === 'Space') {
+        event.preventDefault();
+        this.click();
+    }
+});</code></pre>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="slide slide-answer">
+            <div class="slide-content">
+                <h2>เฉลย 🎯</h2>
+                <p style="font-size:2rem; font-weight:bold;">คำตอบคือ: C</p>
+                 <pre><code class="language-javascript">button.addEventListener('keydown', function(event) {
+    if (event.key === ' ' || event.code === 'Space') {
+        event.preventDefault(); // หยุดการ scroll หน้าจอ
+        this.click(); // จำลองการคลิกจริงๆ
+    }
+});</code></pre>
+                <h3>เหตุผล:</h3>
+                <ul>
+                    <li><strong><code>keydown</code></strong> ดีกว่า <code>keypress</code> (ที่กำลังจะเลิกใช้) และจับ event ได้เร็วกว่า <code>keyup</code></li>
+                    <li><strong><code>event.preventDefault()</code></strong> เป็นสิ่งสำคัญ เพื่อป้องกันพฤติกรรมปกติของ Space bar (คือการเลื่อนหน้าจอลง)</li>
+                    <li><strong><code>this.click()</code></strong> เป็นวิธีที่ดีที่สุดในการ trigger event การคลิกที่มีอยู่บนปุ่มนั้น</li>
+                </ul>
+            </div>
+        </section>
+        
+        <section class="slide">
+            <div class="slide-content">
+                <h2>Form Events - การทำงานกับฟอร์ม 📝</h2>
+                <p>ตรวจสอบข้อมูล (Validation) และจัดการการส่งข้อมูล</p>
+                <div class="two-column">
+                    <div class="column">
+                        <pre><code class="language-javascript">let username = document.getElementById('username');
+
+// เมื่อ focus ที่ input
+username.addEventListener('focus', function() {
+    this.style.backgroundColor = '#e3f2fd';
+});
+
+// เมื่อ focus หายไป (blur)
+username.addEventListener('blur', function() {
+    this.style.backgroundColor = '';
+    // Validation
+    if (this.value.length < 3) {
+        this.style.borderColor = 'red';
+    } else {
+        this.style.borderColor = 'green';
+    }
+});</code></pre>
+                    </div>
+                    <div class="column">
+                        <h3>ผลลัพธ์ (ลองคลิกเข้าและออกจากช่อง):</h3>
+                        <div class="demo-box" style="width:100%;">
+                           <form style="display:contents;">
+                               <input type="text" id="username_demo" placeholder="Username (ต้องมี 3+ ตัวอักษร)">
+                           </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <section class="slide">
+            <div class="slide-content">
+                <h2>ตัวอย่าง: Real-time Search 🔍</h2>
+                <p>สร้าง Search ที่ค้นหาข้อมูลจาก Array ขณะที่ผู้ใช้กำลังพิมพ์</p>
+                <div class="demo-box" id="demo12" style="width:80%; color: #333; text-align:left;">
+                    <input type="text" id="searchInput_demo" placeholder="ค้นหาสินค้า... (เช่น iPhone, MacBook)" style="width:100%;">
+                    <div id="searchResults_demo" style="margin-top:1rem; width:100%;"></div>
+                </div>
+                <p style="font-size:1.1rem; margin-top:1rem;">เทคนิคสำคัญ: ใช้ <strong>Debounce</strong> เพื่อลดการค้นหาที่บ่อยเกินไป ทำให้มี Performance ที่ดีขึ้น</p>
+            </div>
+        </section>
+
+        <section class="slide">
+             <div class="slide-content">
+                <h2>Demo Time - Interactive Calculator! 💻</h2>
+                <p>เครื่องคิดเลขที่ใช้งานได้ทั้งเมาส์และคีย์บอร์ด</p>
+                 <div id="demo13_calculator" style="width: 300px; margin: auto; padding: 20px; border-radius: 10px; background: #4a4a4a; box-shadow: 0 5px 15px rgba(0,0,0,0.5);">
+                    <input type="text" id="calc_display" readonly style="width: 100%; height: 50px; text-align: right; font-size: 2rem; padding: 10px; border-radius: 5px; background: #333; color: white; border: none;">
+                    <div id="calc_buttons" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 20px;">
+                    </div>
+                </div>
+             </div>
+        </section>
+
+        <section class="slide">
+            <div class="slide-content">
+                <h2>Touch Events สำหรับ Mobile 📱</h2>
+                <p>ทำให้เว็บรองรับการสัมผัสบนมือถือ เช่น การลาก (drag) หรือการปัด (swipe)</p>
+                <div class="two-column">
+                    <div class="column">
+                        <h3>Code สร้าง Swipe Gesture:</h3>
+                        <pre><code class="language-javascript">// รองรับทั้ง Touch และ Mouse
+let startX = 0;
+swipeArea.addEventListener('touchstart', (e) => {
+    startX = e.touches[0].clientX;
+});
+swipeArea.addEventListener('touchend', (e) => {
+    let endX = e.changedTouches[0].clientX;
+    handleSwipe(startX, endX);
+});
+swipeArea.addEventListener('mousedown', (e) => {
+    startX = e.clientX;
+});
+swipeArea.addEventListener('mouseup', (e) => {
+    let endX = e.clientX;
+    handleSwipe(startX, endX);
+});</code></pre>
+                    </div>
+                    <div class="column">
+                        <h3>ผลลัพธ์ (ลองปัด/ลากซ้ายขวาในกรอบนี้):</h3>
+                        <div class="demo-box">
+                            <div id="swipeArea_demo" style="width:300px; height:150px; background:#3498db; color:white; display:flex; justify-content:center; align-items:center; border-radius:10px; cursor:pointer; user-select:none;">
+                                ปัดซ้าย หรือ ขวา
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="slide">
+            <div class="slide-content">
+                <h2>Event Delegation - เทคนิคขั้นสูง 🎯</h2>
+                <p>คือการใช้ Event Listener เพียงตัวเดียวที่ Element แม่ เพื่อจัดการ Events ที่เกิดขึ้นใน Element ลูกๆ</p>
+                 <div class="two-column">
+                    <div class="column">
+                        <h3>❌ วิธีที่ไม่ดี (เพิ่ม Listener ทีละตัว)</h3>
+                        <p>มีปัญหา Performance และไม่ทำงานกับ Element ที่สร้างขึ้นมาใหม่</p>
+                         <div class="demo-box" style="width: 100%; align-items: flex-start;">
+                            <ul id="todoList_bad"><li>Task 1 <button class="delete">ลบ</button></li></ul>
+                            <button id="addTodo_bad">เพิ่ม Task (วิธีไม่ดี)</button>
+                             <p id="bad_note" style="font-size:0.9rem; margin-top:10px;"></p>
+                        </div>
+                    </div>
+                    <div class="column">
+                         <h3>✅ วิธีที่ดี (Event Delegation)</h3>
+                         <p>ใช้ Listener ตัวเดียวที่ <code>&lt;ul&gt;</code> จัดการได้ทุกปุ่ม ไม่ว่าจะมีกี่ปุ่มก็ตาม</p>
+                        <div class="demo-box" style="width: 100%; align-items: flex-start;">
+                            <ul id="todoList_good"><li>Task 1 <button class="delete">ลบ</button></li></ul>
+                            <button id="addTodo_good">เพิ่ม Task (วิธีดี)</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <section class="slide">
+            <div class="slide-content">
+                <h2>ตัวอย่าง Event Delegation ขั้นสูง 💡</h2>
+                <p>สร้างระบบปุ่มแบบ Dynamic ที่จัดการทุกอย่างผ่าน Listener ตัวเดียว</p>
+                <div class="demo-box" id="buttonContainer_demo" style="width:80%; align-items: flex-start; text-align:left;">
+                    <div id="controls_demo">
+                        <button data-action="add" data-target="red" style="background:#ff6b6b; color:white;">เพิ่มปุ่มแดง</button>
+                        <button data-action="add" data-target="blue" style="background:#4ecdc4; color:white;">เพิ่มปุ่มน้ำเงิน</button>
+                    </div>
+                    <hr style="width:100%; margin: 1rem 0;">
+                    <div id="dynamicButtons_demo"></div>
+                    <p style="font-size:1rem; margin-top:1rem;">คลิก: toggle | ดับเบิ้ลคลิก: animate | คลิก '×': ลบ</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="slide">
+            <div class="slide-content">
+                <h2>Custom Events - สร้าง Events เอง 🛠️</h2>
+                <p>ให้ Components สื่อสารกันได้โดยไม่ต้องผูกติดกัน (Decoupling)</p>
+                <div class="two-column">
+                    <div class="column">
+                        <h3>ตัวอย่าง: Shopping Cart</h3>
+                        <p>เมื่อมีการเพิ่ม/ลบสินค้าในตะกร้า เราจะส่ง (dispatch) Custom Event ออกไป</p>
+                        <pre><code class="language-javascript">class ShoppingCart {
+    addItem(product) {
+        //... logic ...
+        const event = new CustomEvent('itemAdded', {
+            detail: { product: product, total: this.items.length }
+        });
+        this.element.dispatchEvent(event);
+    }
+}</code></pre>
+                        <p>Component อื่นๆ (เช่น Navbar) สามารถ "ฟัง" event นี้เพื่ออัปเดต UI ได้</p>
+                         <pre><code class="language-javascript">cartElement.addEventListener('itemAdded', (e) => {
+    updateCartCount(e.detail.total);
+});</code></pre>
+                    </div>
+                    <div class="column">
+                        <h3>ผลลัพธ์:</h3>
+                        <div class="demo-box" style="width:100%; text-align:left;">
+                            <div id="cart_demo" style="border:1px solid #ccc; padding:10px; border-radius:5px;">
+                                <h4>My Cart UI</h4>
+                                <p>จำนวนสินค้า: <span id="itemCount_demo" style="font-weight:bold;">0</span></p>
+                            </div>
+                            <div style="margin-top:1rem;">
+                                <button id="addProduct1_demo">เพิ่ม iPhone</button>
+                                <button id="addProduct2_demo">เพิ่ม MacBook</button>
+                            </div>
+                            <div id="notification-area" style="position:fixed; top:20px; right:80px; z-index: 101;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="slide">
+            <div class="slide-content">
+                <h2>Window และ Document Events 🌐</h2>
+                <p>Events ที่เกี่ยวกับหน้าเว็บโดยรวม</p>
+                <ul>
+                    <li><code>DOMContentLoaded</code>: เกิดขึ้นเมื่อ HTML โหลดเสร็จ (ยังไม่รอรูป) - เหมาะกับการเริ่มรันสคริปต์</li>
+                    <li><code>load</code>: เกิดขึ้นเมื่อทุกอย่าง (รวมถึงรูปภาพ, CSS) โหลดเสร็จสมบูรณ์</li>
+                    <li><code>scroll</code>: เกิดขึ้นเมื่อผู้ใช้เลื่อนหน้าจอ (ใช้บ่อยกับ Throttling)</li>
+                    <li><code>resize</code>: เกิดขึ้นเมื่อมีการปรับขนาดหน้าต่างเบราว์เซอร์</li>
+                    <li><code>beforeunload</code>: เกิดขึ้นก่อนที่ผู้ใช้จะออกจากหน้าเว็บ (ใช้เพื่อเตือน "แน่ใจหรือไม่?")</li>
+                </ul>
+                <p><strong>ตัวอย่าง:</strong> แถบ Progress bar ด้านล่างของสไลด์นี้ ควบคุมด้วย <code>scroll</code> event (ในสไลด์ที่เนื้อหายาว) และการเปลี่ยนสไลด์</p>
+            </div>
+        </section>
+        
+        <section class="slide slide-question">
+            <div class="slide-content">
+                <h2>คำถาม 🤔</h2>
+                <p>ในการใช้ Event Delegation, ถ้าคุณต้องการให้การคลิกที่ child element <u>ไม่ส่งผล</u>ต่อ parent คุณควรใช้วิธีไหน?</p>
+                <div class="options-grid" style="grid-template-columns: 1fr;">
+                    <div class="option">A) <code>event.preventDefault()</code></div>
+                    <div class="option">B) <code>event.stopPropagation()</code></div>
+                    <div class="option">C) <code>event.stopImmediatePropagation()</code></div>
+                    <div class="option">D) <code>return false</code></div>
+                </div>
+                 <pre><code class="language-html">&lt;div id="parent"&gt;
+    &lt;button id="child"&gt;ปุ่มลูก&lt;/button&gt;
+&lt;/div&gt;</code></pre>
+            </div>
+        </section>
+
+        <section class="slide slide-answer">
+            <div class="slide-content">
+                <h2>เฉลย 🎯</h2>
+                <p style="font-size:2rem; font-weight:bold;">คำตอบคือ: B) <code>event.stopPropagation()</code></p>
+                <pre><code class="language-javascript">child.addEventListener('click', function(event) {
+    event.stopPropagation(); // หยุดการส่งต่อไปยัง parent (Bubbling)
+    console.log('เฉพาะ Child clicked');
+});</code></pre>
+                <h3>เหตุผล:</h3>
+                <ul>
+                    <li><code>preventDefault()</code>: หยุดพฤติกรรมเริ่มต้นของ element (เช่น submit form) แต่ไม่หยุดการส่งต่อ event.</li>
+                    <li><code>stopPropagation()</code>: <strong>หยุดการส่งต่อ event</strong> ไปยัง parent elements ใน phase bubbling หรือ capturing.</li>
+                    <li><code>stopImmediatePropagation()</code>: เหมือน <code>stopPropagation</code> แต่หยุด listener อื่นๆ บน <strong>element เดียวกัน</strong> ด้วย.</li>
+                </ul>
+            </div>
+        </section>
+
+        <section class="slide">
+            <div class="slide-content">
+                <h2>Keyboard Shortcuts และ Hotkeys ⌨️</h2>
+                <p>สร้างระบบ Shortcut เพื่อเพิ่มความสะดวกให้ผู้ใช้</p>
+                <div class="demo-box" style="width:80%;">
+                    <p>ลองกด Shortcut ต่อไปนี้:</p>
+                    <ul>
+                        <li><kbd>Ctrl</kbd> + <kbd>S</kbd> : บันทึก (จำลอง)</li>
+                        <li><kbd>Ctrl</kbd> + <kbd>N</kbd> : สร้างใหม่ (จำลอง)</li>
+                        <li><kbd>F1</kbd> : แสดง/ซ่อน ความช่วยเหลือ</li>
+                    </ul>
+                    <div id="shortcut_modal" style="display:none; margin-top:1rem; padding:1rem; border:1px solid #ccc; background:rgba(0,0,0,0.2);">
+                        <h3><i class="fa-solid fa-circle-info"></i> Help</h3>
+                        <p>นี่คือกล่องช่วยเหลือที่ถูกเปิดด้วย F1</p>
+                    </div>
+                </div>
+                <p style="margin-top:1rem;"><strong>เคล็ดลับ:</strong> สร้าง Class หรือ Function มาจัดการ Shortcut โดยเฉพาะจะทำให้โค้ดสะอาดและจัดการง่าย</p>
+            </div>
+        </section>
+
+        <section class="slide">
+            <div class="slide-content">
+                <h2>Drag and Drop API 🎪</h2>
+                <p>สร้าง Interface ให้ผู้ใช้ลากและวาง Elements ได้</p>
+                <div class="demo-box" style="width:90%; flex-direction:row; align-items:flex-start;">
+                    <div id="demo22_container">
+                        <div class="draggable-items">
+                            <h4>Items</h4>
+                            <div class="dd-item" draggable="true" data-id="1">รายการ 1</div>
+                            <div class="dd-item" draggable="true" data-id="2">รายการ 2</div>
+                            <div class="dd-item" draggable="true" data-id="3">รายการ 3</div>
+                        </div>
+                        <div class="drop-zones">
+                            <h4>Drop Here</h4>
+                            <div class="drop-zone" data-zone="done">เสร็จแล้ว</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="slide">
+            <div class="slide-content">
+                <h2>Demo Time - Image Gallery! 🖼️</h2>
+                <p>สร้าง Image Gallery ที่ควบคุมได้ด้วยเมาส์, คีย์บอร์ด (<kbd>←</kbd> <kbd>→</kbd>), และ Touch</p>
+                 <div id="gallery_demo" style="max-width: 600px; margin: auto; position: relative;">
+                    <div style="overflow: hidden; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.3);">
+                        <div id="gallery_track" style="display: flex; transition: transform 0.5s ease;">
+                            </div>
+                    </div>
+                    <button id="gallery_prev" class="nav-btn" style="position:absolute; top:50%; left:10px; transform:translateY(-50%); z-index:2; width:40px; height:40px; font-size:1.5rem;">❮</button>
+                    <button id="gallery_next" class="nav-btn" style="position:absolute; top:50%; right:10px; transform:translateY(-50%); z-index:2; width:40px; height:40px; font-size:1.5rem;">❯</button>
+                    <div id="gallery_thumbnails" style="display:flex; justify-content:center; gap:10px; margin-top:10px;"></div>
+                </div>
+            </div>
+        </section>
+
+        <section class="slide">
+            <div class="slide-content">
+                <h2>Performance และ Best Practices 🚀</h2>
+                <p>เขียน Event อย่างไรให้เว็บเร็วและลื่นไหล</p>
+                <div class="two-column">
+                    <div class="column">
+                        <h3>1. Throttling & Debouncing</h3>
+                        <p>เป็นเทคนิคที่สำคัญที่สุดสำหรับ Events ที่เกิดถี่ๆ เช่น <code>scroll</code>, <code>resize</code>, <code>input</code> เพื่อลดการทำงานที่ไม่จำเป็น</p>
+                        <h3>2. การลบ Event Listeners</h3>
+                        <p>เมื่อ Component หรือ Element ถูกทำลาย ควรลบ Listener ออกเสมอ เพื่อป้องกัน Memory Leaks</p>
+                        <pre><code class="language-javascript">element.removeEventListener('click', myFunction);</code></pre>
+                    </div>
+                    <div class="column">
+                        <h3>3. Passive Event Listeners</h3>
+                        <p>บอกเบราว์เซอร์ว่า Listener ของเราจะไม่เรียก <code>preventDefault()</code> ทำให้เบราว์เซอร์ทำงานได้ลื่นขึ้น (เช่น การ scroll)</p>
+                         <pre><code class="language-javascript">elem.addEventListener('touchstart', handleTouch, { passive: true });</code></pre>
+                         <h3>4. ใช้ Event Delegation</h3>
+                         <p>ลดจำนวน Listener ทั้งหมดในหน้าเว็บ ซึ่งช่วยประหยัด Memory และเพิ่ม Performance</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <section class="slide">
+            <div class="slide-content">
+                <h2>Accessibility (a11y) กับ Events ♿</h2>
+                <p>การทำให้ Events รองรับผู้พิการและผู้ใช้งาน Keyboard</p>
+                <ul>
+                    <li><strong>Keyboard Equivalents:</strong> ทุกการกระทำที่ทำด้วยเมาส์ได้ ควรทำด้วยคีย์บอร์ดได้เช่นกัน (เช่น กด <kbd>Enter</kbd>/<kbd>Space</kbd> บนปุ่ม)</li>
+                    <li><strong>Focus Management:</strong> เมื่อเปิด Modal ควรให้ Focus อยู่แค่ใน Modal นั้น (Focus Trapping) และเมื่อปิด Modal ควรคืน Focus กลับไปที่เดิม</li>
+                    <li><strong>ใช้ ARIA Attributes:</strong> ใช้ <code>role="button"</code>, <code>aria-label</code> เพื่อให้ Screen Readers เข้าใจความหมายของ Element</li>
+                    <li><strong>ทดสอบด้วย Keyboard:</strong> ลองใช้งานเว็บของคุณโดยไม่ใช้เมาส์เลย คุณสามารถเข้าถึงทุกส่วนได้หรือไม่?</li>
+                </ul>
+                <pre><code class="language-javascript">// ทำให้ Div ทำตัวเหมือนปุ่ม และเข้าถึงได้
+myDiv.setAttribute('role', 'button');
+myDiv.setAttribute('tabindex', '0'); // ทำให้ focus ได้
+
+myDiv.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        // ทำงานเหมือนคลิก
+    }
+});</code></pre>
+            </div>
+        </section>
+
+        <section class="slide slide-question">
+            <div class="slide-content">
+                <h2>คำถาม 🤔</h2>
+                <p>ถ้าคุณมี Search Input ที่ต้องการค้นหาขณะพิมพ์ แต่ไม่อยากให้ค้นหาบ่อยเกินไป (เพื่อลดภาระ API) คุณจะใช้เทคนิคไหน?</p>
+                <div class="options-grid" style="grid-template-columns: 1fr;">
+                    <div class="option">A) <strong>Throttling</strong> - จำกัดการค้นหาไม่เกิน X ครั้งต่อวินาที</div>
+                    <div class="option">B) <strong>Debouncing</strong> - รอให้หยุดพิมพ์ X มิลลิวินาทีแล้วค่อยค้นหา</div>
+                    <div class="option">C) <strong>setTimeout</strong> - ใช้ timer ธรรมดา</div>
+                    <div class="option">D) <strong>setInterval</strong> - ตั้งเวลาค้นหาเป็นระยะ</div>
+                </div>
+            </div>
+        </section>
+
+        <section class="slide slide-answer">
+            <div class="slide-content">
+                <h2>เฉลย 🎯</h2>
+                <p style="font-size:2rem; font-weight:bold;">คำตอบคือ: B) Debouncing</p>
+                <pre><code class="language-javascript">const debouncedSearch = debounce(performSearch, 300);
+// รอ 300ms หลังจากผู้ใช้หยุดพิมพ์ แล้วจึงเรียก performSearch()
+
+searchInput.addEventListener('input', (e) => {
+    debouncedSearch(e.target.value);
+});</code></pre>
+                <h3>เหตุผล:</h3>
+                <ul>
+                    <li><strong>Debouncing</strong> เหมาะกับงานที่ต้องการผลลัพธ์สุดท้ายหลังจากการกระทำสิ้นสุดลง เช่น การค้นหา, การตรวจสอบฟอร์ม, การ autosave.</li>
+                    <li><strong>Throttling</strong> เหมาะกับงานที่ต้องการอัปเดตอย่างต่อเนื่องแต่ไม่บ่อยเกินไป เช่น การติดตามการ scroll, การลากเมาส์.</li>
+                </ul>
+            </div>
+        </section>
+        
+        <section class="slide">
+            <div class="slide-content">
+                <h2>Event Bubbling และ Capturing 🎈</h2>
+                <p>การไหลของ Events ใน DOM Tree มี 2 ทิศทางหลัก</p>
+                <div class="two-column">
+                    <div class="column">
+                        <h3>Phase 1: Capturing (จากบนลงล่าง)</h3>
+                        <p>Event เดินทางจาก <code>&lt;html&gt;</code> ลงมาหา Target (ไม่ค่อยได้ใช้)</p>
+                        <pre><code class="language-javascript">// true ที่ argument ตัวที่ 3 คือการใช้ Capturing phase
+elem.addEventListener('click', func, true);</code></pre>
+                    </div>
+                    <div class="column">
+                        <h3>Phase 3: Bubbling (จากล่างขึ้นบน)</h3>
+                        <p>Event เดินทางจาก Target กลับขึ้นไปหา <code>&lt;html&gt;</code> (เป็น Default)</p>
+                        <pre><code class="language-javascript">// Default คือ Bubbling phase
+elem.addEventListener('click', func);</code></pre>
+                    </div>
+                </div>
+                 <p style="margin-top:2rem;"><strong>Event Delegation</strong> เป็นเทคนิคที่ใช้ประโยชน์จาก <strong>Event Bubbling</strong></p>
+            </div>
+        </section>
+
+        <section class="slide">
+            <div class="slide-content">
+                <h2>Error Handling ใน Events 🐛</h2>
+                <p>การป้องกันและจัดการข้อผิดพลาดที่อาจเกิดขึ้นใน Event Handlers</p>
+                 <pre><code class="language-javascript">// ใช้ try...catch ใน handler เพื่อจัดการ error เฉพาะจุด
+button.addEventListener('click', (event) => {
+    try {
+        // โค้ดที่อาจมี error
+        const data = JSON.parse("{ 'invalid json' }");
+    } catch (error) {
+        console.error('เกิดข้อผิดพลาดในการคลิก:', error);
+        // แสดงข้อความให้ผู้ใช้ทราบ
+        showUserFriendlyError();
+    }
+});
+
+// ใช้ Global Error Handler เพื่อดักจับ error ที่ไม่ถูกจัดการ
+window.addEventListener('error', (event) => {
+    console.error('Unhandled error:', event.error);
+    // ส่ง log ไปยัง service เช่น Sentry
+});</code></pre>
+                 <p>การมี Error Handling ที่ดีช่วยให้แอปพลิเคชันมีความเสถียรและสามารถแก้ไขปัญหาได้ง่ายขึ้น</p>
+            </div>
+        </section>
+        
+        <section class="slide">
+            <div class="slide-content">
+                <h2>สรุปและเทคนิคขั้นสูง 🎯</h2>
+                <h3>สิ่งที่เราเรียนรู้ใน 2 ชั่วโมง:</h3>
+                <div class="two-column">
+                    <div class="column">
+                        <h4>✅ Event Fundamentals:</h4>
+                        <ul>
+                            <li>Event Listeners และ Event Object</li>
+                            <li><code>preventDefault()</code> & <code>stopPropagation()</code></li>
+                        </ul>
+                        <h4>✅ Event Types:</h4>
+                        <ul>
+                            <li>Mouse, Keyboard, Form, Touch Events</li>
+                        </ul>
+                    </div>
+                    <div class="column">
+                        <h4>✅ Advanced Techniques:</h4>
+                        <ul>
+                            <li>Event Delegation</li>
+                            <li>Custom Events</li>
+                            <li>Performance (Throttling/Debouncing)</li>
+                            <li>Accessibility (a11y)</li>
+                        </ul>
+                    </div>
+                </div>
+                <p style="margin-top:2rem;"><strong>ทักษะที่ได้รับ:</strong> สร้างเว็บไซต์ที่ตอบสนองผู้ใช้ได้, จัดการ Events อย่างมีประสิทธิภาพ, และ Debug ปัญหา Events ได้</p>
+            </div>
+        </section>
+
+        <section class="slide">
+            <div class="slide-content">
+                <h2>โปรเจคตัวอย่างที่ใช้ Events 🌟</h2>
+                <h3>ตัวอย่างโปรเจคที่น่าสนใจเพื่อฝึกฝน:</h3>
+                <ul>
+                    <li>
+                        <strong>A. Drag & Drop Kanban Board:</strong>
+                        <p>ระบบจัดการงานแบบลากวาง (ใช้: <code>drag</code> events, <code>event delegation</code>, <code>custom events</code>)</p>
+                    </li>
+                    <li>
+                        <strong>B. Real-time Chat Interface:</strong>
+                        <p>แชทที่พิมพ์ได้เร็ว มี emoji picker (ใช้: <code>input</code> events, <code>keyboard shortcuts</code>, <code>custom events</code>)</p>
+                    </li>
+                     <li>
+                        <strong>C. Interactive Quiz Game:</strong>
+                        <p>เกมตอบคำถามพร้อม timer (ใช้: <code>click</code> events, <code>keyboard</code> events, <code>animations</code>)</p>
+                    </li>
+                </ul>
+                 <p style="margin-top:2rem;">เลือกโปรเจคที่สนใจไปลองทำดู! 💪</p>
+            </div>
+        </section>
+
+        <section class="slide">
+            <div class="slide-content">
+                 <h2>การเตรียมตัวสำหรับหัวข้อถัดไป 🚀</h2>
+                 <h3>หัวข้อที่ 3: Form Validation และ Local Storage (2 ชม.)</h3>
+                 <p>เราจะนำความรู้เรื่อง Events ที่เรียนในวันนี้ ไปต่อยอดเพื่อ:</p>
+                 <ul>
+                     <li>ตรวจสอบข้อมูลฟอร์มแบบ Real-time ด้วย <code>input</code>, <code>change</code> และ <code>submit</code> events</li>
+                     <li>ใช้ Regular Expressions สำหรับ pattern matching</li>
+                     <li>บันทึกข้อมูลในเบราว์เซอร์ด้วย Local Storage API</li>
+                     <li>สร้างเว็บแอปที่ "จำ" การตั้งค่าหรือข้อมูลของผู้ใช้ได้</li>
+                 </ul>
+                 <p style="font-size: 2rem; margin-top: 3rem;"><strong>Events + Form Validation + Storage = เว็บแอปที่ใช้งานได้จริง! 🎯</strong></p>
+            </div>
+        </section>
+        
+        <section class="slide">
+            <div class="slide-content">
+                <h2>การบ้านและท้าทาย 📚</h2>
+                <div class="two-column">
+                    <div class="column">
+                        <h3>ระดับพื้นฐาน (ต้องทำ):</h3>
+                        <ol>
+                            <li><strong>Interactive To-Do List Enhanced:</strong> เพิ่ม Keyboard shortcuts, Drag & Drop, Double-click to edit.</li>
+                            <li><strong>Simple Image Viewer:</strong> เพิ่ม Arrow keys navigation, Mouse wheel zoom.</li>
+                        </ol>
+                    </div>
+                    <div class="column">
+                        <h3>ระดับกลาง (ทำเพิ่ม):</h3>
+                        <ul>
+                            <li><strong>Event-driven Game:</strong> สร้างเกมง่ายๆ เช่น Snake Game หรือ Memory Card Game.</li>
+                        </ul>
+                        <h3>ระดับยาก (สำหรับผู้เก่ง):</h3>
+                         <ul>
+                            <li><strong>Multi-modal Interface:</strong> สร้างหน้าเว็บที่รองรับทั้ง Mouse, Keyboard, Touch, และ Voice Commands.</li>
+                        </ul>
+                    </div>
+                </div>
+                 <p style="margin-top:2rem;"><strong>เกณฑ์:</strong> ส่งงานผ่าน GitHub Repository พร้อม README และ Video Demo</p>
+            </div>
+        </section>
+
+        <section class="slide">
+            <div class="slide-content">
+                <h2>Tips สำหรับการพัฒนา Events 💡</h2>
+                <div class="two-column">
+                    <div class="column">
+                        <h3>1. การตั้งชื่อ Handler ที่ดี</h3>
+                        <p>ใช้ชื่อที่สื่อความหมาย เช่น <code>handleFormSubmit</code>, <code>onUserInputChange</code> แทน <code>handler1</code></p>
+                         <h3>2. การแยก Logic</h3>
+                         <p>อย่าเขียน Logic ทั้งหมดใน Event Handler แต่ให้เรียกใช้ฟังก์ชันอื่นที่แยกไว้ ทำให้โค้ดอ่านง่ายและ Test ง่าย</p>
+                    </div>
+                    <div class="column">
+                        <h3>3. Memory Management</h3>
+                        <p>อย่าลืม <code>removeEventListener</code> เมื่อไม่ใช้งาน Component นั้นแล้ว เพื่อป้องกัน Memory Leaks</p>
+                        <h3>4. การ Testing Events</h3>
+                        <p>สามารถจำลองการเกิด Event ได้ด้วย <code>element.dispatchEvent(new Event('click'))</code> เพื่อทดสอบการทำงาน</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="slide">
+            <div class="slide-content">
+                <h2>สรุปสุดท้ายและก้าวต่อไป 🎓</h2>
+                <h3>Event-driven Programming Mindset:</h3>
+                <p>หัวใจสำคัญคือการคิดในมุมของ "<strong>เมื่อ X เกิดขึ้น, ให้ทำ Y</strong>"</p>
+                <ul>
+                    <li>เมื่อผู้ใช้คลิก → แสดงข้อมูล</li>
+                    <li>เมื่อผู้ใช้พิมพ์ → ตรวจสอบข้อมูล</li>
+                    <li>เมื่อมีข้อผิดพลาด → แสดงข้อความ</li>
+                </ul>
+                <h3>เทคนิคที่ต้องจำ:</h3>
+                <ol>
+                    <li>ใช้ <strong><code>addEventListener</code></strong> มากกว่า <code>onclick</code></li>
+                    <li>ใช้ <strong>Event Delegation</strong> สำหรับ Dynamic Content</li>
+                    <li>ใช้ <strong><code>preventDefault()</code></strong> และ <strong><code>stopPropagation()</code></strong> เมื่อจำเป็น</li>
+                    <li>ใช้ <strong>Debouncing/Throttling</strong> เพื่อ Performance</li>
+                    <li>คิดถึง <strong>Accessibility</strong> เสมอ</li>
+                </ol>
+                <p style="margin-top:2rem; font-size:1.5rem;">"เว็บไซต์ของคุณตอบสนองผู้ใช้ได้ดีแค่ไหน?" ถ้าตอบได้ดี... <strong>คุณพร้อมสำหรับ Frontend Development แล้ว!</strong> 💪</p>
+            </div>
+        </section>
+        
+    </main>
+
+    <div id="progress-bar-container">
+        <div id="progress-bar"></div>
+    </div>
+    <div id="slide-counter"></div>
+    
+    <div class="view-controls">
+        <button id="font-decrease-btn" class="view-btn" title="ย่อขนาดตัวอักษร">A-</button>
+        <button id="font-increase-btn" class="view-btn" title="ขยายขนาดตัวอักษร">A+</button>
+        <button id="fullscreen-btn" class="view-btn" title="โหมดเต็มจอ"><i class="fa-solid fa-expand"></i></button>
+    </div>
+
+    <div class="nav-controls">
+        <button id="prevBtn" class="nav-btn">‹</button>
+        <button id="nextBtn" class="nav-btn">›</button>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const slides = document.querySelectorAll('.slide');
+            const progressBar = document.getElementById('progress-bar');
+            const slideCounter = document.getElementById('slide-counter');
+            let currentSlide = 0;
+
+            const showSlide = (index) => {
+                slides.forEach((slide, i) => slide.classList.toggle('active', i === index));
+                currentSlide = index;
+                updateUI();
+            };
+
+            const updateUI = () => {
+                const progress = ((currentSlide + 1) / slides.length) * 100;
+                progressBar.style.width = `${progress}%`;
+                slideCounter.textContent = `${currentSlide + 1} / ${slides.length}`;
+                location.hash = `#${currentSlide + 1}`;
+            };
+
+            // --- Navigation Logic ---
+            const nextBtn = document.getElementById('nextBtn');
+            const prevBtn = document.getElementById('prevBtn');
+            nextBtn.addEventListener('click', () => showSlide(Math.min(currentSlide + 1, slides.length - 1)));
+            prevBtn.addEventListener('click', () => showSlide(Math.max(currentSlide - 1, 0)));
+            document.addEventListener('keydown', (e) => {
+                if(e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+                if (e.key === 'ArrowRight' || e.key === 'PageDown') nextBtn.click();
+                else if (e.key === 'ArrowLeft' || e.key === 'PageUp') prevBtn.click();
+            });
+
+            // --- View Controls Logic ---
+            const fontIncreaseBtn = document.getElementById('font-increase-btn');
+            const fontDecreaseBtn = document.getElementById('font-decrease-btn');
+            const fullscreenBtn = document.getElementById('fullscreen-btn');
+            const root = document.documentElement;
+            let currentSize = 1.1; // Corresponds to --base-font-size: 110%
+            
+            const updateFontSize = (newSize) => {
+                currentSize = Math.max(0.7, Math.min(1.5, newSize)); // Clamp size
+                root.style.fontSize = `${currentSize * 100}%`;
+            };
+
+            fontIncreaseBtn.addEventListener('click', () => updateFontSize(currentSize + 0.1));
+            fontDecreaseBtn.addEventListener('click', () => updateFontSize(currentSize - 0.1));
+            
+            fullscreenBtn.addEventListener('click', () => {
+                if (!document.fullscreenElement) {
+                    root.requestFullscreen().catch(err => console.error(err));
+                } else {
+                    document.exitFullscreen();
+                }
+            });
+
+            document.addEventListener('fullscreenchange', () => {
+                const icon = fullscreenBtn.querySelector('i');
+                if (document.fullscreenElement) {
+                    icon.classList.replace('fa-expand', 'fa-compress');
+                } else {
+                    icon.classList.replace('fa-compress', 'fa-expand');
+                }
+            });
+
+            // --- Initial Load ---
+            const initialSlide = parseInt(location.hash.substring(1), 10) - 1;
+            showSlide(!isNaN(initialSlide) && initialSlide >= 0 && initialSlide < slides.length ? initialSlide : 0);
+
+            // --- Helper Functions ---
+            const debounce = (func, wait) => { let t; return function(...a) { clearTimeout(t); t = setTimeout(() => func.apply(this, a), wait); }; }
+            const throttle = (func, limit) => { let f=true; return function(...a) { if(f) { func.apply(this, a); f=false; setTimeout(() => f=true, limit); } }; }
+
+            // --- Interactive Demos Logic ---
+            
+            // Slide 4: Click Counter
+            (() => {
+                const b = document.getElementById('clickBtn_demo'), o = document.getElementById('output_demo');
+                if(!b || !o) return; let c = 0; b.addEventListener('click', () => o.textContent = `คลิกไปแล้ว ${++c} ครั้ง`);
+            })();
+            
+            // Slide 5: Mouse Tracker
+            (() => {
+                const d = document.getElementById('demo5'), m = document.getElementById('mouseInfo_demo');
+                if(!d || !m) return;
+                const updateMouse = throttle(e => {
+                    const r = d.getBoundingClientRect();
+                    m.textContent = `Mouse: (${Math.floor(e.clientX - r.left)}, ${Math.floor(e.clientY - r.top)})`;
+                }, 50);
+                d.addEventListener('mousemove', updateMouse);
+                d.addEventListener('mouseleave', () => m.textContent = 'Mouse: (x, y)');
+            })();
+
+            // Slide 6: preventDefault & stopPropagation (REVISED)
+            (() => {
+                const form = document.getElementById('myForm_demo');
+                const input = document.getElementById('myInput_demo');
+                const result = document.getElementById('form_result_demo');
+                if (form && input && result) {
+                    form.addEventListener('submit', e => {
+                        e.preventDefault();
+                        const inputValue = input.value || "(ไม่มีข้อมูล)";
+                        result.textContent = `preventDefault() ทำงาน! ฟอร์มไม่ถูกส่ง แต่เราดักจับข้อมูลได้: "${inputValue}"`;
+                        input.value = '';
+                        setTimeout(() => { result.textContent = ''; }, 4000);
+                    });
+                }
+                const p = document.getElementById('parent_demo'), c = document.getElementById('child_demo'), o = document.getElementById('stopPropagation_output');
+                if(!p || !c || !o) return;
+                p.addEventListener('click', () => { o.textContent = "Parent ถูกคลิก!"; console.log('Parent ถูกคลิก'); setTimeout(()=>o.textContent="(ดูผลลัพธ์ใน Console)", 2000); });
+                c.addEventListener('click', e => { e.stopPropagation(); o.textContent = "เฉพาะ Child ถูกคลิก!"; console.log('เฉพาะ Child ถูกคลิก'); setTimeout(()=>o.textContent="(ดูผลลัพธ์ใน Console)", 2000); });
+            })();
+
+            // Slide 7: Mouse Events
+            (() => {
+                const b = document.getElementById('hoverBox_demo'); if(!b) return;
+                b.addEventListener('mouseenter', function() { this.textContent = 'เมาส์เข้ามาแล้ว!'; this.style.backgroundColor = '#1abc9c'; });
+                b.addEventListener('mouseleave', function() { this.textContent = 'ลองเอาเมาส์มาวางที่นี่'; this.style.backgroundColor = '#3498db'; });
+                b.addEventListener('contextmenu', function(e) { e.preventDefault(); this.textContent = 'คุณคลิกขวา!'; });
+            })();
+            
+            // Slide 8: Keyboard Events
+            (() => {
+                const i = document.getElementById('textInput_demo'), o = document.getElementById('inputRealtime_demo'); if(!i || !o) return;
+                i.addEventListener('keydown', e => { console.log(`Key Down: ${e.key}, Code: ${e.code}`); if (e.key === 'Enter') { e.preventDefault(); alert('คุณกด Enter!'); } });
+                i.addEventListener('input', e => o.textContent = `Real-time: ${e.target.value}`);
+            })();
+            
+            // Slide 11: Form Events (focus/blur)
+            (() => {
+                const u = document.getElementById('username_demo'); if(!u) return;
+                u.addEventListener('focus', function() { this.style.backgroundColor = '#e3f2fd'; });
+                u.addEventListener('blur', function() { this.style.backgroundColor = ''; this.style.borderColor = this.value.length < 3 ? 'red' : 'green'; });
+            })();
+
+            // Slide 12: Real-time Search
+            (() => {
+                const p = ['iPhone 15', 'Samsung Galaxy S24', 'MacBook Pro', 'Dell XPS 13', 'iPad Air', 'Microsoft Surface', 'AirPods Pro', 'Sony WH-1000XM5', 'Canon EOS R5'];
+                const i = document.getElementById('searchInput_demo'), r = document.getElementById('searchResults_demo'); if(!i || !r) return;
+                const search = q => {
+                    if (!q) { r.innerHTML = ''; return; }
+                    const f = p.filter(item => item.toLowerCase().includes(q.toLowerCase()));
+                    r.innerHTML = f.length ? `<ul>${f.map(item => `<li>${item}</li>`).join('')}</ul>` : '<p>ไม่พบสินค้า</p>';
+                };
+                i.addEventListener('input', debounce(e => search(e.target.value), 300));
+            })();
+
+            // Slide 13: Calculator
+            (() => {
+                const d = document.getElementById('calc_display'), bc = document.getElementById('calc_buttons'); if(!d || !bc) return;
+                const btns = ['C', '/', '*', '-', '7', '8', '9', '+', '4', '5', '6', '=', '1', '2', '3', '0', '.'];
+                let expr = '';
+                const handleInput = val => {
+                    if(val === 'C') expr = '';
+                    else if(val === '=') try { expr = eval(expr.replace(/[^-()\d/*+.]/g, '')).toString(); } catch { expr = 'Error'; }
+                    else expr += val;
+                    d.value = expr;
+                };
+                btns.forEach(b => {
+                    const btn = document.createElement('button'); btn.textContent = b;
+                    btn.addEventListener('click', () => handleInput(b));
+                    if(b === '=') btn.style.gridRow = 'span 2';
+                    if(b === '0') btn.style.gridColumn = 'span 2';
+                    bc.appendChild(btn);
+                });
+            })();
+            
+            // Slide 14: Touch & Mouse Swipe Events (REVISED)
+            (() => {
+                const area = document.getElementById('swipeArea_demo'); if(!area) return; 
+                let startX = 0; let isDown = false;
+                
+                const handleSwipe = (start, end) => {
+                    if (start === 0) return;
+                    const deltaX = end - start;
+                    if (Math.abs(deltaX) > 50) area.textContent = deltaX > 0 ? '→ Swiped Right' : '← Swiped Left';
+                    else area.textContent = 'ปัดซ้าย หรือ ขวา';
+                    startX = 0;
+                };
+                // Touch
+                area.addEventListener('touchstart', e => startX = e.touches[0].clientX, {passive: true});
+                area.addEventListener('touchend', e => handleSwipe(startX, e.changedTouches[0].clientX));
+                // Mouse
+                area.addEventListener('mousedown', e => { startX = e.clientX; isDown = true; });
+                area.addEventListener('mouseup', e => { if(isDown) handleSwipe(startX, e.clientX); isDown = false; });
+                area.addEventListener('mouseleave', e => { if(isDown) handleSwipe(startX, e.clientX); isDown = false; });
+            })();
+
+            // Slide 15: Event Delegation
+            (() => {
+                const badList = document.getElementById('todoList_bad'), badBtn = document.getElementById('addTodo_bad'), badNote = document.getElementById('bad_note');
+                const goodList = document.getElementById('todoList_good'), goodBtn = document.getElementById('addTodo_good');
+                if(!badList || !goodList) return;
+                let badCount = 1, goodCount = 1;
+                // Bad way
+                const addBadListener = (btn) => btn.addEventListener('click', e => e.target.parentElement.remove());
+                document.querySelectorAll('#todoList_bad .delete').forEach(addBadListener);
+                badBtn.addEventListener('click', () => {
+                    const li = document.createElement('li'); li.innerHTML = `Task ${++badCount} <button class="delete">ลบ</button>`;
+                    badList.appendChild(li);
+                    badNote.textContent = 'ปุ่มที่เพิ่มมาใหม่จะกดลบไม่ได้!';
+                });
+                // Good way
+                goodBtn.addEventListener('click', () => {
+                    const li = document.createElement('li'); li.innerHTML = `Task ${++goodCount} <button class="delete">ลบ</button>`;
+                    goodList.appendChild(li);
+                });
+                goodList.addEventListener('click', e => { if(e.target.classList.contains('delete')) e.target.parentElement.remove(); });
+            })();
+            
+            // Slide 16: Advanced Delegation Demo
+            (() => {
+                const container = document.getElementById('buttonContainer_demo'), area = document.getElementById('dynamicButtons_demo');
+                if(!container || !area) return; let count = 0;
+                container.addEventListener('click', e => {
+                    const { action, target } = e.target.dataset;
+                    if(action === 'add') {
+                        const btn = document.createElement('button');
+                        btn.textContent = `${target} #${++count}`;
+                        btn.dataset.action = 'toggle'; btn.style.background = target; btn.style.color='white';
+                        btn.innerHTML += ' <span data-action="remove" style="cursor:pointer; background:rgba(255,255,255,0.3); border-radius:50%; padding:0 4px;">&times;</span>';
+                        area.appendChild(btn);
+                    } else if (action === 'remove') {
+                        e.target.parentElement.remove();
+                    } else if (action === 'toggle') {
+                        e.target.classList.toggle('active');
+                    }
+                });
+                 container.addEventListener('dblclick', e => { if (e.target.dataset.action === 'toggle') alert(`Button #${e.target.textContent.split('#')[1]} double-clicked!`); });
+            })();
+
+            // Slide 17: Custom Events Demo
+            (() => {
+                const cartEl = document.getElementById('cart_demo'), countEl = document.getElementById('itemCount_demo');
+                const add1 = document.getElementById('addProduct1_demo'), add2 = document.getElementById('addProduct2_demo');
+                const notifyArea = document.getElementById('notification-area');
+                if(!cartEl || !add1 || !add2) return;
+                let items = 0;
+                
+                const showNotification = msg => {
+                    const notif = document.createElement('div');
+                    notif.textContent = msg;
+                    notif.style.cssText = 'background:var(--success-color); color:white; padding:10px; border-radius:5px; margin-bottom:10px;';
+                    notifyArea.appendChild(notif);
+                    setTimeout(() => notif.remove(), 2000);
+                }
+
+                cartEl.addEventListener('itemAdded', e => {
+                    countEl.textContent = e.detail.total;
+                    showNotification(`เพิ่ม ${e.detail.product} แล้ว`);
+                });
+
+                const addItem = product => {
+                    const event = new CustomEvent('itemAdded', { detail: { product, total: ++items }, bubbles: true });
+                    cartEl.dispatchEvent(event);
+                };
+                add1.addEventListener('click', () => addItem('iPhone'));
+                add2.addEventListener('click', () => addItem('MacBook'));
+            })();
+
+            // Slide 21: Keyboard Shortcuts
+            (() => {
+                const modal = document.getElementById('shortcut_modal'); if(!modal) return;
+                const feedback = msg => alert(msg);
+                document.addEventListener('keydown', e => {
+                    if (e.ctrlKey && e.key === 's') { e.preventDefault(); feedback('บันทึกข้อมูล (จำลอง)'); }
+                    if (e.ctrlKey && e.key === 'n') { e.preventDefault(); feedback('สร้างเอกสารใหม่ (จำลอง)'); }
+                    if (e.key === 'F1') { e.preventDefault(); modal.style.display = modal.style.display === 'none' ? 'block' : 'none'; }
+                });
+            })();
+            
+            // Slide 22: Drag & Drop
+            (() => {
+                const items = document.querySelectorAll('#demo22_container .dd-item');
+                const zones = document.querySelectorAll('#demo22_container .drop-zone');
+                if(items.length === 0) return;
+                let draggedItem = null;
+                items.forEach(item => {
+                    item.addEventListener('dragstart', () => { draggedItem = item; setTimeout(()=>item.classList.add('dragging'), 0); });
+                    item.addEventListener('dragend', () => { draggedItem.classList.remove('dragging'); draggedItem=null; });
+                });
+                zones.forEach(zone => {
+                    zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); });
+                    zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+                    zone.addEventListener('drop', e => { e.preventDefault(); zone.classList.remove('drag-over'); if(draggedItem) zone.appendChild(draggedItem); });
+                });
+            })();
+            
+            // Slide 23: Image Gallery
+            (() => {
+                const track = document.getElementById('gallery_track'), thumbs = document.getElementById('gallery_thumbnails');
+                const prev = document.getElementById('gallery_prev'), next = document.getElementById('gallery_next');
+                if(!track) return;
+                const images = [1,2,3,4,5].map(i=>`https://picsum.photos/600/400?random=${i}`);
+                let currentIndex = 0;
+                
+                images.forEach((src, i) => {
+                    track.innerHTML += `<img src="${src}" style="width:100%; flex-shrink:0;">`;
+                    thumbs.innerHTML += `<img src="${src}" data-index="${i}" style="width:60px; height:40px; cursor:pointer; border:2px solid transparent; border-radius:4px; opacity:0.7;">`;
+                });
+                
+                const updateGallery = () => {
+                    track.style.transform = `translateX(-${currentIndex * 100}%)`;
+                    document.querySelectorAll('#gallery_thumbnails img').forEach((img, i) => {
+                        img.style.borderColor = i === currentIndex ? 'var(--primary-color)' : 'transparent';
+                        img.style.opacity = i === currentIndex ? 1 : 0.7;
+                    });
+                };
+                
+                const goTo = i => { currentIndex = (i + images.length) % images.length; updateGallery(); };
+
+                next.addEventListener('click', () => goTo(currentIndex + 1));
+                prev.addEventListener('click', () => goTo(currentIndex - 1));
+                thumbs.addEventListener('click', e => { if(e.target.dataset.index) goTo(parseInt(e.target.dataset.index)); });
+                document.addEventListener('keydown', e => {
+                    if(slides[22].classList.contains('active')) {
+                        if(e.key === 'ArrowRight') next.click();
+                        if(e.key === 'ArrowLeft') prev.click();
+                    }
+                });
+                updateGallery();
+            })();
+        });
+    </script>
+</body>
+</html>
