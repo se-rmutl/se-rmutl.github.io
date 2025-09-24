@@ -1,0 +1,1726 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ENGSE203 - Week 12: Electron.js for Software Engineers</title>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #0D204E; /* RMUTL Navy Blue */
+            --secondary-color: #4A90E2; /* Electron Blue */
+            --accent-color: #10B981; /* Tech Green */
+            --background-gradient: linear-gradient(135deg, #0D204E 0%, #1a3a8a 100%);
+            --slide-bg: rgba(255, 255, 255, 0.98);
+            --text-color: #333;
+            --header-color: #0D204E;
+            --base-font-size: clamp(16px, 1.5vw, 24px);
+            --border-radius: 15px;
+            --code-font: 'Fira Code', 'Courier New', monospace;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { overflow: hidden; height: 100%; }
+
+        body {
+            font-family: 'Sarabun', sans-serif;
+            background: var(--background-gradient);
+            color: var(--text-color);
+            font-size: 16px; 
+            line-height: 1.7;
+        }
+        
+        .presentation {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2vh 3vw; 
+        }
+
+        .slide {
+            background: var(--slide-bg);
+            padding: 30px 40px 80px 40px;
+            border-radius: var(--border-radius);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+            width: 100%;
+            height: 100%;
+            font-size: var(--base-font-size);
+            overflow-y: auto;
+            display: none;
+            animation: fadeIn 0.5s ease-in-out;
+            position: relative;
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .slide::-webkit-scrollbar { display: none; }
+
+        .slide.active { display: block; }
+        
+        .title-slide.active {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            background: var(--background-gradient);
+            color: white;
+        }
+        
+        .title-slide h1, .title-slide h2, .title-slide h3, .title-slide p {
+            color: white !important;
+        }
+        .title-slide h1 { font-size: 3em; margin-bottom: 10px; border: none;}
+        .title-slide h2 { font-size: 2em; margin-bottom: 20px; border: none; }
+        .title-slide h3 { font-size: 1.5em; font-weight: 400; opacity: 0.9; }
+
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.98); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .progress-bar-container {
+            position: fixed; top: 0; left: 0; width: 100%; height: 8px;
+            background-color: rgba(255, 255, 255, 0.2); z-index: 2000;
+        }
+
+        .progress-bar {
+            height: 100%; width: 0%;
+            background: linear-gradient(120deg, var(--secondary-color) 0%, #7db5f1 100%);
+            transition: width 0.3s ease-out;
+        }
+
+        .presentation-controls {
+            position: fixed; bottom: 15px; left: 50%;
+            transform: translateX(-50%);
+            display: flex; align-items: center; gap: 10px;
+            background: rgba(13, 32, 78, 0.9);
+            padding: 10px 15px;
+            border-radius: 50px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(8px); z-index: 1000;
+        }
+
+        .nav-btn, .font-btn, .fullscreen-btn {
+            background: transparent; color: white; border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex; align-items: center; justify-content: center;
+            width: 45px; height: 45px;
+            font-size: 1.5rem;
+        }
+        .nav-btn:hover:not(:disabled), .font-btn:hover, .fullscreen-btn:hover { 
+            background: var(--secondary-color); 
+            transform: translateY(-2px); 
+        }
+        .nav-btn:disabled { background-color: transparent; color: #777; cursor: not-allowed; transform: none;}
+        
+        #slide-counter { 
+            color: white; 
+            font-weight: 500; 
+            font-size: 1.1em; 
+            min-width: 70px;
+            text-align: center; 
+        }
+
+        .slide-number {
+            position: absolute; top: 15px; right: 20px;
+            background: rgba(13, 32, 78, 0.8); color: white;
+            padding: 5px 12px; border-radius: 15px; font-size: 0.8em; font-weight: 600;
+        }
+        
+        .slide h2 { 
+            font-size: 2.2em; 
+            color: var(--header-color);
+            border-bottom: 3px solid var(--secondary-color); 
+            padding-bottom: 8px; 
+            margin-top: 1em; 
+            margin-bottom: 1em;
+            font-weight: 700;
+        }
+        .slide h3 { 
+            font-size: 1.6em; 
+            color: var(--primary-color);
+            margin-top: 1.5em; 
+            font-weight: 700;
+        }
+
+        p, ul, ol { font-size: 1em; max-width: 85ch; }
+
+        ul.checklist li::before {
+             content: "✅"; color: var(--accent-color);
+        }
+        
+        ul.crosslist li::before {
+             content: "❌"; color: #c0392b;
+        }
+
+        ul { list-style: none; padding-left: 0; }
+        ul li {
+            position: relative; padding-left: 30px; margin-bottom: 12px;
+        }
+        ul li::before {
+            content: "▶"; color: var(--primary-color); position: absolute;
+            left: 0; top: 0px; font-size: 1.1em;
+        }
+        
+        pre {
+            background: #2d3142; color: #e0e0e0; border-radius: 10px;
+            padding: 20px; margin: 15px 0; font-family: var(--code-font);
+            font-size: 0.85em; overflow-x: auto; line-height: 1.6;
+        }
+        code { font-family: var(--code-font); background-color: rgba(0,0,0,0.05); padding: 2px 5px; border-radius: 4px;}
+        
+        .solution { border-left: 4px solid var(--accent-color); background: #e8f8f5; padding: 15px; margin: 10px 0; border-radius: 0 8px 8px 0; }
+        .anti-pattern { border-left: 4px solid #c0392b; background: #fdedec; padding: 15px; margin: 10px 0; border-radius: 0 8px 8px 0;}
+
+        table {
+            width: 100%; border-collapse: collapse; margin: 20px 0; 
+            font-size: 0.8em; box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            border-radius: var(--border-radius);
+            overflow: hidden;
+        }
+        table th { background: var(--header-color); color: white; padding: 12px; text-align: left; }
+        table td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+        table tr:nth-child(even) { background: #f9f9f9; }
+        table td:first-child { font-weight: bold; }
+
+        .mermaid-container {
+            background-color: #f8f9fa;
+            border: 1px solid #e0e0e0;
+            border-radius: var(--border-radius);
+            padding: 20px;
+            margin-top: 20px;
+            /* display: flex; */
+            justify-content: center;
+            align-items: center;
+            min-height: 40vh;
+            flex-direction: column;
+        }
+        .mermaid-container svg {
+            max-width: 100%;
+            height: auto;
+        }
+        pre.mermaid {
+            background: transparent;
+            text-align: center;
+            width: 100%;
+        }
+        
+        .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 25px; margin: 20px 0; align-items: stretch; }
+        .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; align-items: stretch;}
+        .grid-4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; align-items: stretch;}
+
+
+        .infographic-card {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-top: 5px solid var(--primary-color);
+            border-radius: var(--border-radius);
+            padding: 25px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+        }
+        .infographic-card .icon {
+            font-size: 3.5em;
+            margin-bottom: 15px;
+            color: var(--primary-color);
+        }
+        .infographic-card h4 {
+            font-size: 1.2em;
+            color: var(--header-color);
+            margin: 0 0 10px;
+        }
+        .infographic-card p, .infographic-card ul {
+            font-size: 0.9em;
+            color: #555;
+            flex-grow: 1;
+            text-align: left;
+            width: 100%;
+        }
+        
+        blockquote {
+            border-left: 5px solid var(--secondary-color);
+            margin: 1.5em 0;
+            padding: 1em 1.5em;
+            background-color: #eaf3fc;
+            font-style: italic;
+        }
+        .highlight {
+            background-color: var(--secondary-color);
+            color: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+
+    </style>
+</head>
+<body>
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+        mermaid.initialize({
+            startOnLoad: false, 
+            flowchart: { htmlLabels: true }
+        });
+        window.mermaid = mermaid;
+    </script>
+
+    <div class="progress-bar-container">
+        <div class="progress-bar" id="progress-bar"></div>
+    </div>
+
+    <div class="presentation">
+
+        <section class="slide title-slide active">
+            <h2>ENGSE203: การเขียนโปรแกรมสำหรับวิศวกรซอฟต์แวร์</h2>
+            <h1>สัปดาห์ที่ 12: Cross-Platform Development ด้วย Electron.js</h1>
+            <h3 style="margin-top: 30px;">From Web to Desktop: การสร้าง Desktop Applications ด้วย JavaScript</h3>
+            <p style="font-size: 1.2em; opacity: 0.9;">มหาวิทยาลัยเทคโนโลยีราชมงคลล้านนา (ดอยสะเก็ด)</p>
+            <div class="slide-number">1/27</div>
+        </section>
+
+        <section class="slide">
+            <h2>🎯 ภาพรวมและเป้าหมายการเรียนรู้</h2>
+            <div class="grid-3">
+                <div class="infographic-card">
+                    <div class="icon">📖</div>
+                    <h4>เป้าหมายการเรียนรู้</h4>
+                    <p>
+                        <ul>
+                            <li>เข้าใจพื้นฐานและสถาปัตยกรรมของ Electron.js</li>
+                            <li>สร้าง Desktop App ด้วยเทคโนโลยีเว็บ (HTML, CSS, JS)</li>
+                            <li>จัดการการสื่อสารระหว่าง Process และ Native APIs</li>
+                            <li>เชื่อมต่อกับ External APIs และ Real-time Features</li>
+                            <li>Package และแจกจ่าย Desktop App ของเราได้</li>
+                        </ul>
+                    </p>
+                </div>
+                <div class="infographic-card" style="border-top-color: var(--secondary-color);">
+                    <div class="icon">✅</div>
+                    <h4>ความรู้พื้นฐานที่ต้องมี</h4>
+                     <p>
+                        <ul>
+                            <li>JavaScript ES6+ fundamentals</li>
+                            <li>HTML/CSS พื้นฐาน</li>
+                            <li>Node.js และ npm</li>
+                            <li>ความเข้าใจ Web Development ทั่วไป</li>
+                        </ul>
+                    </p>
+                </div>
+                <div class="infographic-card" style="border-top-color: var(--accent-color);">
+                    <div class="icon">🧪</div>
+                    <h4>โครงสร้าง Labs (5 Labs)</h4>
+                     <p>
+                        <ul>
+                            <li><b>Lab 8.1:</b> Hello Electron</li>
+                            <li><b>Lab 8.2:</b> IPC Communication</li>
+                            <li><b>Lab 8.3:</b> Native APIs</li>
+                            <li><b>Lab 8.4:</b> Real-time Features</li>
+                            <li><b>Lab 8.5:</b> Building & Distribution</li>
+                        </ul>
+                    </p>
+                </div>
+            </div>
+            <div class="slide-number">2/27</div>
+        </section>
+
+        <section class="slide">
+            <h2>🤔 ทำไมต้องใช้ Electron?</h2>
+            <div class="grid-2">
+                <div class="anti-pattern">
+                    <h4>❌ ปัญหาของ Traditional Desktop Development</h4>
+                    <div class="mermaid-container">
+                        <pre class="mermaid">
+                        graph TD
+                            A[Desktop App Requirements] --> B[Windows - C#/.NET]
+                            A --> C[macOS - Swift/Objective-C]
+                            A --> D[Linux - Qt/GTK]
+                            
+                            B & C & D --> E[Different Codebases]
+                            
+                            E --> F[High Development Cost]
+                            E --> G[Separate Teams Required]
+                            E --> H[Different UI Frameworks]
+                        </pre>
+                    </div>
+                </div>
+                 <div class="solution">
+                    <h4>✅ Solution: Electron.js</h4>
+                    <div class="mermaid-container">
+                        <pre class="mermaid">
+                        graph TD
+                            A[One Codebase] --> B[HTML/CSS/JS]
+                            B --> C[Electron Framework]
+                            C --> D[Windows .exe]
+                            C --> E[macOS .app]
+                            C --> F[Linux .deb/.rpm]
+                            
+                            G[Benefits] --> H[Code Reuse]
+                            G --> I[Faster Development]
+                            G --> J[Single Team]
+                        </pre>
+                    </div>
+                </div>
+            </div>
+            <h3>🏆 แอปพลิเคชันชื่อดังที่ใช้ Electron.js</h3>
+            <p><strong>VS Code, Discord, Slack, WhatsApp Desktop, Figma</strong> และอีกมากมาย</p>
+            <div class="slide-number">3/27</div>
+        </section>
+
+        <section class="slide">
+            <h2>🏗️ สถาปัตยกรรมของ Electron (Architecture)</h2>
+            <div class="grid-2">
+                <div>
+                    <h4>🔑 Key Concepts:</h4>
+                    <ul>
+                        <li><strong class="highlight">Main Process:</strong> เป็น "สมอง" ของแอปพลิเคชัน ทำงานบน Node.js มีเพียง 1 ตัว จัดการหน้าต่าง, event ของแอป และเข้าถึง Native APIs ของ OS ได้โดยตรง</li>
+                        <li><strong class="highlight">Renderer Process:</strong> คือ "หน้าจอ" ที่เราเห็น แต่ละหน้าต่าง (BrowserWindow) คือ 1 Renderer Process ทำงานบน Chromium แสดงผล HTML/CSS และรัน JavaScript ของ UI</li>
+                        <li><strong class="highlight">IPC (Inter-Process Communication):</strong> คือ "สะพานสื่อสาร" ระหว่าง Main และ Renderer Process เนื่องจากทั้งสองทำงานแยกกันโดยสิ้นเชิงเพื่อความปลอดภัย</li>
+                        <li><strong class="highlight">Preload Scripts:</strong> เป็นสคริปต์ที่ทำงานใน Renderer Process แต่สามารถเข้าถึง Node.js APIs บางส่วนได้ ใช้เป็นตัวกลางที่ปลอดภัยในการสื่อสารผ่าน IPC</li>
+                    </ul>
+                </div>
+                <div class="mermaid-container">
+                    <pre class="mermaid">
+                    graph TB
+                        subgraph "Electron Application"
+                            subgraph "Main Process (Node.js)"
+                                MP[Main Process]
+                                MP --> NA[Native APIs]
+                                MP --> FS[File System Access]
+                            end
+                            
+                            subgraph "Renderer Process (Chromium)"
+                                RP[Renderer Process]
+                                RP --> UI[HTML/CSS UI]
+                                RP --> JS[JavaScript Logic]
+                            end
+                            
+                            subgraph "Security Layer"
+                                PL[Preload Scripts]
+                                CB[Context Bridge]
+                            end
+                            
+                            MP <-->|IPC| PL
+                            PL <--> CB
+                            CB -- Exposes APIs --> RP
+                        end
+                        
+                        MP --> OS[Operating System]
+                    </pre>
+                </div>
+            </div>
+            <div class="slide-number">4/27</div>
+        </section>
+        
+        <section class="slide">
+            <h2>🆚 Web vs Desktop: เมื่อไหร่ควรใช้ Electron?</h2>
+            <h3>เปรียบเทียบความสามารถ</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Feature</th>
+                        <th>🌐 Web Apps (ใน Browser)</th>
+                        <th>⚡ Electron Apps</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>File System Access</strong></td>
+                        <td>❌ จำกัดมาก</td>
+                        <td>✅ <span class="highlight">เข้าถึงได้เต็มที่ (ผ่าน Main Process)</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Native Notifications</strong></td>
+                        <td>⚠️ ขึ้นอยู่กับ Browser</td>
+                        <td>✅ <span class="highlight">Native OS</span></td>
+                    </tr>
+                     <tr>
+                        <td><strong>System Tray</strong></td>
+                        <td>❌ ไม่มี</td>
+                        <td>✅ <span class="highlight">มี</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Offline Mode</strong></td>
+                        <td>⚠️ จำกัด (PWA)</td>
+                        <td>✅ <span class="highlight">ทำงานได้เต็มที่</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Auto Updates</strong></td>
+                        <td>✅ อัตโนมัติ</td>
+                        <td>✅ <span class="highlight">มีระบบในตัว (Built-in)</span></td>
+                    </tr>
+                     <tr>
+                        <td><strong>Resource Usage</strong></td>
+                        <td>✅ ต่ำ</td>
+                        <td>❌ <span class="highlight">สูงกว่า</span> (เพราะมี Chromium + Node.js)</td>
+                    </tr>
+                </tbody>
+            </table>
+             <div class="grid-2">
+                <div class="infographic-card" style="border-top-color: var(--accent-color);">
+                    <div class="icon">👍</div>
+                    <h4>💡 When to Use Electron</h4>
+                     <ul class="checklist">
+                        <li>ต้องการสร้างแอป Cross-platform (Win/Mac/Linux)</li>
+                        <li>มีทีมพัฒนาเว็บอยู่แล้ว (HTML/CSS/JS)</li>
+                        <li>ต้องการสร้าง Prototype อย่างรวดเร็ว</li>
+                        <li>ต้องการ UI/UX ที่สวยงามซับซ้อน</li>
+                        <li>ต้องเชื่อมต่อกับ Web Services เป็นหลัก</li>
+                    </ul>
+                </div>
+                 <div class="infographic-card" style="border-top-color: #c0392b;">
+                    <div class="icon">👎</div>
+                    <h4>❌ When NOT to Use Electron</h4>
+                    <ul class="crosslist">
+                        <li>แอปที่ต้องการ Performance สูงสุด (เกม, ตัดต่อวิดีโอ)</li>
+                        <li>แอปที่ต้องทำงานในเครื่องที่มีทรัพยากรจำกัด</li>
+                        <li>ต้องการใช้ฟีเจอร์เฉพาะของ OS นั้นๆ อย่างลึกซึ้ง</li>
+                        <li>โปรเจกต์ที่เป็น Mobile-first</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="slide-number">5/27</div>
+        </section>
+
+        <section class="slide">
+            <h2>🚀 เริ่มต้นโปรเจกต์ - Project Setup</h2>
+            <h3>ขั้นตอนการติดตั้ง</h3>
+            <div class="mermaid-container">
+                <pre class="mermaid">
+                sequenceDiagram
+                    participant Dev as Developer
+                    participant Terminal as Terminal/CMD
+                    participant NPM as npm Registry
+                    
+                    Dev->>Terminal: mkdir my-electron-app && cd my-electron-app
+                    Dev->>Terminal: npm init -y
+                    Terminal->>NPM: Request package.json
+                    NPM-->>Terminal: Creates package.json
+                    Dev->>Terminal: npm install electron --save-dev
+                    Terminal->>NPM: Request electron package
+                    NPM-->>Terminal: Download Electron binaries
+                    Dev->>Dev: Create main.js, index.html
+                    Dev->>Terminal: npm start
+                    Terminal-->>Dev: Launches Desktop App
+                </pre>
+            </div>
+            <h3>📄 ไฟล์ package.json ที่สำคัญ</h3>
+            <pre><code class="language-json">
+{
+  "name": "my-electron-app",
+  "version": "1.0.0",
+  "description": "My first Electron app",
+  "main": "main.js", // <-- จุดเริ่มต้นของ Main Process
+  "scripts": {
+    "start": "electron ." // <-- คำสั่งสำหรับรันแอป
+  },
+  "devDependencies": {
+    "electron": "^29.1.0" // <-- Dependency หลัก
+  }
+}
+</code></pre>
+            <div class="slide-number">6/27</div>
+        </section>
+
+        <section class="slide">
+            <h2>🖥️ Main Process: หัวใจของแอปพลิเคชัน</h2>
+            <div class="grid-2">
+                <div>
+                    <h3>หน้าที่หลักของ Main Process</h3>
+                    <ul>
+                        <li><strong>จัดการ Application Lifecycle:</strong> ควบคุมการเปิด, ปิด, หรือเหตุการณ์ต่างๆ ของแอป</li>
+                        <li><strong>สร้างและจัดการหน้าต่าง (BrowserWindow):</strong> กำหนดขนาด, ตำแหน่ง, และคุณสมบัติของหน้าต่าง</li>
+                        <li><strong>เข้าถึง Native APIs:</strong> เช่น การแสดง Dialog, Notifications, หรือการเข้าถึงไฟล์ในเครื่อง</li>
+                        <li><strong>เป็นศูนย์กลางของ IPC:</strong> รับ-ส่งข้อมูลกับทุก Renderer Process</li>
+                    </ul>
+                     <h3>🎯 Key APIs ที่ใช้บ่อย</h3>
+                     <ul>
+                         <li><code>app</code> - ควบคุม Lifecycle ของแอปพลิเคชัน</li>
+                         <li><code>BrowserWindow</code> - สำหรับสร้างและควบคุมหน้าต่าง</li>
+                         <li><code>ipcMain</code> - จัดการการสื่อสาร IPC ฝั่ง Main Process</li>
+                         <li><code>Menu</code> - สร้าง Application menus (File, Edit, etc.)</li>
+                         <li><code>Tray</code> - จัดการไอคอนใน System Tray</li>
+                     </ul>
+                </div>
+                <div>
+                    <h3>🔧 โค้ดพื้นฐานของ `main.js`</h3>
+                    <pre><code class="language-javascript">
+const { app, BrowserWindow } = require('electron');
+const path = require('path');
+
+function createWindow() {
+  const mainWindow = new BrowserWindow({
+    width: 800,
+    height: 600,
+    webPreferences: {
+      // 🔒 การตั้งค่าด้านความปลอดภัยที่สำคัญ
+      preload: path.join(__dirname, 'preload.js') 
+    }
+  });
+
+  mainWindow.loadFile('index.html');
+}
+
+// เมื่อแอปพร้อมทำงาน ให้สร้างหน้าต่าง
+app.whenReady().then(createWindow);
+
+// ปิดแอปเมื่อหน้าต่างทั้งหมดถูกปิด (ยกเว้นบน macOS)
+app.on('window-all-closed', () => {
+  if (process.platform !== 'darwin') {
+    app.quit();
+  }
+});
+                    </code></pre>
+                </div>
+            </div>
+            <div class="slide-number">7/27</div>
+        </section>
+
+        <section class="slide">
+            <h2>🎨 Renderer Process: ส่วนติดต่อผู้ใช้ (UI)</h2>
+            <div class="grid-2">
+                 <div>
+                    <h3>สถาปัตยกรรมของ Renderer Process</h3>
+                    <div class="mermaid-container">
+                        <pre class="mermaid">
+                        graph TD
+                            RP[Renderer Process] --> CE[Chromium Engine]
+                            RP --> WA[Web APIs]
+                            RP --> IPC[IPC Client]
+                            
+                            CE --> HTML[HTML Rendering]
+                            CE --> CSS[CSS Styling]
+                            CE --> JS[JavaScript Execution]
+                            
+                            subgraph "Security Boundary"
+                                PL[Preload Script]
+                            end
+                            
+                            IPC --> PL
+                        </pre>
+                    </div>
+                </div>
+                 <div>
+                    <h3>🎨 โค้ดพื้นฐาน `index.html`</h3>
+                    <pre><code class="language-html">
+&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;head&gt;
+  &lt;meta charset="UTF-8"&gt;
+  &lt;title&gt;My Electron App&lt;/title&gt;
+&lt;/head&gt;
+&lt;body&gt;
+  &lt;h1&gt;Hello from Renderer Process!&lt;/h1&gt;
+  &lt;p&gt;We are using Node.js version 
+     &lt;span id="node-version"&gt;&lt;/span&gt;.
+  &lt;/p&gt;
+  &lt;button id="my-button"&gt;Call Main Process&lt;/button&gt;
+
+  &lt;!-- Renderer.js จะถูกโหลดที่นี่ --&gt;
+  &lt;script src="./renderer.js"&gt;&lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+                    </code></pre>
+                    <blockquote>💡 <strong>ข้อจำกัดสำคัญ:</strong> โดยปกติแล้ว Renderer Process <span class="highlight">ไม่สามารถ</span> เข้าถึง Node.js หรือไฟล์ในเครื่องได้โดยตรง ต้องสื่อสารผ่าน Preload Script และ IPC เท่านั้นเพื่อความปลอดภัย</blockquote>
+                </div>
+            </div>
+            <div class="slide-number">8/27</div>
+        </section>
+
+        <section class="slide">
+            <h2>🔒 Security Best Practices: สิ่งที่ต้องทำเสมอ!</h2>
+            <h3>ทำไมต้องซีเรียสเรื่อง Security?</h3>
+            <p>เพราะ Electron App ไม่เหมือนเว็บ! โค้ดที่รันมีสิทธิ์เข้าถึง OS ได้ ถ้าไม่ป้องกันให้ดี อาจกลายเป็นช่องโหว่ให้ผู้ไม่หวังดีเข้ามาควบคุมเครื่องผู้ใช้ได้เลย</p>
+            <div class="grid-2">
+                 <div class="solution">
+                    <h4>✅ การตั้งค่าที่ปลอดภัย (Secure Configuration)</h4>
+                    <pre><code class="language-javascript">
+new BrowserWindow({
+  webPreferences: {
+    // 💡 ป้องกันไม่ให้ Renderer เข้าถึง Node.js โดยตรง
+    nodeIntegration: false,
+    
+    // 💡 แยก Context ระหว่าง Preload กับ Renderer
+    contextIsolation: true,
+    
+    // 💡 ปิด Remote module ที่ไม่ปลอดภัย
+    enableRemoteModule: false,
+    
+    // 💡 ใช้ Preload script เป็นสะพานสื่อสาร
+    preload: path.join(__dirname, 'preload.js')
+  }
+});
+                    </code></pre>
+                </div>
+                <div class="anti-pattern">
+                    <h4>❌ การตั้งค่าที่อันตราย (Insecure - ห้ามทำเด็ดขาด!)</h4>
+                     <pre><code class="language-javascript">
+new BrowserWindow({
+  webPreferences: {
+    // 💀 เปิดช่องโหว่ให้โค้ดในหน้าเว็บ
+    //    รันคำสั่งใน OS ได้โดยตรง!
+    nodeIntegration: true,
+    
+    // 💀 ทำให้ Preload script กับหน้าเว็บ
+    //    ใช้ Context เดียวกัน ไม่มีการป้องกัน
+    contextIsolation: false
+  }
+});
+                    </code></pre>
+                </div>
+            </div>
+            <h3>🌉 `preload.js` และ `contextBridge`: สะพานที่ปลอดภัย</h3>
+            <pre><code class="language-javascript">
+// preload.js
+const { contextBridge, ipcRenderer } = require('electron');
+
+// เปิด API ที่ปลอดภัยให้ Renderer เรียกใช้ได้
+contextBridge.exposeInMainWorld('electronAPI', {
+  // ฟังก์ชันสำหรับเรียก IPC ไปยัง Main Process
+  showNotification: (title, body) => 
+    ipcRenderer.send('show-notification', { title, body }),
+
+  // ฟังก์ชันที่รับค่ากลับมา (Invoke/Handle)
+  getAppVersion: () => ipcRenderer.invoke('get-app-version')
+});
+            </code></pre>
+            <div class="slide-number">9/27</div>
+        </section>
+        
+        <section class="slide">
+            <h2>🔄 IPC: การสื่อสารระหว่าง Process</h2>
+            <p>การสื่อสารระหว่าง Main Process และ Renderer Process เป็นสิ่งจำเป็น นี่คือ 2 รูปแบบหลักที่ใช้กัน</p>
+            <h3>1. Invoke / Handle (สำหรับ Request-Response)</h3>
+            <p>เหมาะสำหรับเมื่อ Renderer ต้องการข้อมูลจาก Main และรอคำตอบกลับมา (คล้าย `async/await`)</p>
+            <div class="grid-2">
+                <div>
+                    <h4>Main Process (`main.js`)</h4>
+                    <pre><code class="language-javascript">
+// รับ request 'get-app-version'
+ipcMain.handle('get-app-version', () => {
+  return app.getVersion();
+});
+                    </code></pre>
+                </div>
+                 <div>
+                    <h4>Renderer Process (ผ่าน Preload)</h4>
+                    <pre><code class="language-javascript">
+// เรียกใช้ API ที่ expose ไว้ใน preload.js
+async function displayVersion() {
+  const version = await window.electronAPI.getAppVersion();
+  console.log('App version:', version);
+}
+                    </code></pre>
+                </div>
+            </div>
+             <h3>2. Send / On (สำหรับ Events)</h3>
+             <p>เหมาะสำหรับเมื่อ Main Process ต้องการส่งข้อมูลหรือ "Event" ไปให้ Renderer โดยไม่ต้องการคำตอบ (เช่น Real-time update)</p>
+             <div class="grid-2">
+                <div>
+                    <h4>Main Process (`main.js`)</h4>
+                    <pre><code class="language-javascript">
+// ส่ง event 'status-update' ไปยังหน้าต่าง
+mainWindow.webContents.send(
+  'status-update', 
+  { status: 'online' }
+);
+                    </code></pre>
+                </div>
+                 <div>
+                    <h4>Renderer Process (ผ่าน Preload)</h4>
+                    <pre><code class="language-javascript">
+// Preload.js
+contextBridge.exposeInMainWorld('api', {
+  onStatusUpdate: (callback) => 
+    ipcRenderer.on('status-update', (event, data) => callback(data))
+});
+
+// Renderer.js
+window.api.onStatusUpdate((data) => {
+  console.log('New status:', data.status);
+});
+                    </code></pre>
+                </div>
+            </div>
+            <div class="slide-number">10/27</div>
+        </section>
+        
+        <section class="slide">
+            <h2>📁 การเข้าถึงไฟล์ (File System)</h2>
+            <p>การอ่าน-เขียนไฟล์เป็น Native Feature ที่ต้องทำใน Main Process เท่านั้น Renderer จะส่งคำขอผ่าน IPC</p>
+             <div class="grid-2">
+                 <div>
+                    <h3>📂 การเปิดไฟล์ (Open File)</h3>
+                    <pre><code class="language-javascript">
+// In main.js
+const { dialog } = require('electron');
+const fs = require('fs/promises');
+
+ipcMain.handle('dialog:openFile', async () => {
+  const { canceled, filePaths } = await dialog.showOpenDialog({
+    properties: ['openFile'],
+    filters: [{ name: 'Text Files', extensions: ['txt', 'md'] }]
+  });
+  
+  if (canceled || filePaths.length === 0) {
+    return { canceled: true };
+  }
+  
+  const filePath = filePaths[0];
+  const content = await fs.readFile(filePath, 'utf8');
+  
+  return { success: true, path: filePath, content };
+});
+                    </code></pre>
+                </div>
+                 <div>
+                    <h3>💾 การบันทึกไฟล์ (Save File)</h3>
+                     <pre><code class="language-javascript">
+// In main.js
+ipcMain.handle('dialog:saveFile', async (event, data) => {
+  const { canceled, filePath } = await dialog.showSaveDialog({
+    defaultPath: 'my-document.txt',
+    filters: [{ name: 'Text Files', extensions: ['txt'] }]
+  });
+
+  if (canceled || !filePath) {
+    return { canceled: true };
+  }
+
+  await fs.writeFile(filePath, data, 'utf8');
+  return { success: true, path: filePath };
+});
+
+// In preload.js
+// ...
+  saveFile: (data) => ipcRenderer.invoke('dialog:saveFile', data),
+// ...
+                    </code></pre>
+                </div>
+            </div>
+            <div class="slide-number">11/27</div>
+        </section>
+
+        <section class="slide">
+            <h2>🔔 Native Notifications</h2>
+            <p>แสดงการแจ้งเตือนของ OS โดยตรง ทำให้แอปของเราดูเป็นส่วนหนึ่งของระบบปฏิบัติการมากขึ้น</p>
+            <h3>Flow การแสดง Notification</h3>
+             <div class="mermaid-container">
+                 <pre class="mermaid">
+graph TD
+    A["Application Event<br/>(e.g., new message)"] --> B["Main Process"]
+    B --> C["new Notification(...)"]
+    C --> D["Operating System"]
+    
+    subgraph "OS Features"
+        D --> E["Display Toast/Banner"]
+        D --> F["Play Sound"]
+        D --> G["Show Icon"]
+    end
+    
+    E --> H{"User clicks notification"}
+    H --> I["Focus Application Window"]
+    I --> A
+                 </pre>
+            </div>
+            <h3>🔧 ตัวอย่างการเขียนโค้ด</h3>
+             <pre><code class="language-javascript">
+// In main.js
+const { Notification } = require('electron');
+
+function showNotification(title, body) {
+  if (!Notification.isSupported()) return;
+
+  const notification = new Notification({
+    title,
+    body,
+    icon: path.join(__dirname, 'assets/icon.png'),
+    actions: [{ type: 'button', text: 'View Details' }]
+  });
+
+  notification.on('click', () => mainWindow.focus());
+  notification.show();
+}
+
+ipcMain.on('show-notification', (event, { title, body }) => {
+  showNotification(title, body);
+});
+            </code></pre>
+            <div class="slide-number">12/27</div>
+        </section>
+
+        <section class="slide">
+            <h2>🖱️ System Tray Integration</h2>
+            <p>เพิ่มไอคอนของแอปใน System Tray (Taskbar ของ Windows, Menu Bar ของ macOS) เพื่อให้เข้าถึงฟังก์ชันด่วนได้</p>
+            <h3>ส่วนประกอบของ System Tray</h3>
+            <div class="mermaid-container">
+                <pre class="mermaid">
+                graph TD
+                    APP[Application] --> TRAY[System Tray Icon]
+                    
+                    subgraph "User Interactions"
+                        TRAY -- "Left Click" --> TOG[Toggle Window Show/Hide]
+                        TRAY -- "Right Click" --> MENU[Context Menu]
+                    end
+                    
+                    subgraph "Context Menu Options"
+                        MENU --> OPT1[Change Status]
+                        MENU --> OPT2[Settings]
+                        MENU --> OPT3[Quit Application]
+                    end
+                </pre>
+            </div>
+            <h3>🔧 ตัวอย่างการเขียนโค้ด</h3>
+            <pre><code class="language-javascript">
+// In main.js
+const { Tray, Menu } = require('electron');
+
+let tray = null;
+app.whenReady().then(() => {
+  tray = new Tray('/path/to/icon.png');
+  const contextMenu = Menu.buildFromTemplate([
+    { label: 'Show App', click: () => mainWindow.show() },
+    { label: 'Separator', type: 'separator' },
+    { 
+      label: 'Set Status',
+      submenu: [
+        { label: 'Available', click: () => setAgentStatus('Available') },
+        { label: 'Busy', click: () => setAgentStatus('Busy') }
+      ]
+    },
+    { label: 'Quit', click: () => app.quit() }
+  ]);
+  
+  tray.setToolTip('Agent Wallboard');
+  tray.setContextMenu(contextMenu);
+});
+            </code></pre>
+            <div class="slide-number">13/27</div>
+        </section>
+
+        <section class="slide">
+            <h2>🌐 การเชื่อมต่อกับ External API</h2>
+            <p>เราสามารถใช้ความสามารถของ Node.js ใน Main Process เพื่อเรียก API ภายนอกได้อย่างปลอดภัยและมีประสิทธิภาพ</p>
+             <div class="grid-2">
+                 <div>
+                    <h3>🌍 ตัวอย่างการเรียก REST API (HTTPS)</h3>
+                    <pre><code class="language-javascript">
+// In main.js
+const { net } = require('electron');
+
+ipcMain.handle('fetch-agent-data', async () => {
+  try {
+    const response = await net.fetch('https://api.example.com/agents');
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const data = await response.json();
+    return { success: true, data };
+  } catch (error) {
+    console.error('Failed to fetch agent data:', error);
+    return { success: false, error: error.message };
+  }
+});
+                    </code></pre>
+                </div>
+                 <div>
+                    <h3>⚡ ตัวอย่างการเชื่อมต่อ WebSocket</h3>
+                     <p>สำหรับ Real-time data ควรจัดการ Connection ใน <strong>Main Process</strong> เพื่อความเสถียร แล้วส่งต่อข้อมูลให้ Renderer ผ่าน IPC</p>
+                     <pre><code class="language-javascript">
+// In renderer.js (or component)
+const websocket = new WebSocket('wss://api.example.com/websocket');
+
+websocket.onmessage = (event) => {
+  const data = JSON.parse(event.data);
+  
+  if (data.type === 'agent_status_update') {
+    // ฟังก์ชันนี้จะอัปเดต UI บนหน้าจอ
+    updateAgentStatus(data.agentId, data.status);
+    
+    // ส่งคำขอไป Main Process เพื่อแสดง Notification
+    window.electronAPI.showNotification(
+        'Status Update',
+        `Agent ${data.agentId} is now ${data.status}`
+    );
+  }
+};
+                    </code></pre>
+                </div>
+            </div>
+            <div class="slide-number">14/27</div>
+        </section>
+
+        <section class="slide">
+            <h2>📦 การ Build และแจกจ่ายแอป (Distribution)</h2>
+            <p>เมื่อพัฒนาเสร็จแล้ว เราต้อง package แอปของเราให้เป็นไฟล์ที่ผู้ใช้สามารถติดตั้งได้ง่ายๆ เช่น <code>.exe</code>, <code>.dmg</code> โดยใช้เครื่องมืออย่าง <strong>electron-builder</strong></p>
+            <h3>📋 การตั้งค่าใน `package.json`</h3>
+            <pre><code class="language-json">
+{
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder",
+    "build:win": "electron-builder --win",
+    "build:mac": "electron-builder --mac",
+    "build:linux": "electron-builder --linux"
+  },
+  "build": {
+    "appId": "com.mycompany.agent-wallboard",
+    "productName": "Agent Wallboard",
+    "win": {
+      "target": "nsis", "icon": "build/icon.ico"
+    },
+    "mac": {
+      "target": "dmg", "icon": "build/icon.icns"
+    }
+  }
+}
+            </code></pre>
+            <h3>🚀 คำสั่งสำหรับ Build</h3>
+            <pre><code class="language-bash">
+# ติดตั้ง electron-builder
+npm install electron-builder --save-dev
+
+# Build สำหรับ Platform ปัจจุบัน
+npm run build
+
+# Build สำหรับ Windows เท่านั้น
+npm run build:win
+
+# Build สำหรับทุก Platforms (ถ้าทำได้)
+npx electron-builder --win --mac --linux
+            </code></pre>
+            <div class="slide-number">15/27</div>
+        </section>
+        
+        <section class="slide">
+            <h2>🎯 Case Study: Agent Wallboard Architecture</h2>
+            <h3>การนำ Electron มาใช้กับโปรเจกต์ของเรา</h3>
+            <div class="mermaid-container">
+                <pre class="mermaid">
+graph TD
+    subgraph "Desktop Application (Electron)"
+        EA["Agent Wallboard App"]
+        
+        subgraph "Main Features"
+            DASH["Dashboard View"]
+            AGENT["Agent Management"]
+            STATS["Statistics & Reports"]
+        end
+        
+        subgraph "Real-time & Native Features"
+            WS["WebSocket Client"]
+            NOTIF["Native Notifications"]
+            TRAY["System Tray"]
+            FILE["File Export (.csv)"]
+        end
+    end
+    
+    subgraph "Backend & External Systems"
+        API["Backend REST API"]
+        PBX_WS["PBX WebSocket Server"]
+        DB["Database"]
+    end
+    
+    EA --> DASH
+    EA --> AGENT
+    EA --> STATS
+    
+    API -->|Agent Data| EA
+    PBX_WS -->|Real-time Status| WS
+    WS -->|Updates| DASH
+    WS -->|Updates| NOTIF
+    WS -->|Updates| TRAY
+    STATS -->|Request Export| FILE
+    DB -->|Historical Data| API
+                </pre>
+            </div>
+            <div class="slide-number">16/27</div>
+        </section>
+        
+        <section class="slide">
+            <h2>🎯 Case Study: Agent Wallboard Implementation</h2>
+            <h3>ตัวอย่างโค้ดฟีเจอร์หลัก</h3>
+            <div class="grid-2">
+                <div>
+                    <h4>Real-time Agent Status (WebSocket)</h4>
+                    <pre><code class="language-javascript">
+// Renderer Process
+const ws = new WebSocket('wss://pbx.company.com/agents');
+
+ws.onmessage = (event) => {
+  const update = JSON.parse(event.data);
+  
+  if (update.type === 'agent_status') {
+    // 1. อัปเดต UI โดยตรง
+    updateAgentDisplay(update.agentId, update.status);
+    
+    // 2. เรียกใช้ Native Notification ผ่าน Preload
+    if (update.status === 'Available') {
+      window.electronAPI.showNotification(
+        'Agent Update',
+        `${update.agentName} is now available`
+      );
+    }
+  }
+};
+                    </code></pre>
+                </div>
+                 <div>
+                    <h4>System Tray Quick Actions</h4>
+                    <pre><code class="language-javascript">
+// Main Process
+const contextMenu = Menu.buildFromTemplate([
+  {
+    label: 'Set Status',
+    submenu: [
+      { 
+        label: 'Available', 
+        // ส่ง IPC ไปบอก Renderer ให้เปลี่ยนสถานะ
+        click: () => mainWindow.webContents.send(
+            'change-status', { status: 'Available' }
+        )
+      },
+      { 
+        label: 'Busy', 
+        click: () => mainWindow.webContents.send(
+            'change-status', { status: 'Busy' }
+        )
+      }
+    ]
+  },
+  { type: 'separator' },
+  { label: 'Quit', role: 'quit' }
+]);
+tray.setContextMenu(contextMenu);
+                    </code></pre>
+                </div>
+            </div>
+            <div class="slide-number">17/27</div>
+        </section>
+
+        <section class="slide">
+            <h2>🛠️ Development Workflow และเครื่องมือ</h2>
+            <div class="grid-2">
+                <div>
+                    <h3>ขั้นตอนการพัฒนา</h3>
+                    <div class="mermaid-container" style="min-height: auto;">
+                        <pre class="mermaid">
+                        graph TD
+                            A[1. Code] --> B[2. Run Locally];
+                            B --> C{3. Test & Debug};
+                            C --> D[4. Build];
+                            D --> E[5. Release];
+                            E --> F[6. Monitor];
+                            F --> A;
+                            C --> A;
+                        </pre>
+                    </div>
+                     <h3>🐛 การ Debugging</h3>
+                    <ul>
+                        <li><strong>Main Process:</strong> ใช้ <code>console.log()</code> ใน Terminal หรือ Debugger ของ VS Code</li>
+                        <li><strong>Renderer Process:</strong> เปิด Developer Tools (Ctrl+Shift+I) ได้เหมือนเว็บ</li>
+                        <li><strong>Preload Script:</strong> <code>console.log()</code> จะแสดงใน Developer Tools</li>
+                    </ul>
+                </div>
+                <div>
+                    <h3>ตัวอย่าง Development Scripts</h3>
+                    <pre><code class="language-json">
+{
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev", // ส่ง flag สำหรับ dev mode
+    "debug": "electron --inspect=9229 .", // สำหรับ VS Code Debugger
+    "test": "jest",
+    "lint": "eslint .",
+    "build": "electron-builder",
+    "release": "electron-builder --publish=always"
+  }
+}
+                    </code></pre>
+                    <h3>โค้ดสำหรับ Debugging</h3>
+                    <pre><code class="language-javascript">
+// main.js
+// เปิด DevTools อัตโนมัติถ้าอยู่ใน dev mode
+if (process.argv.includes('--dev')) {
+    mainWindow.webContents.openDevTools();
+}
+
+// IPC สำหรับขอข้อมูล Debug
+ipcMain.handle('debug-info', () => {
+  return {
+    platform: process.platform,
+    versions: process.versions
+  };
+});
+                    </code></pre>
+                </div>
+            </div>
+            <div class="slide-number">18/27</div>
+        </section>
+
+        <section class="slide">
+            <h2>🔧 ฟีเจอร์ขั้นสูง (Advanced Features)</h2>
+             <div class="grid-2">
+                <div>
+                    <h4>🔄 Auto Updater</h4>
+                    <p>ใช้ <code>electron-updater</code> เพื่อให้แอปสามารถตรวจสอบ, ดาวน์โหลด, และติดตั้งอัปเดตใหม่ได้เองโดยอัตโนมัติ</p>
+                    <pre><code class="language-javascript">
+// In main.js
+const { autoUpdater } = require('electron-updater');
+
+autoUpdater.checkForUpdatesAndNotify();
+
+autoUpdater.on('update-downloaded', () => {
+  dialog.showMessageBox({
+    title: 'Update Ready',
+    message: 'A new version is ready. Restart to apply?',
+    buttons: ['Restart', 'Later']
+  }).then(result => {
+    if (result.response === 0) autoUpdater.quitAndInstall();
+  });
+});
+                    </code></pre>
+                </div>
+                <div>
+                    <h4>🎛️ Custom Menu System</h4>
+                    <p>สร้างเมนูบาร์ (File, Edit, View) และ Context Menu ที่เป็นของเราเอง</p>
+                     <pre><code class="language-javascript">
+// In main.js
+const { Menu } = require('electron');
+
+const template = [
+  {
+    label: 'File',
+    submenu: [
+      { 
+        label: 'Export Report...', 
+        accelerator: 'CmdOrCtrl+E',
+        click: () => { /* ... send IPC to renderer ... */ } 
+      },
+      { type: 'separator' },
+      process.platform === 'darwin' ? { role: 'close' } : { role: 'quit' }
+    ]
+  },
+  { role: 'editMenu' },
+  { role: 'viewMenu' }
+];
+
+const menu = Menu.buildFromTemplate(template);
+Menu.setApplicationMenu(menu);
+                    </code></pre>
+                </div>
+            </div>
+            <div class="slide-number">19/27</div>
+        </section>
+
+        <section class="slide">
+            <h2>📊 การจัดการ Performance และ Best Practices</h2>
+            <p>Electron App อาจใช้ทรัพยากรเครื่องสูง เราจึงต้องใส่ใจกับการ Optimization เพื่อให้ผู้ใช้มีประสบการณ์ที่ดี</p>
+            <h3>กลยุทธ์การปรับปรุง Performance</h3>
+            <div class="mermaid-container">
+                <pre class="mermaid">
+                graph TD
+                    PERF[Performance Issues] --> MEM[High Memory]
+                    PERF --> CPU[High CPU]
+                    PERF --> START[Slow Startup]
+                    
+                    subgraph "Solutions"
+                        MEM --> A[Prevent Memory Leaks]
+                        MEM --> B[Use Smart Caching]
+                        
+                        CPU --> C[Use Web Workers for Heavy Tasks]
+                        CPU --> D[Throttle/Debounce Events]
+                        
+                        START --> E[Lazy Load Modules/Components]
+                        START --> F[Code Splitting]
+                    end
+                </pre>
+            </div>
+             <h3>ตัวอย่างโค้ด Best Practices</h3>
+             <pre><code class="language-javascript">
+// 1. Memory Leak Prevention
+class ComponentManager {
+  constructor() { this.listeners = []; }
+  
+  addListener(element, event, handler) {
+    element.addEventListener(event, handler);
+    this.listeners.push({ element, event, handler });
+  }
+  
+  // เรียกใช้เมื่อ Component จะถูกทำลาย
+  cleanup() {
+    this.listeners.forEach(({ element, event, handler }) => {
+      element.removeEventListener(event, handler);
+    });
+    this.listeners = [];
+  }
+}
+
+// 2. Throttling for frequent events (e.g., real-time updates)
+function throttle(func, limit) {
+  let inThrottle;
+  return function() {
+    const args = arguments;
+    const context = this;
+    if (!inThrottle) {
+      func.apply(context, args);
+      inThrottle = true;
+      setTimeout(() => inThrottle = false, limit);
+    }
+  }
+}
+// Usage: const throttledUpdate = throttle(updateUI, 200);
+            </code></pre>
+            <div class="slide-number">20/27</div>
+        </section>
+
+        <section class="slide">
+            <h2>🧪 กลยุทธ์การทดสอบ (Testing Strategies)</h2>
+            <p>การทดสอบเป็นสิ่งจำเป็นเพื่อให้แอปมีคุณภาพและเสถียรภาพ ใน Electron เราจะแบ่งการทดสอบเป็นหลายระดับ</p>
+             <div class="mermaid-container">
+                 <pre class="mermaid">
+                 graph TD
+                    A[Testing Pyramid]
+                    subgraph E2E_Tests ["End-to-End Tests (Spectron, Playwright)"]
+                        E1[User Workflow Simulation]
+                        E2[UI Interactions]
+                    end
+                    subgraph Integration_Tests ["Integration Tests (Jest)"]
+                        I1[IPC Communication]
+                        I2[API & File System Integration]
+                    end
+                    subgraph Unit_Tests ["Unit Tests (Jest)"]
+                        U1[Test Main Process Logic]
+                        U2[Test Renderer Components]
+                        U3[Test Utility Functions]
+                    end
+                    A --> E2E_Tests --> Integration_Tests --> Unit_Tests
+                 </pre>
+            </div>
+            <div class="grid-2">
+                <div>
+                    <h4>Unit Test (Jest)</h4>
+                    <pre><code class="language-javascript">
+// tests/main.test.js
+describe('Agent Status Management', () => {
+  test('should update agent status correctly', () => {
+    // ... Mock functions ...
+    const result = handleAgentStatusUpdate('AG001', 'Busy');
+    expect(result.newStatus).toBe('Busy');
+  });
+});
+                    </code></pre>
+                </div>
+                <div>
+                    <h4>E2E Test (Spectron)</h4>
+                     <pre><code class="language-javascript">
+// tests/e2e.test.js
+describe('Application launch', () => {
+  let app;
+  // ... setup and teardown ...
+
+  test('shows an initial window', async () => {
+    await app.start();
+    const count = await app.client.getWindowCount();
+    expect(count).toBe(1);
+  });
+});
+                    </code></pre>
+                </div>
+            </div>
+            <div class="slide-number">21/27</div>
+        </section>
+
+        <section class="slide">
+            <h2>🚨 การจัดการข้อผิดพลาด (Error Handling)</h2>
+            <h3>กลยุทธ์และตัวอย่างโค้ด</h3>
+            <div class="mermaid-container">
+                <pre class="mermaid">
+                graph TD
+                    ERROR[Error Sources] --> MAIN_ERR[Main Process] & RENDER_ERR[Renderer] & IPC_ERR[IPC] & API_ERR[API]
+                    
+                    subgraph "Handling & Recovery"
+                        MAIN_ERR --> CATCH1[try/catch & process.on] --> LOG[Log Error] & NOTIFY[Notify User]
+                        RENDER_ERR --> CATCH2[window.onerror] --> LOG & NOTIFY
+                        IPC_ERR --> CATCH3[Promise.catch] --> LOG
+                        API_ERR --> CATCH4[Retry Logic] --> LOG
+                    end
+                </pre>
+            </div>
+             <pre><code class="language-javascript">
+// Main Process - Global Error Handling
+process.on('uncaughtException', (error) => {
+  console.error('Uncaught Exception:', error);
+  logErrorToFile(error);
+  dialog.showErrorBox('Unexpected Error', 'An error occurred. The application will restart.');
+  app.relaunch();
+  app.exit(0);
+});
+
+// IPC - Error Handling
+ipcMain.handle('some-operation', async () => {
+  try {
+    const result = await riskyOperation();
+    return { success: true, data: result };
+  } catch (error) {
+    console.error('Operation failed:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+// Renderer Process - Global Error Handling
+window.addEventListener('error', (event) => {
+  console.error('Renderer Error:', event.error);
+  // ส่ง error ไปให้ Main Process เพื่อทำการ log
+  window.electronAPI.logError({
+    message: event.error.message,
+    stack: event.error.stack,
+  });
+});
+            </code></pre>
+            <div class="slide-number">22/27</div>
+        </section>
+        
+        <section class="slide">
+            <h2>🔐 Security Deep Dive: Implementation</h2>
+            <h3>4 เสาหลักของความปลอดภัยใน Electron</h3>
+            <div class="grid-4">
+                <div class="infographic-card">
+                    <div class="icon">🛡️</div><h4>Input Validation</h4>
+                </div>
+                <div class="infographic-card">
+                    <div class="icon">🧱</div><h4>Context Isolation</h4>
+                </div>
+                <div class="infographic-card">
+                    <div class="icon">📡</div><h4>Secure Communication</h4>
+                </div>
+                 <div class="infographic-card">
+                    <div class="icon">🗄️</div><h4>Secure Storage</h4>
+                </div>
+            </div>
+             <h3>ตัวอย่างโค้ดเพื่อความปลอดภัย</h3>
+             <pre><code class="language-javascript">
+// 1. Input Validation in Main Process
+ipcMain.handle('update-agent', (event, agentData) => {
+    // ใช้ library อย่าง Zod หรือ Joi ในการ validate schema
+    const schema = { agentId: /^[A-Z]{2}\d{3}$/, status: ['Available', 'Busy'] };
+    
+    // ถ้า agentData ไม่ตรงตาม schema, reject promise ทันที
+    if (!validate(agentData, schema)) {
+        throw new Error("Invalid agent data received.");
+    }
+    // ... process validated data ...
+});
+
+// 2. Secure API Communication
+class SecureAPIClient {
+    constructor(baseURL, apiKey) {
+        if (!baseURL.startsWith('https://')) {
+          throw new Error('Only HTTPS URLs are allowed');
+        }
+        this.baseURL = baseURL;
+        this.apiKey = apiKey;
+    }
+    async makeRequest(endpoint) {
+        const response = await net.fetch(`${this.baseURL}${endpoint}`, {
+            headers: { 'Authorization': `Bearer ${this.apiKey}` }
+        });
+        // ... handle response ...
+    }
+}
+            </code></pre>
+            <div class="slide-number">23/27</div>
+        </section>
+        
+        <section class="slide">
+            <h2>📱 Mobile Integration & Data Sync</h2>
+            <h3>สร้าง Ecosystem ที่ทำงานร่วมกัน</h3>
+            <div class="mermaid-container">
+                <pre class="mermaid">
+graph TD
+    API["Backend APIs & Database"]
+    
+    subgraph "Client Applications"
+        Desktop["Desktop (Electron)"]
+        Web["Web App (React)"]
+        Mobile["Mobile (React Native)"]
+    end
+    
+    subgraph "Shared Code (Monorepo)"
+        Logic["Business Logic"]
+        Models["Data Models/Types"]
+    end
+    
+    API --> Desktop
+    API --> Web
+    API --> Mobile
+    
+    Desktop --> Logic
+    Desktop --> Models
+    Web --> Logic
+    Web --> Models
+    Mobile --> Logic
+    Mobile --> Models
+                </pre>
+            </div>
+            <h3>🔄 ตัวอย่างโค้ด Data Synchronization (Conceptual)</h3>
+            <pre><code class="language-javascript">
+// Shared Data Synchronization Service
+class DataSyncService {
+  constructor() {
+    this.syncQueue = []; // เก็บ actions ที่ทำตอน offline
+    this.isOnline = navigator.onLine;
+    window.addEventListener('online', () => this.handleOnline());
+  }
+
+  async performAction(action) {
+    if (this.isOnline) {
+      await this.sendActionToServer(action);
+    } else {
+      this.syncQueue.push(action); // เก็บไว้รอ sync ตอน online
+      this.updateLocalState(action);
+    }
+  }
+  
+  async handleOnline() {
+    this.isOnline = true;
+    // ส่ง actions ทั้งหมดใน queue ไปยัง server
+    for (const action of this.syncQueue) {
+      await this.sendActionToServer(action);
+    }
+    this.syncQueue = [];
+    // ดึงข้อมูลล่าสุดจาก server
+    await this.fetchLatestData();
+  }
+}
+            </code></pre>
+            <div class="slide-number">24/27</div>
+        </section>
+
+        <section class="slide">
+            <h2>🎨 UI/UX Best Practices สำหรับ Desktop Apps</h2>
+            <p>การออกแบบ UI/UX ที่ดีสำหรับ Desktop App ต้องคำนึงถึงความเป็น Native และพฤติกรรมของผู้ใช้ที่ต่างจากเว็บ</p>
+            <div class="grid-2">
+                 <div>
+                    <h4>Key Design Guidelines</h4>
+                    <ul>
+                        <li><strong>Native Look & Feel:</strong> ทำให้แอปดูเป็นส่วนหนึ่งของ OS</li>
+                        <li><strong>Responsive Window:</strong> UI ควรปรับตามขนาดหน้าต่าง</li>
+                        <li><strong>Accessibility:</strong> รองรับการใช้คีย์บอร์ดและโปรแกรมอ่านหน้าจอ</li>
+                        <li><strong>Performance UX:</strong> มี Loading state, Animation ลื่นไหล</li>
+                         <li><strong>Theme Adaptation:</strong> ปรับเป็น Dark/Light mode ตาม OS</li>
+                    </ul>
+                 </div>
+                 <div class="solution">
+                    <h4>💡 การปรับ UI ตาม Platform</h4>
+                     <pre><code class="language-javascript">
+// main.js: ปรับการแสดงผลของ menu bar
+if (process.platform === 'darwin') { // macOS
+  mainWindow.setMenuBarVisibility(false); 
+}
+
+// renderer.js: เพิ่ม class ให้ body เพื่อปรับ CSS
+document.body.classList.add(`platform-${process.platform}`);
+                    </code></pre>
+                    <h4>💡 การจำสถานะของหน้าต่าง</h4>
+                    <p>ใช้ library อย่าง <code>electron-window-state</code> เพื่อจำขนาดและตำแหน่งล่าสุดของหน้าต่าง</p>
+                </div>
+            </div>
+            <div class="slide-number">25/27</div>
+        </section>
+        
+        <section class="slide">
+            <h2>📊 Analytics และ Monitoring</h2>
+            <p>การเก็บข้อมูลการใช้งานและข้อผิดพลาดใน Production เป็นสิ่งสำคัญในการปรับปรุงแอปให้ดีขึ้น</p>
+             <div class="mermaid-container">
+                 <pre class="mermaid">
+graph TD
+    subgraph "Electron App"
+        A["User Actions"] --> B{"Data Collector"}
+        C["Performance"] --> B
+        D["Errors"] --> B
+    end
+    
+    subgraph "External Services"
+        E["Analytics Platform<br/>(Mixpanel, GA)"]
+        F["Error Monitoring<br/>(Sentry, Bugsnag)"]
+    end
+    
+    B -->|User Events| E
+    B -->|Errors & Crashes| F
+                 </pre>
+            </div>
+            <h3>สิ่งที่เราควร Track:</h3>
+            <ul class="checklist">
+                <li><strong>User Events:</strong> การคลิกปุ่มสำคัญ, การใช้งานฟีเจอร์ต่างๆ</li>
+                <li><strong>Performance Metrics:</strong> เวลาที่ใช้ในการเปิดแอป (Startup Time), การใช้ Memory/CPU</li>
+                <li><strong>Error Reports:</strong> ข้อผิดพลาดที่ไม่คาดคิด (Exceptions) และ Crashes</li>
+                <li><strong>Usage Patterns:</strong> ระยะเวลาที่เปิดแอป (Session Duration), หน้าที่ใช้งานบ่อยที่สุด</li>
+            </ul>
+            <div class="slide-number">26/27</div>
+        </section>
+        
+        <section class="slide">
+            <h2>🎓 สรุป Best Practices และ Q&A</h2>
+            <h3>Mindmap สรุปสิ่งที่ต้องจำ</h3>
+            <div class="mermaid-container">
+                <pre class="mermaid">
+                mindmap
+                  root((Electron Best Practices))
+                    Security
+                      Context Isolation
+                      Input Validation
+                      Secure APIs (HTTPS)
+                      Minimal Privileges
+                    Performance
+                      Memory Management
+                      Efficient IPC
+                      Lazy Loading
+                      Web Workers
+                    Architecture
+                      Separation of Concerns
+                      Modular Design
+                      Logging Strategy
+                      Testing Coverage
+                    User Experience
+                      Native Integration
+                      Responsive Design
+                      Offline Support
+                      Accessibility
+                    Production
+                      Monitoring & Analytics
+                      Auto Updates
+                      CI/CD Pipeline
+                      Code Signing
+                </pre>
+            </div>
+             <h3>🤔 ถาม-ตอบ และเปิดประเด็นสนทนา</h3>
+            <div class="slide-number">27/27</div>
+        </section>
+
+
+    </div>
+
+    <div class="presentation-controls">
+        <button id="prev-btn" class="nav-btn" title="สไลด์ก่อนหน้า">‹</button>
+        <span id="slide-counter"></span>
+        <button id="next-btn" class="nav-btn" title="สไลด์ถัดไป">›</button>
+        <button id="font-decrease-btn" class="font-btn" title="ลดขนาดตัวอักษร">-</button>
+        <button id="font-increase-btn" class="font-btn" title="เพิ่มขนาดตัวอักษร">+</button>
+        <button id="fullscreen-btn" class="fullscreen-btn" title="เต็มจอ">⛶</button>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const slides = document.querySelectorAll('.slide');
+            const nextBtn = document.getElementById('next-btn');
+            const prevBtn = document.getElementById('prev-btn');
+            const fullscreenBtn = document.getElementById('fullscreen-btn');
+            const slideCounter = document.getElementById('slide-counter');
+            const progressBar = document.getElementById('progress-bar');
+            const fontIncreaseBtn = document.getElementById('font-increase-btn');
+            const fontDecreaseBtn = document.getElementById('font-decrease-btn');
+            const root = document.documentElement;
+
+            let currentFontSize = 1.5; 
+            let currentSlideIndex = 0;
+            const totalSlides = slides.length;
+
+            function updateFontSize() {
+                root.style.setProperty('--base-font-size', `clamp(16px, ${currentFontSize}vw, 24px)`);
+            }
+            
+            function showSlide(index) {
+                if (index < 0 || index >= totalSlides) return;
+
+                slides.forEach((slide, i) => {
+                    slide.classList.toggle('active', i === index);
+                });
+
+                const activeSlide = slides[index];
+
+                if (activeSlide.scrollTop > 0) {
+                    activeSlide.scrollTop = 0;
+                }
+                
+                if (window.mermaid && !activeSlide.dataset.mermaidRendered) {
+                    const mermaidElements = activeSlide.querySelectorAll('pre.mermaid');
+                    if (mermaidElements.length > 0) {
+                        try {
+                           window.mermaid.run({ nodes: mermaidElements });
+                           activeSlide.dataset.mermaidRendered = 'true';
+                        } catch (e) {
+                           console.error("Mermaid rendering failed:", e);
+                        }
+                    }
+                }
+
+                currentSlideIndex = index;
+                updateControls();
+            }
+
+            function updateControls() {
+                slideCounter.textContent = `${currentSlideIndex + 1} / ${totalSlides}`;
+                const progressPercentage = ((currentSlideIndex + 1) / totalSlides) * 100;
+                progressBar.style.width = `${progressPercentage}%`;
+                prevBtn.disabled = currentSlideIndex === 0;
+                nextBtn.disabled = currentSlideIndex === totalSlides - 1;
+            }
+
+            function toggleFullscreen() {
+                if (!document.fullscreenElement) {
+                    document.documentElement.requestFullscreen().catch(err => {
+                        alert(`ไม่สามารถเข้าสู่โหมดเต็มจอได้: ${err.message}`);
+                    });
+                } else {
+                    if (document.exitFullscreen) {
+                        document.exitFullscreen();
+                    }
+                }
+            }
+
+            fontIncreaseBtn.addEventListener('click', () => {
+                if (currentFontSize < 2.5) {
+                    currentFontSize += 0.1;
+                    updateFontSize();
+                }
+            });
+
+            fontDecreaseBtn.addEventListener('click', () => {
+                if (currentFontSize > 0.8) {
+                    currentFontSize -= 0.1;
+                    updateFontSize();
+                }
+            });
+
+            nextBtn.addEventListener('click', () => showSlide(currentSlideIndex + 1));
+            prevBtn.addEventListener('click', () => showSlide(currentSlideIndex - 1));
+            fullscreenBtn.addEventListener('click', toggleFullscreen);
+
+            document.addEventListener('keydown', (event) => {
+                if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA') return;
+
+                if (event.key === 'ArrowRight' || event.key === ' ') {
+                    event.preventDefault();
+                    nextBtn.click();
+                } else if (event.key === 'ArrowLeft') {
+                    event.preventDefault();
+                    prevBtn.click();
+                } else if (event.key === 'f') {
+                    event.preventDefault();
+                    toggleFullscreen();
+                }
+            });
+
+            showSlide(0);
+        });
+    </script>
+</body>
+</html>
