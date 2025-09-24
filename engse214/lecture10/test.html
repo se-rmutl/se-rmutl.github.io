@@ -1,0 +1,946 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ENGSE214 - แบบทดสอบสัปดาห์ที่ 10: Incident Response</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #3b82f6; /* Blue */
+            --secondary-color: #1f2937; /* Dark Gray */
+            --bg-color: #111827; /* Very Dark Blue/Gray */
+            --card-bg: #1f2937;
+            --text-color: #d1d5db; /* Light Gray */
+            --header-color: #ffffff;
+            --success-color: #22c55e; /* Green */
+            --danger-color: #ef4444; /* Red */
+            --warning-color: #f59e0b; /* Amber */
+            --shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            --border-radius: 12px;
+            --border-color: #374151;
+        }
+
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Sarabun', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+        }
+
+        .quiz-container {
+            width: 100%;
+            max-width: 800px;
+            background-color: var(--card-bg);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border-color);
+            overflow: hidden;
+            transition: height 0.4s ease-in-out;
+        }
+
+        .quiz-page {
+            padding: 30px 40px;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        #welcome-page .welcome-header {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        #welcome-page h1 {
+            color: var(--header-color);
+            text-align: center;
+            margin: 0;
+            font-size: 2em;
+        }
+        #welcome-page p {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+            color: #9ca3af;
+        }
+        .info-box {
+            background-color: #374151;
+            border-left: 5px solid var(--primary-color);
+            padding: 15px 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 12px 15px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            background-color: #111827;
+            color: var(--text-color);
+            font-size: 1em;
+            font-family: 'Sarabun', sans-serif;
+        }
+        .start-btn {
+            width: 100%;
+            padding: 15px;
+            font-size: 1.2em;
+            font-weight: 600;
+            color: white;
+            background-color: var(--primary-color);
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .start-btn:hover {
+            background-color: #2563eb;
+        }
+
+        .quiz-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .progress-bar-container {
+            flex-grow: 1;
+            height: 10px;
+            background-color: #374151;
+            border-radius: 5px;
+            margin: 0 20px;
+        }
+        .progress-bar {
+            width: 0;
+            height: 100%;
+            background-color: var(--primary-color);
+            border-radius: 5px;
+            transition: width 0.3s ease;
+        }
+        #question-counter {
+            font-weight: 600;
+        }
+        .question-text {
+            font-size: 1.3em;
+            font-weight: 600;
+            margin-bottom: 25px;
+            color: var(--header-color);
+        }
+        .options-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .option {
+            background-color: #374151;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 15px 20px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .option:hover {
+            border-color: var(--primary-color);
+            background-color: #4b5563;
+        }
+        .option.selected {
+            border-color: var(--primary-color);
+            background-color: var(--primary-color);
+            color: white;
+            font-weight: 600;
+        }
+        pre.code-snippet {
+            background-color: #111827;
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            border: 1px solid var(--border-color);
+        }
+        .quiz-navigation {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 30px;
+        }
+        .nav-btn {
+            padding: 10px 25px;
+            border: none;
+            border-radius: 8px;
+            background-color: #4b5563;
+            color: white;
+            font-size: 1em;
+            cursor: pointer;
+        }
+        .nav-btn:disabled {
+            background-color: #374151;
+            color: #6b7280;
+            cursor: not-allowed;
+        }
+        #finish-btn {
+            background-color: var(--success-color);
+        }
+
+        #result-page {
+            text-align: center;
+        }
+        .result-summary {
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            padding: 20px;
+            margin-bottom: 30px;
+            background-color: #111827;
+        }
+        #result-header {
+            font-size: 1.8em;
+            font-weight: 700;
+            margin-bottom: 10px;
+            color: var(--header-color);
+        }
+        .score-display {
+            font-size: 2.5em;
+            font-weight: 700;
+            margin: 15px 0;
+        }
+        .score-display.pass { color: var(--success-color); }
+        .score-display.fail { color: var(--danger-color); }
+        
+        .level-badge {
+            display: inline-block;
+            padding: 8px 20px;
+            border-radius: 20px;
+            color: white;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+        .level-proficient { background-color: var(--success-color); }
+        .level-competent { background-color: var(--warning-color); }
+        .level-beginner { background-color: var(--danger-color); }
+
+        .result-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        .result-actions button {
+            padding: 12px 25px;
+            font-size: 1em;
+            border-radius: 8px;
+            border: none;
+            color: white;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        #capture-btn { background-color: var(--primary-color); }
+        #review-btn { background-color: #4b5563; }
+        #retake-btn { background-color: var(--danger-color); }
+
+
+        #review-section {
+            display: none;
+            margin-top: 30px;
+            text-align: left;
+        }
+        .review-item {
+            margin-bottom: 25px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .review-item .question-text { font-size: 1.1em; color: var(--header-color); }
+        .review-option {
+            padding: 10px 15px;
+            margin: 5px 0;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+        .review-option.correct {
+            background-color: rgba(34, 197, 94, 0.1);
+            border-color: var(--success-color);
+            font-weight: bold;
+            color: var(--success-color);
+        }
+        .review-option.incorrect {
+            background-color: rgba(239, 68, 68, 0.1);
+            border-color: var(--danger-color);
+            text-decoration: line-through;
+            color: #9ca3af;
+        }
+        .explanation {
+            background-color: #4b5563;
+            border: 1px solid #6b7280;
+            padding: 15px;
+            margin-top: 15px;
+            border-radius: 8px;
+        }
+
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+
+    <div class="quiz-container">
+        <div id="welcome-page" class="quiz-page">
+            <div class="welcome-header">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-primary-color" viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd" d="M10 1.944A11.954 11.954 0 012.166 5.002.951.951 0 001.05 6.248a13.481 13.481 0 001.98 7.444.951.951 0 001.566.294l.271-.271A.951.951 0 005.134 13.52a11.955 11.955 0 01-1.407-3.518.951.951 0 00-1.042-1.043 13.482 13.482 0 00-3.232 4.043.951.951 0 00.326 1.488l.533.266a.951.951 0 001.182-.24a11.955 11.955 0 011.83-2.671.951.951 0 00.082-1.332l-.271-.271a.951.951 0 00-1.332-.082A13.482 13.482 0 002.166 14.998a11.954 11.954 0 01-1.11-4.752.951.951 0 00-1.043-1.042A13.481 13.481 0 005.002 17.834a.951.951 0 001.248-.053l.271-.271a.951.951 0 00-.082-1.332 11.955 11.955 0 01-3.518-1.407.951.951 0 00-1.043-1.042 13.482 13.482 0 004.043-3.232.951.951 0 00.294-1.566l-.266-.533a.951.951 0 00-.24-1.182A11.954 11.954 0 0110 1.944zM10 18.056a11.954 11.954 0 01-7.834-2.834.951.951 0 00-1.248.053l-.271.271a.951.951 0 00.082 1.332 11.955 11.955 0 013.518 1.407.951.951 0 001.043 1.042 13.482 13.482 0 003.232-4.043.951.951 0 00-.326-1.488l-.533-.266a.951.951 0 00-1.182.24 11.955 11.955 0 01-1.83 2.671.951.951 0 00-.082 1.332l.271.271a.951.951 0 001.332.082 13.482 13.482 0 007.834-2.834.951.951 0 00-.053-1.248l-.271-.271a.951.951 0 00-1.332.082 11.955 11.955 0 01-1.407 3.518.951.951 0 00-1.042 1.043 13.482 13.482 0 00-4.043 3.232.951.951 0 00-1.566-.294l.266-.533a.951.951 0 00-.24-1.182A11.954 11.954 0 0110 18.056z" clip-rule="evenodd" />
+                </svg>
+                <h1>ทดสอบความพร้อมรับมือเหตุการณ์ไซเบอร์</h1>
+            </div>
+            <p>สัปดาห์ที่ 10: Security Incident Response</p>
+            <div class="info-box">
+                <p><strong>สถานการณ์:</strong> คุณคือ Software Engineer ที่ต้องเผชิญกับวิกฤตความปลอดภัยไซเบอร์ แบบทดสอบนี้จะประเมินความเข้าใจและทักษะการตัดสินใจของคุณภายใต้ความกดดัน ขอให้โชคดี!</p>
+            </div>
+            <form id="student-info-form">
+                <div class="form-group">
+                    <label for="fullname">ชื่อ-นามสกุล</label>
+                    <input type="text" id="fullname" placeholder="เช่น นายสมเกียรติ ไม่เหยียบหญ้า" required>
+                </div>
+                <div class="form-group">
+                    <label for="student-id">รหัสนักศึกษา</label>
+                    <input type="text" id="student-id" placeholder="เช่น 66123456" required>
+                </div>
+                <button type="submit" class="start-btn">เริ่มภารกิจ</button>
+            </form>
+        </div>
+
+        <div id="quiz-page" class="quiz-page hidden">
+            <div class="quiz-header">
+                <h2 id="question-number"></h2>
+                <div class="progress-bar-container">
+                    <div class="progress-bar" id="progress-bar"></div>
+                </div>
+                <span id="question-counter"></span>
+            </div>
+            <div id="question-text" class="question-text"></div>
+            <pre id="code-snippet" class="code-snippet hidden"></pre>
+            <ul id="options-list" class="options-list"></ul>
+            <div class="quiz-navigation">
+                <button id="prev-btn" class="nav-btn">ก่อนหน้า</button>
+                <button id="next-btn" class="nav-btn">ถัดไป</button>
+                <button id="finish-btn" class="nav-btn hidden">ส่งคำตอบ</button>
+            </div>
+        </div>
+
+        <div id="result-page" class="quiz-page hidden">
+            <div class="result-summary" id="result-capture-area">
+                <h1 id="result-header">สรุปผลการปฏิบัติภารกิจ</h1>
+                <p><strong>ผู้ปฏิบัติการ:</strong> <span id="result-fullname"></span> | <strong>รหัส:</strong> <span id="result-studentid"></span></p>
+                <div id="score-display" class="score-display"></div>
+                <div id="level-badge" class="level-badge"></div>
+                <p id="level-description"></p>
+                <p><strong>เกณฑ์ผ่านภารกิจ:</strong> 25 คะแนนขึ้นไป</p>
+            </div>
+            <div class="result-actions">
+                <button id="capture-btn">บันทึกผลลัพธ์</button>
+                <button id="review-btn">ทบทวนภารกิจ</button>
+                <button id="retake-btn" class="hidden">เริ่มภารกิจใหม่</button>
+            </div>
+
+            <div id="review-section">
+                <h2>ทบทวนการปฏิบัติภารกิจ</h2>
+                </div>
+        </div>
+    </div>
+
+    <script>
+        const quizData = [
+    {
+        question: "ตาม NIST Framework ขั้นตอนแรกสุดของกระบวนการ Incident Response คืออะไร?",
+        options: [
+            "Detection & Analysis (การตรวจจับและวิเคราะห์)",
+            "Preparation (การเตรียมพร้อม)",
+            "Containment (การจำกัดความเสียหาย)",
+            "Post-Incident Activity (กิจกรรมหลังเกิดเหตุ)"
+        ],
+        answer: "Preparation (การเตรียมพร้อม)",
+        explanation: "การเตรียมพร้อม (Preparation) คือขั้นตอนที่สำคัญที่สุดและต้องทำก่อนเกิดเหตุการณ์จริง เพื่อให้แน่ใจว่ามีทีม, เครื่องมือ, และแผนการที่พร้อมรับมือ"
+    },
+    {
+        question: "RTO (Recovery Time Objective) หมายถึงอะไร?",
+        options: [
+            "ปริมาณข้อมูลที่ยอมให้สูญหายได้",
+            "เวลาที่ใช้ในการตรวจจับการโจมตี",
+            "ระยะเวลาสูงสุดที่ระบบสามารถล่มได้โดยไม่กระทบธุรกิจรุนแรง",
+            "เวลาที่ใช้ในการกู้คืนข้อมูลจาก Backup"
+        ],
+        answer: "ระยะเวลาสูงสุดที่ระบบสามารถล่มได้โดยไม่กระทบธุรกิจรุนแรง",
+        explanation: "RTO คือ 'เวลา' ที่ธุรกิจยอมรับได้ว่าระบบจะหยุดทำงาน เช่น 'ระบบขายของออนไลน์ต้องกู้คืนภายใน 4 ชั่วโมง' ในขณะที่ RPO (Recovery Point Objective) คือ 'ข้อมูล' ที่ยอมให้หายได้"
+    },
+    {
+        question: "ตาม พ.ร.บ. คุ้มครองข้อมูลส่วนบุคคล (PDPA) ของไทย เมื่อเกิดเหตุข้อมูลส่วนบุคคลรั่วไหล องค์กรต้องแจ้งให้สำนักงานคณะกรรมการคุ้มครองข้อมูลส่วนบุคคล (PDPC) ทราบภายในกี่ชั่วโมงหลังจากที่ทราบเหตุ?",
+        options: [
+            "24 ชั่วโมง",
+            "48 ชั่วโมง",
+            "72 ชั่วโมง",
+            "7 วันทำการ"
+        ],
+        answer: "72 ชั่วโมง",
+        explanation: "PDPA กำหนดให้องค์กรต้องแจ้งเหตุการละเมิดข้อมูลส่วนบุคคลต่อหน่วยงานกำกับดูแลภายใน 72 ชั่วโมง ซึ่งเป็นกรอบเวลาที่ท้าทายและต้องการแผนการเตรียมพร้อมที่ดี"
+    },
+    {
+        question: "การทำ Forensic Image หรือการทำสำเนาข้อมูลแบบบิตต่อบิต มีความสำคัญอย่างไรในกระบวนการเก็บหลักฐานดิจิทัล?",
+        options: [
+            "เพื่อให้ไฟล์มีขนาดเล็กลง",
+            "เพื่อลบไวรัสออกจากหลักฐาน",
+            "เพื่อวิเคราะห์หลักฐานโดยไม่แตะต้องหรือเปลี่ยนแปลงข้อมูลต้นฉบับ",
+            "เพื่อให้ส่งข้อมูลผ่านอีเมลง่ายขึ้น"
+        ],
+        answer: "เพื่อวิเคราะห์หลักฐานโดยไม่แตะต้องหรือเปลี่ยนแปลงข้อมูลต้นฉบับ",
+        explanation: "หลักการสำคัญของ Digital Forensics คือการรักษาความสมบูรณ์ (Integrity) ของหลักฐานต้นฉบับ การทำงานกับสำเนา (Image) ช่วยให้แน่ใจว่าหลักฐานเดิมจะไม่ถูกแก้ไขและสามารถใช้อ้างอิงในชั้นศาลได้"
+    },
+    {
+        question: "ในสถานการณ์ที่พบว่าเซิร์ฟเวอร์ถูกโจมตีและกำลังมีการขโมยข้อมูลออกไป (Data Exfiltration) สิ่งแรกที่ควรทำทันทีคืออะไร?",
+        options: [
+            "รีบูตเซิร์ฟเวอร์ทันที",
+            "เริ่ม Restore ข้อมูลจาก Backup",
+            "ถอดสายแลนหรือตัดการเชื่อมต่อเครือข่ายของเซิร์ฟเวอร์นั้น (Containment)",
+            "แจ้งลูกค้าทั้งหมดให้เปลี่ยนรหัสผ่าน"
+        ],
+        answer: "ถอดสายแลนหรือตัดการเชื่อมต่อเครือข่ายของเซิร์ฟเวอร์นั้น (Containment)",
+        explanation: "ขั้นตอนแรกใน Phase 'Response' คือ Containment หรือการจำกัดความเสียหาย การตัดการเชื่อมต่อเครือข่ายจะหยุดการขโมยข้อมูลและป้องกันไม่ให้ผู้โจมตีทำลายหลักฐานหรือโจมตีระบบอื่นต่อ"
+    },
+    {
+        question: "ข้อใดคือเป้าหมายหลักของการประชุม Lessons Learned หลังจบเหตุการณ์?",
+        options: [
+            "หาคนผิดมารับผิดชอบ",
+            "คำนวณโบนัสของทีม IR",
+            "เพื่อวิเคราะห์ว่าอะไรทำได้ดี อะไรควรปรับปรุง และป้องกันไม่ให้เกิดซ้ำ",
+            "เขียนรายงานส่งผู้บริหารเท่านั้น"
+        ],
+        answer: "เพื่อวิเคราะห์ว่าอะไรทำได้ดี อะไรควรปรับปรุง และป้องกันไม่ให้เกิดซ้ำ",
+        explanation: "หัวใจของ Post-Incident Activity คือการเรียนรู้และปรับปรุง (Continuous Improvement) เพื่อให้องค์กรแข็งแกร่งขึ้นและรับมือกับเหตุการณ์ในอนาคตได้ดีกว่าเดิม ไม่ใช่การหาคนผิด"
+    },
+    {
+        question: "กฎการสำรองข้อมูลแบบ '3-2-1' หมายความว่าอย่างไร?",
+        options: [
+            "Backup 3 ครั้งต่อวัน, เก็บไว้ 2 ที่, ทดสอบ 1 ครั้งต่อเดือน",
+            "มีข้อมูล 3 สำเนา, เก็บในสื่อ 2 ชนิดที่แตกต่างกัน, และมี 1 สำเนาเก็บไว้นอกสถานที่ (Off-site)",
+            "ใช้ Server 3 ตัว, Network Switch 2 ตัว, และ Data Center 1 แห่ง",
+            "ใช้เวลา Backup ไม่เกิน 3 ชั่วโมง, กู้คืนใน 2 ชั่วโมง, และ Downtime ไม่เกิน 1 ชั่วโมง"
+        ],
+        answer: "มีข้อมูล 3 สำเนา, เก็บในสื่อ 2 ชนิดที่แตกต่างกัน, และมี 1 สำเนาเก็บไว้นอกสถานที่ (Off-site)",
+        explanation: "กฎ 3-2-1 เป็น Best Practice ที่ช่วยให้มั่นใจว่าข้อมูลจะยังคงอยู่รอดปลอดภัยแม้เกิดภัยพิบัติรุนแรง เช่น ไฟไหม้ Data Center"
+    },
+    {
+        question: "ในฐานะ Software Engineer คุณจะช่วยในขั้นตอน 'Preparation' ได้อย่างไรดีที่สุด?",
+        options: [
+            "รอให้เกิดเหตุการณ์ก่อนแล้วค่อยช่วยแก้ไข",
+            "ออกแบบระบบให้มีการบันทึก Log ที่ดีและมีโครงสร้าง (Structured Logging)",
+            "ซื้อโปรแกรม Antivirus ที่ดีที่สุด",
+            "ฝึกเจาะระบบของบริษัท"
+        ],
+        answer: "ออกแบบระบบให้มีการบันทึก Log ที่ดีและมีโครงสร้าง (Structured Logging)",
+        explanation: "Log ที่ดีเปรียบเสมือน 'กล้องวงจรปิด' ของระบบ ซึ่งจะช่วยให้ทีม IR สามารถสืบสวนหาสาเหตุและลำดับเหตุการณ์ได้อย่างรวดเร็วและแม่นยำ การวางแผน Logging ที่ดีตั้งแต่ขั้นตอนออกแบบจึงสำคัญมาก"
+    },
+    {
+        question: "เอกสาร 'Chain of Custody' มีไว้เพื่อวัตถุประสงค์ใด?",
+        options: [
+            "เป็นแผนผังเครือข่ายขององค์กร",
+            "เป็นรายการทรัพย์สิน IT ทั้งหมด",
+            "เป็นบันทึกการครอบครองและส่งมอบหลักฐานดิจิทัล เพื่อรับประกันความสมบูรณ์",
+            "เป็นคู่มือการใช้งานเครื่องมือ Forensics"
+        ],
+        answer: "เป็นบันทึกการครอบครองและส่งมอบหลักฐานดิจิทัล เพื่อรับประกันความสมบูรณ์",
+        explanation: "Chain of Custody คือเอกสารทางกฎหมายที่ติดตามว่าใครเป็นผู้ถือครองหลักฐานในแต่ละช่วงเวลา เพื่อให้แน่ใจว่าหลักฐานไม่ได้ถูกดัดแปลงและมีความน่าเชื่อถือในชั้นศาล"
+    },
+    {
+        question: "Business Continuity Planning (BCP) แตกต่างจาก Disaster Recovery (DR) อย่างไร?",
+        options: [
+            "BCP โฟกัสที่การกู้คืนระบบ IT, DR โฟกัสที่การดำเนินธุรกิจ",
+            "BCP โฟกัสที่การทำให้ธุรกิจดำเนินต่อไปได้, DR เป็นส่วนหนึ่งของ BCP ที่เน้นการกู้คืนระบบ IT",
+            "ทั้งสองอย่างเหมือนกัน สามารถใช้แทนกันได้",
+            "BCP ใช้สำหรับภัยธรรมชาติ, DR ใช้สำหรับ Cyber Attack"
+        ],
+        answer: "BCP โฟกัสที่การทำให้ธุรกิจดำเนินต่อไปได้, DR เป็นส่วนหนึ่งของ BCP ที่เน้นการกู้คืนระบบ IT",
+        explanation: "BCP เป็นภาพที่ใหญ่กว่า โดยมองว่า 'ทำอย่างไรให้ธุรกิจไม่หยุดชะงัก' ซึ่งอาจรวมถึงการย้ายพนักงานไปทำงานที่อื่น, การใช้กระบวนการ Manual ชั่วคราว ส่วน DR จะเน้นที่ 'ทำอย่างไรให้ระบบ IT กลับมาใช้งานได้'"
+    },
+    {
+        question: "Incident Response Team ควรมีบทบาทใดต่อไปนี้เพื่อสื่อสารกับสาธารณะและลูกค้า?",
+        options: [
+            "Incident Commander (หัวหน้าทีม)",
+            "Technical Lead (หัวหน้าทีมเทคนิค)",
+            "Communications Lead (โฆษก/ฝ่ายสื่อสาร)",
+            "Legal Advisor (ที่ปรึกษากฎหมาย)"
+        ],
+        answer: "Communications Lead (โฆษก/ฝ่ายสื่อสาร)",
+        explanation: "ควรมีผู้รับผิดชอบการสื่อสารโดยเฉพาะ (มักจะเป็นฝ่าย PR หรือ Marketing) เพื่อให้การสื่อสารเป็นไปในทิศทางเดียวกัน, ถูกต้อง, และไม่สร้างความตื่นตระหนกเกินจำเป็น"
+    },
+    {
+        question: "การทำ 'Tabletop Exercise' คืออะไร?",
+        options: [
+            "การแข่งขันเจาะระบบ",
+            "การฝึกอบรมการเขียนโค้ดให้ปลอดภัย",
+            "การซ้อมแผนรับมือเหตุการณ์โดยการพูดคุยตามสถานการณ์จำลอง โดยไม่มีการแตะต้องระบบจริง",
+            "การทดสอบ Restore ข้อมูลจาก Backup จริง"
+        ],
+        answer: "การซ้อมแผนรับมือเหตุการณ์โดยการพูดคุยตามสถานการณ์จำลอง โดยไม่มีการแตะต้องระบบจริง",
+        explanation: "Tabletop Exercise เป็นการซ้อมบทบาทสมมติ เพื่อทดสอบความเข้าใจในแผนและกระบวนการตัดสินใจของทีม IR โดยไม่ต้องเสี่ยงกับระบบจริง เหมาะสำหรับการเริ่มต้นและทดสอบแผน"
+    },
+    {
+        question: "เครื่องมือ SIEM (Security Information and Event Management) ทำหน้าที่หลักอะไร?",
+        options: [
+            "ป้องกันไวรัสและมัลแวร์",
+            "เข้ารหัสข้อมูลใน Hard disk",
+            "รวบรวมและวิเคราะห์ Log จากหลายๆ แหล่งเพื่อหาความสัมพันธ์และแจ้งเตือนภัยคุกคาม",
+            "จัดการรหัสผ่านขององค์กร"
+        ],
+        answer: "รวบรวมและวิเคราะห์ Log จากหลายๆ แหล่งเพื่อหาความสัมพันธ์และแจ้งเตือนภัยคุกคาม",
+        explanation: "SIEM เปรียบเสมือน 'สมองกล' ของศูนย์ปฏิบัติการความปลอดภัย (SOC) ที่ช่วยวิเคราะห์ข้อมูลมหาศาลเพื่อตรวจจับการโจมตีที่ซับซ้อน"
+    },
+    {
+        question: "MTTD (Mean Time to Detect) คือตัวชี้วัด (KPI) ที่ใช้วัดอะไร?",
+        options: [
+            "เวลาเฉลี่ยในการแก้ไขปัญหา",
+            "เวลาเฉลี่ยในการกู้คืนระบบ",
+            "เวลาเฉลี่ยในการตรวจจับเจอภัยคุกคามตั้งแต่เริ่มเกิดขึ้น",
+            "เวลาเฉลี่ยที่ระบบล่ม"
+        ],
+        answer: "เวลาเฉลี่ยในการตรวจจับเจอภัยคุกคามตั้งแต่เริ่มเกิดขึ้น",
+        explanation: "MTTD เป็น KPI สำคัญที่บ่งบอกประสิทธิภาพของระบบ Monitoring และ Detection ยิ่งค่านี้ต่ำเท่าไหร่ ยิ่งหมายความว่าเราสามารถตรวจจับการโจมตีได้เร็วขึ้นเท่านั้น"
+    },
+    {
+        question: "ข้อใด ไม่ใช่ ส่วนหนึ่งของขั้นตอน 'Eradication' ในการรับมือเหตุการณ์?",
+        options: [
+            "การลบมัลแวร์ออกจากระบบ",
+            "การติดตั้ง Patch เพื่ออุดช่องโหว่",
+            "การ Restore ข้อมูลจาก Backup",
+            "การลบบัญชีผู้ใช้ที่ผู้โจมตีสร้างขึ้น"
+        ],
+        answer: "การ Restore ข้อมูลจาก Backup",
+        explanation: "Eradication คือการ 'กำจัด' ต้นตอของการโจมตีให้หมดสิ้น ส่วนการ Restore ข้อมูลจาก Backup เป็นส่วนหนึ่งของขั้นตอน 'Recovery' ซึ่งเป็นการนำระบบกลับสู่สภาพปกติ"
+    },
+    {
+        question: "ภัยคุกคามแบบ 'Supply Chain Attack' หมายถึงอะไร?",
+        options: [
+            "การโจมตีระบบโลจิสติกส์ของบริษัท",
+            "การแฮกเข้าระบบผ่านช่องโหว่ของซอฟต์แวร์หรือบริการจาก Third-party ที่เราใช้งาน",
+            "การหลอกลวงพนักงานในแผนกจัดซื้อ",
+            "การโจมตีทางกายภาพที่คลังสินค้า"
+        ],
+        answer: "การแฮกเข้าระบบผ่านช่องโหว่ของซอฟต์แวร์หรือบริการจาก Third-party ที่เราใช้งาน",
+        explanation: "เป็นการโจมตีที่ไม่ได้มุ่งเป้ามาที่เราโดยตรง แต่โจมตีผ่าน 'ห่วงโซ่อุปทาน' ของซอฟต์แวร์ เช่น การแฝงมัลแวร์มาใน Library ที่เราดาวน์โหลดมาใช้ (เช่น เหตุการณ์ Log4j)"
+    },
+    {
+        question: "หลักการ 'Zero Trust' ในยุค Remote Work มีแนวคิดสำคัญว่าอย่างไร?",
+        options: [
+            "เชื่อถือทุกการเชื่อมต่อจากภายในเครือข่ายบริษัท",
+            "ไม่เชื่อถือใครเลย และต้องมีการตรวจสอบ (Verify) ทุกครั้งที่มีการเข้าถึงทรัพยากร",
+            "เชื่อถือเฉพาะผู้บริหารระดับสูงเท่านั้น",
+            "เมื่อเชื่อมต่อ VPN แล้ว สามารถเข้าถึงได้ทุกระบบ"
+        ],
+        answer: "ไม่เชื่อถือใครเลย และต้องมีการตรวจสอบ (Verify) ทุกครั้งที่มีการเข้าถึงทรัพยากร",
+        explanation: "Zero Trust มีคติว่า 'Never Trust, Always Verify' ซึ่งหมายความว่าไม่ว่าผู้ใช้จะอยู่ที่ไหนหรือใช้อุปกรณ์อะไร จะต้องมีการพิสูจน์ตัวตนและตรวจสอบสิทธิ์ทุกครั้งที่พยายามเข้าถึงข้อมูล"
+    },
+    {
+        question: "ใบรับรอง (Certification) ใดที่เน้นด้านการจัดการรับมือเหตุการณ์โดยตรง?",
+        options: [
+            "CompTIA Security+",
+            "CISSP (Certified Information Systems Security Professional)",
+            "GCIH (GIAC Certified Incident Handler)",
+            "OSCP (Offensive Security Certified Professional)"
+        ],
+        answer: "GCIH (GIAC Certified Incident Handler)",
+        explanation: "GCIH เป็นใบรับรองเฉพาะทางที่ได้รับการยอมรับอย่างสูงในวงการ Incident Response ซึ่งครอบคลุมทักษะการตรวจจับ, ตอบสนอง, และแก้ไขการโจมตี"
+    },
+    {
+        question: "เครื่องมือ 'Volatility Framework' ใช้สำหรับวิเคราะห์อะไร?",
+        options: [
+            "วิเคราะห์ Log file",
+            "วิเคราะห์ Network traffic",
+            "วิเคราะห์ Memory (RAM) dump",
+            "วิเคราะห์ช่องโหว่ของเว็บแอปพลิเคชัน"
+        ],
+        answer: "วิเคราะห์ Memory (RAM) dump",
+        explanation: "Volatility ใช้สำหรับวิเคราะห์สิ่งที่อยู่ในหน่วยความจำ (RAM) ของเครื่องคอมพิวเตอร์ ซึ่งมีประโยชน์มากในการค้นหามัลแวร์ที่ไม่มีไฟล์บนดิสก์ (Fileless Malware) หรือหาร่องรอยที่อาจหายไปหลังรีบูตเครื่อง"
+    },
+    {
+        question: "ความแตกต่างระหว่าง 'Incident' และ 'Crisis' คืออะไร?",
+        options: [
+            "Incident เกิดจากแฮกเกอร์, Crisis เกิดจากภัยธรรมชาติ",
+            "Incident เป็นปัญหาทางเทคนิค, Crisis เป็นปัญหาที่ส่งผลกระทบต่อทั้งองค์กรและชื่อเสียง",
+            "Incident จัดการโดยทีม IT, Crisis จัดการโดยทีม HR",
+            "ไม่มีความแตกต่างกัน"
+        ],
+        answer: "Incident เป็นปัญหาทางเทคนิค, Crisis เป็นปัญหาที่ส่งผลกระทบต่อทั้งองค์กรและชื่อเสียง",
+        explanation: "Incident อาจเป็นเหตุการณ์เล็กๆ ที่ทีม IT จัดการได้ แต่เมื่อ Incident นั้นลุกลามจนส่งผลกระทบต่อการเงิน, ชื่อเสียง, หรือความเชื่อมั่นของลูกค้าอย่างรุนแรง มันจะยกระดับกลายเป็น Crisis ที่ต้องการการจัดการในระดับผู้บริหาร"
+    },
+    {
+        question: "คุณเป็น SOC Analyst พบ Log ต่อไปนี้ ควรตั้งสมมติฐานว่าเกิดอะไรขึ้น?",
+        code: `[14:15] Failed login attempts x50 for user 'admin' from 203.xxx.xxx.xxx\n[14:20] SSH login SUCCESS from 203.xxx.xxx.xxx - user 'admin'`,
+        options: [
+            "ผู้ใช้ 'admin' ลืมรหัสผ่าน",
+            "ระบบ Log ทำงานผิดปกติ",
+            "เกิดการโจมตีแบบ Brute-force และผู้โจมตีเดารหัสผ่านสำเร็จ",
+            "มีคนพยายาม Phishing ผู้ใช้ 'admin'"
+        ],
+        answer: "เกิดการโจมตีแบบ Brute-force และผู้โจมตีเดารหัสผ่านสำเร็จ",
+        explanation: "รูปแบบการล็อกอินผิดพลาดซ้ำๆ จาก IP เดียวกัน ตามด้วยการล็อกอินสำเร็จ เป็นสัญญาณคลาสสิกของการโจมตีแบบ Brute-force ที่ผู้โจมตีพยายามเดารหัสผ่านไปเรื่อยๆ จนถูกต้อง"
+    },
+    {
+        question: "Business Impact Analysis (BIA) มีวัตถุประสงค์หลักเพื่ออะไร?",
+        options: [
+            "เพื่อระบุว่าระบบใดมีความสำคัญต่อธุรกิจมากที่สุดและควรกู้คืนก่อน",
+            "เพื่อคำนวณค่าปรับจากกฎหมาย PDPA",
+            "เพื่อออกแบบสถาปัตยกรรมเครือข่าย",
+            "เพื่อประเมินประสิทธิภาพของพนักงาน"
+        ],
+        answer: "เพื่อระบุว่าระบบใดมีความสำคัญต่อธุรกิจมากที่สุดและควรกู้คืนก่อน",
+        explanation: "BIA ช่วยให้องค์กรเข้าใจว่าหากระบบต่างๆ ล่ม จะส่งผลกระทบต่อรายได้และการดำเนินงานอย่างไร ทำให้สามารถจัดลำดับความสำคัญในการวางแผน DR และ BCP ได้อย่างถูกต้อง"
+    },
+    {
+        question: "ข้อใดคือตัวอย่างของ 'Long-term Containment'?",
+        options: [
+            "ถอดสายแลนออกจากเครื่องที่ติดเชื้อ",
+            "เปลี่ยนรหัสผ่านของบัญชีที่ถูกแฮก",
+            "ย้ายเครื่องที่ติดเชื้อไปยังเครือข่ายแยก (Quarantine VLAN) เพื่อวิเคราะห์เพิ่มเติม",
+            "รีบูตเครื่องเซิร์ฟเวอร์"
+        ],
+        answer: "ย้ายเครื่องที่ติดเชื้อไปยังเครือข่ายแยก (Quarantine VLAN) เพื่อวิเคราะห์เพิ่มเติม",
+        explanation: "Long-term containment เป็นการจำกัดความเสียหายในระยะยาวที่ช่วยให้เรายังสามารถวิเคราะห์เครื่องที่ติดเชื้อได้ในสภาพแวดล้อมที่ปลอดภัย ต่างจาก Short-term (ถอดสายแลน) ที่เป็นการหยุดภัยคุกคามทันทีแต่อาจเสียโอกาสในการเก็บหลักฐาน"
+    },
+    {
+        question: "ทำไม Software Engineer จึงไม่ควรทำงานวิเคราะห์บนหลักฐานดิจิทัลตัวจริงโดยตรง?",
+        options: [
+            "เพราะอาจทำให้ข้อมูลช้าลง",
+            "เพราะอาจทำให้หลักฐานเสียหายหรือเปลี่ยนแปลง และหมดความน่าเชื่อถือทางกฎหมาย",
+            "เพราะต้องใช้สิทธิ์ Admin ซึ่ง Engineer ไม่มี",
+            "เพราะจะทำให้ติดไวรัสไปด้วย"
+        ],
+        answer: "เพราะอาจทำให้หลักฐานเสียหายหรือเปลี่ยนแปลง และหมดความน่าเชื่อถือทางกฎหมาย",
+        explanation: "การเปิดไฟล์หรือรันโปรแกรมบนหลักฐานตัวจริงอาจเปลี่ยนแปลง Timestamps หรือ Metadata ของไฟล์ได้ ซึ่งทำลายความสมบูรณ์ของหลักฐาน ดังนั้นจึงต้องทำงานกับสำเนา (Forensic Image) เท่านั้น"
+    },
+    {
+        question: "องค์กรที่อยู่ใน Incident Response Maturity Level 5 (Optimized) จะมีลักษณะเด่นอย่างไร?",
+        options: [
+            "มีแผนรับมือเขียนไว้ในกระดาษ",
+            "มีการซ้อมแผนเป็นครั้งคราว",
+            "มีการวัดผล KPI และปรับปรุงกระบวนการอย่างต่อเนื่อง",
+            "ใช้ระบบอัตโนมัติ (Automation) และ AI ในการรับมือและเรียนรู้จากเหตุการณ์"
+        ],
+        answer: "ใช้ระบบอัตโนมัติ (Automation) และ AI ในการรับมือและเรียนรู้จากเหตุการณ์",
+        explanation: "ระดับสูงสุดของ Maturity คือการที่กระบวนการส่วนใหญ่เป็นแบบอัตโนมัติ, มีการเรียนรู้และปรับปรุงตัวเอง (Self-healing/Self-improving) และสามารถคาดการณ์ภัยคุกคามได้"
+    },
+    {
+        question: "คุณได้รับอีเมลจาก CEO สั่งให้โอนเงินด่วนไปยังบัญชีที่ไม่เคยติดต่อมาก่อน และกำชับว่าเป็นเรื่องลับห้ามบอกใคร ควรทำอย่างไร?",
+        options: [
+            "รีบโอนเงินตามคำสั่งทันที เพราะเป็นคำสั่งจาก CEO",
+            "ส่งต่ออีเมลให้ฝ่ายการเงินจัดการ",
+            "โทรศัพท์หรือเดินไปหา CEO โดยตรงเพื่อยืนยันคำสั่ง (ห้าม Reply อีเมล)",
+            "ลบอีเมลทิ้งเพราะน่าจะเป็นสแปม"
+        ],
+        answer: "โทรศัพท์หรือเดินไปหา CEO โดยตรงเพื่อยืนยันคำสั่ง (ห้าม Reply อีเมล)",
+        explanation: "นี่คือลักษณะคลาสสิกของ Business Email Compromise (BEC) ที่ผู้โจมตีปลอมอีเมลเป็นผู้บริหาร การตรวจสอบโดยใช้ช่องทางอื่น (Out-of-band verification) เช่น การโทรศัพท์ เป็นวิธีที่ดีที่สุดในการยืนยัน"
+    },
+    {
+        question: "ข้อใดคือความเสี่ยงที่สำคัญที่สุดของการทำงานแบบ Remote Work?",
+        options: [
+            "พนักงานทำงานไม่เต็มที่",
+            "ค่าใช้จ่ายอินเทอร์เน็ตสูงขึ้น",
+            "การใช้อุปกรณ์ส่วนตัวและเครือข่าย Wi-Fi ที่บ้านซึ่งอาจไม่ปลอดภัย",
+            "การประชุมออนไลน์บ่อยเกินไป"
+        ],
+        answer: "การใช้อุปกรณ์ส่วนตัวและเครือข่าย Wi-Fi ที่บ้านซึ่งอาจไม่ปลอดภัย",
+        explanation: "ขอบเขตความปลอดภัยขององค์กร (Perimeter) ขยายจากออฟฟิศไปสู่บ้านของพนักงานทุกคน ซึ่งเพิ่มจุดอ่อนและช่องทางการโจมตีจำนวนมากหากไม่มีมาตรการควบคุมที่ดี"
+    },
+    {
+        question: "การออกแบบระบบโดยใช้ 'Circuit Breaker Pattern' ช่วยในเรื่อง Incident Response อย่างไร?",
+        options: [
+            "ป้องกัน SQL Injection",
+            "ช่วยให้ระบบโดยรวมไม่ล่มตามไปด้วยเมื่อ Service ย่อยตัวหนึ่งมีปัญหาหรือถูกโจมตี",
+            "เข้ารหัสข้อมูล",
+            "ตรวจสอบรหัสผ่าน"
+        ],
+        answer: "ช่วยให้ระบบโดยรวมไม่ล่มตามไปด้วยเมื่อ Service ย่อยตัวหนึ่งมีปัญหาหรือถูกโจมตี",
+        explanation: "Circuit Breaker ช่วยเพิ่มความทนทาน (Resilience) ให้กับระบบ โดยการตัดการเชื่อมต่อไปยัง service ที่ล่มชั่วคราว ทำให้ส่วนอื่นๆ ของแอปพลิเคชันยังทำงานต่อไปได้ และช่วยจำกัดผลกระทบของ Incident ให้อยู่ในวงแคบ"
+    },
+    {
+        question: "เมื่อเกิด Crisis ที่ต้องสื่อสารกับลูกค้า สิ่งที่สำคัญที่สุดในการสื่อสารคืออะไร?",
+        options: [
+            "โทษว่าเป็นความผิดของ Third-party",
+            "บอกข้อมูลทางเทคนิคให้ละเอียดที่สุด",
+            "ความรวดเร็ว, ความโปร่งใส, และการแสดงความรับผิดชอบพร้อมแนวทางแก้ไข",
+            "สัญญาว่าจะไม่มีเหตุการณ์แบบนี้เกิดขึ้นอีก 100%"
+        ],
+        answer: "ความรวดเร็ว, ความโปร่งใส, และการแสดงความรับผิดชอบพร้อมแนวทางแก้ไข",
+        explanation: "การสื่อสารที่ดีในภาวะวิกฤตสามารถเปลี่ยนวิกฤตให้เป็นโอกาสในการสร้างความไว้วางใจได้ การยอมรับ, แจ้งข้อมูลที่เป็นจริง, และบอกขั้นตอนต่อไปอย่างชัดเจน เป็นหัวใจสำคัญในการรักษาความสัมพันธ์กับลูกค้า"
+    },
+    {
+        question: "เป้าหมายสูงสุดของกระบวนการ Incident Response ทั้งหมดคืออะไร?",
+        options: [
+            "จับแฮกเกอร์เข้าคุกให้ได้",
+            "ทำให้แน่ใจว่าจะไม่ถูกโจมตีอีกเลย",
+            "ลดผลกระทบทางธุรกิจให้เหลือน้อยที่สุด และฟื้นฟูการดำเนินงานให้กลับมาเป็นปกติโดยเร็วที่สุด",
+            "ซื้อเทคโนโลยีความปลอดภัยใหม่ล่าสุด"
+        ],
+        answer: "ลดผลกระทบทางธุรกิจให้เหลือน้อยที่สุด และฟื้นฟูการดำเนินงานให้กลับมาเป็นปกติโดยเร็วที่สุด",
+        explanation: "แม้ว่าการจับผู้กระทำผิดหรือการป้องกัน 100% จะเป็นเรื่องดี แต่เป้าหมายที่แท้จริงและทำได้ของ IR คือการบริหารจัดการความเสียหาย (Damage Control) เพื่อให้ธุรกิจสามารถอยู่รอดและดำเนินต่อไปได้"
+    }
+];
+
+        const welcomePage = document.getElementById('welcome-page');
+        const quizPage = document.getElementById('quiz-page');
+        const resultPage = document.getElementById('result-page');
+        const form = document.getElementById('student-info-form');
+        
+        const questionNumber = document.getElementById('question-number');
+        const progressBar = document.getElementById('progress-bar');
+        const questionCounter = document.getElementById('question-counter');
+        const questionText = document.getElementById('question-text');
+        const codeSnippet = document.getElementById('code-snippet');
+        const optionsList = document.getElementById('options-list');
+        
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const finishBtn = document.getElementById('finish-btn');
+        const retakeBtn = document.getElementById('retake-btn');
+        
+        let currentQuestionIndex = 0;
+        let userAnswers = new Array(quizData.length).fill(null);
+        let studentInfo = {};
+
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            studentInfo.fullname = document.getElementById('fullname').value;
+            studentInfo.studentId = document.getElementById('student-id').value;
+            startQuiz();
+        });
+        
+        function startQuiz() {
+            currentQuestionIndex = 0;
+            userAnswers.fill(null);
+            welcomePage.classList.add('hidden');
+            resultPage.classList.add('hidden');
+            quizPage.classList.remove('hidden');
+            displayQuestion();
+        }
+
+        function displayQuestion() {
+            const questionData = quizData[currentQuestionIndex];
+            
+            questionNumber.textContent = `คำถามข้อที่ ${currentQuestionIndex + 1}`;
+            progressBar.style.width = `${((currentQuestionIndex + 1) / quizData.length) * 100}%`;
+            questionCounter.textContent = `${currentQuestionIndex + 1} / ${quizData.length}`;
+            questionText.textContent = questionData.question;
+            
+            if (questionData.code) {
+                codeSnippet.textContent = questionData.code;
+                codeSnippet.classList.remove('hidden');
+            } else {
+                codeSnippet.classList.add('hidden');
+            }
+
+            optionsList.innerHTML = '';
+            questionData.options.forEach(option => {
+                const li = document.createElement('li');
+                li.className = 'option';
+                li.textContent = option;
+                if (userAnswers[currentQuestionIndex] === option) {
+                    li.classList.add('selected');
+                }
+                li.addEventListener('click', () => selectOption(li, option));
+                optionsList.appendChild(li);
+            });
+
+            updateNavigation();
+        }
+
+        function selectOption(liElement, option) {
+            const selectedOption = optionsList.querySelector('.selected');
+            if (selectedOption) {
+                selectedOption.classList.remove('selected');
+            }
+            liElement.classList.add('selected');
+            userAnswers[currentQuestionIndex] = option;
+            updateNavigation();
+            
+            // Auto-advance to next question
+            setTimeout(() => {
+                if (currentQuestionIndex < quizData.length - 1) {
+                    nextBtn.click();
+                } else {
+                    if(userAnswers[currentQuestionIndex] !== null) finishBtn.click();
+                }
+            }, 300);
+        }
+
+        function updateNavigation() {
+            prevBtn.disabled = currentQuestionIndex === 0;
+            const isLastQuestion = currentQuestionIndex === quizData.length - 1;
+            nextBtn.disabled = userAnswers[currentQuestionIndex] === null || isLastQuestion;
+            
+            if (isLastQuestion) {
+                nextBtn.classList.add('hidden');
+                finishBtn.classList.remove('hidden');
+                finishBtn.disabled = userAnswers.includes(null);
+            } else {
+                nextBtn.classList.remove('hidden');
+                finishBtn.classList.add('hidden');
+            }
+        }
+
+        prevBtn.addEventListener('click', () => {
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+                displayQuestion();
+            }
+        });
+
+        nextBtn.addEventListener('click', () => {
+            if (currentQuestionIndex < quizData.length - 1) {
+                currentQuestionIndex++;
+                displayQuestion();
+            }
+        });
+        
+        finishBtn.addEventListener('click', showResults);
+        retakeBtn.addEventListener('click', startQuiz);
+
+
+        function showResults() {
+            let score = 0;
+            userAnswers.forEach((answer, index) => {
+                if (answer === quizData[index].answer) {
+                    score++;
+                }
+            });
+
+            const percentage = Math.round((score / quizData.length) * 100);
+            const passed = score >= 25;
+
+            document.getElementById('result-fullname').textContent = studentInfo.fullname;
+            document.getElementById('result-studentid').textContent = studentInfo.studentId;
+
+            const scoreDisplay = document.getElementById('score-display');
+            scoreDisplay.textContent = `${score} / ${quizData.length} (${percentage}%)`;
+            scoreDisplay.className = `score-display ${passed ? 'pass' : 'fail'}`;
+
+            const levelBadge = document.getElementById('level-badge');
+            const levelDescription = document.getElementById('level-description');
+            
+            retakeBtn.classList.add('hidden');
+
+            if (passed) {
+                levelBadge.textContent = 'สถานะ: ภารกิจสำเร็จ (Proficient)';
+                levelBadge.className = 'level-badge level-proficient';
+                levelDescription.textContent = 'ยอดเยี่ยม! คุณมีความเข้าใจในหลักการ Incident Response เป็นอย่างดี พร้อมรับมือกับสถานการณ์จริง';
+            } else {
+                levelBadge.textContent = 'สถานะ: ภารกิจล้มเหลว (Needs Improvement)';
+                levelBadge.className = 'level-badge level-danger';
+                levelDescription.textContent = 'คะแนนยังไม่ถึงเกณฑ์ แต่ไม่เป็นไร! วิกฤตสร้างวีรบุรุษเสมอ ทบทวนข้อผิดพลาดแล้วเริ่มภารกิจใหม่อีกครั้ง';
+                retakeBtn.classList.remove('hidden');
+            }
+
+            quizPage.classList.add('hidden');
+            resultPage.classList.remove('hidden');
+            
+            buildReviewSection();
+        }
+
+        function buildReviewSection() {
+            const reviewSection = document.getElementById('review-section');
+            reviewSection.innerHTML = '<h2>ทบทวนการปฏิบัติภารกิจ</h2>';
+            quizData.forEach((question, index) => {
+                const item = document.createElement('div');
+                item.className = 'review-item';
+                
+                let questionHtml = `<div class="question-text">${index + 1}. ${question.question}</div>`;
+                if(question.code) {
+                    questionHtml += `<pre class="code-snippet">${question.code}</pre>`;
+                }
+
+                let optionsHtml = '';
+                question.options.forEach(option => {
+                    let classNames = 'review-option';
+                    if (option === question.answer) {
+                        classNames += ' correct';
+                    }
+                    if (userAnswers[index] === option && option !== question.answer) {
+                        classNames += ' incorrect';
+                    }
+                    optionsHtml += `<div class="${classNames}">${option}</div>`;
+                });
+
+                item.innerHTML = `
+                    ${questionHtml}
+                    ${optionsHtml}
+                    <div class="explanation">
+                        <strong>คำอธิบาย:</strong> ${question.explanation}
+                    </div>
+                `;
+                reviewSection.appendChild(item);
+            });
+        }
+        
+        document.getElementById('review-btn').addEventListener('click', () => {
+            const reviewSection = document.getElementById('review-section');
+            const reviewBtn = document.getElementById('review-btn');
+            if(reviewSection.style.display === 'block') {
+                reviewSection.style.display = 'none';
+                reviewBtn.textContent = 'ทบทวนภารกิจ';
+            } else {
+                reviewSection.style.display = 'block';
+                reviewBtn.textContent = 'ซ่อนเฉลย';
+            }
+        });
+
+document.getElementById('capture-btn').addEventListener('click', () => {
+    const captureArea = document.getElementById('result-capture-area');
+    const originalBorder = captureArea.style.border;
+    const originalBg = captureArea.style.backgroundColor;
+
+    // 1. ตั้งค่าพื้นหลังและเส้นขอบเป็นค่าสีจริงชั่วคราว
+    captureArea.style.border = 'none';
+    captureArea.style.backgroundColor = '#1f2937'; // ใช้ค่าสีจริงของ --card-bg
+
+    html2canvas(captureArea, {
+        scale: 2,
+        backgroundColor: '#1f2937' // ระบุสีจริงให้ library โดยตรง
+    }).then(canvas => {
+        // 2. คืนค่าสไตล์เดิมหลังจากจับภาพเสร็จ
+        captureArea.style.border = originalBorder;
+        captureArea.style.backgroundColor = originalBg;
+
+        // 3. สร้างลิงก์สำหรับดาวน์โหลดภาพ
+        const link = document.createElement('a');
+        link.download = `ENGSE214_W10_Result_${studentInfo.studentId}.png`;
+        link.href = canvas.toDataURL();
+        link.click();
+    }).catch(err => {
+        console.error("เกิดข้อผิดพลาดในการจับภาพ:", err);
+        // คืนค่าสไตล์เดิมแม้ว่าจะเกิดข้อผิดพลาด
+        captureArea.style.border = originalBorder;
+        captureArea.style.backgroundColor = originalBg;
+        alert("ขออภัย, ไม่สามารถบันทึกภาพได้ในขณะนี้");
+    });
+});
+
+    </script>
+</body>
+</html>
