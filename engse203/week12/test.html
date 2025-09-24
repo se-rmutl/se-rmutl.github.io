@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>แบบทดสอบพื้นฐาน | ENGSE203 | Electron.js Week 12 (Fixed)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        body {
+            font-family: 'Sarabun', sans-serif;
+            background-color: #111827; /* bg-gray-900 */
+        }
+        .answer-btn {
+            transition: all 0.2s ease-in-out;
+        }
+        .answer-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            background-color: #4b5563; /* hover:bg-gray-600 */
+        }
+        .answer-btn.selected {
+            background-color: #3b82f6; /* bg-blue-600 */
+            border-color: #2563eb; /* border-blue-700 */
+            color: white;
+        }
+        .answer-btn.correct {
+            background-color: #16a34a; /* bg-green-600 */
+            color: white;
+            border-color: #15803d;
+        }
+        .answer-btn.incorrect {
+            background-color: #dc2626; /* bg-red-600 */
+            color: white;
+            border-color: #b91c1c;
+        }
+        .btn-icon {
+            width: 1.25rem;
+            height: 1.25rem;
+            margin-right: 0.5rem;
+        }
+        #explanation-box {
+            transition: opacity 0.5s ease-in-out, max-height 0.5s ease-in-out;
+            max-height: 0;
+            opacity: 0;
+            overflow: hidden;
+        }
+        #explanation-box.visible {
+            max-height: 1000px; /* Large enough to not clip content */
+            opacity: 1;
+        }
+    </style>
+</head>
+<body class="text-gray-200 flex items-center justify-center min-h-screen p-4">
+
+    <div class="w-full max-w-4xl mx-auto">
+
+        <div id="start-screen" class="bg-gray-800 p-8 rounded-2xl shadow-2xl text-center transition-opacity duration-500">
+            <div class="flex justify-center items-center gap-4 mb-4">
+                 <svg class="w-10 h-10 text-blue-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 a 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <h1 class="text-3xl md:text-4xl font-bold text-blue-400">แบบทดสอบพื้นฐาน Electron.js</h1>
+            </div>
+            <p class="text-lg md:text-xl text-gray-300 mb-1">ENGSE203: Week 12 Core Concepts</p>
+            <p class="text-md text-gray-400 mb-6">ทบทวนความเข้าใจจากเนื้อหาในสไลด์การสอน</p>
+            
+            <div class="bg-gray-900/50 p-4 rounded-lg border-l-4 border-blue-500 text-left mb-8">
+                <p class="text-gray-300">
+                    <strong class="text-blue-400">ทบทวนความรู้พื้นฐาน!</strong> 👨‍💻👩‍💻<br>
+                    แบบทดสอบนี้จะวัดความเข้าใจในแนวคิดหลักๆ ของ Electron.js ที่เราเรียนกันไปในสไลด์ Week 12
+                    มาลองดูกันว่าพื้นฐานของเราแน่นแค่ไหนก่อนจะไปสร้างโปรเจกต์จริงกัน!
+                </p>
+            </div>
+            
+            <form id="student-form" class="space-y-6">
+                <div>
+                    <label for="student-id" class="block text-left text-gray-300 mb-2 font-medium">รหัสนักศึกษา</label>
+                    <input type="text" id="student-id" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="เช่น 66xxxxxxxx" required>
+                </div>
+                <div>
+                    <label for="student-name" class="block text-left text-gray-300 mb-2 font-medium">ชื่อ - นามสกุล</label>
+                    <input type="text" id="student-name" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="เช่น สมชาย ใจดี" required>
+                </div>
+                <button type="submit" id="start-btn" class="w-full flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg transition duration-300 text-lg shadow-lg">
+                    <svg class="btn-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M7 5V4C7 2.34315 8.34315 1 10 1H14C15.6569 1 17 2.34315 17 4V5H20C20.5523 5 21 5.44772 21 6V20C21 20.5523 20.5523 21 20 21H4C3.44772 21 3 20.5523 3 20V6C3 5.44772 3.44772 5 4 5H7ZM9 5H15V4C15 3.44772 14.5523 3 14 3H10C9.44772 3 9 3.44772 9 4V5Z"></path></svg>
+                    เริ่มต้นทำแบบทดสอบ
+                </button>
+            </form>
+        </div>
+
+        <div id="quiz-screen" class="hidden bg-gray-800 p-6 md:p-8 rounded-2xl shadow-2xl transition-opacity duration-500">
+            <div class="mb-6">
+                <div class="flex justify-between items-center mb-2">
+                    <span class="text-sm font-medium text-gray-400">ความคืบหน้า</span>
+                    <span id="question-counter" class="text-sm font-bold text-blue-400">ข้อ 1 / 30</span>
+                </div>
+                <div class="w-full bg-gray-700 rounded-full h-2.5">
+                    <div id="progress-bar" class="bg-blue-600 h-2.5 rounded-full transition-all duration-300 ease-out"></div>
+                </div>
+            </div>
+
+            <div class="mb-6">
+                <h2 id="question-text" class="text-xl md:text-2xl font-bold mb-4" style="min-height: 4rem;"></h2>
+            </div>
+
+            <div id="answer-buttons" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+
+            <div id="explanation-box" class="mt-6"></div>
+
+            <div class="mt-8 flex justify-end">
+                <button id="next-btn" class="flex items-center justify-center bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 px-6 rounded-lg transition duration-300">
+                    <span id="next-btn-text">ข้อถัดไป</span>
+                    <svg class="w-5 h-5 ml-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <div id="result-screen-container" class="hidden">
+            <div id="result-screen" class="bg-gray-800 p-6 md:p-8 rounded-2xl shadow-2xl text-center transition-opacity duration-500">
+                <h2 class="text-3xl font-bold text-blue-400 mb-2">สรุปผลการทดสอบ</h2>
+                <p id="result-student-info" class="text-lg text-gray-300 mb-4"></p>
+                
+                <div id="result-summary-box" class="rounded-xl p-6 my-6">
+                    <p class="text-lg text-gray-300">คะแนนของคุณคือ</p>
+                    <p id="score-text" class="text-6xl font-bold text-white my-2">25 / 30</p>
+                    <p id="score-percentage" class="text-xl"></p>
+                    <p id="pass-fail-status" class="text-2xl font-bold mt-4"></p>
+                </div>
+
+                <div id="summary-container" class="space-y-4 text-left mt-8 max-h-[50vh] overflow-y-auto pr-4"></div>
+                
+                <div class="flex flex-col md:flex-row gap-4 mt-8">
+                    <button id="capture-btn" class="w-full md:w-1/2 flex items-center justify-center bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg transition duration-300 text-lg shadow-lg">
+                        <svg class="btn-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.776 48.776 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" /><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM18.75 10.5h.008v.008h-.008V10.5z" /></svg>
+                        บันทึกผลคะแนน (Capture)
+                    </button>
+                    <button id="retry-btn" class="w-full md:w-1/2 flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition duration-300 text-lg shadow-lg">
+                        <svg class="btn-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0011.667 0l3.181-3.183m-11.667 0l3.181-3.183a8.25 8.25 0 00-11.667 0l3.181 3.183" /></svg>
+                        <span id="retry-btn-text">ทำแบบทดสอบอีกครั้ง</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+<script>
+    // --- DATA ---
+    const quizData = [
+        {
+            question: "จากสไลด์ Course Overview, ข้อใดคือหนึ่งในเป้าหมายการเรียนรู้ (Learning Goals) ของ Week 12?",
+            answers: [
+                { text: "เข้าใจพื้นฐาน Electron.js และ architecture", correct: true },
+                { text: "เขียน Mobile App ด้วย Swift", correct: false },
+                { text: "ออกแบบฐานข้อมูล SQL", correct: false },
+                { text: "เรียนรู้การตลาดสำหรับ Desktop App", correct: false }
+            ],
+            rationale: "ในสไลด์ที่ 1 ระบุเป้าหมายการเรียนรู้ไว้อย่างชัดเจน ซึ่งข้อแรกคือ 'เข้าใจพื้นฐาน Electron.js และ architecture'"
+        },
+        {
+            question: "ข้อใดคือปัญหาหลักของ Traditional Desktop Development ที่ Electron เข้ามาช่วยแก้?",
+            answers: [
+                { text: "ต้องใช้ทีมพัฒนาและ Codebase แยกกันสำหรับแต่ละ OS", correct: true },
+                { text: "ไม่สามารถเชื่อมต่ออินเทอร์เน็ตได้", correct: false },
+                { text: "ประสิทธิภาพสูงเกินความจำเป็น", correct: false },
+                { text: "มี UI Framework ให้เลือกน้อยเกินไป", correct: false }
+            ],
+            rationale: "สไลด์ที่ 2 แสดงให้เห็นว่าการพัฒนาแบบดั้งเดิมต้องใช้ C#/.NET สำหรับ Windows, Swift สำหรับ macOS, และ Qt/GTK สำหรับ Linux ซึ่ง Electron แก้ปัญหานี้โดยใช้ Codebase เดียว"
+        },
+        {
+            question: "แอปพลิเคชันใดต่อไปนี้ที่ถูกกล่าวถึงในสไลด์ว่าเป็น Success Story ของการใช้ Electron?",
+            answers: [
+                { text: "Microsoft Word", correct: false },
+                { text: "Adobe Photoshop", correct: false },
+                { text: "VS Code", correct: true },
+                { text: "Google Chrome", correct: false }
+            ],
+            rationale: "สไลด์ที่ 2 ยกตัวอย่างแอปที่ประสบความสำเร็จซึ่งสร้างด้วย Electron ได้แก่ VS Code, Discord, Slack, WhatsApp Desktop, และ Figma Desktop"
+        },
+        {
+            question: "ในสถาปัตยกรรมของ Electron, มี Main Process ได้ทั้งหมดกี่ตัวต่อหนึ่งแอปพลิเคชัน?",
+            answers: [
+                { text: "เท่ากับจำนวนหน้าต่างที่เปิด", correct: false },
+                { text: "1 ตัวเท่านั้น", correct: true },
+                { text: "เท่ากับจำนวน Core ของ CPU", correct: false },
+                { text: "ไม่จำกัดจำนวน", correct: false }
+            ],
+            rationale: "สไลด์ที่ 3 ระบุ Key Concepts ว่า 'Main Process = แอพพลิเคชันหลัก (1 ตัว)'"
+        },
+        {
+            question: "Process ใดที่ทำงานบน Chromium และรับผิดชอบในการแสดงผล UI (HTML/CSS)?",
+            answers: [
+                { text: "Main Process", correct: false },
+                { text: "Preload Script", correct: false },
+                { text: "Renderer Process", correct: true },
+                { text: "Node.js Process", correct: false }
+            ],
+            rationale: "สไลด์ที่ 3 แสดงแผนภาพสถาปัตยกรรมว่า Renderer Process ทำงานบน Chromium และรับผิดชอบด้าน UI, JavaScript Logic, และ DOM Manipulation"
+        },
+        {
+            question: "การสื่อสารระหว่าง Main Process และ Renderer Process เรียกว่าอะไร?",
+            answers: [
+                { text: "HTTP Request", correct: false },
+                { text: "IPC (Inter-Process Communication)", correct: true },
+                { text: "API Call", correct: false },
+                { text: "DOM Events", correct: false }
+            ],
+            rationale: "สไลด์ที่ 3 และ 9 เน้นย้ำว่า IPC คือกลไกการสื่อสารหลักระหว่าง Process ต่างๆ ใน Electron"
+        },
+        {
+            question: "จากตารางเปรียบเทียบในสไลด์ที่ 4, ข้อใดที่ Electron App ทำได้ แต่ Web App ทำได้จำกัด (Limited)?",
+            answers: [
+                { text: "การทำงานข้ามแพลตฟอร์ม (Cross Platform)", correct: false },
+                { text: "ความเร็วในการพัฒนา (Development Speed)", correct: false },
+                { text: "การเข้าถึงไฟล์ในเครื่อง (File Access)", correct: true },
+                { text: "การใช้ทรัพยากรต่ำ (Resource Usage)", correct: false }
+            ],
+            rationale: "ตารางเปรียบเทียบในสไลด์ที่ 4 ระบุว่า Web Apps มี 'Limited' File Access ในขณะที่ Desktop Apps และ Electron Apps มี 'Full Access'"
+        },
+        {
+            question: "ไฟล์ใดที่ถูกกำหนดให้เป็น Entry Point ของ Main Process ใน `package.json`?",
+            answers: [
+                { text: "`index.html`", correct: false },
+                { text: "`main.js`", correct: true },
+                { text: "`package.json`", correct: false },
+                { text: "`preload.js`", correct: false }
+            ],
+            rationale: "สไลด์ที่ 5 แสดงตัวอย่าง `package.json` ที่มี `\"main\": \"main.js\"` ซึ่งเป็นการกำหนดไฟล์เริ่มต้นสำหรับ Main Process"
+        },
+        {
+            question: "คำสั่งใดที่ใช้ในการเริ่มต้นรันแอปพลิเคชัน Electron จาก command line ตามที่กำหนดใน `package.json`?",
+            answers: [
+                { text: "`electron .`", correct: true },
+                { text: "`node start`", correct: false },
+                { text: "`npm build`", correct: false },
+                { text: "`run electron`", correct: false }
+            ],
+            rationale: "สไลด์ที่ 5 แสดง script `\"start\": \"electron .\"` ใน `package.json` ซึ่งเป็นคำสั่งมาตรฐานในการรันโปรเจกต์"
+        },
+        {
+            question: "API ใดของ Electron ที่ใช้สำหรับสร้างหน้าต่างแอปพลิเคชัน (windows)?",
+            answers: [
+                { text: "`app`", correct: false },
+                { text: "`ipcMain`", correct: false },
+                { text: "`BrowserWindow`", correct: true },
+                { text: "`Menu`", correct: false }
+            ],
+            rationale: "สไลด์ที่ 6 แสดงตัวอย่างโค้ดที่ใช้ `const { app, BrowserWindow } = require('electron');` และเรียก `new BrowserWindow(...)` เพื่อสร้างหน้าต่าง"
+        },
+        {
+            question: "เพื่อความปลอดภัย, ค่า `contextIsolation` ควรถูกตั้งเป็นอะไร?",
+            answers: [
+                { text: "`true`", correct: true },
+                { text: "`false`", correct: false },
+                { text: "'auto'", correct: false },
+                { text: "`undefined`", correct: false }
+            ],
+            rationale: "สไลด์ที่ 6 และ 8 เน้นย้ำว่าการตั้งค่า `contextIsolation: true` เป็นสิ่งสำคัญเพื่อความปลอดภัย"
+        },
+        {
+            question: "ข้อใดคือข้อจำกัดของ Renderer Process (เมื่อตั้งค่าอย่างปลอดภัย)?",
+            answers: [
+                { text: "ไม่สามารถใช้ CSS ได้", correct: false },
+                { text: "ไม่สามารถเข้าถึง Node.js หรือ File System ได้โดยตรง", correct: true },
+                { text: "ไม่สามารถส่ง HTTP Request ได้", correct: false },
+                { text: "ไม่สามารถรัน JavaScript ได้", correct: false }
+            ],
+            rationale: "สไลด์ที่ 7 ระบุ Key Limitations ของ Renderer Process ว่า 'No direct Node.js access' และ 'No direct file system access'"
+        },
+        {
+            question: "การตั้งค่า `nodeIntegration: true` ใน `webPreferences` ถือว่าอันตรายเพราะอะไร?",
+            answers: [
+                { text: "ทำให้แอปทำงานช้าลง", correct: false },
+                { text: "ทำให้ขนาดไฟล์ใหญ่ขึ้น", correct: false },
+                { text: "ทำให้โค้ดใน Renderer Process สามารถเข้าถึง Node.js API ได้เต็มรูปแบบ", correct: true },
+                { text: "ทำให้ไม่สามารถใช้ React ได้", correct: false }
+            ],
+            rationale: "สไลด์ที่ 8 เตือนอย่างชัดเจนว่าการตั้งค่า `nodeIntegration: true` นั้น DANGEROUS! เพราะเป็นการทำลายกำแพงความปลอดภัยระหว่าง UI และ Backend"
+        },
+        {
+            question: "อะไรคือบทบาทของ Preload Script ในสถาปัตยกรรมความปลอดภัยของ Electron?",
+            answers: [
+                { text: "เป็นตัวกลางที่ปลอดภัยในการสื่อสารระหว่าง Main และ Renderer Process", correct: true },
+                { text: "เป็นไฟล์ที่เก็บข้อมูลการตั้งค่าของผู้ใช้", correct: false },
+                { text: "เป็นไฟล์ CSS ที่จะถูกโหลดก่อนไฟล์อื่น", correct: false },
+                { text: "เป็น Script สำหรับการ Build แอพ", correct: false }
+            ],
+            rationale: "สไลด์ที่ 3 และ 8 แสดงให้เห็นว่า Preload Script ทำหน้าที่เป็น Security Layer และตัวกลางความปลอดภัย โดยใช้ Context Bridge ในการเปิดเผย API อย่างจำกัด"
+        },
+        {
+            question: "IPC Pattern ใดที่ถูกแนะนำให้ใช้สำหรับการสื่อสารที่ต้องการคำตอบกลับ (คล้าย async/await)?",
+            answers: [
+                { text: "Send/On Pattern", correct: false },
+                { text: "Invoke/Handle Pattern", correct: true },
+                { text: "Push/Pull Pattern", correct: false },
+                { text: "Broadcast/Listen Pattern", correct: false }
+            ],
+            rationale: "สไลด์ที่ 9 แนะนำ Invoke/Handle Pattern สำหรับการสื่อสารแบบสองทางที่ต้องการผลลัพธ์กลับมา และมีตัวอย่างการใช้งานที่ชัดเจน"
+        },
+        {
+            question: "หากต้องการเปิด File Dialog ให้ผู้ใช้เลือกไฟล์, โค้ดที่เรียก `dialog.showOpenDialog` ควรอยู่ที่ Process ใด?",
+            answers: [
+                { text: "Main Process", correct: true },
+                { text: "Renderer Process", correct: false },
+                { text: "Preload Script", correct: false },
+                { text: "สามารถอยู่ที่ใดก็ได้", correct: false }
+            ],
+            rationale: "สไลด์ที่ 10 แสดงสถาปัตยกรรมและตัวอย่างโค้ดว่าการเรียก `dialog.showOpenDialog` และการอ่านไฟล์ด้วย `fs` ต้องทำผ่าน Handler ใน Main Process"
+        },
+        {
+            question: "โมดูลใดใน Electron ที่ใช้สำหรับแสดง Native OS Notification?",
+            answers: [
+                { text: "`BrowserWindow`", correct: false },
+                { text: "`dialog`", correct: false },
+                { text: "`ipcMain`", correct: false },
+                { text: "`Notification`", correct: true }
+            ],
+            rationale: "สไลด์ที่ 11 แสดงตัวอย่างโค้ดการสร้าง Notification โดยใช้ `new Notification({...})` ซึ่ง import มาจาก `electron` และต้องทำใน Main Process"
+        },
+        {
+            question: "หากต้องการสร้างไอคอนของแอปใน System Tray (หรือ Taskbar) ควรใช้โมดูลใด?",
+            answers: [
+                { text: "`Tray`", correct: true },
+                { text: "`Icon`", correct: false },
+                { text: "`Menu`", correct: false },
+                { text: "`App`", correct: false }
+            ],
+            rationale: "สไลด์ที่ 12 แสดงตัวอย่างการใช้งาน `const { Tray, Menu } = require('electron');` เพื่อสร้าง System Tray icon"
+        },
+        {
+            question: "ในสถาปัตยกรรมที่แนะนำ, การเรียก External API (เช่น REST API, WebSocket) ควรทำที่ Process ใด?",
+            answers: [
+                { text: "Renderer Process เท่านั้น", correct: false },
+                { text: "Main Process", correct: true },
+                { text: "Preload Script เท่านั้น", correct: false },
+                { text: "สามารถทำได้ทั้งสองที่ แต่ Main Process เหมาะสำหรับ Logic ที่ซับซ้อน", correct: false }
+            ],
+            rationale: "สไลด์ที่ 13 แสดงแผนภาพสถาปัตยกรรมที่ Main Process เป็นผู้รับผิดชอบในการเชื่อมต่อกับ External APIs ทั้ง HTTP และ WebSocket แล้วจึงส่งข้อมูลที่ประมวลผลแล้วไปยัง Renderer Process ผ่าน IPC"
+        },
+        {
+            question: "เครื่องมือใดที่ถูกแนะนำในสไลด์สำหรับใช้ Build และ Distribute แอปพลิเคชัน Electron?",
+            answers: [
+                { text: "Webpack", correct: false },
+                { text: "npm", correct: false },
+                { text: "electron-builder", correct: true },
+                { text: "VS Code extension", correct: false }
+            ],
+            rationale: "สไลด์ที่ 14 พูดถึง `electron-builder` อย่างชัดเจนว่าเป็นเครื่องมือสำหรับ Package และสร้าง Distribution Assets (.exe, .dmg, .deb)"
+        },
+        {
+            question: "ใน Agent Wallboard Case Study, ฟีเจอร์ใดที่ใช้ WebSocket?",
+            answers: [
+                { text: "การ Export ไฟล์", correct: false },
+                { text: "การแจ้งเตือนด้วยเสียง", correct: false },
+                { text: "การอัปเดตสถานะ Agent แบบ Real-time", correct: true },
+                { text: "System Tray Quick Actions", correct: false }
+            ],
+            rationale: "สไลด์ที่ 15 แสดงตัวอย่างโค้ด Real-time Agent Status ที่ใช้ `const ws = new WebSocket(...)` เพื่อรับ live updates"
+        },
+        {
+            question: "ข้อใดคือเทคนิคการ Debug ใน Main Process ที่ง่ายที่สุด?",
+            answers: [
+                { text: "ใช้ `alert()`", correct: false },
+                { text: "ใช้ `console.log()` และดูผลลัพธ์ใน Terminal", correct: true },
+                { text: "เปิด DevTools", correct: false },
+                { text: "เขียน Log ลงไฟล์", correct: false }
+            ],
+            rationale: "สไลด์ที่ 17 แสดงตัวอย่างการ Debugging โดยใช้ `console.log('[MAIN]', 'Application started');` ซึ่งผลลัพธ์จะแสดงในหน้าต่าง command line ที่รันแอป"
+        },
+        {
+            question: "DevTools (`mainWindow.webContents.openDevTools()`) ใช้สำหรับ Debug Process ใด?",
+            answers: [
+                { text: "Main Process", correct: false },
+                { text: "Renderer Process", correct: true },
+                { text: "Preload Script", correct: false },
+                { text: "ทุก Process", correct: false }
+            ],
+            rationale: "สไลด์ที่ 17 ระบุว่า DevTools ใช้สำหรับ Renderer Process Debugging"
+        },
+        {
+            question: "ฟีเจอร์ Auto-Updater ใน Electron ใช้ Library ใดที่มักจะทำงานร่วมกับ electron-builder?",
+            answers: [
+                { text: "`electron-updater`", correct: true },
+                { text: "`auto-patcher`", correct: false },
+                { text: "`npm-updater`", correct: false },
+                { text: "`electron-downloader`", correct: false }
+            ],
+            rationale: "สไลด์ที่ 18 แสดงตัวอย่างโค้ด `const { autoUpdater } = require('electron-updater');` สำหรับการทำ Auto-Updater"
+        },
+        {
+            question: "หากต้องการสร้างเมนูหลักของแอปพลิเคชัน (Application Menu) เช่น File, Edit, View ควรใช้ API ใด?",
+            answers: [
+                { text: "`Tray` และ `ContextMenu`", correct: false },
+                { text: "`Menu.buildFromTemplate` และ `Menu.setApplicationMenu`", correct: true },
+                { text: "`dialog.show`", correct: false },
+                { text: "`ipcMain.handle`", correct: false }
+            ],
+            rationale: "สไลด์ที่ 18 มีหัวข้อ Custom Menu System และแสดงตัวอย่างโค้ดการสร้างเมนูจาก Template และตั้งค่าเป็นเมนูหลักของแอป"
+        },
+        {
+            question: "ข้อใดคือกลยุทธ์การปรับปรุง Performance ที่ถูกกล่าวถึงในสไลด์ที่ 19?",
+            answers: [
+                { text: "การใช้ Web Workers สำหรับงานที่ใช้ CPU หนัก", correct: true },
+                { text: "การใช้ `setInterval` แทน `setTimeout`", correct: false },
+                { text: "การเขียนโค้ดทั้งหมดในไฟล์เดียว", correct: false },
+                { text: "การปิด DevTools เสมอ", correct: false }
+            ],
+            rationale: "สไลด์ที่ 19 แสดงแผนภาพและโค้ดตัวอย่างที่แนะนำให้ใช้ Web Workers สำหรับ heavy computation เพื่อไม่ให้ CPU Usage สูงและไม่ block UI thread"
+        },
+        {
+            question: "ในการทดสอบแบบ End-to-End (E2E), สไลด์ได้ยกตัวอย่างเครื่องมือใด?",
+            answers: [
+                { text: "Jest", correct: false },
+                { text: "Spectron", correct: true },
+                { text: "Mocha", correct: false },
+                { text: "Enzyme", correct: false }
+            ],
+            rationale: "สไลด์ที่ 20 แสดงตัวอย่างโค้ด E2E Test โดยใช้ Spectron ซึ่งเป็นเครื่องมือที่นิยมใช้ทดสอบแอป Electron"
+        },
+        {
+            question: "การดักจับ Error ที่ไม่ถูกจัดการใน Main Process ควรใช้ Event ใด?",
+            answers: [
+                { text: "`window.onerror`", correct: false },
+                { text: "`app.on('error')`", correct: false },
+                { text: "`process.on('uncaughtException')`", correct: true },
+                { text: "`ipcMain.on('error')`", correct: false }
+            ],
+            rationale: "สไลด์ที่ 21 แสดงตัวอย่างการดักจับ Error ใน Main Process โดยใช้ `process.on('uncaughtException', ...)` เพื่อป้องกันแอปแครชและสามารถ Log error ได้"
+        },
+        {
+            question: "จากสไลด์ Security Deep Dive, การตั้งค่า `webSecurity: true` มีความสำคัญอย่างไร?",
+            answers: [
+                { text: "ช่วยป้องกัน Cross-Site Scripting (XSS) และปัญหาด้านความปลอดภัยอื่นๆ ของเว็บ", correct: true },
+                { text: "ช่วยเข้ารหัสไฟล์ที่บันทึก", correct: false },
+                { text: "ช่วยตรวจสอบเวอร์ชันของ Electron", correct: false },
+                { text: "ช่วยให้การเชื่อมต่อ IPC ปลอดภัยขึ้น", correct: false }
+            ],
+            rationale: "สไลด์ที่ 8 และ 22 แสดงให้เห็นว่าการตั้งค่า `webSecurity: true` (ซึ่งเป็นค่า default) เป็นส่วนหนึ่งของการตั้งค่าที่ปลอดภัย ในขณะที่ `webSecurity: false` นั้นอันตรายมาก"
+        },
+        {
+            question: "ตามสไลด์ UI/UX Best Practices, การใช้ `electron-window-state` มีประโยชน์อย่างไร?",
+            answers: [
+                { text: "ช่วยจัดการ State ของ React Component", correct: false },
+                { text: "ช่วยจำตำแหน่งและขนาดของหน้าต่างล่าสุดของผู้ใช้", correct: true },
+                { text: "ช่วยเปลี่ยน Theme ของหน้าต่าง", correct: false },
+                { text: "ช่วยตรวจสอบว่าหน้าต่าง Active อยู่หรือไม่", correct: false }
+            ],
+            rationale: "สไลด์ที่ 24 แสดงตัวอย่างโค้ดการใช้ `electron-window-state` เพื่อจดจำสถานะของหน้าต่าง (ขนาด, ตำแหน่ง) เพื่อสร้างประสบการณ์ใช้งานที่ดีขึ้นเมื่อผู้ใช้เปิดแอปครั้งถัดไป"
+        }
+    ]
+
+    // --- DOM ELEMENTS ---
+    const startScreen = document.getElementById('start-screen');
+    const quizScreen = document.getElementById('quiz-screen');
+    const resultScreenContainer = document.getElementById('result-screen-container');
+    const resultScreen = document.getElementById('result-screen');
+    const studentForm = document.getElementById('student-form');
+    const studentIdInput = document.getElementById('student-id');
+    const studentNameInput = document.getElementById('student-name');
+    const questionText = document.getElementById('question-text');
+    const answerButtons = document.getElementById('answer-buttons');
+    const nextBtn = document.getElementById('next-btn');
+    const nextBtnText = document.getElementById('next-btn-text');
+    const questionCounter = document.getElementById('question-counter');
+    const progressBar = document.getElementById('progress-bar');
+    const scoreText = document.getElementById('score-text');
+    const scorePercentage = document.getElementById('score-percentage');
+    const resultStudentInfo = document.getElementById('result-student-info');
+    const summaryContainer = document.getElementById('summary-container');
+    const retryBtn = document.getElementById('retry-btn');
+    const captureBtn = document.getElementById('capture-btn');
+    const explanationBox = document.getElementById('explanation-box');
+    const passFailStatus = document.getElementById('pass-fail-status');
+    const resultSummaryBox = document.getElementById('result-summary-box');
+
+    // --- STATE VARIABLES ---
+    let shuffledQuestions, currentQuestionIndex;
+    let score = 0;
+    let userAnswers = [];
+    let studentId = '';
+    let studentName = '';
+    const passingScore = 25; // เกณฑ์การผ่าน
+
+    // --- EVENT LISTENERS ---
+    studentForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        studentId = studentIdInput.value.trim();
+        studentName = studentNameInput.value.trim();
+        if (studentId && studentName) {
+            startQuiz();
+        }
+    });
+
+    nextBtn.addEventListener('click', () => {
+        currentQuestionIndex++;
+        if (currentQuestionIndex < shuffledQuestions.length) {
+            setNextQuestion();
+        } else {
+            showResults();
+        }
+    });
+
+    retryBtn.addEventListener('click', resetQuiz);
+
+    captureBtn.addEventListener('click', () => {
+        captureBtn.style.visibility = 'hidden';
+        retryBtn.style.visibility = 'hidden';
+        
+        html2canvas(resultScreen, {
+            backgroundColor: '#1f2937',
+            onclone: (document) => {
+                document.getElementById('capture-btn').style.visibility = 'hidden';
+                document.getElementById('retry-btn').style.visibility = 'hidden';
+            }
+        }).then(canvas => {
+            const link = document.createElement('a');
+            link.download = `quiz-result-electron-core-${studentId}-${new Date().toISOString().slice(0,10)}.png`;
+            link.href = canvas.toDataURL();
+            link.click();
+            captureBtn.style.visibility = 'visible';
+            retryBtn.style.visibility = 'visible';
+        }).catch(err => {
+            console.error('oops, something went wrong!', err);
+            captureBtn.style.visibility = 'visible';
+            retryBtn.style.visibility = 'visible';
+        });
+    });
+
+    // --- FUNCTIONS ---
+    function startQuiz() {
+        shuffledQuestions = quizData.sort(() => Math.random() - 0.5);
+        currentQuestionIndex = 0;
+        score = 0;
+        userAnswers = [];
+        startScreen.classList.add('hidden');
+        resultScreenContainer.classList.add('hidden');
+        quizScreen.classList.remove('hidden');
+        setNextQuestion();
+    }
+    
+    // **FIXED**: This function now returns to the start screen for a clean reset.
+    function resetQuiz() {
+        resultScreenContainer.classList.add('hidden');
+        startScreen.classList.remove('hidden');
+        // We don't clear the input fields, so the user can just click "start" again easily.
+    }
+
+    function setNextQuestion() {
+        resetState();
+        showQuestion(shuffledQuestions[currentQuestionIndex]);
+        updateProgress();
+    }
+
+    function updateProgress() {
+        const questionNumber = currentQuestionIndex + 1;
+        questionCounter.innerText = `ข้อ ${questionNumber} / ${shuffledQuestions.length}`;
+        const progressPercentage = (questionNumber / shuffledQuestions.length) * 100;
+        progressBar.style.width = `${progressPercentage}%`;
+    }
+
+    function showQuestion(question) {
+        questionText.innerHTML = question.question;
+        
+        question.answers.forEach(answer => {
+            const button = document.createElement('button');
+            button.innerText = answer.text;
+            button.classList.add('answer-btn', 'w-full', 'bg-gray-700', 'border', 'border-gray-600', 'text-gray-200', 'font-medium', 'py-4', 'px-4', 'rounded-lg', 'text-left');
+            if (answer.correct) {
+                button.dataset.correct = answer.correct;
+            }
+            button.addEventListener('click', selectAnswer);
+            answerButtons.appendChild(button);
+        });
+    }
+
+    function resetState() {
+        nextBtn.classList.add('opacity-50', 'cursor-not-allowed');
+        nextBtn.disabled = true;
+        while (answerButtons.firstChild) {
+            answerButtons.removeChild(answerButtons.firstChild);
+        }
+        explanationBox.classList.remove('visible');
+        explanationBox.innerHTML = '';
+    }
+
+    function selectAnswer(e) {
+        Array.from(answerButtons.children).forEach(button => {
+            button.disabled = true;
+            button.classList.add('cursor-not-allowed', 'opacity-70');
+        });
+
+        const selectedButton = e.target.closest('.answer-btn');
+        const correct = selectedButton.dataset.correct === "true";
+        
+        userAnswers.push({
+            question: shuffledQuestions[currentQuestionIndex].question,
+            selected: selectedButton.innerText,
+            correctAnswer: shuffledQuestions[currentQuestionIndex].answers.find(a => a.correct).text,
+            isCorrect: correct,
+            rationale: shuffledQuestions[currentQuestionIndex].rationale
+        });
+
+        if (correct) {
+            score++;
+        }
+        
+        Array.from(answerButtons.children).forEach(button => {
+            if (button.dataset.correct === "true") {
+                button.classList.add('correct');
+            }
+            button.classList.remove('opacity-70');
+        });
+        if (!correct) {
+            selectedButton.classList.add('incorrect');
+        }
+
+        showExplanation();
+
+        nextBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+        nextBtn.disabled = false;
+        
+        if (shuffledQuestions.length > currentQuestionIndex + 1) {
+            nextBtnText.innerText = 'ข้อถัดไป';
+        } else {
+            nextBtnText.innerText = 'ดูผลลัพธ์';
+        }
+    }
+
+    function showExplanation() {
+        const rationale = shuffledQuestions[currentQuestionIndex].rationale;
+        explanationBox.innerHTML = `
+            <div class="bg-gray-900/50 p-4 rounded-lg border-l-4 border-blue-400">
+                <h3 class="font-bold text-lg text-blue-300 mb-2">คำอธิบาย</h3>
+                <p class="text-gray-300">${rationale}</p>
+            </div>
+        `;
+        explanationBox.classList.add('visible');
+    }
+
+    function showResults() {
+        quizScreen.classList.add('hidden');
+        resultScreenContainer.classList.remove('hidden');
+
+        resultStudentInfo.innerText = `รหัสนักศึกษา: ${studentId} | ชื่อ: ${studentName}`;
+        scoreText.innerText = `${score} / ${shuffledQuestions.length}`;
+        const percentage = Math.round((score / shuffledQuestions.length) * 100);
+        scorePercentage.innerText = `คิดเป็น ${percentage}%`;
+
+        if (score >= passingScore) {
+            passFailStatus.innerText = '🎉 ยอดเยี่ยม! คุณผ่านเกณฑ์การทดสอบแล้ว! 🎉';
+            passFailStatus.className = 'text-2xl font-bold mt-4 text-green-400';
+            resultSummaryBox.className = 'rounded-xl p-6 my-6 bg-green-900/20 border border-green-500';
+            captureBtn.classList.remove('hidden');
+            document.getElementById('retry-btn-text').innerText = 'ทบทวนอีกครั้ง';
+        } else {
+            passFailStatus.innerText = '⚠️ ยังไม่ผ่านเกณฑ์ (25 คะแนน) ลองทบทวนคำอธิบายแล้วสู้ใหม่! ⚠️';
+            passFailStatus.className = 'text-2xl font-bold mt-4 text-yellow-400';
+            resultSummaryBox.className = 'rounded-xl p-6 my-6 bg-yellow-900/20 border border-yellow-500';
+            captureBtn.classList.add('hidden');
+            document.getElementById('retry-btn-text').innerText = 'ทำแบบทดสอบอีกครั้ง';
+        }
+
+        summaryContainer.innerHTML = '';
+        const correctIcon = `<svg class="w-6 h-6 text-green-400 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12C22 17.5228 17.5228 22 12 22ZM11.0026 16L18.0737 8.92893L16.6595 7.51472L11.0026 13.1716L8.17421 10.3431L6.75999 11.7574L11.0026 16Z"></path></svg>`;
+        const incorrectIcon = `<svg class="w-6 h-6 text-red-400 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12C22 17.5228 17.5228 22 12 22ZM12 10.5858L14.8284 7.75736L16.2426 9.17157L13.4142 12L16.2426 14.8284L14.8284 16.2426L12 13.4142L9.17157 16.2426L7.75736 14.8284L10.5858 12L7.75736 9.17157L9.17157 7.75736L12 10.5858Z"></path></svg>`;
+
+        userAnswers.forEach((answer, index) => {
+            const summaryItem = document.createElement('div');
+            summaryItem.classList.add('bg-gray-700/50', 'p-4', 'rounded-lg', 'border-l-4');
+            summaryItem.classList.add(answer.isCorrect ? 'border-green-500' : 'border-red-500');
+            
+            summaryItem.innerHTML = `
+                <div class="flex justify-between items-start">
+                    <div class="font-bold text-white mb-2 flex-1 pr-4">ข้อ ${index + 1}: ${answer.question}</div>
+                    ${answer.isCorrect ? correctIcon : incorrectIcon}
+                </div>
+                <div class="text-sm space-y-1">
+                    <p class="text-gray-400">คุณตอบ: <span class="font-medium ${answer.isCorrect ? 'text-green-400' : 'text-red-400'}">${answer.selected}</span></p>
+                    ${!answer.isCorrect ? `<p class="text-gray-400">คำตอบที่ถูก: <span class="font-medium text-green-400">${answer.correctAnswer}</span></p>` : ''}
+                </div>
+                <div class="mt-3 pt-3 border-t border-gray-600 bg-gray-900/50 p-3 rounded-md">
+                    <p class="text-sm text-blue-300"><strong class="font-semibold text-blue-200">คำอธิบาย:</strong> ${answer.rationale}</p>
+                </div>
+            `;
+            summaryContainer.appendChild(summaryItem);
+        });
+    }
+
+</script>
+
+</body>
+</html>
