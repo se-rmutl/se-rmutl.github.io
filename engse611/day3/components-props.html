@@ -1,0 +1,882 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ENGSE611 - Day 3.2: การสร้าง Components และ Props</title>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #61DAFB; /* React Blue */
+            --secondary-color: #20232A; /* React Dark */
+            --accent-color: #FFD700; /* Gold Accent */
+            --success-color: #10B981;
+            --background-gradient: linear-gradient(135deg, #20232A 0%, #282c34 100%);
+            --slide-bg: #f8f9fa;
+            --text-color: #212529;
+            --header-color: #20232A;
+            --base-font-size: clamp(16px, 1.5vw, 22px);
+            --border-radius: 15px;
+            --code-font: 'Fira Code', 'Courier New', monospace;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { overflow: hidden; height: 100%; }
+
+        body {
+            font-family: 'Sarabun', sans-serif;
+            background: var(--background-gradient);
+            color: var(--text-color);
+            font-size: 16px; 
+            line-height: 1.7;
+        }
+        
+        .presentation {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2vh 3vw; 
+        }
+
+        .slide {
+            background: var(--slide-bg);
+            padding: 30px 40px 80px 40px;
+            border-radius: var(--border-radius);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+            width: 100%;
+            height: 100%;
+            font-size: var(--base-font-size);
+            overflow-y: auto;
+            display: none;
+            animation: fadeIn 0.5s ease-in-out;
+            position: relative;
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .slide::-webkit-scrollbar { display: none; }
+
+        .slide.active { display: block; }
+        
+        .title-slide.active, .quiz-slide.active {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            background: var(--background-gradient);
+            color: white;
+        }
+        
+        .title-slide h1, .title-slide h2, .title-slide h3, .title-slide p { color: white !important; }
+        .title-slide h1 { font-size: 3em; margin-bottom: 10px; border: none; color: var(--primary-color) !important;}
+        .title-slide h2 { font-size: 2em; margin-bottom: 20px; border: none; }
+        .title-slide h3 { font-size: 1.5em; font-weight: 400; opacity: 0.9; }
+        
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
+
+        .progress-bar-container { position: fixed; top: 0; left: 0; width: 100%; height: 8px; background-color: rgba(255, 255, 255, 0.2); z-index: 2000; }
+        .progress-bar { height: 100%; width: 0%; background: linear-gradient(120deg, var(--primary-color) 0%, #90e0ef 100%); transition: width 0.3s ease-out; }
+
+        .presentation-controls {
+            position: fixed; bottom: 15px; left: 50%; transform: translateX(-50%);
+            display: flex; align-items: center; gap: 10px; background: rgba(32, 35, 42, 0.9);
+            padding: 10px 15px; border-radius: 50px; box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(8px); z-index: 1000;
+        }
+
+        .nav-btn, .font-btn, .fullscreen-btn {
+            background: transparent; color: white; border: none; border-radius: 50%;
+            cursor: pointer; transition: all 0.3s ease; display: flex; align-items: center; justify-content: center;
+            width: 45px; height: 45px; font-size: 1.5rem;
+        }
+        .nav-btn:hover:not(:disabled), .font-btn:hover, .fullscreen-btn:hover { background: var(--primary-color); color: var(--secondary-color); transform: translateY(-2px); }
+        .nav-btn:disabled { background-color: transparent; color: #777; cursor: not-allowed; transform: none;}
+        
+        #slide-counter { color: white; font-weight: 500; font-size: 1.1em; min-width: 70px; text-align: center; }
+        .slide-number { position: absolute; bottom: 15px; right: 20px; background: rgba(32, 35, 42, 0.8); color: white; padding: 5px 12px; border-radius: 15px; font-size: 0.8em; font-weight: 600; }
+        
+        .slide h2 { font-size: 2.2em; color: var(--header-color); border-bottom: 3px solid var(--primary-color); padding-bottom: 8px; margin-bottom: 1em; font-weight: 700; }
+        .slide h3 { font-size: 1.6em; color: var(--secondary-color); margin-top: 1.5em; margin-bottom: 0.5em; font-weight: 700; }
+        .slide h4 { font-size: 1.2em; color: var(--header-color); margin-top: 1em; margin-bottom: 0.5em; font-weight: 600; }
+
+        p, ul, ol { font-size: 1em; max-width: 85ch; margin-bottom: 1rem; }
+        
+        ul:not(.browser-default) { list-style: none; padding-left: 0; }
+        ul:not(.browser-default) li { position: relative; padding-left: 35px; margin-bottom: 12px; }
+        ul:not(.browser-default) li::before { content: attr(data-icon); position: absolute; left: 0; top: 0px; color: var(--primary-color); font-weight: bold; font-family: 'Font Awesome 6 Free'; }
+        
+        pre { background: #282c34; color: #abb2bf; border-radius: 10px; padding: 1em; margin: 1em 0; font-family: var(--code-font); font-size: 0.9em; overflow-x: auto; line-height: 1.6; }
+        code { font-family: var(--code-font); background-color: rgba(0,0,0,0.05); padding: 2px 5px; border-radius: 4px;}
+        pre code { background-color: transparent; padding: 0; }
+        
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; margin: 20px 0; align-items: start; }
+        
+        blockquote { border-left: 5px solid var(--primary-color); margin: 1.5em 0; padding: 1em 1.5em; background-color: #f0f8ff; font-style: italic; }
+        .highlight { background-color: #61DAFB33; padding: 2px 6px; border-radius: 4px; font-weight: 500; }
+        
+        .interactive-controls { display: flex; gap: 10px; margin-bottom: 1em; flex-wrap: wrap; }
+        .interactive-controls button { background-color: var(--secondary-color); color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; transition: background-color 0.2s; font-family: 'Sarabun', sans-serif; font-size: 0.9em; }
+        .interactive-controls button:hover { background-color: #4a4e59; }
+        .interactive-controls button.active { background-color: var(--success-color); }
+        .interactive-pane { border: 1px solid #ccc; border-radius: 10px; padding: 15px; background: white; margin-top: 1em; min-height: 150px; }
+
+        .infographic { padding: 1.5em; background-color: #e7f7ff; border-radius: var(--border-radius); text-align: center; }
+        .infographic .component { background: white; border: 2px solid var(--primary-color); padding: 10px; border-radius: 10px; margin: 5px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        .infographic .component-lg { padding: 20px; }
+        .infographic .component-group { display: flex; justify-content: center; gap: 10px; margin-top: 10px; align-items: center; flex-wrap: wrap;}
+        .infographic .arrow { font-size: 2em; color: var(--secondary-color); margin: 10px; display: flex; align-items: center; justify-content: center; flex-direction: column; }
+        .infographic .arrow span { font-size: 0.6em; font-weight: bold; }
+        
+        .quiz-slide h2 { color: white; font-size: 2.5em; border: none; }
+        .quiz-slide blockquote { background: rgba(255,255,255,0.1); border-left-color: var(--primary-color); max-width: 80%; }
+        .quiz-slide .answer { background: rgba(16, 185, 129, 0.2); border-left: 5px solid var(--success-color); padding: 1em; border-radius: 10px; margin-top: 1.5em; display: none; text-align: left; }
+        .quiz-slide .answer h4 { color: white; }
+        .quiz-slide .answer p { color: #f0f0f0; }
+
+        .code-comment { color: #5c6370; font-style: italic; }
+        .code-tag { color: #e06c75; }
+        .code-attr { color: #d19a66; }
+        .code-string { color: #98c379; }
+        .code-keyword { color: #c678dd; }
+        .code-js-expr { color: #61afef; }
+        .code-jsx-tag-bracket { color: #56b6c2; }
+        
+        .explain-code-btn {
+            background-color: #e7f1ff; border: 1px solid #b3d1ff; color: #0053ba; padding: 6px 12px; border-radius: 20px;
+            cursor: pointer; transition: all 0.2s ease; font-family: 'Sarabun', sans-serif; font-size: 0.8em; font-weight: 500;
+            display: inline-flex; align-items: center; gap: 6px; margin-top: -10px; margin-bottom: 10px;
+        }
+        .explain-code-btn:hover { background-color: #d1e3ff; }
+        
+        .code-explanation {
+            background: #f0f7ff; border: 1px solid #d1e3ff; border-radius: 10px; padding: 15px;
+            margin-bottom: 1em; font-size: 0.9em;
+        }
+        .code-explanation ul { list-style: disc; padding-left: 20px; }
+        .code-explanation li { padding-left: 0; }
+        .code-explanation li::before { display: none; }
+
+
+        @media (max-width: 900px) {
+            .grid-2 { grid-template-columns: 1fr; height: auto; }
+            .slide { padding: 20px 25px 70px 25px; }
+            .slide h2 { font-size: 1.8em; }
+        }
+    </style>
+</head>
+<body>
+    <div class="progress-bar-container"><div class="progress-bar" id="progress-bar"></div></div>
+
+    <div class="presentation">
+        
+        <section class="slide title-slide active">
+            <h2>ENGSE611 - Day 3 - หัวข้อที่ 2</h2>
+            <i class="fas fa-cubes" style="font-size: 4em; color: var(--primary-color); margin: 20px 0;"></i>
+            <h1>การสร้าง Components และ Props</h1>
+            <h3 style="margin-top: 30px;">เจาะลึกการสร้าง UI ที่นำกลับมาใช้ใหม่ได้และส่งข้อมูลอย่างมืออาชีพ</h3>
+            <p style="font-size: 1.2em; opacity: 0.9;">เป้าหมาย: "จาก Basic Components → Professional Component Architecture"</p>
+        </section>
+
+        <section class="slide">
+            <h2>ทบทวน: Component คืออะไร? 🤔</h2>
+            <p>หลักการสำคัญคือ <span class="highlight">"การแบ่งแยกหน้าที่" (Separation of Concerns)</span> โดยแบ่ง UI ที่ซับซ้อนออกเป็นชิ้นส่วนเล็กๆ ที่จัดการได้ง่ายและนำกลับมาใช้ใหม่ได้</p>
+            <h3>หลักการคิดแบบ Component:</h3>
+            <ul class="browser-default">
+                <li data-icon="1."><strong>แบ่ง (Decomposition):</strong> มอง UI ทั้งหมดเป็นกล่องใหญ่ แล้วซอยย่อยเป็นกล่องเล็กลงเรื่อยๆ</li>
+                <li data-icon="2."><strong>ตั้งชื่อ (Naming):</strong> ตั้งชื่อกล่องแต่ละชิ้นให้สื่อความหมายตามหน้าที่ของมัน (เช่น <code>UserProfile</code>, <code>ProductList</code>)</li>
+                <li data-icon="3."><strong>ประกอบ (Composition):</strong> นำกล่องเล็กๆ มาประกอบกันเป็นกล่องที่ใหญ่ขึ้น</li>
+            </ul>
+        </section>
+
+        <section class="slide">
+            <h2>Infographic: โครงสร้าง Component</h2>
+            <p>ลองจินตนาการว่าเว็บไซต์ E-commerce ของเราเป็นเหมือนบ้าน</p>
+            <div class="infographic">
+                <div class="component component-lg">
+                    <strong>App (บ้านทั้งหลัง)</strong>
+                    <div class="component-group">
+                        <div class="component"><strong>Header</strong><br>(ส่วนหัวเว็บ)</div>
+                        <div class="component"><strong>ProductPage</strong><br>(ห้องแสดงสินค้า)</div>
+                        <div class="component"><strong>Footer</strong><br>(ส่วนท้ายเว็บ)</div>
+                    </div>
+                    <div class="arrow"><i class="fas fa-arrow-down"></i><span>เจาะลึก ProductPage</span></div>
+                    <div class="component component-lg">
+                        <strong>ProductPage (ห้องแสดงสินค้า)</strong>
+                         <div class="component-group">
+                            <div class="component"><strong>FilterSidebar</strong><br>(ชั้นวางของ)</div>
+                            <div class="component"><strong>ProductList</strong><br>(ตู้โชว์สินค้า)</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <p style="text-align: center; margin-top: 1em;">การคิดแบบนี้ช่วยให้เราจัดการกับความซับซ้อนของแอปพลิเคชันขนาดใหญ่ได้ง่ายขึ้น</p>
+        </section>
+        
+        <section class="slide">
+            <h2>Props = การสื่อสาร 📞</h2>
+            <p>Props (Properties) คือกลไกหลักในการส่งข้อมูลจาก Component แม่ (Parent) ไปยัง Component ลูก (Child) มันคือการสื่อสารใน <span class="highlight">ทิศทางเดียว (One-way data flow)</span></p>
+            <h3>เปรียบเทียบ:</h3>
+            <div class="grid-2">
+                <div>
+                    <h4>📞 เหมือนการโทรศัพท์</h4>
+                    <pre><code class="language-jsx"><span class="code-comment">// แม่ส่งข้อความและเงินให้ลูก</span>
+<span class="code-jsx-tag-bracket">&lt;</span><span class="code-tag">Son</span> <span class="code-attr">message</span>=<span class="code-string">"อย่าลืมกินข้าว"</span> <span class="code-attr">money</span>={<span class="code-js-expr">500</span>} <span class="code-jsx-tag-bracket">/&gt;</span>
+
+<span class="code-comment">// ลูกรับ props</span>
+<span class="code-keyword">function</span> <span class="code-js-expr">Son</span>({ message, money }) { ... }</code></pre>
+                </div>
+                <div>
+                    <h4>🎁 เหมือนการส่งของขวัญ</h4>
+                    <pre><code class="language-jsx"><span class="code-comment">// ส่งการ์ดวันเกิดพร้อมข้อมูล</span>
+<span class="code-jsx-tag-bracket">&lt;</span><span class="code-tag">BirthdayCard</span> 
+  <span class="code-attr">name</span>=<span class="code-string">"สมชาย"</span> 
+  <span class="code-attr">age</span>={<span class="code-js-expr">20</span>}
+<span class="code-jsx-tag-bracket">/&gt;</span>
+
+<span class="code-keyword">function</span> <span class="code-js-expr">BirthdayCard</span>({ name, age }) { ... }</code></pre>
+                </div>
+            </div>
+            <p><strong>จุดสำคัญ:</strong> Props เป็นแบบ <span class="highlight">Read-only</span> Component ลูกไม่สามารถแก้ไขค่า props ที่ได้รับมาโดยตรงได้</p>
+        </section>
+
+        <section class="slide">
+            <h2>Infographic: การไหลของ Props</h2>
+            <p>ข้อมูลจะไหลจาก Component ด้านบน (Parent) ลงสู่ Component ด้านล่าง (Child) เสมอ</p>
+            <div class="infographic">
+                <div class="component">
+                    <strong>Parent Component</strong>
+                    <pre style="font-size: 0.8em; text-align: left;"><code>const userData = { name: "สมชาย" };
+&lt;Child user={userData} /&gt;</code></pre>
+                </div>
+                <div class="arrow">
+                    <i class="fas fa-arrow-down"></i>
+                    <span>ส่ง Props: <strong>user</strong></span>
+                </div>
+                <div class="component">
+                     <strong>Child Component</strong>
+                     <pre style="font-size: 0.8em; text-align: left;"><code>function Child({ user }) {
+  return &lt;h1&gt;{user.name}&lt;/h1&gt;
+}</code></pre>
+                </div>
+            </div>
+            <p style="text-align: center; margin-top: 1em;">ทำให้เราสามารถติดตามและคาดเดาการทำงานของข้อมูลในแอปพลิเคชันได้ง่ายขึ้น</p>
+        </section>
+
+        <section class="slide">
+            <h2>Destructuring Props - เทคนิคมืออาชีพ ⚡</h2>
+            <p>การทำ Destructuring ช่วยให้โค้ดสั้นลง อ่านง่ายขึ้น และลดการเขียนซ้ำซ้อน</p>
+            <div class="grid-2">
+                <div>
+                    <h4>❌ แบบเก่า (ใช้ <code>props.</code>)</h4>
+                    <pre><code class="language-jsx"><span class="code-keyword">function</span> <span class="code-js-expr">ProductCard</span>(props) {
+  <span class="code-keyword">return</span> (
+    <span class="code-jsx-tag-bracket">&lt;</span><span class="code-tag">div</span><span class="code-jsx-tag-bracket">&gt;</span>
+      <span class="code-jsx-tag-bracket">&lt;</span><span class="code-tag">h3</span><span class="code-jsx-tag-bracket">&gt;</span>{props.product.name}<span class="code-jsx-tag-bracket">&lt;/</span><span class="code-tag">h3</span><span class="code-jsx-tag-bracket">&gt;</span>
+      <span class="code-jsx-tag-bracket">&lt;</span><span class="code-tag">p</span><span class="code-jsx-tag-bracket">&gt;</span>ราคา: {props.product.price} บาท<span class="code-jsx-tag-bracket">&lt;/</span><span class="code-tag">p</span><span class="code-jsx-tag-bracket">&gt;</span>
+    <span class="code-jsx-tag-bracket">&lt;/</span><span class="code-tag">div</span><span class="code-jsx-tag-bracket">&gt;</span>
+  );
+}</code></pre>
+                </div>
+                <div>
+                    <h4>✅ แบบใหม่ (Destructuring)</h4>
+                    <pre><code class="language-jsx"><span class="code-keyword">function</span> <span class="code-js-expr">ProductCard</span>({ product }) {
+  <span class="code-keyword">const</span> { name, price } = product;
+  <span class="code-keyword">return</span> (
+    <span class="code-jsx-tag-bracket">&lt;</span><span class="code-tag">div</span><span class="code-jsx-tag-bracket">&gt;</span>
+      <span class="code-jsx-tag-bracket">&lt;</span><span class="code-tag">h3</span><span class="code-jsx-tag-bracket">&gt;</span>{name}<span class="code-jsx-tag-bracket">&lt;/</span><span class="code-tag">h3</span><span class="code-jsx-tag-bracket">&gt;</span>
+      <span class="code-jsx-tag-bracket">&lt;</span><span class="code-tag">p</span><span class="code-jsx-tag-bracket">&gt;</span>ราคา: {price} บาท<span class="code-jsx-tag-bracket">&lt;/</span><span class="code-tag">p</span><span class="code-jsx-tag-bracket">&gt;</span>
+    <span class="code-jsx-tag-bracket">&lt;/</span><span class="code-tag">div</span><span class="code-jsx-tag-bracket">&gt;</span>
+  );
+}</code></pre>
+                </div>
+            </div>
+             <button class="explain-code-btn" onclick="toggleExplanation(this)"><i class="fas fa-info-circle"></i> อธิบายโค้ด</button>
+             <div class="code-explanation" style="display: none;">
+                <ul class="browser-default">
+                    <li><strong>แบบเก่า:</strong> เราต้องเข้าถึงข้อมูลผ่าน <code>props.product.name</code> ซึ่งยาวและอาจพิมพ์ผิดได้ง่าย</li>
+                    <li><strong>แบบใหม่:</strong> เราใช้ <code>{ product }</code> ใน parameter เพื่อดึง `product` ออกมาจาก `props` ทันที จากนั้นใช้ <code>const { name, price } = product;</code> เพื่อดึงค่าที่ต้องการออกมาอีกชั้น ทำให้ใน JSX เราสามารถเรียกใช้ <code>name</code> และ <code>price</code> ได้โดยตรง โค้ดจึงสั้นและสะอาดตาขึ้นมาก</li>
+                </ul>
+             </div>
+        </section>
+
+        <section class="slide quiz-slide">
+            <h2><i class="fas fa-question-circle"></i> Quiz Time!</h2>
+            <blockquote>จากโค้ดนี้ อะไรคือประโยชน์ที่ "ชัดเจนที่สุด" ของการทำ Destructuring Props?</blockquote>
+            <pre style="color: white; font-size: 0.8em;"><code>function UserProfile({ user: { name, avatar }, isOnline }) { ... }
+// เทียบกับ
+function UserProfile(props) {
+  const name = props.user.name;
+  ...
+}</code></pre>
+            <button class="interactive-controls" style="margin-top: 1em;" onclick="document.getElementById('quiz1-answer').style.display='block'">แสดงเฉลย</button>
+            <div class="answer" id="quiz1-answer">
+                <h4>คำตอบ: <span style="font-weight: normal;">ลดความซ้ำซ้อนและทำให้โค้ดสั้นลง</span></h4>
+                <p>เราไม่ต้องพิมพ์ `props.user` ซ้ำๆ และยังเห็นได้ชัดเจนตั้งแต่ใน parameter list ว่า Component นี้ต้องการ props อะไรบ้าง</p>
+            </div>
+        </section>
+
+        <section class="slide">
+            <h2>Interactive: Default Props Demo 🎯</h2>
+            <p>เราสามารถกำหนดค่าเริ่มต้นให้ props เพื่อป้องกัน Error และทำให้ Component ยืดหยุ่นมากขึ้น ลองคลิกปุ่มเพื่อดูผลลัพธ์</p>
+            <div class="interactive-controls">
+                <button id="dp-btn-full">ส่ง Props ครบ</button>
+                <button id="dp-btn-partial">ส่ง Props บางส่วน</button>
+                <button id="dp-btn-none">ไม่ส่ง Props เลย</button>
+            </div>
+            <div class="grid-2">
+                <div class="code-pane">
+                    <h4>โค้ด Component</h4>
+                     <pre><code class="language-jsx"><span class="code-keyword">function</span> <span class="code-js-expr">WelcomeMessage</span>({ 
+    <span class="code-attr">name</span> = <span class="code-string">"ผู้เยี่ยมชม"</span>, 
+    <span class="code-attr">isVIP</span> = <span class="code-js-expr">false</span> 
+}) {
+  <span class="code-keyword">return</span> (
+    <span class="code-jsx-tag-bracket">&lt;</span><span class="code-tag">div</span><span class="code-jsx-tag-bracket">&gt;</span>
+      <span class="code-jsx-tag-bracket">&lt;</span><span class="code-tag">h1</span><span class="code-jsx-tag-bracket">&gt;</span>สวัสดี {name}! 👋<span class="code-jsx-tag-bracket">&lt;/</span><span class="code-tag">h1</span><span class="code-jsx-tag-bracket">&gt;</span>
+      {isVIP && <span class="code-jsx-tag-bracket">&lt;</span><span class="code-tag">span</span><span class="code-jsx-tag-bracket">&gt;</span>⭐ VIP Member<span class="code-jsx-tag-bracket">&lt;/</span><span class="code-tag">span</span><span class="code-jsx-tag-bracket">&gt;</span>}
+    <span class="code-jsx-tag-bracket">&lt;/</span><span class="code-tag">div</span><span class="code-jsx-tag-bracket">&gt;</span>
+  );
+}</code></pre>
+                     <button class="explain-code-btn" onclick="toggleExplanation(this)"><i class="fas fa-info-circle"></i> อธิบายโค้ด</button>
+                     <div class="code-explanation" style="display: none;">
+                        <ul class="browser-default">
+                            <li><code>name = "ผู้เยี่ยมชม"</code>: หมายความว่าถ้าไม่มีการส่ง prop ชื่อ <code>name</code> มาให้, ให้ใช้ค่า <strong>"ผู้เยี่ยมชม"</strong> แทน</li>
+                            <li><code>isVIP = false</code>: หมายความว่าถ้าไม่มีการส่ง prop ชื่อ <code>isVIP</code> มาให้, ให้ใช้ค่า <strong>false</strong> แทน</li>
+                            <li><code>{isVIP && ...}</code>: เป็นเทคนิค Conditional Rendering ที่จะแสดงข้อความ "⭐ VIP Member" ก็ต่อเมื่อ <code>isVIP</code> เป็น <strong>true</strong> เท่านั้น</li>
+                        </ul>
+                     </div>
+                </div>
+                <div class="preview-pane">
+                     <h4>ผลลัพธ์</h4>
+                     <div class="interactive-pane" id="default-props-output"></div>
+                </div>
+            </div>
+        </section>
+        
+        <section class="slide">
+            <h2>Props Validation ด้วย PropTypes 🛡️</h2>
+            <p>เป็นเครื่องมือที่ช่วยตรวจสอบว่า props ที่ส่งมาให้ Component นั้นมี "ประเภท" และ "รูปแบบ" ที่ถูกต้องหรือไม่ ช่วยจับ Bug ได้ตั้งแต่ตอนพัฒนา</p>
+            <h4>❌ ปัญหา: ส่งข้อมูลผิดประเภททำให้แอปพัง</h4>
+            <pre><code class="language-jsx"><span class="code-comment">// price ควรเป็น number แต่ส่งเป็น string มา!</span>
+<span class="code-jsx-tag-bracket">&lt;</span><span class="code-tag">PriceDisplay</span> <span class="code-attr">price</span>=<span class="code-string">"1000"</span> <span class="code-attr">currency</span>=<span class="code-string">"บาท"</span> <span class="code-jsx-tag-bracket">/&gt;</span> <span class="code-comment">// ผลลัพธ์การคำนวณจะเป็น NaN!</span></code></pre>
+            
+            <h4>✅ แก้ไขด้วย PropTypes:</h4>
+            <pre><code class="language-jsx"><span class="code-keyword">import</span> PropTypes <span class="code-keyword">from</span> <span class="code-string">'prop-types'</span>;
+<span class="code-keyword">function</span> <span class="code-js-expr">PriceDisplay</span>({ price, currency, discount }) { ... }
+
+<span class="code-comment">// กำหนดกฎการตรวจสอบ props</span>
+PriceDisplay.propTypes = {
+  <span class="code-attr">price</span>: PropTypes.number.isRequired,
+  <span class="code-attr">currency</span>: PropTypes.string.isRequired,
+  <span class="code-attr">discount</span>: PropTypes.number,
+};</code></pre>
+             <button class="explain-code-btn" onclick="toggleExplanation(this)"><i class="fas fa-info-circle"></i> อธิบายโค้ด</button>
+             <div class="code-explanation" style="display: none;">
+                <ul class="browser-default">
+                    <li><code>PriceDisplay.propTypes = { ... }</code>: เป็นการกำหนด "กฎ" สำหรับ Component ที่ชื่อ <code>PriceDisplay</code></li>
+                    <li><code>price: PropTypes.number.isRequired</code>: กำหนดว่า prop <code>price</code> <strong>ต้องเป็นตัวเลข</strong> (number) และ <strong>จำเป็นต้องส่งมา</strong> (isRequired)</li>
+                    <li><code>currency: PropTypes.string.isRequired</code>: กำหนดว่า prop <code>currency</code> <strong>ต้องเป็นข้อความ</strong> (string) และ <strong>จำเป็นต้องส่งมา</strong></li>
+                    <li><code>discount: PropTypes.number</code>: กำหนดว่า prop <code>discount</code> <strong>ต้องเป็นตัวเลข</strong> แต่ <strong>ไม่จำเป็น</strong> ต้องส่งมาก็ได้</li>
+                </ul>
+             </div>
+            <p>ถ้ามีการส่ง prop ที่ผิดพลาด React จะแสดงคำเตือนที่มีประโยชน์ใน Console ของเบราว์เซอร์</p>
+        </section>
+        
+        <section class="slide">
+            <h2>Children Props - Component ที่ยืดหยุ่น 👶</h2>
+            <p><code>props.children</code> เป็น prop พิเศษที่ React ส่งมาให้โดยอัตโนมัติ มันคือ "ทุกอย่างที่อยู่ระหว่าง" tag เปิดและปิดของ Component ทำให้เราสร้าง Component ที่เป็น Layout หรือ Wrapper ได้อย่างมีประสิทธิภาพ</p>
+            <h4>Card Component ที่ยืดหยุ่น:</h4>
+            <pre><code class="language-jsx"><span class="code-keyword">function</span> <span class="code-js-expr">Card</span>({ title, children }) {
+  <span class="code-keyword">return</span> (
+    <span class="code-jsx-tag-bracket">&lt;</span><span class="code-tag">div</span> <span class="code-attr">className</span>=<span class="code-string">"card"</span><span class="code-jsx-tag-bracket">&gt;</span>
+        <span class="code-jsx-tag-bracket">&lt;</span><span class="code-tag">h3</span><span class="code-jsx-tag-bracket">&gt;</span>{title}<span class="code-jsx-tag-bracket">&lt;/</span><span class="code-tag">h3</span><span class="code-jsx-tag-bracket">&gt;</span>
+        <span class="code-jsx-tag-bracket">&lt;</span><span class="code-tag">div</span> <span class="code-attr">className</span>=<span class="code-string">"card-body"</span><span class="code-jsx-tag-bracket">&gt;</span>{children}<span class="code-jsx-tag-bracket">&lt;/</span><span class="code-tag">div</span><span class="code-jsx-tag-bracket">&gt;</span>
+    <span class="code-jsx-tag-bracket">&lt;/</span><span class="code-tag">div</span><span class="code-jsx-tag-bracket">&gt;</span>
+  );
+}</code></pre>
+             <button class="explain-code-btn" onclick="toggleExplanation(this)"><i class="fas fa-info-circle"></i> อธิบายโค้ด</button>
+             <div class="code-explanation" style="display: none;">
+                <ul class="browser-default">
+                    <li><code>function Card({ title, children })</code>: เราทำการ destructure เอา <code>title</code> และ <code>children</code> ออกมาจาก props</li>
+                    <li><code>{title}</code>: แสดงผลค่า title ที่ได้รับมา</li>
+                    <li><code>{children}</code>: จุดนี้คือหัวใจสำคัญ! React จะนำ JSX หรือข้อความใดๆ ที่เราใส่ไว้ "ข้างใน" Tag <code>&lt;Card&gt;...&lt;/Card&gt;</code> มาแสดงผลตรงตำแหน่งนี้</li>
+                </ul>
+             </div>
+        </section>
+
+        <section class="slide">
+             <h2>Interactive: Children Props Demo</h2>
+             <p>เราสามารถใส่ JSX อะไรก็ได้ลงไปเป็น `children` ของ Card Component</p>
+             <div class="grid-2">
+                 <div class="code-pane">
+                     <h4>โค้дการใช้งาน</h4>
+                     <pre><code class="language-jsx"><span class="code-comment">// 1. Card ที่มีแค่ข้อความ</span>
+<span class="code-jsx-tag-bracket">&lt;</span><span class="code-tag">Card</span> <span class="code-attr">title</span>=<span class="code-string">"ข้อมูลส่วนตัว"</span><span class="code-jsx-tag-bracket">&gt;</span>
+  <span class="code-jsx-tag-bracket">&lt;</span><span class="code-tag">p</span><span class="code-jsx-tag-bracket">&gt;</span>ชื่อ: สมชาย ใจดี<span class="code-jsx-tag-bracket">&lt;/</span><span class="code-tag">p</span><span class="code-jsx-tag-bracket">&gt;</span>
+<span class="code-jsx-tag-bracket">&lt;/</span><span class="code-tag">Card</span><span class="code-jsx-tag-bracket">&gt;</span>
+
+<span class="code-comment">// 2. Card ที่มีฟอร์ม</span>
+<span class="code-jsx-tag-bracket">&lt;</span><span class="code-tag">Card</span> <span class="code-attr">title</span>=<span class="code-string">"แก้ไขข้อมูล"</span><span class="code-jsx-tag-bracket">&gt;</span>
+  <span class="code-jsx-tag-bracket">&lt;</span><span class="code-tag">input</span> <span class="code-attr">placeholder</span>=<span class="code-string">"ชื่อใหม่"</span> <span class="code-jsx-tag-bracket">/&gt;</span>
+  <span class="code-jsx-tag-bracket">&lt;</span><span class="code-tag">button</span><span class="code-jsx-tag-bracket">&gt;</span>บันทึก<span class="code-jsx-tag-bracket">&lt;/</span><span class="code-tag">button</span><span class="code-jsx-tag-bracket">&gt;</span>
+<span class="code-jsx-tag-bracket">&lt;/</span><span class="code-tag">Card</span><span class="code-jsx-tag-bracket">&gt;</span></code></pre>
+                 </div>
+                 <div class="preview-pane">
+                     <h4>ผลลัพธ์</h4>
+                     <div class="interactive-pane" id="children-props-output"></div>
+                 </div>
+             </div>
+        </section>
+
+        <section class="slide">
+            <h2>Component Composition Patterns 🏗️</h2>
+            <p>คือเทคนิคการออกแบบ Component ให้ทำงานร่วมกันอย่างมีประสิทธิภาพและอ่านง่าย</p>
+            <h3>Pattern: Compound Components</h3>
+            <p>ช่วยจัดกลุ่ม Component ที่เกี่ยวข้องกันและทำให้ API สวยงามขึ้น</p>
+            <h4>✅ การใช้งานที่สวยงามและชัดเจน:</h4>
+            <pre><code class="language-jsx"><span class="code-keyword">function</span> <span class="code-js-expr">NewsPage</span>() {
+  <span class="code-keyword">return</span> (
+    <span class="code-jsx-tag-bracket">&lt;</span><span class="code-tag">Card</span> <span class="code-attr">className</span>=<span class="code-string">"news-card"</span><span class="code-jsx-tag-bracket">&gt;</span>
+      <span class="code-jsx-tag-bracket">&lt;</span><span class="code-tag">Card.Header</span><span class="code-jsx-tag-bracket">&gt;</span>
+        <span class="code-jsx-tag-bracket">&lt;</span><span class="code-tag">Card.Title</span><span class="code-jsx-tag-bracket">&gt;</span>📰 ข่าวเทคโนโลยี<span class="code-jsx-tag-bracket">&lt;/</span><span class="code-tag">Card.Title</span><span class="code-jsx-tag-bracket">&gt;</span>
+        <span class="code-jsx-tag-bracket">&lt;</span><span class="code-tag">Card.Actions</span><span class="code-jsx-tag-bracket">&gt;</span>
+          <span class="code-jsx-tag-bracket">&lt;</span><span class="code-tag">button</span><span class="code-jsx-tag-bracket">&gt;</span>✏️ แก้ไข<span class="code-jsx-tag-bracket">&lt;/</span><span class="code-tag">button</span><span class="code-jsx-tag-bracket">&gt;</span>
+        <span class="code-jsx-tag-bracket">&lt;/</span><span class="code-tag">Card.Actions</span><span class="code-jsx-tag-bracket">&gt;</span>
+      <span class="code-jsx-tag-bracket">&lt;/</span><span class="code-tag">Card.Header</span><span class="code-jsx-tag-bracket">&gt;</span>
+      <span class="code-jsx-tag-bracket">&lt;</span><span class="code-tag">Card.Body</span><span class="code-jsx-tag-bracket">&gt;</span>
+        <span class="code-jsx-tag-bracket">&lt;</span><span class="code-tag">p</span><span class="code-jsx-tag-bracket">&gt;</span>React 18 ได้เปิดตัวฟีเจอร์ใหม่...<span class="code-jsx-tag-bracket">&lt;/</span><span class="code-tag">p</span><span class="code-jsx-tag-bracket">&gt;</span>
+      <span class="code-jsx-tag-bracket">&lt;/</span><span class="code-tag">Card.Body</span><span class="code-jsx-tag-bracket">&gt;</span>
+    <span class="code-jsx-tag-bracket">&lt;/</span><span class="code-tag">Card</span><span class="code-jsx-tag-bracket">&gt;</span>
+  );
+}</code></pre>
+            <p><strong>วิธีการสร้าง:</strong> เราสร้าง Sub-components (<code>Card.Header</code>, <code>Card.Title</code>) แล้วกำหนดให้เป็น property ของ Main Component (<code>Card</code>)</p>
+        </section>
+
+        <section class="slide">
+            <h2>Component Lifecycle - วงจรชีวิต 🔄</h2>
+            <p>Component ทุกตัวมีวงจรชีวิต 3 ระยะหลัก ซึ่งเราสามารถใช้ Hook ที่ชื่อว่า <code>useEffect</code> เพื่อเข้าไปจัดการในแต่ละช่วงได้</p>
+            <div class="infographic">
+                <div class="component-group">
+                    <div class="component"><strong>🐣 Mounting</strong><br>(เกิด)</div>
+                    <div class="arrow"><i class="fas fa-arrow-right"></i></div>
+                    <div class="component"><strong>🔄 Updating</strong><br>(เปลี่ยนแปลง)</div>
+                    <div class="arrow"><i class="fas fa-arrow-right"></i></div>
+                     <div class="component"><strong>⚰️ Unmounting</strong><br>(ตาย)</div>
+                </div>
+            </div>
+            <h4>การใช้ <code>useEffect</code> เพื่อจัดการ Lifecycle:</h4>
+            <pre><code class="language-jsx"><span class="code-keyword">import</span> { useEffect } <span class="code-keyword">from</span> <span class="code-string">'react'</span>;
+
+<span class="code-keyword">function</span> <span class="code-js-expr">LifecycleDemo</span>({ userName }) {
+    <span class="code-comment">// 🐣 Mounting & ⚰️ Unmounting</span>
+    useEffect(() => {
+        console.log('🐣 Component ถูกสร้างแล้ว!');
+        <span class="code-keyword">return</span> () => { console.log('⚰️ Component ถูกลบแล้ว'); };
+    }, []);
+    
+    <span class="code-comment">// 🔄 Updating</span>
+    useEffect(() => {
+        console.log('🔄 userName เปลี่ยนเป็น:', userName);
+    }, [userName]);
+}</code></pre>
+            <button class="explain-code-btn" onclick="toggleExplanation(this)"><i class="fas fa-info-circle"></i> อธิบายโค้ด</button>
+            <div class="code-explanation" style="display: none;">
+               <ul class="browser-default">
+                   <li><strong>useEffect แรก (Mounting/Unmounting):</strong>
+                       <ul>
+                           <li><code>useEffect(() => { ... }, [])</code>: การใส่ <strong>dependency array ว่าง `[]`</strong> หมายถึงให้โค้ดข้างในทำงาน <strong>แค่ครั้งเดียว</strong> ตอนที่ Component ถูกสร้าง (Mounting)</li>
+                           <li><code>return () => { ... }</code>: ฟังก์ชันที่ return ออกไปจาก `useEffect` จะถูกเรียกว่า <strong>cleanup function</strong> ซึ่งจะทำงานตอนที่ Component กำลังจะถูกทำลาย (Unmounting)</li>
+                       </ul>
+                   </li>
+                   <li><strong>useEffect ที่สอง (Updating):</strong>
+                       <ul>
+                           <li><code>useEffect(() => { ... }, [userName])</code>: การใส่ <strong>`[userName]`</strong> ใน dependency array หมายถึงให้โค้ดข้างในทำงาน <strong>ทุกครั้งที่ค่าของ `userName` เปลี่ยนแปลง</strong></li>
+                       </ul>
+                   </li>
+               </ul>
+            </div>
+        </section>
+
+        <section class="slide quiz-slide">
+            <h2><i class="fas fa-question-circle"></i> Quiz Time!</h2>
+            <blockquote>ถ้าเราต้องการดึงข้อมูล (fetch data) จาก API เพียง "ครั้งเดียว" ตอนที่ Component โหลดขึ้นมาครั้งแรก เราควรจะเขียน <code>useEffect</code> อย่างไร?</blockquote>
+            <button class="interactive-controls" style="margin-top: 1em;" onclick="document.getElementById('quiz2-answer').style.display='block'">แสดงเฉลย</button>
+            <div class="answer" id="quiz2-answer">
+                <h4>คำตอบ: <span style="font-weight: normal;">ใช้ <code>useEffect</code> พร้อมกับ Dependency Array ที่ว่างเปล่า `[]`</span></h4>
+                <pre style="color: white; font-size: 0.8em;"><code>useEffect(() => {
+  // โค้ดสำหรับ fetch data...
+}, []);</code></pre>
+                <p>Dependency Array ที่ว่างเปล่า `[]` จะบอกให้ React รัน effect นี้เพียงครั้งเดียวหลังจากการ render ครั้งแรก (Mounting) เท่านั้น</p>
+            </div>
+        </section>
+
+        <section class="slide">
+            <h2>Conditional Rendering Patterns 🎭</h2>
+            <p>สำหรับ Logic ที่ซับซ้อน ควรแยก Logic ออกมาเป็น Component หรือ Function เพื่อให้อ่านง่ายขึ้น</p>
+            <h4>❌ ปัญหา: Ternary ซ้อนกันจนอ่านไม่รู้เรื่อง</h4>
+            <pre><code class="language-jsx"><span class="code-comment">// อ่านยากและซับซ้อนมาก!</span>
+{user ? (user.isOnline ? <span class="code-jsx-tag-bracket">&lt;</span><span class="code-tag">Online</span><span class="code-jsx-tag-bracket">/&gt;</span> : <span class="code-jsx-tag-bracket">&lt;</span><span class="code-tag">Offline</span><span class="code-jsx-tag-bracket">/&gt;</span>) : <span class="code-jsx-tag-bracket">&lt;</span><span class="code-tag">Guest</span><span class="code-jsx-tag-bracket">/&gt;</span>}</code></pre>
+            
+            <h4>✅ แก้ไขด้วยการแยก Logic ออกมา:</h4>
+            <pre><code class="language-jsx"><span class="code-keyword">function</span> <span class="code-js-expr">UserStatus</span>({ user }) {
+  <span class="code-keyword">if</span> (!user) {
+    <span class="code-keyword">return</span> <span class="code-jsx-tag-bracket">&lt;</span><span class="code-tag">StatusBadge</span> <span class="code-attr">type</span>=<span class="code-string">"guest"</span><span class="code-jsx-tag-bracket">&gt;</span>👤 ผู้เยี่ยมชม<span class="code-jsx-tag-bracket">&lt;/</span><span class="code-tag">StatusBadge</span><span class="code-jsx-tag-bracket">&gt;</span>;
+  }
+  
+  <span class="code-keyword">if</span> (user.isOnline) {
+    <span class="code-keyword">return</span> <span class="code-jsx-tag-bracket">&lt;</span><span class="code-tag">StatusBadge</span> <span class="code-attr">type</span>=<span class="code-string">"online"</span><span class="code-jsx-tag-bracket">&gt;</span>🟢 Online<span class="code-jsx-tag-bracket">&lt;/</span><span class="code-tag">StatusBadge</span><span class="code-jsx-tag-bracket">&gt;</span>;
+  }
+  
+  <span class="code-keyword">return</span> <span class="code-jsx-tag-bracket">&lt;</span><span class="code-tag">StatusBadge</span> <span class="code-attr">type</span>=<span class="code-string">"offline"</span><span class="code-jsx-tag-bracket">&gt;</span>🔴 Offline<span class="code-jsx-tag-bracket">&lt;/</span><span class="code-tag">StatusBadge</span><span class="code-jsx-tag-bracket">&gt;</span>;
+}</code></pre>
+            <p>เทคนิคนี้ทำให้โค้ดสะอาด ทดสอบง่าย และนำกลับมาใช้ใหม่ได้สะดวกขึ้นมาก</p>
+        </section>
+        
+        <section class="slide">
+            <h2>Component Communication Patterns 📞</h2>
+            <h4>1. Parent ↔️ Child (Props & Callbacks)</h4>
+            <p>Parent ส่งข้อมูลให้ Child ผ่าน <strong>Props</strong> และ Child ส่งข้อมูลกลับไปหา Parent ผ่าน <strong>Callback Function</strong> ที่ได้รับมาทาง Props</p>
+            <pre><code class="language-jsx"><span class="code-keyword">function</span> <span class="code-js-expr">Parent</span>() {
+  <span class="code-keyword">const</span> handleChildClick = (dataFromChild) => { ... };
+  <span class="code-keyword">return</span> <span class="code-jsx-tag-bracket">&lt;</span><span class="code-tag">Child</span> <span class="code-attr">onButtonClick</span>={handleChildClick} <span class="code-jsx-tag-bracket">/&gt;</span>;
+}
+<span class="code-keyword">function</span> <span class="code-js-expr">Child</span>({ onButtonClick }) {
+  <span class="code-keyword">return</span> <span class="code-jsx-tag-bracket">&lt;</span><span class="code-tag">button</span> <span class="code-attr">onClick</span>={() => onButtonClick("สวัสดีจากลูก")}<span class="code-jsx-tag-bracket">&gt;</span>ส่งข้อมูลกลับ<span class="code-jsx-tag-bracket">&lt;/</span><span class="code-tag">button</span><span class="code-jsx-tag-bracket">&gt;</span>;
+}</code></pre>
+            <h4>2. Sibling Communication (Lifting State Up)</h4>
+            <p>เมื่อ Component พี่น้องต้องการแชร์ข้อมูลกัน เราจะ "ยก state" ขึ้นไปไว้ที่ Component แม่ที่ใกล้ที่สุด แล้วส่ง state และฟังก์ชันสำหรับอัปเดต state นั้นลงมาให้ลูกๆ ผ่าน props</p>
+        </section>
+        
+         <section class="slide">
+            <h2>Infographic: Lifting State Up</h2>
+            <p>ใช้สำหรับ Sibling (พี่น้อง) Communication</p>
+             <div class="infographic">
+                <div class="component component-lg">
+                    <strong>Parent Component (เก็บ State)</strong>
+                    <pre style="font-size: 0.8em; text-align: left;"><code>const [state, setState] = useState(...)</code></pre>
+                    <div class="component-group">
+                        <div class="component"><strong>Sibling A</strong></div>
+                        <div class="arrow" style="flex-direction: row; gap: 20px;">
+                            <div><i class="fas fa-arrow-down"></i><span>ส่ง State (Props)</span></div>
+                            <div><i class="fas fa-arrow-up"></i><span>เรียก setState (Callback)</span></div>
+                        </div>
+                         <div class="component"><strong>Sibling B (รับ State)</strong></div>
+                    </div>
+                </div>
+            </div>
+             <p><strong>ขั้นตอน:</strong><br>1. Sibling A เรียก callback function (<code>setState</code>) ที่ได้รับจาก Parent.<br>2. State ใน Parent เปลี่ยนแปลง.<br>3. Parent re-render และส่ง state ใหม่ลงไปให้ทั้ง Sibling A และ Sibling B.</p>
+        </section>
+        
+        <section class="slide">
+            <h2>ปัญหา Props Drilling และการแก้ไข</h2>
+            <h4>❌ ปัญหา: Props Drilling</h4>
+            <p>คือการส่ง props ผ่าน Component หลายๆ ชั้นที่ไม่จำเป็นต้องใช้ props นั้นเลย ทำให้โค้ดซับซ้อนและดูแลรักษายาก</p>
+            <pre>App → Layout → Header → UserMenu (เพิ่งได้ใช้ props)</pre>
+
+            <h4>✅ แก้ไขด้วย Context API:</h4>
+            <p>Context API ช่วยให้เราสร้าง "แหล่งข้อมูลกลาง" ที่ Component ใดๆ ในลำดับชั้นลึกลงไปสามารถเข้าถึงได้โดยตรง โดยไม่ต้องส่ง props ต่อกันเป็นทอดๆ</p>
+            <div class="infographic" style="padding: 1em;">
+                 <div class="component"><strong>UserProvider (สร้าง Context)</strong></div>
+                 <div class="arrow"><i class="fas fa-arrows-alt-v"></i><span>ส่งข้อมูลผ่าน Context</span></div>
+                 <div class="component-group">
+                     <div class="component">Layout</div>
+                     <div class="component">Header</div>
+                     <div class="component"><strong>UserMenu (ดึงข้อมูลจาก Context)</strong></div>
+                 </div>
+            </div>
+            <p>เหมาะสำหรับข้อมูลที่ใช้ร่วมกันทั้งแอป เช่น ข้อมูลผู้ใช้, Theme (Dark/Light Mode), หรือภาษา</p>
+        </section>
+
+        <section class="slide">
+            <h2>Lab 3.2 Preview - Product List 🛍️</h2>
+            <p>ใน Lab ถัดไป เราจะนำความรู้ทั้งหมดมาสร้างระบบแสดงรายการสินค้าที่มีความสามารถซับซ้อนขึ้น</p>
+            <h4>สิ่งที่จะได้สร้าง:</h4>
+            <ul class="browser-default">
+                <li data-icon="🧩"><strong><code>ProductCard</code> Component:</strong> Component ที่แสดงข้อมูลสินค้าชิ้นเดียว สามารถนำกลับมาใช้ซ้ำได้ และมีการใช้ Conditional Rendering (เช่น แสดงป้ายลดราคา)</li>
+                <li data-icon="🔄"><strong><code>ProductList</code> Component:</strong> Component ที่รับข้อมูลสินค้าทั้งหมดมาแสดงผลโดยใช้ <code>.map()</code> เพื่อ render <code>ProductCard</code> หลายๆ อัน</li>
+                <li data-icon="📞"><strong>Event Handling:</strong> สร้างปุ่ม "ใส่ตะกร้า" ที่สามารถส่งข้อมูลของสินค้านั้นๆ กลับไปยัง Component แม่ได้</li>
+                <li data-icon="🛡️"><strong>Props Validation:</strong> ใช้ PropTypes เพื่อตรวจสอบข้อมูลของสินค้าที่ส่งเข้ามา</li>
+            </ul>
+            <p><strong>ความท้าทายที่รออยู่:</strong> การจัดการข้อมูลสินค้า, Filtering และ Sorting, และการสร้าง Component ที่ reusable และ maintainable</p>
+        </section>
+
+        <section class="slide">
+            <h2>Best Practices: Component & Props 💎</h2>
+            <div class="grid-2">
+                <div>
+                    <h4>1. การตั้งชื่อ (Naming)</h4>
+                    <ul class="browser-default">
+                        <li data-icon="✅"><strong>Components:</strong> PascalCase และเป็นคำนาม (<code>UserProfile</code>)</li>
+                        <li data-icon="✅"><strong>Props:</strong> camelCase และสื่อความหมาย (<code>onUserUpdate</code>, <code>isDisabled</code>)</li>
+                    </ul>
+                </div>
+                <div>
+                    <h4>2. Props Design</h4>
+                    <ul class="browser-default">
+                        <li data-icon="✅">ออกแบบ Interface ให้ชัดเจน</li>
+                        <li data-icon="✅">ใช้ <code>...rest</code> เพื่อส่งต่อ props ที่เหลือ</li>
+                    </ul>
+                </div>
+                <div>
+                    <h4>3. Performance</h4>
+                    <ul class="browser-default">
+                        <li data-icon="✅">ใช้ <code>React.memo</code> กับ Component ที่ re-render บ่อยโดยไม่จำเป็น</li>
+                        <li data-icon="✅">ใช้ <code>React.lazy</code> สำหรับ Code-Splitting</li>
+                    </ul>
+                </div>
+                <div>
+                    <h4>4. Error Prevention</h4>
+                    <ul class="browser-default">
+                        <li data-icon="✅">ใช้ PropTypes และ Default Props</li>
+                        <li data-icon="✅">เขียนโค้ดแบบป้องกัน (Defensive)</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+        
+        <section class="slide">
+            <h2>Component Testing Basics 🧪</h2>
+            <p>การเขียนเทสสำหรับ Component ช่วยให้เรามั่นใจว่า UI ของเราทำงานได้ถูกต้องตามที่คาดหวัง และป้องกันการเกิด Bug ใหม่เมื่อมีการแก้ไขโค้ด</p>
+            <h4>เครื่องมือที่นิยม: Jest + React Testing Library</h4>
+            <pre><code class="language-jsx"><span class="code-keyword">import</span> { render, screen, fireEvent } <span class="code-keyword">from</span> <span class="code-string">'@testing-library/react'</span>;
+<span class="code-keyword">import</span> Button <span class="code-keyword">from</span> <span class="code-string">'./Button'</span>;
+
+test('calls onClick prop when clicked', () => {
+  <span class="code-keyword">const</span> handleClick = jest.fn(); <span class="code-comment">// สร้าง mock function</span>
+  
+  render(<span class="code-jsx-tag-bracket">&lt;</span><span class="code-tag">Button</span> <span class="code-attr">onClick</span>={handleClick}<span class="code-jsx-tag-bracket">&gt;</span>Click Me<span class="code-jsx-tag-bracket">&lt;/</span><span class="code-tag">Button</span><span class="code-jsx-tag-bracket">&gt;</span>);
+  
+  <span class="code-comment">// จำลองการคลิกปุ่ม</span>
+  fireEvent.click(screen.getByText(/click me/i));
+  
+  <span class="code-comment">// ตรวจสอบว่า mock function ถูกเรียก 1 ครั้ง</span>
+  expect(handleClick).toHaveBeenCalledTimes(1);
+});</code></pre>
+            <p><strong>ประโยชน์ของการ Test:</strong> ✅ มั่นใจในคุณภาพโค้ด ✅ จับ Bug ได้เร็ว ✅ ปลอดภัยในการ Refactor</p>
+        </section>
+
+        <section class="slide">
+            <h2>คำถามและการแก้ปัญหาที่พบบ่อย ❓</h2>
+            <h4>Q1: "Props ส่งไม่ถึง Child Component ทำไง?"</h4>
+            <p><strong>A:</strong> ตรวจสอบให้แน่ใจว่าคุณเข้าถึง props ถูกต้อง ถ้าส่งมาเป็น <code>&lt;Child user={data} /&gt;</code> ใน Child ต้องเข้าถึงผ่าน <code>props.user</code> หรือ destructure เป็น <code>{ user }</code></p>
+
+            <h4>Q2: "Component Render หลายรอบเกินไป ทำยังไง?"</h4>
+            <p><strong>A:</strong> ส่วนใหญ่มักเกิดจากการสร้าง object, array, หรือ function ใหม่ทุกครั้งที่ render ให้ใช้ <code>React.memo</code> ร่วมกับ <code>useMemo</code> และ <code>useCallback</code> เพื่อป้องกัน</p>
+
+            <h4>Q3: "Event Handler ไม่ทำงาน หรือทำงานทันที?"</h4>
+            <p><strong>A:</strong> ตรวจสอบว่าคุณส่ง "function reference" (<code>onClick={handleClick}</code>) ไม่ใช่ "การเรียกฟังก์ชัน" (<code>onClick={handleClick()}</code>)</p>
+            
+            <h4>Q4: "Props Drilling คืออะไร และแก้ยังไง?"</h4>
+            <p><strong>A:</strong> คือการส่ง props ผ่าน Component หลายๆ ชั้นที่ไม่จำเป็น วิธีแก้ที่ดีที่สุดคือใช้ <strong>Context API</strong></p>
+        </section>
+
+        <section class="slide">
+            <h2 style="text-align:center;">สรุปเนื้อหา</h2>
+            <h3>สิ่งที่เราได้เรียนรู้ในหัวข้อนี้:</h3>
+            <ul class="browser-default">
+                <li data-icon="✅"><strong>Component Architecture:</strong> การออกแบบและแบ่งแยก Component</li>
+                <li data-icon="✅"><strong>Props Mastery:</strong> การส่งข้อมูล, Destructuring, Default Props, PropTypes</li>
+                <li data-icon="✅"><strong>Advanced Patterns:</strong> Composition, Conditional Rendering, Error Boundaries</li>
+                <li data-icon="✅"><strong>Performance:</strong> การใช้ <code>memo</code>, <code>useCallback</code>, <code>useMemo</code></li>
+                <li data-icon="✅"><strong>Communication:</strong> การสื่อสารระหว่าง Components</li>
+            </ul>
+            <blockquote>
+                <strong>การเปลี่ยนแปลงที่เกิดขึ้น:</strong><br>
+                เมื่อเช้า: รู้จัก Component พื้นฐาน<br>
+                <strong>ตอนนี้: คุณสามารถสร้าง Component Architecture ที่ซับซ้อน, นำกลับมาใช้ใหม่ได้, และมีประสิทธิภาพ! 🚀</strong>
+            </blockquote>
+        </section>
+        
+        <section class="slide">
+            <h2>ทักษะที่พัฒนาขึ้น และโปรเจคที่ทำได้</h2>
+             <div class="grid-2">
+                <div>
+                     <h4>ทักษะที่พัฒนาขึ้น:</h4>
+                     <ul class="browser-default">
+                        <li data-icon="🧩">คิดแบบ Component-based</li>
+                        <li data-icon="🔄">เข้าใจการไหลของ Props</li>
+                        <li data-icon="🛡️">จัดการข้อผิดพลาดอย่างมืออาชีพ</li>
+                        <li data-icon="⚡">เขียนโค้ดโดยคำนึงถึง Performance</li>
+                     </ul>
+                </div>
+                 <div>
+                    <h4>ตัวอย่างโปรเจคที่ทำได้แล้ว:</h4>
+                    <ul class="browser-default">
+                        <li data-icon="🏪">E-commerce Product List</li>
+                        <li data-icon="👤">User Management System</li>
+                        <li data-icon="📊">Dashboard with Multiple Widgets</li>
+                        <li data-icon="📝">Form Builder System</li>
+                    </ul>
+                 </div>
+            </div>
+        </section>
+        
+        <section class="slide title-slide">
+            <h2>เตรียมตัวสำหรับหัวข้อถัดไป</h2>
+            <i class="fas fa-cogs" style="font-size: 4em; color: var(--primary-color); margin: 20px 0;"></i>
+            <h1>State Management เบื้องต้น</h1>
+            <h3 style="margin-top: 30px;">ทำให้ Component ของเรา "จำ" และ "เปลี่ยนแปลง" ข้อมูลได้ด้วย useState Hook!</h3>
+            <p style="font-size: 1.2em; opacity: 0.9;">พักเบรก 15 นาที ☕ แล้วมาทำให้แอปของเรามีชีวิตกันต่อ!</p>
+        </section>
+    </div>
+
+    <div class="presentation-controls">
+        <button id="prev-btn" class="nav-btn" title="สไลด์ก่อนหน้า">‹</button>
+        <span id="slide-counter"></span>
+        <button id="next-btn" class="nav-btn" title="สไลด์ถัดไป">›</button>
+        <button id="font-decrease-btn" class="font-btn" title="ลดขนาดตัวอักษร">-</button>
+        <button id="font-increase-btn" class="font-btn" title="เพิ่มขนาดตัวอักษร">+</button>
+        <button id="fullscreen-btn" class="fullscreen-btn" title="เต็มจอ">⛶</button>
+    </div>
+
+    <script>
+        // --- SCRIPT FOR PRESENTATION CONTROLS AND INTERACTIVITY ---
+
+        // Function to toggle code explanations
+        function toggleExplanation(button) {
+            const explanationDiv = button.nextElementSibling;
+            const isHidden = explanationDiv.style.display === 'none' || explanationDiv.style.display === '';
+            explanationDiv.style.display = isHidden ? 'block' : 'none';
+            button.innerHTML = isHidden ? '<i class="fas fa-times-circle"></i> ปิดคำอธิบาย' : '<i class="fas fa-info-circle"></i> อธิบายโค้ด';
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const slides = Array.from(document.querySelectorAll('.slide'));
+            const nextBtn = document.getElementById('next-btn');
+            const prevBtn = document.getElementById('prev-btn');
+            const fullscreenBtn = document.getElementById('fullscreen-btn');
+            const slideCounter = document.getElementById('slide-counter');
+            const progressBar = document.getElementById('progress-bar');
+            
+            const totalSlides = slides.length;
+            let currentSlideIndex = 0;
+            
+            function showSlide(index) {
+                if (index < 0 || index >= totalSlides) return;
+                slides.forEach((slide) => {
+                    slide.classList.remove('active');
+                     if (slide.classList.contains('quiz-slide')) {
+                        const answer = slide.querySelector('.answer');
+                        if (answer) answer.style.display = 'none';
+                    }
+                    // Reset explanation buttons
+                    slide.querySelectorAll('.explain-code-btn').forEach(btn => {
+                        const explanationDiv = btn.nextElementSibling;
+                        if(explanationDiv && explanationDiv.classList.contains('code-explanation')) {
+                            explanationDiv.style.display = 'none';
+                            btn.innerHTML = '<i class="fas fa-info-circle"></i> อธิบายโค้ด';
+                        }
+                    });
+                });
+                slides[index].classList.add('active');
+                
+                if (slides[index].scrollTop > 0) slides[index].scrollTop = 0;
+                currentSlideIndex = index;
+                updateControls();
+                
+                // Trigger interactive elements
+                if (slides[index].querySelector('#default-props-output')) {
+                    setupDefaultPropsDemo();
+                }
+                if (slides[index].querySelector('#children-props-output')) {
+                    setupChildrenPropsDemo();
+                }
+            }
+
+            function updateControls() {
+                // Update slide numbers dynamically on each slide
+                slides.forEach((slide, index) => {
+                    let numberDiv = slide.querySelector('.slide-number');
+                    if (!numberDiv) {
+                        numberDiv = document.createElement('div');
+                        numberDiv.className = 'slide-number';
+                        slide.appendChild(numberDiv);
+                    }
+                    numberDiv.textContent = `${index + 1}/${totalSlides}`;
+                });
+                
+                slideCounter.textContent = `${currentSlideIndex + 1} / ${totalSlides}`;
+                const progressPercentage = ((currentSlideIndex + 1) / totalSlides) * 100;
+                progressBar.style.width = `${progressPercentage}%`;
+                prevBtn.disabled = currentSlideIndex === 0;
+                nextBtn.disabled = currentSlideIndex === totalSlides - 1;
+            }
+
+            function toggleFullscreen() {
+                if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+                else if (document.exitFullscreen) document.exitFullscreen();
+            }
+
+            nextBtn.addEventListener('click', () => showSlide(currentSlideIndex + 1));
+            prevBtn.addEventListener('click', () => showSlide(currentSlideIndex - 1));
+            fullscreenBtn.addEventListener('click', toggleFullscreen);
+            document.addEventListener('keydown', (e) => {
+                if (e.target.tagName === 'INPUT' || e.target.isContentEditable) return;
+                if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); nextBtn.click(); } 
+                else if (e.key === 'ArrowLeft') { e.preventDefault(); prevBtn.click(); } 
+                else if (e.key === 'f') { e.preventDefault(); toggleFullscreen(); }
+            });
+            
+            // --- INTERACTIVE DEMOS ---
+            function setupDefaultPropsDemo() {
+                const btnFull = document.getElementById('dp-btn-full');
+                const btnPartial = document.getElementById('dp-btn-partial');
+                const btnNone = document.getElementById('dp-btn-none');
+                const output = document.getElementById('default-props-output');
+
+                const renderWelcome = (props) => {
+                    const name = props.name === undefined ? "ผู้เยี่ยมชม" : props.name;
+                    const isVIP = props.isVIP === undefined ? false : props.isVIP;
+                    output.innerHTML = `
+                        <div style="padding:10px; border-radius:5px; background:${isVIP ? '#fffbe6' : '#f8f9fa'}">
+                            <h1>สวัสดี ${name}! 👋</h1>
+                            ${isVIP ? '<span style="color: #f59e0b; font-weight: bold;">⭐ VIP Member</span>' : ''}
+                        </div>
+                        <pre style="font-size:0.7em; margin-top:10px;">Props ที่ส่ง: ${JSON.stringify(props)}</pre>
+                    `;
+                };
+
+                btnFull.onclick = () => renderWelcome({ name: 'สมชาย', isVIP: true });
+                btnPartial.onclick = () => renderWelcome({ name: 'สมศรี' });
+                btnNone.onclick = () => renderWelcome({});
+                
+                if (!output.innerHTML) {
+                     btnNone.click();
+                }
+            }
+
+            function setupChildrenPropsDemo() {
+                const output = document.getElementById('children-props-output');
+                if (output.innerHTML) return; 
+                
+                output.innerHTML = `
+                    <style>
+                        .demo-card { border: 1px solid #ccc; border-radius: 8px; margin-bottom: 15px; background:white; }
+                        .demo-card h3 { background-color: #f0f0f0; padding: 10px; border-bottom: 1px solid #ccc; font-size: 1em; }
+                        .demo-card .card-body { padding: 15px; font-size: 0.9em; }
+                        .demo-card input { width: 90%; padding: 5px; margin-bottom: 5px; }
+                        .demo-card button { background: var(--primary-color); border:none; color: var(--secondary-color); padding: 5px 10px; border-radius: 5px;}
+                    </style>
+                    <div class="demo-card">
+                        <h3>ข้อมูลส่วนตัว</h3>
+                        <div class="card-body"><p>ชื่อ: สมชาย ใจดี</p></div>
+                    </div>
+                    <div class="demo-card">
+                        <h3>แก้ไขข้อมูล</h3>
+                        <div class="card-body">
+                            <input placeholder="ชื่อใหม่" />
+                            <button>บันทึก</button>
+                        </div>
+                    </div>
+                `;
+            }
+
+            showSlide(0);
+        });
+    </script>
+</body>
+</html>

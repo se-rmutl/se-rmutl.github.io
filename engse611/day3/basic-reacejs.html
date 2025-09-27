@@ -1,0 +1,1374 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ENGSE611 - Day 3: เริ่มต้นกับ React.js</title>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #61DAFB; /* React Blue */
+            --secondary-color: #20232A; /* React Dark */
+            --accent-color: #FFD700; /* Gold Accent */
+            --success-color: #10B981;
+            --background-gradient: linear-gradient(135deg, #20232A 0%, #282c34 100%);
+            --slide-bg: #f8f9fa;
+            --text-color: #212529;
+            --header-color: #20232A;
+            --base-font-size: clamp(16px, 1.5vw, 22px);
+            --border-radius: 15px;
+            --code-font: 'Fira Code', 'Courier New', monospace;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { overflow: hidden; height: 100%; }
+
+        body {
+            font-family: 'Sarabun', sans-serif;
+            background: var(--background-gradient);
+            color: var(--text-color);
+            font-size: 16px; 
+            line-height: 1.7;
+        }
+        
+        .presentation {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2vh 3vw; 
+        }
+
+        .slide {
+            background: var(--slide-bg);
+            padding: 30px 40px 80px 40px;
+            border-radius: var(--border-radius);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+            width: 100%;
+            height: 100%;
+            font-size: var(--base-font-size);
+            overflow-y: auto;
+            display: none;
+            animation: fadeIn 0.5s ease-in-out;
+            position: relative;
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .slide::-webkit-scrollbar { display: none; }
+
+        .slide.active { display: block; }
+        
+        .title-slide.active {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            background: var(--background-gradient);
+            color: white;
+        }
+        
+        .title-slide h1, .title-slide h2, .title-slide h3, .title-slide p { color: white !important; }
+        .title-slide h1 { font-size: 3em; margin-bottom: 10px; border: none; color: var(--primary-color) !important;}
+        .title-slide h2 { font-size: 2em; margin-bottom: 20px; border: none; }
+        .title-slide h3 { font-size: 1.5em; font-weight: 400; opacity: 0.9; }
+        .title-slide .react-logo { font-size: 5em; color: var(--primary-color); animation: spin 20s linear infinite; display: block; margin-bottom: 20px; }
+
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
+
+        .progress-bar-container { position: fixed; top: 0; left: 0; width: 100%; height: 8px; background-color: rgba(255, 255, 255, 0.2); z-index: 2000; }
+        .progress-bar { height: 100%; width: 0%; background: linear-gradient(120deg, var(--primary-color) 0%, #90e0ef 100%); transition: width 0.3s ease-out; }
+
+        .presentation-controls {
+            position: fixed; bottom: 15px; left: 50%; transform: translateX(-50%);
+            display: flex; align-items: center; gap: 10px; background: rgba(32, 35, 42, 0.9);
+            padding: 10px 15px; border-radius: 50px; box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(8px); z-index: 1000;
+        }
+
+        .nav-btn, .font-btn, .fullscreen-btn {
+            background: transparent; color: white; border: none; border-radius: 50%;
+            cursor: pointer; transition: all 0.3s ease; display: flex; align-items: center; justify-content: center;
+            width: 45px; height: 45px; font-size: 1.5rem;
+        }
+        .nav-btn:hover:not(:disabled), .font-btn:hover, .fullscreen-btn:hover { background: var(--primary-color); color: var(--secondary-color); transform: translateY(-2px); }
+        .nav-btn:disabled { background-color: transparent; color: #777; cursor: not-allowed; transform: none;}
+        
+        #slide-counter { color: white; font-weight: 500; font-size: 1.1em; min-width: 70px; text-align: center; }
+        .slide-number { position: absolute; bottom: 15px; right: 20px; background: rgba(32, 35, 42, 0.8); color: white; padding: 5px 12px; border-radius: 15px; font-size: 0.8em; font-weight: 600; }
+        
+        .slide h2 { font-size: 2.2em; color: var(--header-color); border-bottom: 3px solid var(--primary-color); padding-bottom: 8px; margin-bottom: 1em; font-weight: 700; }
+        .slide h3 { font-size: 1.6em; color: var(--secondary-color); margin-top: 1.5em; margin-bottom: 0.5em; font-weight: 700; }
+
+        p, ul, ol { font-size: 1em; max-width: 85ch; margin-bottom: 1rem; }
+        
+        ul { list-style: none; padding-left: 0; }
+        ul li { position: relative; padding-left: 35px; margin-bottom: 12px; }
+        ul li::before { content: attr(data-icon); position: absolute; left: 0; top: 0px; color: var(--primary-color); font-weight: bold; font-family: 'Font Awesome 6 Free'; }
+        
+        pre { background: #282c34; color: #abb2bf; border-radius: 10px; padding: 1em; margin: 1em 0; font-family: var(--code-font); font-size: 0.9em; overflow-x: auto; line-height: 1.6; }
+        code { font-family: var(--code-font); background-color: rgba(0,0,0,0.05); padding: 2px 5px; border-radius: 4px;}
+        pre code { background-color: transparent; padding: 0; }
+        
+        .solution { border-left: 4px solid var(--accent-color); background: #fff9e6; padding: 15px; margin: 10px 0; border-radius: 0 8px 8px 0; }
+        
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; margin: 20px 0; align-items: start; }
+        
+        blockquote { border-left: 5px solid var(--primary-color); margin: 1.5em 0; padding: 1em 1.5em; background-color: #f0f8ff; font-style: italic; }
+        .highlight { background-color: #61DAFB33; padding: 2px 6px; border-radius: 4px; font-weight: 500; }
+
+        .live-preview-container { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 1em; height: 65vh; }
+        .code-pane, .preview-pane { display: flex; flex-direction: column; height: 100%; overflow: hidden; }
+        .pane-title { font-size: 1.1em; font-weight: 700; margin-bottom: 10px; color: var(--secondary-color); text-align: center; }
+        .code-pane pre { flex-grow: 1; margin: 0; display: flex; flex-direction: column; }
+        .code-pane pre code { flex-grow: 1; }
+        .preview-pane-content { flex-grow: 1; border: 1px solid #ccc; border-radius: var(--border-radius); background: white; padding: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.1) inset; overflow-y: auto; }
+        .interactive-controls { display: flex; gap: 10px; margin-bottom: 1em; flex-wrap: wrap; }
+        .interactive-controls button { background-color: var(--secondary-color); color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; transition: background-color 0.2s; font-family: 'Sarabun', sans-serif; font-size: 0.9em; }
+        .interactive-controls button:hover { background-color: #4a4e59; }
+        .interactive-pane { border: 1px solid #ccc; border-radius: 10px; padding: 15px; background: white; margin-top: 1em; min-height: 150px; transition: all 0.3s ease; }
+        .interactive-pane .alert { background-color: #fffbe6; border: 1px solid #ffe58f; padding: 10px; border-radius: 5px; margin-top: 10px; color: #8a6d3b; }
+
+        .infographic { padding: 1.5em; background-color: #e7f7ff; border-radius: var(--border-radius); text-align: center; }
+        .infographic .component { background: white; border: 2px solid var(--primary-color); padding: 10px; border-radius: 10px; margin: 5px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        .infographic .component-lg { padding: 20px; }
+        .infographic .component-group { display: flex; justify-content: center; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
+        .infographic .arrow { font-size: 2em; color: var(--secondary-color); margin: 10px; display: flex; align-items: center; justify-content: center; flex-direction: column; }
+        .infographic .arrow span { font-size: 0.6em; font-weight: bold; }
+
+        .quiz-slide h2 { color: white; font-size: 2.5em; border: none; }
+        .quiz-slide blockquote { background: rgba(255,255,255,0.1); border-left-color: var(--primary-color); max-width: 80%; }
+        .quiz-slide .answer { background: rgba(16, 185, 129, 0.2); border-left: 5px solid var(--success-color); padding: 1em; border-radius: 10px; margin-top: 1.5em; display: none; }
+        .quiz-slide .answer h4 { color: white; }
+        .quiz-slide .answer p { color: #f0f0f0; }
+        .quiz-slide button.reveal-btn { background-color: var(--primary-color); color: var(--secondary-color); border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-family: 'Sarabun', sans-serif; font-size: 1em; font-weight: bold; margin-top: 1em; transition: transform 0.2s; }
+        .quiz-slide button.reveal-btn:hover { transform: scale(1.05); }
+        
+        .explanation-btn {
+            background-color: #ffc107;
+            color: #212529;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: 'Sarabun', sans-serif;
+            font-size: 0.9em;
+            font-weight: bold;
+            margin-top: 1em;
+            transition: all 0.2s ease;
+        }
+        .explanation-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .explanation-box {
+            display: none;
+            margin-top: 1em;
+            padding: 15px;
+            background-color: #eef7ff;
+            border-left: 5px solid #007bff;
+            border-radius: 0 8px 8px 0;
+            animation: fadeIn 0.3s;
+        }
+        .explanation-box h4 {
+            margin-top: 0;
+            margin-bottom: 0.5em;
+            color: #0056b3;
+        }
+        .explanation-box p {
+            font-size: 0.95em;
+            margin-bottom: 0.5em;
+        }
+        .explanation-box code {
+            font-size: 0.9em;
+        }
+
+        table { width: 100%; border-collapse: collapse; font-size: 0.95em; text-align: center; margin-top: 1em; }
+        th, td { padding: 12px; border: 1px solid #ddd; }
+        thead tr { background-color: var(--secondary-color); color: white; }
+        
+        .code-comment { color: #5c6370; font-style: italic; }
+        .code-tag { color: #e06c75; }
+        .code-attr { color: #d19a66; }
+        .code-string { color: #98c379; }
+        .code-keyword { color: #c678dd; }
+        .code-js-expr { color: #61afef; }
+
+        @media (max-width: 900px) {
+            .live-preview-container, .grid-2 { grid-template-columns: 1fr; height: auto; }
+            .slide { padding: 20px 25px 70px 25px; }
+            .slide h2 { font-size: 1.8em; }
+        }
+    </style>
+</head>
+<body>
+    <div class="progress-bar-container"><div class="progress-bar" id="progress-bar"></div></div>
+
+    <div class="presentation">
+        
+        <section class="slide title-slide active">
+            <h2>ENGSE611 - วันที่ 3</h2>
+            <i class="fab fa-react react-logo"></i>
+            <h1>เริ่มต้นกับ React.js</h1>
+            <h3 style="margin-top: 30px;">สร้าง UI ที่ทันสมัยและตอบสนองได้รวดเร็ว</h3>
+            <p style="font-size: 1.2em; opacity: 0.9;">เป้าหมาย: "จาก Web Developer พื้นฐาน → Modern Frontend Developer"</p>
+            <div class="slide-number">1/35</div>
+        </section>
+
+        <section class="slide">
+            <h2>แล้ว React.js คืออะไร? 🤔</h2>
+            <p>React คือ JavaScript library สำหรับสร้าง User Interfaces (UI) ที่สามารถจัดการสถานะ (state) และอัปเดตหน้าเว็บได้อย่างมีประสิทธิภาพ โดยไม่ต้องเขียนโค้ดจัดการ DOM เองให้วุ่นวาย</p>
+            <div class="grid-2">
+                <div>
+                    <h3>วิธีเก่า: จัดการ DOM ด้วย JS 😫</h3>
+                    <pre><code class="language-js"><span class="code-comment">// เยอะ ซับซ้อน และผิดพลาดง่าย!</span>
+document.getElementById('username').innerHTML = 'สวัสดี ' + name;
+document.getElementById('counter').innerHTML = count + ' ครั้ง';
+document.getElementById('message').style.display = isVisible ? 'block' : 'none';
+                    </code></pre>
+                </div>
+                <div>
+                    <h3>วิธี React: แค่บอกผลลัพธ์ที่ต้องการ 😊</h3>
+                    <pre><code class="language-jsx"><span class="code-comment">// เขียนน้อย เข้าใจง่าย ผิดพลาดยาก!</span>
+<span class="code-keyword">function</span> <span class="code-js-expr">WelcomeComponent</span>({ name, count, isVisible }) {
+  <span class="code-keyword">return</span> (
+    <span class="code-tag">&lt;div&gt;</span>
+      <span class="code-tag">&lt;h1&gt;</span>สวัสดี {name}<span class="code-tag">&lt;/h1&gt;</span>
+      <span class="code-tag">&lt;p&gt;</span>{count} ครั้ง<span class="code-tag">&lt;/p&gt;</span>
+      {isVisible &amp;&amp; <span class="code-tag">&lt;div&gt;</span>ข้อความพิเศษ<span class="code-tag">&lt;/div&gt;</span>}
+    <span class="code-tag">&lt;/div&gt;</span>
+  );
+}</code></pre>
+                </div>
+            </div>
+            <button class="explanation-btn" onclick="toggleExplanation(this)"><i class="fas fa-lightbulb"></i> อธิบายเพิ่มเติม</button>
+            <div class="explanation-box">
+                <h4>เจาะลึกความแตกต่าง</h4>
+                <p><strong>วิธีเก่า (Imperative):</strong> เราต้องเขียนคำสั่ง "ทีละขั้นตอน" บอกเบราว์เซอร์ว่าต้องทำอะไรบ้าง (ไปหา id นี้, เปลี่ยนข้อความ, เปลี่ยนสไตล์) ซึ่งซับซ้อนและผิดพลาดง่ายเมื่อแอปใหญ่ขึ้น</p>
+                <p><strong>วิธี React (Declarative):</strong> เราแค่ "ประกาศ" ว่าหน้าตา UI ควรเป็นอย่างไรเมื่อข้อมูล (state) เป็นแบบนี้ React จะจัดการส่วนที่เหลือให้เอง เราไม่ต้องยุ่งกับ DOM โดยตรงเลย</p>
+            </div>
+            <div class="slide-number">2/35</div>
+        </section>
+        
+        <section class="slide">
+            <h2>ประวัติ React.js 📚</h2>
+            <ul>
+                <li data-icon="📅"><strong>2011:</strong> Facebook เจอปัญหา UI ที่ซับซ้อนและอัปเดตได้ช้าใน News Feed</li>
+                <li data-icon="🧠"><strong>2013:</strong> Jordan Walke วิศวกรของ Facebook สร้าง React และเปิดเป็น Open Source</li>
+                <li data-icon="🚀"><strong>ปัจจุบัน:</strong> ถูกใช้งานโดยบริษัทเทคโนโลยียักษ์ใหญ่ทั่วโลก เช่น Netflix, Uber, Airbnb, Instagram, และ WhatsApp</li>
+            </ul>
+            <h3>ทำไมถึงเป็นที่นิยม?</h3>
+            <div class="grid-2">
+                <ul>
+                    <li data-icon="1."><strong>Declarative:</strong> แค่บอกว่า UI ควรหน้าตาเป็นอย่างไรในแต่ละ state แล้ว React จะจัดการอัปเดต DOM ให้เอง</li>
+                    <li data-icon="2."><strong>Component-Based:</strong> สร้าง UI จากชิ้นส่วนเล็กๆ ที่เรียกว่า "Component" ซึ่งนำกลับมาใช้ใหม่ได้</li>
+                </ul>
+                <ul>
+                    <li data-icon="3."><strong>Learn Once, Write Anywhere:</strong> เรียนรู้ครั้งเดียว แต่สามารถนำไปพัฒนาได้ทั้งเว็บ, แอปมือถือ (React Native), และแอปเดสก์ท็อป (Electron)</li>
+                    <li data-icon="4."><strong>Virtual DOM:</strong> มีระบบจำลอง DOM ที่ช่วยให้อัปเดตหน้าเว็บได้เร็วและมีประสิทธิภาพสูงมาก</li>
+                </ul>
+            </div>
+            <blockquote>"ถ้า Facebook ใช้ React สำหรับผู้ใช้งาน 3 พันล้านคนได้ แสดงว่า... มันต้องเก่งจริงๆ! 💪"</blockquote>
+            <div class="slide-number">3/35</div>
+        </section>
+
+        <section class="slide">
+            <h2>React vs วิธีเก่า 🥊</h2>
+            <p>เปรียบเทียบการสร้างปุ่มง่ายๆ ที่เมื่อคลิกแล้วจะแสดงข้อความ</p>
+            <div class="grid-2">
+                <div>
+                    <h3>วิธีเก่า (Vanilla JavaScript)</h3>
+                    <pre><code class="language-js"><span class="code-comment">// ต้องจำเยอะ ทำเยอะ</span>
+<span class="code-keyword">const</span> button = document.createElement('button');
+button.textContent = 'คลิกฉัน';
+button.addEventListener('click', <span class="code-keyword">function</span>() {
+    document.getElementById('output').innerHTML = 'ถูกคลิกแล้ว!';
+});
+document.body.appendChild(button);</code></pre>
+                </div>
+                <div>
+                    <h3>วิธี React</h3>
+                    <pre><code class="language-jsx"><span class="code-comment">// เข้าใจง่าย ทำน้อย</span>
+<span class="code-keyword">function</span> <span class="code-js-expr">MyButton</span>() {
+    <span class="code-keyword">const</span> [clicked, setClicked] = useState(false);
+    
+    <span class="code-keyword">return</span> (
+        <span class="code-tag">&lt;div&gt;</span>
+            <span class="code-tag">&lt;button</span> <span class="code-attr">onClick</span>=<span class="code-string">{() => setClicked(true)}</span><span class="code-tag">&gt;</span>
+                คลิกฉัน
+            <span class="code-tag">&lt;/button&gt;</span>
+            {clicked &amp;&amp; <span class="code-tag">&lt;p&gt;</span>ถูกคลิกแล้ว!<span class="code-tag">&lt;/p&gt;</span>}
+        <span class="code-tag">&lt;/div&gt;</span>
+    );
+}</code></pre>
+                </div>
+            </div>
+            <button class="explanation-btn" onclick="toggleExplanation(this)"><i class="fas fa-lightbulb"></i> อธิบายโค้ด React</button>
+            <div class="explanation-box">
+                <h4>เจาะลึกโค้ด React</h4>
+                <p><code>const [clicked, setClicked] = useState(false);</code> คือการใช้ "Hook" เพื่อสร้าง state ชื่อ `clicked` ให้กับ component โดยมีค่าเริ่มต้นเป็น `false`</p>
+                <p><code>onClick={() => setClicked(true)}</code> เมื่อปุ่มถูกคลิก เราจะเรียกฟังก์ชัน `setClicked` เพื่อเปลี่ยนค่า `clicked` ให้เป็น `true`</p>
+                <p><code>{clicked && <p>...</p>}</code> เป็นการทำ Conditional Rendering ครับ ถ้า `clicked` เป็น `true` ข้อความ `<p>` ก็จะแสดงผล</p>
+            </div>
+            <div class="slide-number">4/35</div>
+        </section>
+
+        <section class="slide">
+            <h2>ก่อนเริ่ม React ต้องรู้จัก Node.js! 🟢</h2>
+            <ul>
+                <li data-icon="💡"><strong>Node.js คืออะไร?</strong> มันคือสภาพแวดล้อมที่ทำให้เราสามารถรันโค้ด JavaScript "นอกเบราว์เซอร์" ได้ (บนเซิร์ฟเวอร์หรือบนเครื่องของเรา)</li>
+                <li data-icon="🔧"><strong>ทำไมต้องใช้กับ React?</strong> เราใช้ Node.js เป็น "เครื่องมือสำหรับนักพัฒนา" เพื่อ:
+                    <ul>
+                        <li data-icon="✅">สร้างโปรเจกต์ React ใหม่</li>
+                        <li data-icon="✅">รันเซิร์ฟเวอร์สำหรับพัฒนา (Development Server)</li>
+                        <li data-icon="✅">ติดตั้งไลบรารี่ต่างๆ ผ่าน <strong>NPM</strong> (Node Package Manager)</li>
+                    </ul>
+                </li>
+            </ul>
+            <pre><code class="language-bash"><span class="code-comment"># สร้างโปรเจค React ใหม่</span>
+npx create-react-app my-first-react-app
+
+<span class="code-comment"># รันโปรเจค</span>
+npm start
+
+<span class="code-comment"># ติดตั้งไลบรารี่เพิ่มเติม</span>
+npm install bootstrap</code></pre>
+            <blockquote>Node.js เปรียบเสมือน "ห้องแล็บ 🧪" หรือ "โรงรถ 🛠️" ของโปรแกรมเมอร์ ที่เต็มไปด้วยเครื่องมือสำหรับสร้างสรรค์ผลงาน</blockquote>
+            <div class="slide-number">5/35</div>
+        </section>
+        
+        <section class="slide">
+            <h2>การติดตั้งและสร้างโปรเจกต์แรก 💻</h2>
+            <h3>ขั้นตอนการติดตั้ง:</h3>
+            <ol>
+                <li>
+                    <strong>ติดตั้ง Node.js:</strong> ไปที่ <a href="https://nodejs.org/" target="_blank">nodejs.org</a> และดาวน์โหลดเวอร์ชัน LTS (Long Term Support)
+                    <pre><code class="language-bash"><span class="code-comment"># ตรวจสอบว่าติดตั้งสำเร็จหรือยัง</span>
+node --version
+npm --version</code></pre>
+                </li>
+                <li>
+                    <strong>สร้างโปรเจกต์ React แรก:</strong> เปิด Terminal หรือ Command Prompt แล้วรันคำสั่ง
+                    <pre><code class="language-bash"><span class="code-comment"># คำสั่งนี้จะสร้างโฟลเดอร์ hello-react พร้อมไฟล์ที่จำเป็น (ใช้เวลา 2-3 นาที)</span>
+npx create-react-app hello-react</code></pre>
+                </li>
+                 <li>
+                    <strong>รันโปรเจกต์:</strong>
+                    <pre><code class="language-bash"><span class="code-comment"># เข้าไปในโฟลเดอร์</span>
+cd hello-react
+
+<span class="code-comment"># สั่งให้โปรเจกต์ทำงาน</span>
+npm start</code></pre>
+                </li>
+                <li><strong>ผลลัพธ์:</strong> เบราว์เซอร์จะเปิดไปที่ <a href="http://localhost:3000" target="_blank">http://localhost:3000</a> โดยอัตโนมัติ และคุณจะเห็นโลโก้ React หมุนๆ 🎉</li>
+            </ol>
+            <div class="slide-number">6/35</div>
+        </section>
+        
+        <section class="slide">
+            <h2>โครงสร้างโปรเจกต์ React 📂</h2>
+            <p>ไฟล์สำคัญที่เราต้องรู้จักในตอนเริ่มต้น:</p>
+            <div class="grid-2">
+                <div>
+                    <h3>1. <code>public/index.html</code></h3>
+                    <p>หน้าเว็บหลักเพียงหน้าเดียวของเรา มีแค่ <code>&lt;div id="root"&gt;&lt;/div&gt;</code> ว่างๆ</p>
+                    <pre><code class="language-html">&lt;div <span class="code-attr">id</span>=<span class="code-string">"root"</span>&gt;
+  <span class="code-comment">&lt;!-- React จะเอา Component มาใส่ตรงนี้ --&gt;</span>
+&lt;/div&gt;</code></pre>
+                </div>
+                 <div>
+                    <h3>2. <code>src/index.js</code></h3>
+                    <p>จุดเริ่มต้นของแอป JavaScript ที่จะบอก React ให้นำ Component หลัก (App) ไปแสดงผลใน <code>div#root</code></p>
+                    <pre><code class="language-js"><span class="code-keyword">import</span> App <span class="code-keyword">from</span> <span class="code-string">'./App'</span>;
+<span class="code-keyword">const</span> root = ReactDOM.createRoot(...);
+root.render(&lt;App /&gt;);</code></pre>
+                </div>
+                 <div>
+                    <h3>3. <code>src/App.js</code></h3>
+                    <p>นี่คือ <strong>Component หลัก</strong> ของเรา เป็นไฟล์ที่เราจะเริ่มแก้ไขเป็นอันดับแรก</p>
+                    <pre><code class="language-jsx"><span class="code-keyword">function</span> <span class="code-js-expr">App</span>() {
+  <span class="code-keyword">return</span> (
+    &lt;div <span class="code-attr">className</span>=<span class="code-string">"App"</span>&gt;
+      &lt;h1&gt;สวัสดี React!&lt;/h1&gt;
+    &lt;/div&gt;
+  );
+}
+<span class="code-keyword">export default</span> App;</code></pre>
+                </div>
+                <div>
+                    <h3>การทำงาน:</h3>
+                    <p style="font-size: 1.2em; text-align: center; margin-top: 1em;">
+                        <code>index.html</code> → <code>index.js</code> → <code>App.js</code> → <i class="fas fa-desktop"></i>
+                    </p>
+                </div>
+            </div>
+            <div class="slide-number">7/35</div>
+        </section>
+ 
+        <section class="slide">
+            <h2>Infographic: โครงสร้างโปรเจกต์ React</h2>
+            <p>นี่คือภาพรวมการทำงานของไฟล์หลัก 3 ไฟล์ เพื่อให้เห็นภาพชัดเจนขึ้น</p>
+             <div class="infographic">
+                <div class="component-group">
+                    <div class="component"><strong>public/index.html</strong><br><code>&lt;div id="root"&gt;&lt;/div&gt;</code><p style="font-size: 0.8em; margin-top:5px;">"บ้าน" ของแอป</p></div>
+                    <div class="arrow"><i class="fas fa-arrow-right"></i><span>บอกให้ render</span></div>
+                    <div class="component"><strong>src/index.js</strong><br><code>root.render(&lt;App/&gt;)</code><p style="font-size: 0.8em; margin-top:5px;">"ผู้จัดการ" ที่นำแอปไปใส่ในบ้าน</p></div>
+                    <div class="arrow"><i class="fas fa-arrow-right"></i><span>Component หลัก</span></div>
+                    <div class="component"><strong>src/App.js</strong><br><code>function App() {...}</code><p style="font-size: 0.8em; margin-top:5px;">"แอปพลิเคชัน" ของเรา</p></div>
+                </div>
+                 <div class="arrow"><i class="fas fa-arrow-down"></i><span>แสดงผลบนเบราว์เซอร์</span></div>
+                 <div class="component component-lg" style="background: #282c34; color: white;">
+                    <i class="fab fa-react" style="font-size: 2em; color: var(--primary-color);"></i>
+                    <p>สวัสดี React!</p>
+                 </div>
+            </div>
+             <div class="slide-number">8/35</div>
+        </section>
+                
+        
+        <section class="slide">
+            <h2>รู้จักกับ JSX 🎨 (JavaScript + XML)</h2>
+            <p>JSX คือส่วนขยายของ JavaScript ที่ทำให้เราสามารถเขียนโค้ดที่หน้าตาเหมือน HTML ลงไปในไฟล์ JavaScript ได้เลย! มันคือ "Super Power" ⚡ ของ React</p>
+            <div class="grid-2">
+                <div>
+                    <h3>เขียนด้วย JSX (ง่ายกว่า)</h3>
+                    <pre><code class="language-jsx"><span class="code-keyword">const</span> element = &lt;h1&gt;สวัสดี React!&lt;/h1&gt;;</code></pre>
+                </div>
+                <div>
+                    <h3>เบื้องหลัง (JS ธรรมดา)</h3>
+                    <pre><code class="language-js"><span class="code-comment">// Babel จะแปลง JSX เป็นแบบนี้ให้เรา</span>
+<span class="code-keyword">const</span> element2 = React.createElement('h1', null, 'สวัสดี React!');</code></pre>
+                </div>
+            </div>
+            <h3>ตัวอย่างการใช้ JavaScript ใน JSX</h3>
+            <pre><code class="language-jsx"><span class="code-keyword">function</span> <span class="code-js-expr">Welcome</span>() {
+    <span class="code-keyword">const</span> name = "นักศึกษา";
+    <span class="code-keyword">const</span> isLoggedIn = true;
+    
+    <span class="code-keyword">return</span> (
+        &lt;div&gt;
+            &lt;h1&gt;สวัสดี {name}!&lt;/h1&gt;
+            {isLoggedIn ? (
+                &lt;p&gt;ยินดีต้อนรับกลับมา&lt;/p&gt;
+            ) : (
+                &lt;p&gt;กรุณาเข้าสู่ระบบ&lt;/p&gt;
+            )}
+        &lt;/div&gt;
+    );
+}</code></pre>
+            <button class="explanation-btn" onclick="toggleExplanation(this)"><i class="fas fa-lightbulb"></i> JSX ทำงานอย่างไร?</button>
+            <div class="explanation-box">
+                <h4>เบื้องหลังของ JSX</h4>
+                <p>โค้ด JSX ที่เราเขียนไม่ได้ทำงานบนเบราว์เซอร์โดยตรงครับ ก่อนที่มันจะไปถึงเบราว์เซอร์ จะมีเครื่องมือที่ชื่อว่า <strong>Babel</strong> ทำการ "แปลง" โค้ด JSX ของเราให้กลายเป็นคำสั่ง JavaScript ธรรมดา (<code>React.createElement(...)</code>) ที่เบราว์เซอร์เข้าใจได้</p>
+                <p>ดังนั้น JSX จึงเป็นแค่ "Syntax Sugar" หรือรูปแบบการเขียนที่ทำให้เราในฐานะนักพัฒนา ทำงานได้ง่ายและอ่านโค้ดสะดวกขึ้นเท่านั้นเอง</p>
+            </div>
+            <div class="slide-number">9/35</div>
+        </section>
+
+        <section class="slide">
+            <h2>กฎของ JSX ที่ต้องจำ 📋</h2>
+            <div class="grid-2">
+                <div>
+                    <h3>1. ต้องมี Element ครอบนอกสุดเสมอ</h3>
+                    <p>ใช้ <code>&lt;div&gt;</code> หรือ <code>&lt;&gt;</code> (Fragment) ครอบ</p>
+                    <pre><code class="language-jsx"><span class="code-comment">// ✅ ถูก</span>
+<span class="code-keyword">return</span> (
+    <span class="code-tag">&lt;&gt;</span>
+        <span class="code-tag">&lt;h1&gt;</span>หัวข้อ<span class="code-tag">&lt;/h1&gt;</span>
+        <span class="code-tag">&lt;p&gt;</span>เนื้อหา<span class="code-tag">&lt;/p&gt;</span>
+    <span class="code-tag">&lt;/&gt;</span>
+);</code></pre>
+                </div>
+                 <div>
+                    <h3>2. ใช้ <code>className</code> แทน <code>class</code></h3>
+                    <p>เพราะ <code>class</code> เป็นคำสงวนใน JavaScript</p>
+                     <pre><code class="language-jsx"><span class="code-comment">// ❌ ผิด: &lt;div class="container"&gt;</span>
+<span class="code-comment">// ✅ ถูก</span>
+&lt;div <span class="code-attr">className</span>=<span class="code-string">"container"</span>&gt;
+</code></pre>
+                </div>
+                 <div>
+                    <h3>3. ปิด Tag ให้ครบเสมอ</h3>
+                    <p>Tag ที่ไม่มี closing tag ใน HTML ต้องใส่ <code>/</code> ปิดท้าย</p>
+                     <pre><code class="language-jsx"><span class="code-comment">// ❌ ผิด: &lt;img src="..."&gt;</span>
+<span class="code-comment">// ✅ ถูก</span>
+&lt;img <span class="code-attr">src</span>=<span class="code-string">"image.jpg"</span> /&gt;
+&lt;input <span class="code-attr">type</span>=<span class="code-string">"text"</span> /&gt;
+&lt;br /&gt;</code></pre>
+                </div>
+                 <div>
+                     <h3>4. Attributes ต้องเป็น camelCase</h3>
+                     <p>เช่น <code>onclick</code> ใน HTML จะกลายเป็น <code>onClick</code></p>
+                     <pre><code class="language-jsx"><span class="code-comment">// ✅ ถูก</span>
+&lt;button <span class="code-attr">onClick</span>={handleClick}&gt;
+&lt;div <span class="code-attr">tabIndex</span>="-1"&gt;
+</code></pre>
+                 </div>
+            </div>
+            <div class="slide-number">10/35</div>
+        </section>
+
+        <section class="slide">
+            <h2>JavaScript ใน JSX 💫</h2>
+            <p>เราสามารถแทรกโค้ด JavaScript ใดๆ ก็ตามลงใน JSX ได้โดยใช้เครื่องหมายปีกกา <code>{...}</code></p>
+            <pre><code class="language-jsx"><span class="code-keyword">function</span> <span class="code-js-expr">UserProfile</span>() {
+    <span class="code-keyword">const</span> user = { name: "สมชาย", age: 20, hobbies: ["เขียนโค้ด", "เล่นเกม"] };
+    
+    <span class="code-keyword">return</span> (
+        &lt;div <span class="code-attr">className</span>=<span class="code-string">"profile"</span>&gt;
+            &lt;h2&gt;ชื่อ: {user.name}&lt;/h2&gt;
+            &lt;p&gt;อายุ: {user.age} ปี&lt;/p&gt;
+            &lt;p&gt;อีก {30 - user.age} ปี จะอายุ 30&lt;/p&gt;
+            &lt;ul&gt;
+                {user.hobbies.map((hobby, index) => (
+                    &lt;li <span class="code-attr">key</span>={index}&gt;{hobby}&lt;/li&gt;
+                ))}
+            &lt;/ul&gt;
+            &lt;button <span class="code-attr">onClick</span>={() => alert(`สวัสดี ${user.name}!`)}&gt;
+                ทักทาย
+            &lt;/button&gt;
+        &lt;/div&gt;
+    );
+}</code></pre>
+            <button class="explanation-btn" onclick="toggleExplanation(this)"><i class="fas fa-lightbulb"></i> อธิบายโค้ด .map()</button>
+            <div class="explanation-box">
+                <h4>การใช้ <code>.map()</code> ใน JSX</h4>
+                <p><code>user.hobbies.map(...)</code> คือการวนลูป array ที่ชื่อ `hobbies` ทีละตัว</p>
+                <p>ในแต่ละรอบ มันจะสร้าง JSX Element ใหม่ขึ้นมา (ในที่นี้คือ <code>&lt;li&gt;</code>) พร้อมกับข้อมูลจาก array (`hobby`)</p>
+                <p>ผลลัพธ์สุดท้ายคือ array ของ <code>&lt;li&gt;</code> Elements ซึ่ง React สามารถนำไปแสดงผลต่อได้ทันที เป็นวิธีที่นิยมที่สุดในการแสดงผลข้อมูลที่เป็นลิสต์ใน React ครับ</p>
+            </div>
+            <div class="slide-number">11/35</div>
+        </section>
+        
+        <section class="slide">
+            <h2>Interactive: Conditional Rendering 🤖</h2>
+            <p>มาลองดู "การแสดงผลตามเงื่อนไข" แบบจริงๆ กันครับ ลองคลิกปุ่มเพื่อเปลี่ยนสถานะและดูผลลัพธ์ที่เปลี่ยนไป</p>
+            <div class="interactive-controls">
+                <button id="cr-btn-login">Login</button>
+                <button id="cr-btn-logout">Logout</button>
+                <button id="cr-btn-toggle-msg">Toggle Message</button>
+            </div>
+             <div class="live-preview-container">
+                 <div class="code-pane">
+                     <div class="pane-title">📝 โค้ด Component</div>
+                     <pre><code>function StatusPanel({ isLoggedIn, hasMessage }) {
+  return (
+    &lt;div&gt;
+      {/* 1. Ternary Operator */}
+      {isLoggedIn ? (
+        &lt;p&gt;✅ ยินดีต้อนรับ!&lt;/p&gt;
+      ) : (
+        &lt;p&gt;❌ กรุณาเข้าสู่ระบบ&lt;/p&gt;
+      )}
+
+      {/* 2. && Operator */}
+      {hasMessage && (
+        &lt;div className="alert"&gt;
+          🔔 คุณมีข้อความใหม่!
+        &lt;/div&gt;
+      )}
+    &lt;/div&gt;
+  );
+}</code></pre>
+                 </div>
+                 <div class="preview-pane">
+                     <div class="pane-title">👀 ผลลัพธ์ (Live)</div>
+                     <div class="interactive-pane" id="cond-render-output"></div>
+                 </div>
+             </div>
+            <div class="slide-number">12/35</div>
+        </section>
+               
+        <section class="slide">
+            <h2>อธิบาย Conditional Rendering 🤖</h2>
+            <p>จากที่เราได้ลองเล่นไปเมื่อสักครู่ มันคือการแสดงผล Component หรือ Element ตามเงื่อนไข ซึ่งเป็นหัวใจสำคัญของ UI ที่ตอบสนองได้</p>
+            <div class="grid-2">
+                <div>
+                    <h3>1. ใช้ <code>&&</code> Operator</h3>
+                    <p>ถ้าเงื่อนไขเป็นจริง ให้แสดง Element ด้านขวา (เหมาะกับกรณีที่ไม่มี else)</p>
+                    <pre><code class="language-jsx">{hasMessage && &lt;div <span class="code-attr">className</span>=<span class="code-string">"alert"</span>&gt;🔔 คุณมีข้อความใหม่!&lt;/div&gt;}</code></pre>
+                </div>
+                <div>
+                    <h3>2. ใช้ Ternary Operator <code>? :</code></h3>
+                    <p>เป็น if-else แบบย่อ เหมาะกับการสลับการแสดงผล 2 อย่าง</p>
+                    <pre><code class="language-jsx">{isLoggedIn ? (&lt;button&gt;ออกจากระบบ&lt;/button&gt;) : (&lt;button&gt;เข้าสู่ระบบ&lt;/button&gt;)}</code></pre>
+                </div>
+            </div>
+            <h3>3. ใช้ If Statement (นอก JSX)</h3>
+            <p>สำหรับเงื่อนไขที่ซับซ้อน สามารถใช้ if-else ปกติเพื่อกำหนดค่าตัวแปร แล้วนำไปแสดงผลใน JSX</p>
+            <pre><code class="language-jsx"><span class="code-keyword">function</span> <span class="code-js-expr">WeatherWidget</span>({ weather }) {
+    <span class="code-keyword">let</span> weatherIcon;
+    <span class="code-keyword">if</span> (weather === 'sunny') weatherIcon = '☀️';
+    <span class="code-keyword">else if</span> (weather === 'rainy') weatherIcon = '🌧️';
+    <span class="code-keyword">else</span> weatherIcon = '☁️';
+    
+    <span class="code-keyword">return</span> &lt;div&gt;{weatherIcon} {weather}&lt;/div&gt;;
+}</code></pre>
+            <div class="slide-number">13/35</div>
+        </section>
+
+        <section class="slide">
+            <h2>การวนลูป Lists ใน JSX 🔄</h2>
+            <p>เราไม่สามารถใช้ for loop แบบปกติใน JSX ได้ แต่วิธีที่นิยมที่สุดคือการใช้ฟังก์ชัน <code>.map()</code> ของ Array เพื่อแปลงข้อมูลแต่ละตัวให้เป็น JSX Element</p>
+            <pre><code class="language-jsx"><span class="code-keyword">function</span> <span class="code-js-expr">StudentList</span>() {
+    <span class="code-keyword">const</span> students = [
+        { id: 1, name: "สมชาย", grade: "A" },
+        { id: 2, name: "สมศรี", grade: "B+" },
+        { id: 3, name: "สมหมาย", grade: "A-" }
+    ];
+    
+    <span class="code-keyword">return</span> (
+        &lt;ul&gt;
+            {students.map(student => (
+                &lt;li <span class="code-attr">key</span>={student.id}&gt;
+                    {student.name} - เกรด {student.grade}
+                &lt;/li&gt;
+            ))}
+        &lt;/ul&gt;
+    );
+}</code></pre>
+            <h3>สิ่งสำคัญที่ต้องจำ!</h3>
+            <ul>
+                <li data-icon="🔑"><strong>key prop:</strong> ทุก Element ที่ถูกสร้างจากการวนลูป <span class="highlight">ต้องมี</span> prop ชื่อ `key` ที่มีค่าไม่ซ้ำกัน (เช่น id จากฐานข้อมูล) เสมอ!</li>
+            </ul>
+            <button class="explanation-btn" onclick="toggleExplanation(this)"><i class="fas fa-lightbulb"></i> ทำไม 'key' ถึงสำคัญ?</button>
+            <div class="explanation-box">
+                <h4>เจาะลึก `key` prop</h4>
+                <p>ลองจินตนาการว่านักเรียนในห้องมีหลายคนชื่อ "สมชาย" ถ้าครูเรียกแค่ชื่อ อาจจะสับสนได้ แต่ถ้าครูเรียกด้วย "เลขประจำตัว" จะรู้ทันทีว่าคือคนไหน</p>
+                <p><code>key</code> ก็เหมือน "เลขประจำตัว" ของ Element ในลิสต์ครับ React ใช้มันเพื่อติดตามว่า Element ไหนถูกเพิ่ม, ลบ, หรือสลับตำแหน่ง ทำให้การอัปเดตหน้าจอทำได้อย่างรวดเร็วและแม่นยำ โดยไม่ต้องสร้างลิสต์ใหม่ทั้งหมดทุกครั้งที่มีการเปลี่ยนแปลง</p>
+            </div>
+            <div class="slide-number">14/35</div>
+        </section>
+
+        <section class="slide">
+            <h2>Event Handling ใน React 🎯</h2>
+            <p>การจัดการ Event เช่น การคลิก (onClick) หรือการกรอกฟอร์ม (onChange) ใน React ทำได้ง่ายๆ โดยการส่งฟังก์ชันเข้าไปใน prop ของ Element</p>
+            <pre><code class="language-jsx"><span class="code-keyword">function</span> <span class="code-js-expr">InteractiveButton</span>() {
+    <span class="code-comment">// Function สำหรับจัดการ Event</span>
+    <span class="code-keyword">const</span> handleClick = () => {
+        alert('ปุ่มถูกคลิก!');
+    };
+    
+    <span class="code-keyword">const</span> handleMouseOver = () => {
+        console.log('เมาส์อยู่บนปุ่ม');
+    };
+    
+    <span class="code-keyword">return</span> (
+        &lt;button 
+            <span class="code-attr">onClick</span>={handleClick}
+            <span class="code-attr">onMouseOver</span>={handleMouseOver}
+            <span class="code-attr">onDoubleClick</span>={() => alert('Double Click!')}
+        &gt;
+            ลองคลิก!
+        &lt;/button&gt;
+    );
+}</code></pre>
+            <h3>Events ที่ใช้บ่อย:</h3>
+            <div class="grid-2">
+                <ul>
+                    <li data-icon="✅"><code>onClick</code> - คลิก</li>
+                    <li data-icon="✅"><code>onChange</code> - เปลี่ยนค่าในฟอร์ม (input, select)</li>
+                    <li data-icon="✅"><code>onSubmit</code> - ส่งฟอร์ม</li>
+                </ul>
+                <ul>
+                    <li data-icon="✅"><code>onMouseOver</code> / <code>onMouseOut</code> - เมาส์เข้า/ออก</li>
+                    <li data-icon="✅"><code>onFocus</code> / <code>onBlur</code> - โฟกัส/ออกจาก input</li>
+                </ul>
+            </div>
+            <div class="slide-number">15/35</div>
+        </section>
+
+        <section class="slide">
+            <h2>ทำไม React ถึงเร็ว? Virtual DOM 🚀</h2>
+            <p>React ไม่ได้แก้ไข DOM จริงๆ (Real DOM) ทุกครั้งที่มีการเปลี่ยนแปลง ซึ่งเป็นกระบวนการที่ช้า แต่จะใช้สิ่งที่เรียกว่า <strong>Virtual DOM</strong></p>
+            <div class="grid-2">
+                <div>
+                    <h3>ปัญหาของ DOM ธรรมดา 🐢</h3>
+                    <p>ทุกครั้งที่ <code>.innerHTML</code> เปลี่ยน เบราว์เซอร์ต้องคำนวณ Layout และวาดหน้าจอใหม่ทั้งหมด ทำให้ช้าและกระตุก</p>
+                </div>
+                <div>
+                    <h3>วิธีของ React - Virtual DOM ⚡</h3>
+                    <p>React จะเปรียบเทียบ Virtual DOM ของเก่ากับของใหม่ เพื่อหา "จุดที่แตกต่าง" แล้วไปอัปเดตแค่ส่วนนั้นใน Real DOM จริงๆ</p>
+                </div>
+            </div>
+            <h3>ขั้นตอนการทำงาน:</h3>
+            <ol>
+                <li>State ในแอปเปลี่ยนแปลง (เช่น ผู้ใช้คลิกปุ่ม)</li>
+                <li>React สร้าง Virtual DOM snapshot ใหม่ขึ้นมาในหน่วยความจำ</li>
+                <li>React เปรียบเทียบ snapshot ใหม่กับ snapshot เก่า (เรียกว่ากระบวนการ "Diffing")</li>
+                <li>React คำนวณวิธีที่เร็วที่สุดในการอัปเดต Real DOM เพื่อให้เหมือนกับ snapshot ใหม่</li>
+                <li>ทำการอัปเดต Real DOM <span class="highlight">เฉพาะจุดที่จำเป็น</span> เท่านั้น</li>
+            </ol>
+            <button class="explanation-btn" onclick="toggleExplanation(this)"><i class="fas fa-lightbulb"></i> อธิบายเปรียบเทียบ</button>
+            <div class="explanation-box">
+                <h4>เปรียบเทียบ Virtual DOM</h4>
+                <p><strong>Real DOM:</strong> เหมือนการ "รีโนเวทบ้านทั้งหลัง" แม้จะเปลี่ยนแค่เฟอร์นิเจอร์ชิ้นเดียว ช้าและใช้พลังงานเยอะ</p>
+                <p><strong>Virtual DOM:</strong> เหมือนการ "วางแผนบนพิมพ์เขียว" ก่อน React จะสร้างพิมพ์เขียว (Virtual DOM) ของเก่าและใหม่ขึ้นมา เปรียบเทียบกันว่ามีอะไรเปลี่ยนไปบ้าง แล้วจึงส่งคำสั่งให้ช่าง (เบราว์เซอร์) ไปแก้ไข "เฉพาะจุดนั้น" ในบ้านจริง (Real DOM) ซึ่งเร็วกว่าและมีประสิทธิภาพกว่ามาก</p>
+            </div>
+            <div class="slide-number">16/35</div>
+        </section>
+        
+        <section class="slide">
+            <h2>การสร้าง Component แรก 👶</h2>
+            <p><strong>Component</strong> คือหัวใจของ React มันคือชิ้นส่วน UI ที่นำกลับมาใช้ซ้ำได้ พูดง่ายๆ มันคือฟังก์ชัน JavaScript ที่ return ค่าเป็น JSX</p>
+            <h3>Component ง่ายๆ:</h3>
+            <pre><code class="language-jsx"><span class="code-comment">// นี่คือ Component ชื่อ WelcomeCard</span>
+<span class="code-keyword">function</span> <span class="code-js-expr">WelcomeCard</span>() {
+    <span class="code-keyword">return</span> (
+        &lt;div <span class="code-attr">className</span>=<span class="code-string">"welcome-card"</span>&gt;
+            &lt;h2&gt;🎉 ยินดีต้อนรับ!&lt;/h2&gt;
+            &lt;p&gt;สวัสดีนักพัฒนาเว็บมือใหม่&lt;/p&gt;
+        &lt;/div&gt;
+    );
+}</code></pre>
+            <h3>การนำ Component ไปใช้งาน:</h3>
+            <p>เราสามารถเรียกใช้ Component เหมือนเป็น HTML Tag ที่เราสร้างขึ้นเอง</p>
+            <pre><code class="language-jsx"><span class="code-keyword">function</span> <span class="code-js-expr">App</span>() {
+    <span class="code-keyword">return</span> (
+        &lt;div&gt;
+            &lt;WelcomeCard /&gt;
+            &lt;WelcomeCard /&gt;
+            &lt;WelcomeCard /&gt;
+        &lt;/div&gt;
+    );
+}</code></pre>
+            <p class="solution"><strong>กฎการตั้งชื่อ Component:</strong> ✅ ต้องขึ้นต้นด้วยตัวพิมพ์ใหญ่เสมอ (PascalCase) เช่น <code>UserProfile</code>, <code>ProductCard</code></p>
+            <div class="slide-number">17/35</div>
+        </section>
+
+        <section class="slide">
+            <h2>Component ที่มี Props 🎁</h2>
+            <p><strong>Props (ย่อมาจาก Properties)</strong> คือวิธีการส่งข้อมูลจาก Component แม่ (Parent) ไปยัง Component ลูก (Child) ทำให้เราสามารถสร้าง Component ที่ยืดหยุ่นและนำไปใช้ซ้ำกับข้อมูลที่แตกต่างกันได้</p>
+            <h3>Component ที่รับ Props:</h3>
+            <pre><code class="language-jsx"><span class="code-comment">// สังเกต { name, major, gpa } ใน parameter คือการรับ props</span>
+<span class="code-keyword">function</span> <span class="code-js-expr">StudentCard</span>({ name, major, gpa }) {
+    <span class="code-keyword">return</span> (
+        &lt;div <span class="code-attr">className</span>=<span class="code-string">"student-card"</span>&gt;
+            &lt;h3&gt;{name}&lt;/h3&gt;
+            &lt;p&gt;สาขา: {major}&lt;/p&gt;
+            &lt;p&gt;GPA: {gpa.toFixed(2)} {gpa >= 3.5 && '🌟'}&lt;/p&gt;
+        &lt;/div&gt;
+    );
+}</code></pre>
+            <h3>การส่ง Props ตอนใช้งาน:</h3>
+            <pre><code class="language-jsx"><span class="code-keyword">function</span> <span class="code-js-expr">ClassRoom</span>() {
+    <span class="code-keyword">return</span> (
+        &lt;div&gt;
+            &lt;StudentCard <span class="code-attr">name</span>=<span class="code-string">"สมชาย"</span> <span class="code-attr">major</span>=<span class="code-string">"วิศวกรรมซอฟต์แวร์"</span> <span class="code-attr">gpa</span>={3.75} /&gt;
+            &lt;StudentCard <span class="code-attr">name</span>=<span class="code-string">"สมศรี"</span> <span class="code-attr">major</span>=<span class="code-string">"วิทยาการคอมพิวเตอร์"</span> <span class="code-attr">gpa</span>={3.25} /&gt;
+        &lt;/div&gt;
+    );
+}</code></pre>
+            <button class="explanation-btn" onclick="toggleExplanation(this)"><i class="fas fa-lightbulb"></i> Props คืออะไร?</button>
+            <div class="explanation-box">
+                <h4>Props เปรียบเสมือน...</h4>
+                <p>...อาร์กิวเมนต์ (arguments) ของฟังก์ชันครับ Component คือฟังก์ชัน และ Props คือข้อมูลที่เราส่งเข้าไปเพื่อให้ฟังก์ชันนั้นทำงานต่างกันได้</p>
+                <p>ในตัวอย่าง <code>StudentCard</code> เปรียบเสมือน "แม่แบบบัตรนักศึกษา" ส่วน props ที่เราส่งเข้าไป (<code>name</code>, <code>major</code>, <code>gpa</code>) คือ "ข้อมูลเฉพาะ" ของนักศึกษาแต่ละคน ทำให้เราใช้แม่แบบเดียวสร้างบัตรนักศึกษาหลายใบที่มีข้อมูลต่างกันได้</p>
+            </div>
+            <div class="slide-number">18/35</div>
+        </section>
+        
+        <section class="slide">
+            <h2>Default Props และ PropTypes 🛡️</h2>
+            <p>เราสามารถทำให้ Component ของเราแข็งแกร่งและป้องกันข้อผิดพลาดได้ดียิ่งขึ้น</p>
+            <div class="grid-2">
+                <div>
+                    <h3>1. Default Props</h3>
+                    <p>กำหนดค่าเริ่มต้นให้กับ props ในกรณีที่ไม่ได้ถูกส่งมา</p>
+                    <pre><code class="language-jsx"><span class="code-keyword">function</span> <span class="code-js-expr">ProductCard</span>({ name, price = 0, inStock = true }) {
+    <span class="code-keyword">return</span> (
+        &lt;div&gt;
+          &lt;h3&gt;{name}&lt;/h3&gt;
+          &lt;p&gt;{price > 0 ? `฿${price}` : 'ฟรี!'}&lt;/p&gt;
+          {!inStock && &lt;div&gt;สินค้าหมด&lt;/div&gt;}
+        &lt;/div&gt;
+    );
+}
+<span class="code-comment">// การใช้งาน: &lt;ProductCard name="แอปฟรี" /&gt; // price และ inStock จะใช้ค่า default</span></code></pre>
+                </div>
+                <div>
+                    <h3>2. PropTypes (Optional)</h3>
+                    <p>ใช้ไลบรารี่ <code>prop-types</code> เพื่อตรวจสอบประเภทของข้อมูลที่ส่งมา และแสดงคำเตือนใน Console หากข้อมูลผิดประเภท</p>
+                    <pre><code class="language-js"><span class="code-keyword">import</span> PropTypes <span class="code-keyword">from</span> <span class="code-string">'prop-types'</span>;
+
+ProductCard.propTypes = {
+    name: PropTypes.string.isRequired,
+    price: PropTypes.number,
+    inStock: PropTypes.bool
+};</code></pre>
+                </div>
+            </div>
+            <h3>ประโยชน์:</h3>
+            <ul>
+                <li data-icon="✅"><strong>ป้องกันข้อผิดพลาด:</strong> ตรวจสอบข้อมูลที่ส่งมาให้ Component</li>
+                <li data-icon="✅"><strong>ง่ายต่อการ Debug:</strong> แจ้งเตือนเมื่อ props ผิดประเภท</li>
+                <li data-icon="✅"><strong>เป็นเอกสารในตัว:</strong> อ่านแล้วรู้ทันทีว่า Component นี้ต้องการ props อะไรบ้าง</li>
+            </ul>
+            <div class="slide-number">19/35</div>
+        </section>
+
+        <section class="slide">
+            <h2>Component Composition 🧩</h2>
+            <p>คือหลักการ "Single Responsibility Principle" ใน React โดยการสร้าง Component เล็กๆ ที่ทำหน้าที่เฉพาะอย่าง แล้วนำมา "ประกอบร่าง" กันเป็น Component ที่ใหญ่และซับซ้อนขึ้น</p>
+            <h3>ตัวอย่าง: การสร้าง UserCard</h3>
+            <div class="grid-2">
+                <div>
+                    <h4>1. สร้าง Components เล็กๆ:</h4>
+                    <pre><code class="language-jsx"><span class="code-keyword">function</span> <span class="code-js-expr">Avatar</span>({ user }) { ... }
+<span class="code-keyword">function</span> <span class="code-js-expr">UserInfo</span>({ user }) { ... }
+<span class="code-keyword">function</span> <span class="code-js-expr">UserActions</span>() { ... }</code></pre>
+                    <p>แต่ละอันทำหน้าที่เดียว: แสดงรูป, แสดงข้อมูล, แสดงปุ่ม</p>
+                </div>
+                <div>
+                    <h4>2. นำมาประกอบกัน:</h4>
+                    <pre><code class="language-jsx"><span class="code-keyword">function</span> <span class="code-js-expr">UserCard</span>({ user }) {
+    <span class="code-keyword">return</span> (
+        &lt;div <span class="code-attr">className</span>=<span class="code-string">"user-card"</span>&gt;
+            &lt;Avatar <span class="code-attr">user</span>={user} /&gt;
+            &lt;UserInfo <span class="code-attr">user</span>={user} /&gt;
+            &lt;UserActions /&gt;
+        &lt;/div&gt;
+    );
+}</code></pre>
+                    <p><code>UserCard</code> ไม่ได้ทำอะไรมากนอกจากเป็น "ภาชนะ" บรรจุ Component อื่นๆ</p>
+                </div>
+            </div>
+            <h3>ข้อดีของ Composition:</h3>
+            <ul>
+                <li data-icon="🧩"><strong>แบ่งแยก (Separation of Concerns):</strong> แต่ละ Component ทำหน้าที่เดียว ทำให้โค้ดสะอาด</li>
+                <li data-icon="🔄"><strong>นำกลับมาใช้ได้ (Reusability):</strong> สามารถนำ <code>Avatar</code> ไปใช้ในที่อื่นๆ ได้โดยไม่ต้องแก้โค้ด</li>
+                <li data-icon="🔧"><strong>แก้ไขง่าย (Maintainability):</strong> อยากเปลี่ยนแค่ปุ่ม ก็ไปแก้ที่ <code>UserActions</code> ที่เดียว ไม่กระทบส่วนอื่น</li>
+            </ul>
+            <div class="slide-number">20/35</div>
+        </section>
+        
+        <section class="slide title-slide quiz-slide">
+            <h2>Quick Quiz 🧠</h2>
+            <h3 style="color:white; font-weight: 400; opacity: 0.9;">ทดสอบความเข้าใจ</h3>
+            <blockquote>
+                 <p style="font-size:1.2em; font-style: normal; color: white;">ทำไมเราถึงต้องใช้ <code style="background-color: rgba(255,255,255,0.2); color:white;">key</code> prop ที่มีค่า<strong style="color: var(--primary-color);">ไม่ซ้ำกัน</strong> เวลาที่เราทำการวนลูปสร้าง Element ใน React?</p>
+            </blockquote>
+             <button class="reveal-btn" onclick="this.nextElementSibling.style.display='block'; this.style.display='none';">เฉลย</button>
+             <div class="answer" style="text-align: left; max-width: 80%;">
+                 <h4>คำตอบ: เพื่อประสิทธิภาพในการอัปเดต (Efficient Updates)</h4>
+                 <p>React ใช้ `key` เพื่อเป็น "บัตรประจำตัว" ของแต่ละ Element ในลิสต์ เมื่อข้อมูลมีการเปลี่ยนแปลง (เช่น เพิ่ม, ลบ, หรือสลับตำแหน่ง) React จะดูที่ `key` เพื่อ:</p>
+                 <ul>
+                    <li data-icon="1." style="padding-left: 25px; color:#f0f0f0;"><strong>ระบุตัวตน:</strong> รู้ว่า element ไหนคืออันไหน ไม่ต้องสร้างใหม่ทั้งหมด</li>
+                    <li data-icon="2." style="padding-left: 25px; color:#f0f0f0;"><strong>ลดการทำงาน:</strong> อัปเดตเฉพาะ DOM ของ element ที่เปลี่ยนแปลงจริงๆ</li>
+                    <li data-icon="3." style="padding-left: 25px; color:#f0f0f0;"><strong>ป้องกันบั๊ก:</strong> โดยเฉพาะกับ component ที่มี state ของตัวเอง</li>
+                 </ul>
+                 <p>สรุป: การใส่ `key` ช่วยให้ React ทำงานได้อย่างชาญฉลาดและรวดเร็วขึ้นมาก!</p>
+             </div>
+            <div class="slide-number">21/35</div>
+        </section>
+
+        <section class="slide">
+            <h2>คำถามสำคัญ ❓</h2>
+            <h3>1. JSX ต่างจาก HTML อย่างไร?</h3>
+            <p class="solution">JSX สามารถเขียน JavaScript expression ข้างในโดยใช้ <code>{...}</code> ได้, ใช้ <code>className</code> แทน <code>class</code>, และ attributes เป็นแบบ camelCase (<code>onClick</code>)</p>
+            
+            <h3>2. Component ต่างจาก function ธรรมดาอย่างไร?</h3>
+            <p class="solution">Component return ค่าเป็น JSX, ชื่อต้องขึ้นต้นด้วยตัวพิมพ์ใหญ่ (PascalCase), และสามารถถูกเรียกใช้งานในรูปแบบของ JSX Tag (<code>&lt;MyComponent /&gt;</code>) ได้</p>
+
+            <h3>3. Props ส่งได้แค่ string หรือไม่?</h3>
+            <p class="solution">ไม่, Props สามารถส่งข้อมูลได้ทุกประเภทใน JavaScript: number, boolean, object, array, หรือแม้กระทั่ง function!</p>
+
+            <h3>4. ทำไมเราถึงควรใช้ Component Composition?</h3>
+            <p class="solution">เพื่อทำให้โค้ดสะอาดขึ้น, นำกลับมาใช้ซ้ำได้ง่าย และแก้ไขได้สะดวกโดยไม่กระทบส่วนอื่นๆ (Single Responsibility Principle)</p>
+            <div class="slide-number">22/35</div>
+        </section>
+
+        <section class="slide">
+            <h2 style="text-align: center;">Lab 3.1 - สร้างโปรไฟล์ส่วนตัว 💻</h2>
+            <p style="text-align: center;"><strong>เป้าหมาย:</strong> สร้าง Component ชื่อ <code>PersonalProfile</code> ที่แสดงข้อมูลโปรไฟล์ส่วนตัวของคุณโดยใช้ความรู้ทั้งหมดที่เรียนมา</p>
+            <div class="live-preview-container" style="height: 70vh;">
+                <div class="code-pane">
+                    <div class="pane-title">📝 โค้ด (src/App.js)</div>
+                    <pre><code class="language-jsx"><span class="code-keyword">function</span> <span class="code-js-expr">PersonalProfile</span>() {
+    <span class="code-keyword">const</span> profile = {
+        name: "ธนิต เกตุแก้ว",
+        studentId: "ENGSE611",
+        major: "วิศวกรรมซอฟต์แวร์",
+        hobbies: ["เขียนโค้ด", "เล่นเกม", "ดูหนัง"],
+        avatar: "https://placehold.co/150"
+    };
+    
+    <span class="code-keyword">return</span> (
+        &lt;div <span class="code-attr">className</span>="profile-card"&gt;
+            &lt;img <span class="code-attr">src</span>={profile.avatar} <span class="code-attr">alt</span>={profile.name} /&gt;
+            &lt;h2&gt;{profile.name}&lt;/h2&gt;
+            &lt;p&gt;{profile.studentId}&lt;/p&gt;
+            &lt;p&gt;<strong>สาขา:</strong> {profile.major}&lt;/p&gt;
+            &lt;div&gt;
+                &lt;h3&gt;งานอดิเรก&lt;/h3&gt;
+                &lt;ul&gt;
+                    {profile.hobbies.map((hobby, i) => (
+                        &lt;li <span class="code-attr">key</span>={i}&gt;{hobby}&lt;/li&gt;
+                    ))}
+                &lt;/ul&gt;
+            &lt;/div&gt;
+        &lt;/div&gt;
+    );
+}
+
+<span class="code-keyword">function</span> <span class="code-js-expr">App</span>() {
+    <span class="code-keyword">return</span> &lt;PersonalProfile /&gt;;
+}
+<span class="code-keyword">export default</span> App;
+</code></pre>
+                </div>
+                <div class="preview-pane">
+                    <div class="pane-title">👀 ผลลัพธ์</div>
+                    <div class="preview-pane-content" id="lab1-preview"></div>
+                </div>
+            </div>
+            <p style="text-align:center; margin-top:1em;"><strong>ความท้าทาย:</strong> 1. เพิ่ม CSS ให้สวยงาม 2. เพิ่มข้อมูลทักษะ (skills) 3. ทำให้ responsive</p>
+            <div class="slide-number">23/35</div>
+        </section>
+
+        <section class="slide">
+            <h2>Component ขั้นสูง: Children Props 👨‍👩‍👧‍👦</h2>
+            <p><code>children</code> เป็น prop พิเศษที่ React ส่งให้โดยอัตโนมัติ มันคือ "ทุกสิ่งทุกอย่างที่อยู่ระหว่าง" tag เปิดและปิดของ Component ของเรา ทำให้เราสร้าง Component ที่เป็น "Layout" หรือ "Wrapper" ได้</p>
+             <div class="live-preview-container" style="height: 70vh;">
+                <div class="code-pane">
+                    <div class="pane-title">📝 โค้ด</div>
+                    <pre><code class="language-jsx"><span class="code-comment">// 1. สร้าง Card Component ที่รับ children</span>
+<span class="code-keyword">function</span> <span class="code-js-expr">Card</span>({ title, children }) {
+  <span class="code-keyword">return</span> (
+    &lt;div <span class="code-attr">className</span>="card"&gt;
+      &lt;h3&gt;{title}&lt;/h3&gt;
+      &lt;div <span class="code-attr">className</span>="card-body"&gt;
+        {children} <span class="code-comment">&lt;-- เนื้อหาที่ส่งมาจะแสดงตรงนี้</span>
+      &lt;/div&gt;
+    &lt;/div&gt;
+  );
+}
+
+<span class="code-comment">// 2. ใช้งาน Card Component</span>
+<span class="code-keyword">function</span> <span class="code-js-expr">Dashboard</span>() {
+  <span class="code-keyword">return</span> (
+    &lt;div&gt;
+      &lt;Card <span class="code-attr">title</span>="ข้อมูลส่วนตัว"&gt;
+        &lt;p&gt;ชื่อ: สมชาย ใจดี&lt;/p&gt;
+        &lt;button&gt;แก้ไข&lt;/button&gt;
+      &lt;/Card&gt;
+      &lt;Card <span class="code-attr">title</span>="สถิติ"&gt;
+        &lt;p&gt;เกรดเฉลี่ย: 3.50&lt;/p&gt;
+      &lt;/Card&gt;
+    &lt;/div&gt;
+  );
+}</code></pre>
+                </div>
+                <div class="preview-pane">
+                    <div class="pane-title">👀 ผลลัพธ์</div>
+                    <div class="preview-pane-content" id="children-preview"></div>
+                </div>
+            </div>
+            <button class="explanation-btn" onclick="toggleExplanation(this)"><i class="fas fa-lightbulb"></i> อธิบายเพิ่มเติม</button>
+            <div class="explanation-box">
+                <h4>`children` props ทำงานอย่างไร?</h4>
+                <p><code>children</code> เป็น prop พิเศษที่ React สร้างให้เองอัตโนมัติ มันคือทุกอย่างที่เราใส่ไว้ "ระหว่าง" tag เปิดและปิดของ Component</p>
+                <p>ในตัวอย่าง <code>&lt;Card&gt;...&lt;/Card&gt;</code> ทุกอย่างที่อยู่ตรง `...` จะถูกส่งไปใน prop ที่ชื่อ `children` ทำให้ Component <code>Card</code> ของเรากลายเป็น "กล่อง" หรือ "กรอบ" ที่สามารถนำเนื้อหาอะไรก็ได้ไปใส่ ทำให้ยืดหยุ่นและนำไปใช้ซ้ำได้ง่ายมากครับ</p>
+                <p><strong>สรุป:</strong> ปุ่ม "แก้ไข" ในหน้าจอนี้จึงเป็นแค่การแสดงผลตัวอย่างว่าเราสามารถใส่ปุ่มเข้าไปใน Card ได้ ไม่ได้ถูกทำให้ทำงานจริงในสไลด์นี้ครับ</p>
+            </div>
+            <div class="slide-number">24/35</div>
+        </section>
+
+        <section class="slide">
+            <h2>CSS ใน React - Styling Components 🎨</h2>
+            <p>มีหลายวิธีในการใส่สไตล์ให้กับ Component ใน React แต่นี่คือ 3 วิธีที่นิยมที่สุด:</p>
+            <h3>1. CSS ธรรมดา (External CSS File) - <span class="highlight">แนะนำสำหรับผู้เริ่มต้น</span></h3>
+            <p>สร้างไฟล์ <code>.css</code> (เช่น <code>App.css</code>) แล้ว import เข้ามาในไฟล์ Component ของคุณ</p>
+            <pre><code class="language-css"><span class="code-comment">/* App.css */</span>
+.profile-card { border: 1px solid #ddd; padding: 20px; }</code></pre>
+            <pre><code class="language-js"><span class="code-comment">// App.js</span>
+<span class="code-keyword">import</span> <span class="code-string">'./App.css'</span>; <span class="code-comment">// Import ไฟล์ CSS</span>
+<span class="code-keyword">function</span> <span class="code-js-expr">App</span>() { <span class="code-keyword">return</span> &lt;div <span class="code-attr">className</span>=<span class="code-string">"profile-card"</span>&gt;...&lt;/div&gt; }</code></pre>
+            
+            <h3>2. Inline Styles</h3>
+            <p>เขียน CSS เป็น JavaScript object แล้วส่งเข้าไปใน <code>style</code> prop (property ต้องเป็น camelCase)</p>
+            <pre><code class="language-jsx"><span class="code-keyword">function</span> <span class="code-js-expr">StyledButton</span>() {
+    <span class="code-keyword">const</span> buttonStyle = {
+        backgroundColor: '#007bff',
+        color: 'white',
+        borderRadius: '5px'
+    };
+    <span class="code-keyword">return</span> &lt;button <span class="code-attr">style</span>={buttonStyle}&gt;คลิก&lt;/button&gt;
+}</code></pre>
+
+            <h3>3. CSS Modules (ขั้นสูง)</h3>
+            <p>ตั้งชื่อไฟล์เป็น <code>.module.css</code> React จะสร้าง class name ที่ไม่ซ้ำกันให้โดยอัตโนมัติ ป้องกันปัญหา class name ชนกัน</p>
+            <pre><code class="language-js"><span class="code-comment">// Button.js</span>
+<span class="code-keyword">import</span> styles <span class="code-keyword">from</span> <span class="code-string">'./Button.module.css'</span>;
+<span class="code-keyword">function</span> <span class="code-js-expr">Button</span>() { <span class="code-keyword">return</span> &lt;button <span class="code-attr">className</span>={styles.primary}&gt;คลิก&lt;/button&gt; }</code></pre>
+            <div class="slide-number">25/35</div>
+        </section>
+
+        <section class="slide">
+            <h2>การจัดการ Arrays ใน React 📊</h2>
+            <p>เราสามารถใช้ Array methods ของ JavaScript (<code>.map</code>, <code>.filter</code>, <code>.reduce</code>) เพื่อจัดการข้อมูลและแสดงผลแบบไดนามิกได้อย่างง่ายดาย</p>
+            <pre><code class="language-jsx"><span class="code-keyword">function</span> <span class="code-js-expr">StudentGrades</span>() {
+    <span class="code-keyword">const</span> grades = [
+        { subject: 'คณิตศาสตร์', score: 85 }, { subject: 'ฟิสิกส์', score: 78 },
+        { subject: 'เคมี', score: 92 }, { subject: 'อังกฤษ', score: 65 }
+    ];
+    
+    <span class="code-comment">// กรองข้อมูล (filter)</span>
+    <span class="code-keyword">const</span> excellentGrades = grades.filter(g => g.score >= 85);
+    
+    <span class="code-comment">// คำนวณค่ารวม (reduce)</span>
+    <span class="code-keyword">const</span> totalScore = grades.reduce((sum, grade) => sum + grade.score, 0);
+    <span class="code-keyword">const</span> averageScore = totalScore / grades.length;
+    
+    <span class="code-keyword">return</span> (
+        &lt;div&gt;
+            &lt;h2&gt;คะแนนเฉลี่ย: {averageScore.toFixed(2)}&lt;/h2&gt;
+            
+            &lt;h3&gt;🌟 วิชาที่ได้คะแนนดีเยี่ยม:&lt;/h3&gt;
+            &lt;ul&gt;{excellentGrades.map(g => &lt;li <span class="code-attr">key</span>={g.subject}&gt;{g.subject}&lt;/li&gt;)}&lt;/ul&gt;
+            
+            &lt;h3&gt;📚 รายการคะแนนทั้งหมด:&lt;/h3&gt;
+            &lt;ul&gt;
+                {grades.map(grade => (
+                    &lt;li <span class="code-attr">key</span>={grade.subject} <span class="code-attr">className</span>={grade.score < 70 ? 'warning' : ''}&gt;
+                        {grade.subject}: {grade.score} คะแนน 
+                    &lt;/li&gt;
+                ))}
+            &lt;/ul&gt;
+        &lt;/div&gt;
+    );
+}</code></pre>
+            <div class="slide-number">26/35</div>
+        </section>
+
+        <section class="slide">
+            <h2>เปรียบเทียบ React vs Vue vs Angular 🏁</h2>
+            <p>Framework ยอดนิยม 3 ตัวสำหรับการพัฒนา Frontend</p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>ฟีเจอร์</th>
+                        <th>React</th>
+                        <th>Vue</th>
+                        <th>Angular</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td><b>ความยาก</b></td><td>🟡 ปานกลาง</td><td>🟢 ง่าย</td><td>🔴 ยาก</td></tr>
+                    <tr><td><b>ความยืดหยุ่น</b></td><td>🟢 สูง (เป็น Library)</td><td>🟡 ปานกลาง</td><td>🔴 ต่ำ (เป็น Framework)</td></tr>
+                    <tr><td><b>ความนิยม</b></td><td>🥇 #1</td><td>🥉 #3</td><td>🥈 #2</td></tr>
+                    <tr><td><b>บริษัทใหญ่</b></td><td>Facebook</td><td>Alibaba</td><td>Google</td></tr>
+                    <tr><td><b>เหมาะสำหรับ</b></td><td>ทุกขนาด</td><td>เว็บเล็ก-กลาง</td><td>Enterprise</td></tr>
+                </tbody>
+            </table>
+            <h3>ทำไมเราเลือกเรียน React?</h3>
+            <ul>
+                <li data-icon="💼"><strong>Job Opportunities:</strong> ความต้องการในตลาดงานสูงที่สุด</li>
+                <li data-icon="👨‍👩‍👧‍👦"><strong>Community:</strong> ชุมชนผู้ใช้ขนาดใหญ่ มีแหล่งข้อมูลและคนช่วยแก้ปัญหาเยอะ</li>
+                <li data-icon="📱"><strong>Ecosystem:</strong> สามารถต่อยอดไปทำแอปมือถือด้วย React Native ได้</li>
+                <li data-icon="💰"><strong>Salary:</strong> เป็นทักษะที่เป็นที่ต้องการและให้ผลตอบแทนสูง</li>
+            </ul>
+            <div class="slide-number">27/35</div>
+        </section>
+
+        <section class="slide">
+            <h2>เคล็ดลับการเขียน React ให้เก่ง 💡 (Best Practices)</h2>
+            <div class="grid-2">
+                <div>
+                    <h3>1. ตั้งชื่อให้ดีและสื่อความหมาย</h3>
+                    <pre><code class="language-jsx"><span class="code-comment">// ❌ ไม่ดี: function comp1() { ... }</span>
+<span class="code-comment">// ✅ ดี: function UserProfile() { ... }</span></code></pre>
+                </div>
+                <div>
+                    <h3>2. แบ่ง Component ให้เล็กและทำหน้าที่เดียว</h3>
+                    <pre><code class="language-jsx"><span class="code-comment">// ❌ ใหญ่เกินไป: MegaComponent 100+ บรรทัด</span>
+<span class="code-comment">// ✅ แบ่งเป็นชิ้นเล็กๆ</span>
+<span class="code-keyword">function</span> <span class="code-js-expr">App</span>() {
+  <span class="code-keyword">return</span> (
+    &lt;div&gt;
+      &lt;Header /&gt;
+      &lt;Content /&gt;
+      &lt;Footer /&gt;
+    &lt;/div&gt;
+  );
+}</code></pre>
+                </div>
+                <div>
+                    <h3>3. ใช้ Destructuring กับ Props</h3>
+                    <pre><code class="language-jsx"><span class="code-comment">// ❌ ยาวไป: props.user.name</span>
+<span class="code-comment">// ✅ กระชับ</span>
+<span class="code-keyword">function</span> <span class="code-js-expr">UserInfo</span>({ user }) {
+  <span class="code-keyword">const</span> { name, email } = user;
+  <span class="code-keyword">return</span> &lt;h1&gt;{name}&lt;/h1&gt;;
+}</code></pre>
+                </div>
+                <div>
+                    <h3>4. เขียน Comments ที่มีประโยชน์</h3>
+                    <pre><code class="language-js"><span class="code-comment">// แปลงอุณหภูมิจาก Kelvin เป็น Celsius</span>
+<span class="code-keyword">const</span> convertTemp = (kelvin) => { ... };
+</code></pre>
+                </div>
+            </div>
+            <div class="slide-number">28/35</div>
+        </section>
+
+        <section class="slide">
+            <h2>Debug และ Developer Tools 🔍</h2>
+            <h3>1. React Developer Tools (Browser Extension)</h3>
+            <p>เครื่องมือที่<span class="highlight">ต้องติดตั้ง</span>ใน Chrome/Firefox ช่วยให้เราสามารถ:
+                <ul>
+                    <li data-icon="🌳">ดูโครงสร้างของ Components (Component Tree)</li>
+                    <li data-icon="🎁">ตรวจสอบและแก้ไข Props และ State ได้แบบ real-time</li>
+                    <li data-icon="⏱️">วัด Performance ของแอปพลิเคชัน</li>
+                </ul>
+            </p>
+            <h3>2. ใช้ <code>console.log</code> อย่างชาญฉลาด</h3>
+            <pre><code class="language-jsx"><span class="code-keyword">function</span> <span class="code-js-expr">ProductList</span>({ products }) {
+    console.log('ProductList rendered with props:', { products });
+    <span class="code-keyword">return</span> &lt;div&gt;...&lt;/div&gt;
+}</code></pre>
+            <h3>3. เคล็ดลับ Debugging ที่ใช้ได้จริง</h3>
+            <p>แสดงข้อมูล object หรือ array ทั้งหมดในหน้าเว็บเพื่อดูค่าแบบเร็วๆ</p>
+            <pre><code class="language-jsx">&lt;pre&gt;{JSON.stringify(data, null, 2)}&lt;/pre&gt;</code></pre>
+            <h3>ข้อผิดพลาดที่เจอบ่อย:</h3>
+            <ul>
+                <li data-icon="❌">ลืมใส่ <code>key</code> ใน list</li>
+                <li data-icon="❌">ใช้ <code>class</code> แทน <code>className</code></li>
+                <li data-icon="❌">ลืมปิด tag (<code>&lt;br&gt;</code> ต้องเป็น <code>&lt;br /&gt;</code>)</li>
+                <li data-icon="❌">Return หลาย element โดยไม่มี wrapper (<code>&lt;div&gt;</code> หรือ <code>&lt;&gt;</code>)</li>
+            </ul>
+            <div class="slide-number">29/35</div>
+        </section>
+        
+        <section class="slide">
+            <h2>Modern JavaScript (ES6+) ที่ใช้บ่อยใน React 🚀</h2>
+            <div class="grid-2">
+                <div>
+                    <h3>1. Arrow Functions <code>=></code></h3>
+                    <pre><code class="language-js">{items.map(item => &lt;li&gt;{item.name}&lt;/li&gt;)}</code></pre>
+                </div>
+                <div>
+                    <h3>2. Destructuring <code>{}</code>, <code>[]</code></h3>
+                    <pre><code class="language-js"><span class="code-keyword">const</span> { name, age } = user;
+<span class="code-keyword">const</span> [count, setCount] = useState(0);</code></pre>
+                </div>
+                <div>
+                    <h3>3. Template Literals (Backticks) <code>``</code></h3>
+                    <pre><code class="language-js"><span class="code-keyword">const</span> message = `สวัสดี ${name}`;</code></pre>
+                </div>
+                <div>
+                    <h3>4. Spread Operator <code>...</code></h3>
+                    <pre><code class="language-js"><span class="code-keyword">const</span> newUser = { ...user, age: 25 };
+<span class="code-keyword">const</span> newItems = [...items, newItem];</code></pre>
+                </div>
+            </div>
+            <p class="solution">การทำความเข้าใจฟีเจอร์เหล่านี้ จะช่วยให้คุณเขียนโค้ด React ได้สั้นลง กระชับ และอ่านง่ายขึ้นอย่างมาก</p>
+            <div class="slide-number">30/35</div>
+        </section>
+
+        <section class="slide">
+            <h2>ทำความเข้าใจ React Ecosystem 🌍</h2>
+            <p>React เป็นแค่ Library สำหรับสร้าง UI แต่ในโลกความเป็นจริง เราต้องใช้เครื่องมือและไลบรารี่อื่นๆ อีกมากมาย นี่คือส่วนหนึ่งของ Ecosystem ที่ควรรู้จัก:</p>
+            <h3>เครื่องมือพัฒนา (Build Tools / Frameworks)</h3>
+            <ul>
+                <li data-icon="🛠️"><strong>Create React App / Vite:</strong> เครื่องมือสำหรับสร้างและตั้งค่าโปรเจกต์ React ได้อย่างรวดเร็ว (ที่เราใช้อยู่คือ Create React App)</li>
+                <li data-icon="🎯"><strong>Next.js / Remix:</strong> Framework ที่สร้างบน React เพิ่มฟีเจอร์สำคัญๆ เช่น Server-Side Rendering, Routing, etc.</li>
+            </ul>
+            <h3>Libraries ที่ใช้บ่อย</h3>
+            <ul>
+                <li data-icon="🎨"><strong>UI Libraries:</strong> Material-UI (MUI), Ant Design, Chakra UI (ชุด Components สำเร็จรูปสวยๆ)</li>
+                <li data-icon="🛣️"><strong>Routing:</strong> React Router (สำหรับทำหน้าเว็บหลายหน้า หรือ Single Page Application)</li>
+                <li data-icon="📊"><strong>State Management:</strong> Redux, Zustand, Recoil (สำหรับจัดการ State ที่ซับซ้อนในแอปขนาดใหญ่)</li>
+                <li data-icon="📡"><strong>Data Fetching:</strong> React Query, SWR, Axios (สำหรับดึงข้อมูลจาก API)</li>
+            </ul>
+            <p class="solution"><i class="fas fa-lightbulb"></i> <strong>คำแนะนำ:</strong> เริ่มจากพื้นฐานของ React ให้แข็งแรงก่อน แล้วค่อยๆ เรียนรู้เครื่องมือเหล่านี้เพิ่มเติมเมื่อจำเป็น</p>
+            <div class="slide-number">31/35</div>
+        </section>
+        
+        <section class="slide">
+            <h2>สรุปสิ่งที่เรียนมา 📝</h2>
+            <h3>React Fundamentals:</h3>
+            <ul>
+                <li data-icon="✅"><strong>React คืออะไร:</strong> Library สำหรับสร้าง UI ที่ทำงานด้วย Component</li>
+                <li data-icon="✅"><strong>Virtual DOM:</strong> กลไกที่ทำให้ React ทำงานได้รวดเร็ว</li>
+                <li data-icon="✅"><strong>Component:</strong> ชิ้นส่วน UI ที่นำกลับมาใช้ซ้ำได้ (ฟังก์ชันที่ return JSX)</li>
+                <li data-icon="✅"><strong>Props:</strong> วิธีการส่งข้อมูลจาก Component แม่ไปลูก</li>
+            </ul>
+            <h3>JSX Mastery:</h3>
+             <ul>
+                <li data-icon="✅"><strong>JSX Syntax:</strong> เขียน HTML ใน JavaScript</li>
+                <li data-icon="✅"><strong>JavaScript ใน JSX:</strong> ใช้ <code>{...}</code> เพื่อแทรกโค้ด JS</li>
+                <li data-icon="✅"><strong>Conditional Rendering:</strong> แสดงผลตามเงื่อนไข (<code>&&</code>, <code>? :</code>)</li>
+                <li data-icon="✅"><strong>Lists & Keys:</strong> แสดงข้อมูล Array ด้วย <code>.map()</code> และ <code>key</code></li>
+                <li data-icon="✅"><strong>Event Handling:</strong> จัดการ Events เช่น <code>onClick</code></li>
+            </ul>
+            <blockquote><strong>การเปลี่ยนแปลงที่เกิดขึ้น:</strong><br>
+            เมื่อเช้า: รู้จักแค่ HTML + JavaScript<br>
+            ตอนนี้: สามารถสร้าง UI Component แบบไดนามิกได้แล้ว! 🚀
+            </blockquote>
+            <div class="slide-number">32/35</div>
+        </section>
+
+        <section class="slide">
+            <h2>คำถามที่พบบ่อย (FAQ) 🙋</h2>
+            <ul>
+                <li data-icon="Q."><strong>React ยากไหม?</strong><br><strong>A:</strong> ช่วงแรกอาจจะรู้สึกแตกต่างจากการเขียนเว็บแบบเดิม แต่เมื่อเข้าใจแนวคิดเรื่อง Component, Props, และ State แล้ว จะพบว่ามันทำให้การพัฒนาเว็บขนาดใหญ่เป็นเรื่องง่ายและสนุกขึ้นมาก!</li>
+                <li data-icon="Q."><strong>จำเป็นต้องรู้ JavaScript เก่งมาก่อนไหม?</strong><br><strong>A:</strong> รู้พื้นฐานก็เริ่มได้ แต่ยิ่งเข้าใจ JavaScript ลึกซึ้ง (โดยเฉพาะ ES6+) ก็จะยิ่งเขียน React ได้ดีและมีประสิทธิภาพมากขึ้น</li>
+                <li data-icon="Q."><strong>หลังเรียนจบคอร์สนี้จะหางานได้ไหม?</strong><br><strong>A:</strong> React Developer เป็นหนึ่งในตำแหน่งงานที่เป็นที่ต้องการมากที่สุดในวงการพัฒนาซอฟต์แวร์ทั่วโลก การมีพื้นฐานที่แข็งแรงจะเปิดโอกาสให้คุณอย่างมหาศาล</li>
+            </ul>
+             <div class="slide-number">33/35</div>
+        </section>
+        
+        <section class="slide">
+            <h2 style="text-align: center;">เตรียมตัวสำหรับหัวข้อถัดไป 🚀</h2>
+            <h3>หัวข้อสำคัญ: <strong>State & Hooks</strong></h3>
+            <p>ถึงตอนนี้ Component ของเราสามารถรับข้อมูลผ่าน Props และแสดงผลได้ แต่ยังไม่สามารถ "เปลี่ยนแปลง" หรือ "มีชีวิต" ได้ด้วยตัวเอง</p>
+            <p>ในหัวข้อถัดไป เราจะเรียนรู้เกี่ยวกับ <code>useState</code> ซึ่งเป็นเครื่องมือที่ทรงพลังที่สุดในการ:</p>
+            <ul>
+                <li data-icon="🧠">ทำให้ Component "จำ" ข้อมูลของตัวเองได้ (State)</li>
+                <li data-icon="🔄">ทำให้ Component re-render หรือ "อัปเดตหน้าจอ" ใหม่ เมื่อข้อมูลนั้นเปลี่ยนไป</li>
+                <li data-icon="🖱️">สร้าง User Interface ที่ interactive อย่างแท้จริง เช่น การนับคะแนน, การเปิด-ปิดเมนู, หรือการกรอกฟอร์ม</li>
+            </ul>
+            <blockquote>State คือสิ่งที่ทำให้แอปพลิเคชัน React ของเรามีชีวิตชีวา!</blockquote>
+            <h3 style="text-align: center; margin-top: 2em;">พักเบรก 15 นาที แล้วมาทำให้แอปของเรามีชีวิตกันต่อ! ☕✨</h3>
+            <div class="slide-number">34/35</div>
+        </section>
+        
+        <section class="slide">
+            <h2 style="text-align: center;">ถาม-ตอบ และ Feedback 🙋</h2>
+            <p style="text-align: center;">มีคำถามอะไรเกี่ยวกับเนื้อหาที่เรียนมาในครึ่งเช้านี้ไหมครับ?</p>
+            
+            <div style="margin-top: 3em; text-align: center;">
+                 <i class="fas fa-comments" style="font-size: 5em; color: var(--primary-color);"></i>
+                 <h3 style="margin-top: 1em;">เปิดโอกาสให้ซักถามทุกประเด็น</h3>
+                 <p>Component, Props, JSX, Virtual DOM, ...</p>
+            </div>
+             <div class="slide-number">35/35</div>
+        </section>
+
+    </div>
+
+    <div class="presentation-controls">
+        <button id="prev-btn" class="nav-btn" title="สไลด์ก่อนหน้า">‹</button>
+        <span id="slide-counter"></span>
+        <button id="next-btn" class="nav-btn" title="สไลด์ถัดไป">›</button>
+        <button id="font-decrease-btn" class="font-btn" title="ลดขนาดตัวอักษร">-</button>
+        <button id="font-increase-btn" class="font-btn" title="เพิ่มขนาดตัวอักษร">+</button>
+        <button id="fullscreen-btn" class="fullscreen-btn" title="เต็มจอ">⛶</button>
+    </div>
+
+    <script>
+        function toggleExplanation(btn) {
+            const explanationBox = btn.nextElementSibling;
+            if (explanationBox && explanationBox.classList.contains('explanation-box')) {
+                const isVisible = explanationBox.style.display === 'block';
+                explanationBox.style.display = isVisible ? 'none' : 'block';
+                btn.innerHTML = isVisible ? '<i class="fas fa-lightbulb"></i> อธิบายเพิ่มเติม' : '<i class="fas fa-times"></i> ปิดคำอธิบาย';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const slides = document.querySelectorAll('.slide');
+            const nextBtn = document.getElementById('next-btn');
+            const prevBtn = document.getElementById('prev-btn');
+            const fullscreenBtn = document.getElementById('fullscreen-btn');
+            const slideCounter = document.getElementById('slide-counter');
+            const progressBar = document.getElementById('progress-bar');
+            const fontIncreaseBtn = document.getElementById('font-increase-btn');
+            const fontDecreaseBtn = document.getElementById('font-decrease-btn');
+            const root = document.documentElement;
+
+            const totalSlides = slides.length;
+            let currentFontSize = 1.5; 
+            let currentSlideIndex = 0;
+            
+            function showSlide(index) {
+                if (index < 0 || index >= totalSlides) return;
+                slides.forEach((slide, i) => slide.classList.toggle('active', i === index));
+                const activeSlide = slides[index];
+                if (activeSlide.scrollTop > 0) activeSlide.scrollTop = 0;
+                currentSlideIndex = index;
+                updateControls();
+                
+                if (slides[index].querySelector('#lab1-preview')) renderLab1Preview();
+                if (slides[index].querySelector('#children-preview')) renderChildrenPreview();
+                if (slides[index].querySelector('#cond-render-output')) renderCondRenderPreview();
+            }
+
+            function updateControls() {
+                slideCounter.textContent = `${currentSlideIndex + 1} / ${totalSlides}`;
+                const progressPercentage = ((currentSlideIndex + 1) / totalSlides) * 100;
+                progressBar.style.width = `${progressPercentage}%`;
+                prevBtn.disabled = currentSlideIndex === 0;
+                nextBtn.disabled = currentSlideIndex === totalSlides - 1;
+            }
+
+            function toggleFullscreen() {
+                if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+                else if (document.exitFullscreen) document.exitFullscreen();
+            }
+
+            fontIncreaseBtn.addEventListener('click', () => {
+                if (currentFontSize < 2.5) {
+                    currentFontSize += 0.1;
+                    root.style.setProperty('--base-font-size', `clamp(16px, ${currentFontSize}vw, 22px)`);
+                }
+            });
+            fontDecreaseBtn.addEventListener('click', () => {
+                if (currentFontSize > 0.8) {
+                    currentFontSize -= 0.1;
+                    root.style.setProperty('--base-font-size', `clamp(16px, ${currentFontSize}vw, 22px)`);
+                }
+            });
+
+            nextBtn.addEventListener('click', () => showSlide(currentSlideIndex + 1));
+            prevBtn.addEventListener('click', () => showSlide(currentSlideIndex - 1));
+            fullscreenBtn.addEventListener('click', toggleFullscreen);
+            document.addEventListener('keydown', (e) => {
+                if (e.target.tagName === 'INPUT' || e.target.isContentEditable) return;
+                if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); nextBtn.click(); } 
+                else if (e.key === 'ArrowLeft') { e.preventDefault(); prevBtn.click(); } 
+                else if (e.key === 'f') { e.preventDefault(); toggleFullscreen(); }
+            });
+            
+            function renderLab1Preview() {
+                const container = document.getElementById('lab1-preview');
+                if (container.innerHTML !== '') return;
+                const profile = { name: "ธนิต เกตุแก้ว", studentId: "ENGSE611", major: "วิศวกรรมซอฟต์แวร์", hobbies: ["เขียนโค้ด", "เล่นเกม", "ดูหนัง"], avatar: "https://placehold.co/150" };
+                container.innerHTML = `<style> .profile-card-preview { text-align: center; border: 1px solid #ddd; border-radius: 10px; padding: 20px; max-width: 300px; margin: auto; font-size: 16px; } .profile-card-preview img { border-radius: 50%; width: 100px; height: 100px; object-fit: cover; border: 3px solid #61DAFB; } .profile-card-preview h2 { margin: 10px 0 5px; font-size: 1.2em; } .profile-card-preview p { margin: 5px 0; font-size: 0.9em; color: #555; } .profile-card-preview ul { list-style-type: none; padding-left: 0; font-size: 0.9em; } .profile-card-preview li { background-color: #eee; border-radius: 15px; padding: 5px 10px; display: inline-block; margin: 3px; } .profile-card-preview h3 { font-size: 1.1em; margin-top: 15px; border-top: 1px solid #eee; padding-top: 10px; } </style> <div class="profile-card-preview"> <img src="${profile.avatar}" alt="${profile.name}" /> <h2>${profile.name}</h2> <p>${profile.studentId}</p> <p><strong>สาขา:</strong> ${profile.major}</p> <div> <h3>งานอดิเรก</h3> <ul> ${profile.hobbies.map(hobby => `<li>${hobby}</li>`).join('')} </ul> </div> </div>`;
+            }
+
+            function renderChildrenPreview() {
+                const container = document.getElementById('children-preview');
+                if (container.innerHTML !== '') return;
+                container.innerHTML = `<style> .card-preview { border: 1px solid #ccc; border-radius: 8px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); font-size: 16px; } .card-preview h3 { background-color: #f0f8ff; color: #20232A; padding: 10px; border-bottom: 1px solid #ccc; font-size: 1.1em; border-radius: 8px 8px 0 0;} .card-body-preview { padding: 15px; font-size: 0.9em; } .card-body-preview p { margin-bottom: 10px; } .card-body-preview button { background: #61DAFB; color: #20232A; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; } </style> <div class="card-preview"> <h3>ข้อมูลส่วนตัว</h3> <div class="card-body-preview"> <p>ชื่อ: สมชาย ใจดี</p> <button>แก้ไข</button> </div> </div> <div class="card-preview"> <h3>สถิติ</h3> <div class="card-body-preview"> <p>เกรดเฉลี่ย: 3.50</p> </div> </div>`;
+            }
+            
+            let crState = { isLoggedIn: false, hasMessage: true };
+            const crOutput = document.getElementById('cond-render-output');
+            
+            function renderCondRenderPreview() {
+                if(!crOutput) return;
+                const loginStatusHTML = crState.isLoggedIn ? `<p>✅ ยินดีต้อนรับ!</p>` : `<p>❌ กรุณาเข้าสู่ระบบ</p>`;
+                const messageHTML = crState.hasMessage ? `<div class="alert">🔔 คุณมีข้อความใหม่!</div>` : '';
+                crOutput.innerHTML = loginStatusHTML + messageHTML;
+            }
+
+            const crBtnLogin = document.getElementById('cr-btn-login');
+            if(crBtnLogin) crBtnLogin.addEventListener('click', () => { crState.isLoggedIn = true; renderCondRenderPreview(); });
+            
+            const crBtnLogout = document.getElementById('cr-btn-logout');
+            if(crBtnLogout) crBtnLogout.addEventListener('click', () => { crState.isLoggedIn = false; renderCondRenderPreview(); });
+            
+            const crBtnToggleMsg = document.getElementById('cr-btn-toggle-msg');
+            if(crBtnToggleMsg) crBtnToggleMsg.addEventListener('click', () => { crState.hasMessage = !crState.hasMessage; renderCondRenderPreview(); });
+
+            showSlide(0);
+        });
+    </script>
+</body>
+</html>
