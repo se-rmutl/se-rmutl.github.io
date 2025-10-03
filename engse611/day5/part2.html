@@ -1,0 +1,1593 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ENGSE611 - Day 5: Website Security Basics</title>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --react-color: #61DAFB;
+            --express-color: #4A5568;
+            --node-color: #339933;
+            --accent-color: #805AD5;
+            /* Purple */
+            --security-color: #E53E3E;
+            /* Red */
+
+            --success-color: #10B981;
+            --danger-color: #C53030;
+            --slide-bg: #ffffff;
+            --text-color: #2D3748;
+            --header-color: #1A202C;
+            --base-font-size: clamp(16px, 1.5vw, 22px);
+            --border-radius: 15px;
+            --code-font: 'Fira Code', 'Courier New', monospace;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            overflow: hidden;
+            height: 100%;
+        }
+
+        body {
+            font-family: 'Sarabun', sans-serif;
+            background: #F7FAFC;
+            color: var(--text-color);
+            font-size: 16px;
+            line-height: 1.7;
+        }
+
+        .presentation {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2vh 3vw;
+        }
+
+        .slide {
+            background: var(--slide-bg);
+            padding: 30px 40px 80px 40px;
+            border-radius: var(--border-radius);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            height: 100%;
+            font-size: var(--base-font-size);
+            overflow-y: auto;
+            display: none;
+            animation: fadeIn 0.5s ease-in-out;
+            position: relative;
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        .slide::-webkit-scrollbar {
+            display: none;
+        }
+
+        .slide.active {
+            display: block;
+        }
+
+        .title-slide.active {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            color: white;
+        }
+
+        .security-title-slide.active {
+            background: linear-gradient(135deg, var(--security-color) 0%, #2D3748 100%);
+        }
+
+        .title-slide h1,
+        .title-slide h2,
+        .title-slide h3,
+        .title-slide p {
+            color: white !important;
+        }
+
+        .title-slide h1 {
+            font-size: 3em;
+            margin-bottom: 10px;
+            border: none;
+            text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .title-slide h2 {
+            font-size: 1.8em;
+            margin-bottom: 20px;
+            border: none;
+            opacity: 0.9;
+        }
+
+        .title-slide h3 {
+            font-size: 1.5em;
+            font-weight: 400;
+            opacity: 0.9;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: scale(0.98);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .progress-bar-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 8px;
+            background-color: #E2E8F0;
+            z-index: 2000;
+        }
+
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(120deg, var(--security-color) 0%, #dd6b20 100%);
+            transition: width 0.3s ease-out;
+        }
+
+        .presentation-controls {
+            position: fixed;
+            bottom: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(26, 32, 44, 0.9);
+            padding: 10px 15px;
+            border-radius: 50px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(8px);
+            z-index: 1000;
+        }
+
+        .nav-btn {
+            background: transparent;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 45px;
+            height: 45px;
+            font-size: 1.5rem;
+        }
+
+        .nav-btn:hover:not(:disabled) {
+            background: var(--security-color);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .nav-btn:disabled {
+            background-color: transparent;
+            color: #718096;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        #slide-counter {
+            color: white;
+            font-weight: 500;
+            font-size: 1.1em;
+            min-width: 70px;
+            text-align: center;
+        }
+
+        .slide-number {
+            position: absolute;
+            bottom: 15px;
+            right: 20px;
+            background: rgba(26, 32, 44, 0.8);
+            color: white;
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 0.8em;
+            font-weight: 600;
+        }
+
+        .slide h2 {
+            font-size: 2.2em;
+            color: var(--header-color);
+            border-bottom: 3px solid var(--accent-color);
+            padding-bottom: 8px;
+            margin-bottom: 1em;
+            font-weight: 700;
+        }
+
+        .slide.security h2 {
+            border-bottom-color: var(--security-color);
+        }
+
+        .slide h3 {
+            font-size: 1.6em;
+            color: var(--header-color);
+            margin-top: 1.5em;
+            margin-bottom: 0.5em;
+            font-weight: 600;
+        }
+
+        p,
+        ul,
+        ol {
+            font-size: 1em;
+            max-width: 85ch;
+            margin-bottom: 1rem;
+            color: #4A5568;
+        }
+
+        ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        ul li {
+            position: relative;
+            padding-left: 35px;
+            margin-bottom: 12px;
+        }
+
+        ul li::before {
+            content: attr(data-icon);
+            position: absolute;
+            left: 0;
+            top: 0px;
+            font-weight: 900;
+            font-family: 'Font Awesome 6 Free';
+            color: var(--accent-color);
+        }
+
+        .slide.security ul li::before {
+            color: var(--security-color);
+        }
+
+        pre {
+            background: #1A202C;
+            color: #E2E8F0;
+            border-radius: 10px;
+            padding: 1em;
+            margin: 1em 0;
+            font-family: var(--code-font);
+            font-size: 0.9em;
+            overflow-x: auto;
+            line-height: 1.6;
+        }
+
+        code {
+            font-family: var(--code-font);
+            background-color: #EDF2F7;
+            color: #2D3748;
+            padding: 3px 6px;
+            border-radius: 4px;
+        }
+
+        pre code {
+            background-color: transparent;
+            padding: 0;
+            color: inherit;
+        }
+
+        .grid-2,
+        .grid-4 {
+            display: grid;
+            gap: 25px;
+            margin: 20px 0;
+            align-items: start;
+        }
+
+        .grid-2 {
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        }
+
+        .grid-4 {
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        }
+
+        blockquote {
+            border-left: 5px solid var(--accent-color);
+            margin: 1.5em 0;
+            padding: 1em 1.5em;
+            background-color: #F7FAFC;
+            font-style: italic;
+            font-weight: 500;
+            color: #2D3748;
+        }
+
+        .slide.security blockquote {
+            border-left-color: var(--security-color);
+        }
+
+        .highlight-danger {
+            background-color: #FED7D7;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 600;
+            color: var(--danger-color);
+        }
+
+        .case-study-card {
+            background-color: #FFF5F5;
+            border: 1px solid #FC8181;
+            border-left: 5px solid var(--danger-color);
+            border-radius: 8px;
+            padding: 1.5em;
+            font-size: 0.9em;
+        }
+
+        .case-study-card h4 {
+            color: var(--danger-color);
+            margin-top: 0;
+            margin-bottom: 0.5em;
+        }
+
+        .impact-card {
+            text-align: center;
+            padding: 1em;
+        }
+
+        .impact-card .icon {
+            font-size: 2.5em;
+            color: var(--danger-color);
+            margin-bottom: 0.5em;
+        }
+
+        .impact-card h4 {
+            color: var(--header-color);
+            font-size: 1.1em;
+        }
+
+        .impact-card p {
+            font-size: 0.9em;
+        }
+
+        .explanation-btn {
+            background-color: #ECC94B;
+            color: #2D3748;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: 'Sarabun', sans-serif;
+            font-size: 0.9em;
+            font-weight: bold;
+            margin-top: 1em;
+            transition: all 0.2s ease;
+        }
+
+        .explanation-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .explanation-box {
+            display: none;
+            margin-top: 1em;
+            padding: 15px;
+            background-color: #EBF8FF;
+            border-left: 5px solid #3182CE;
+            border-radius: 0 8px 8px 0;
+            animation: fadeIn 0.3s;
+        }
+
+        .explanation-box h4 {
+            margin-top: 0;
+            margin-bottom: 0.5em;
+            color: #2C5282;
+        }
+
+        .explanation-box p {
+            font-size: 0.95em;
+            margin-bottom: 0.5em;
+        }
+
+        .interactive-demo {
+            border: 1px solid #E2E8F0;
+            border-radius: 10px;
+            padding: 1.5em;
+            background: white;
+            margin-top: 1em;
+        }
+
+        .interactive-demo input,
+        .interactive-demo textarea,
+        .interactive-demo button {
+            font-family: 'Sarabun', sans-serif;
+            font-size: 0.9em;
+            padding: 8px 12px;
+            margin: 5px;
+            border-radius: 5px;
+            border: 1px solid #CBD5E0;
+            display: block;
+            width: calc(100% - 10px);
+        }
+
+        .interactive-demo button {
+            width: auto;
+            display: inline-block;
+            cursor: pointer;
+            border: none;
+            color: white;
+            transition: background-color 0.2s ease;
+        }
+
+        .interactive-demo button.safe {
+            background-color: var(--success-color);
+        }
+
+        .interactive-demo button.unsafe {
+            background-color: var(--danger-color);
+        }
+
+        .interactive-demo .output {
+            margin-top: 1em;
+            padding: 1em;
+            background: #F7FAFC;
+            border-radius: 8px;
+            font-family: var(--code-font);
+            white-space: pre-wrap;
+            word-break: break-all;
+            min-height: 50px;
+        }
+
+        .interactive-demo .output.error {
+            background: #FFF5F5;
+            color: var(--danger-color);
+            border: 1px solid #FED7D7;
+        }
+
+        .checklist-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            font-size: 0.9em;
+        }
+
+        .checklist-item {
+            background-color: #F7FAFC;
+            border-radius: 8px;
+            padding: 1em;
+        }
+
+        .checklist-item h4 {
+            font-size: 1.1em;
+            color: var(--header-color);
+            margin-top: 0;
+            margin-bottom: 0.5em;
+        }
+
+        .checklist-item ul {
+            padding-left: 20px;
+            list-style: none;
+        }
+
+        .checklist-item ul li {
+            padding-left: 0;
+        }
+
+        .checklist-item ul li::before {
+            content: '\f00c';
+            position: static;
+            font-family: 'Font Awesome 6 Free';
+            color: var(--success-color);
+            margin-right: 10px;
+        }
+
+        /* === ค้นหา .mistake-cards-container และ .mistake-card แล้วแทนที่ด้วยโค้ดนี้ === */
+
+        .mistake-cards-container.detailed {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            /* ระยะห่างระหว่างการ์ด */
+            margin-top: 1em;
+        }
+
+        .mistake-card {
+            display: flex;
+            align-items: flex-start;
+            /* จัดชิดบน */
+            background: #F7FAFC;
+            border-radius: 10px;
+            border-left: 5px solid var(--security-color);
+            padding: 1em;
+            transition: all 0.2s ease-in-out;
+        }
+
+        .mistake-icon {
+            font-size: 1.5em;
+            /* ปรับขนาดไอคอน */
+            color: var(--security-color);
+            margin-top: 5px;
+            margin-right: 1em;
+            width: 40px;
+            /* ปรับขนาดพื้นที่ไอคอน */
+            text-align: center;
+            flex-shrink: 0;
+        }
+
+        .mistake-content {
+            flex-grow: 1;
+        }
+
+        .mistake-content h4 {
+            margin: 0 0 0.2em 0;
+            font-size: 1.05em;
+            /* ปรับขนาดหัวข้อ */
+            color: var(--header-color);
+        }
+
+        .mistake-content .mistake-desc {
+            margin: 0;
+            font-size: 0.9em;
+            padding-bottom: 0.5em;
+            /* เพิ่มระยะห่างก่อนโค้ด */
+            border-bottom: 1px solid #E2E8F0;
+            margin-bottom: 0.7em;
+        }
+
+        .mistake-card:last-child .mistake-desc {
+            border-bottom: none;
+            /* การ์ดสุดท้ายไม่ต้องมีเส้นคั่น */
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+
+        /* === เพิ่ม CSS ใหม่สำหรับส่วนแสดงโค้ด === */
+
+        .mistake-code-examples {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .mistake-code-examples.single {
+            grid-template-columns: 1fr;
+            /* สำหรับตัวอย่างโค้ดอันเดียว */
+        }
+
+        .mistake-code-examples strong {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+
+        .mistake-code-examples strong .fa-times-circle {
+            color: var(--danger-color);
+        }
+
+        .mistake-code-examples strong .fa-check-circle {
+            color: var(--success-color);
+        }
+
+        .mistake-card pre {
+            margin: 0;
+            padding: 0.6em;
+            font-size: 0.7em;
+            /* ทำให้โค้ดเล็กลง */
+            height: 100%;
+            border-radius: 6px;
+        }
+
+
+
+
+
+        /* === ค้นหา #validation-tester แล้วปรับแก้/เพิ่มเติมด้วยโค้ดนี้ === */
+
+        #validation-tester {
+            background-color: #F7FAFC;
+            border: 1px solid #E2E8F0;
+        }
+
+        #validation-tester label {
+            font-weight: 600;
+            font-size: 0.9em;
+            color: var(--header-color);
+            margin-bottom: 5px;
+            display: block;
+        }
+
+        .pattern-selector {
+            margin-bottom: 10px;
+        }
+
+        .select-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        #validation-tester select {
+            flex-grow: 1;
+            /* ทำให้ dropdown ขยายเต็มพื้นที่ */
+            font-size: 1em;
+            /* ขยายขนาดตัวอักษรเล็กน้อย */
+            padding: 10px;
+            /* เพิ่ม padding */
+        }
+
+        #pattern-info-btn {
+            flex-shrink: 0;
+            width: 45px;
+            height: 45px;
+            font-size: 1.5em;
+            border: none;
+            background: transparent;
+            color: #A0AEC0;
+            cursor: pointer;
+            transition: color 0.2s ease;
+        }
+
+        #pattern-info-btn:hover {
+            color: var(--accent-color);
+        }
+
+        #validation-tester input {
+            width: 100%;
+            margin-bottom: 10px;
+            padding: 10px;
+        }
+
+        #pattern-output {
+            min-height: 50px;
+            padding: 10px;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 0.9em;
+            transition: all 0.2s ease;
+        }
+
+        #pattern-output.success {
+            background-color: #F0FFF4;
+            color: #2F855A;
+        }
+
+        #pattern-output.error {
+            background-color: #FFF5F5;
+            color: var(--danger-color);
+        }
+
+        #pattern-input.valid {
+            border: 2px solid var(--success-color);
+            box-shadow: 0 0 5px rgba(16, 185, 129, 0.5);
+        }
+
+        #pattern-input.invalid {
+            border: 2px solid var(--danger-color);
+            box-shadow: 0 0 5px rgba(239, 68, 68, 0.5);
+        }
+
+        #pattern-output ul {
+            margin: 0;
+            padding-left: 20px;
+            list-style-type: none;
+        }
+
+        #pattern-output ul li {
+            padding-left: 0;
+            margin-bottom: 5px;
+            font-size: 0.95em;
+        }
+
+        #pattern-output ul li::before {
+            position: static;
+            margin-right: 10px;
+            font-family: 'Font Awesome 6 Free';
+        }
+
+        #pattern-output ul li.valid::before {
+            content: '\f058';
+            /* fas fa-check-circle */
+            color: var(--success-color);
+        }
+
+        #pattern-output ul li.invalid::before {
+            content: '\f057';
+            /* fas fa-times-circle */
+            color: var(--danger-color);
+        }
+
+        #pattern-explanation {
+            margin-bottom: 15px;
+            /* เพิ่มระยะห่างเมื่อ pop-up แสดง */
+        }
+
+        #pattern-explanation h4 {
+            margin-top: 0;
+            font-size: 1em;
+        }
+
+        #pattern-explanation p {
+            font-size: 0.9em;
+            margin: 0;
+        }
+
+        #pattern-explanation code {
+            font-size: 0.9em;
+        }
+
+
+        /* === CSS for HTTPS Demo === */
+        #https-demo .demo-controls {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 1.5em;
+            flex-wrap: wrap;
+        }
+
+        #https-demo .demo-controls input {
+            flex-grow: 1;
+        }
+
+        #https-demo .demo-controls button {
+            background-color: var(--accent-color);
+            width: auto;
+        }
+
+        .demo-flow {
+            display: flex;
+            justify-content: space-between;
+            align-items: stretch;
+            gap: 10px;
+        }
+
+        .flow-node {
+            flex: 1;
+            text-align: center;
+        }
+
+        .flow-node h5 {
+            font-size: 0.9em;
+            margin-bottom: 0.5em;
+            color: var(--header-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+        }
+
+        .flow-box {
+            background: #F7FAFC;
+            border: 2px solid #E2E8F0;
+            border-radius: 8px;
+            padding: 1em;
+            font-family: var(--code-font);
+            font-size: 0.85em;
+            word-break: break-all;
+            min-height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .flow-arrow {
+            display: flex;
+            align-items: center;
+            font-size: 1.8em;
+            color: #CBD5E0;
+        }
+
+        .internet-box.unsafe {
+            border-color: var(--danger-color);
+            color: var(--danger-color);
+            font-weight: bold;
+        }
+
+        .internet-box.safe {
+            border-color: var(--success-color);
+            color: #718096;
+        }
+
+        .server-box.hacked::after {
+            content: " (ข้อมูลรั่วไหลแล้ว!)";
+            color: var(--danger-color);
+            font-weight: bold;
+            font-family: 'Sarabun', sans-serif;
+        }
+
+        /* Toggle Switch CSS */
+        .toggle-switch {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.9em;
+            font-weight: 600;
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: var(--danger-color);
+            transition: .4s;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+        }
+
+        input:checked+.slider {
+            background-color: var(--success-color);
+        }
+
+        input:checked+.slider:before {
+            transform: translateX(26px);
+        }
+
+        .slider.round {
+            border-radius: 34px;
+        }
+
+        .slider.round:before {
+            border-radius: 50%;
+        }
+
+
+        @media (max-width: 900px) {
+            .slide {
+                padding: 20px 25px 70px 25px;
+            }
+
+            .slide h2 {
+                font-size: 1.8em;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="progress-bar-container">
+        <div class="progress-bar" id="progress-bar"></div>
+    </div>
+
+    <div class="presentation">
+
+        <section class="slide title-slide security-title-slide active">
+            <div class="logos" style="font-size: 5em;">
+                <i class="fas fa-shield-alt"></i>
+            </div>
+            <h1>ความปลอดภัยเว็บไซต์เบื้องต้น</h1>
+            <h2>Security Basics for Fullstack Developers</h2>
+            <blockquote
+                style="background: transparent; border-color: white; color: white; max-width: 60ch; font-size: 1.1em;">
+                "Security ไม่ใช่แค่งานของทีม Security - เป็นหน้าที่ของนักพัฒนาทุกคน"</blockquote>
+            <div class="slide-number">1/8</div>
+        </section>
+
+        <section class="slide security">
+            <h2>ทำไมต้องคำนึงถึงความปลอดภัย?</h2>
+            <p>การโจมตีทางไซเบอร์ไม่ใช่เรื่องไกลตัว และผลกระทบที่เกิดขึ้นอาจรุนแรงกว่าที่คิด</p>
+            <div class="grid-2">
+                <div class="case-study-card">
+                    <h4>Case Study 1: ร้านอาหารออนไลน์ (2023)</h4>
+                    <ul>
+                        <li data-icon="💣"><strong>ปัญหา:</strong> ไม่มีการตรวจสอบ Input (Input Validation) ในฟอร์มรีวิว
+                        </li>
+                        <li data-icon="🎯"><strong>การโจมตี:</strong> Hacker แทรกโค้ด JavaScript ที่อันตราย (XSS Attack)
+                        </li>
+                        <li data-icon="💥"><strong>ผลกระทบ:</strong> ข้อมูลลูกค้ารั่วไหล 50,000 ราย, เว็บไซต์ถูกปิด,
+                            เสียหายกว่า 5 ล้านบาท</li>
+                    </ul>
+                </div>
+                <div class="case-study-card">
+                    <h4>Case Study 2: E-commerce (2022)</h4>
+                    <ul>
+                        <li data-icon="💣"><strong>ปัญหา:</strong> ไม่ใช้ HTTPS และเก็บข้อมูลบัตรเครดิตเป็น Plain text
+                        </li>
+                        <li data-icon="🎯"><strong>การโจมตี:</strong> ดักจับข้อมูลระหว่างทาง (Man-in-the-Middle)</li>
+                        <li data-icon="💥"><strong>ผลกระทบ:</strong> ข้อมูลบัตรเครดิตรั่วไหล, ถูกฟ้องร้อง,
+                            ธุรกิจล้มละลาย</li>
+                    </ul>
+                </div>
+            </div>
+            <h3>ผลกระทบ 4 ด้านหลัก</h3>
+            <div class="grid-4">
+                <div class="impact-card">
+                    <div class="icon"><i class="fas fa-briefcase"></i></div>
+                    <h4>ธุรกิจ</h4>
+                    <p>สูญเสียรายได้, ค่าปรับ, ค่าใช้จ่ายในการแก้ไข</p>
+                </div>
+                <div class="impact-card">
+                    <div class="icon"><i class="fas fa-handshake-slash"></i></div>
+                    <h4>ความน่าเชื่อถือ</h4>
+                    <p>ลูกค้าหมดความไว้ใจ, ภาพลักษณ์เสียหาย</p>
+                </div>
+                <div class="impact-card">
+                    <div class="icon"><i class="fas fa-gavel"></i></div>
+                    <h4>กฎหมาย</h4>
+                    <p>ผิดกฎหมาย PDPA, GDPR, อาจมีโทษทางอาญา</p>
+                </div>
+                <div class="impact-card">
+                    <div class="icon"><i class="fas fa-user-shield"></i></div>
+                    <h4>ผู้ใช้บริการ</h4>
+                    <p>ข้อมูลส่วนตัวรั่วไหล, อาจถูกขโมยเงิน</p>
+                </div>
+            </div>
+            <div class="slide-number">2/8</div>
+        </section>
+
+        <section class="slide security">
+            <h2>Input Validation: ด่านแรกที่สำคัญที่สุด</h2>
+            <p>หลักการทองคำคือ <span class="highlight-danger">"อย่าไว้ใจข้อมูลที่ผู้ใช้ส่งมาเด็ดขาด (Never trust user
+                    input!)"</span> เราต้องตรวจสอบข้อมูลทุกอย่างทั้งฝั่ง Frontend และ Backend</p>
+
+            <div class="interactive-demo">
+                <h4>ทดลองการโจมตีแบบ XSS (Cross-Site Scripting)</h4>
+                <p>ลองพิมพ์ <code>&lt;img src=x onerror="alert('You are Hacked!')"&gt;</code> ในช่อง Comment</p>
+                <textarea id="xss-comment" rows="2" placeholder="เขียนรีวิวของคุณ..."></textarea>
+                <div class="buttons">
+                    <button class="unsafe" id="unsafe-submit">ส่งแบบไม่ปลอดภัย ❌</button>
+                    <button class="safe" id="safe-submit">ส่งแบบปลอดภัย ✅</button>
+                </div>
+                <div class="output" id="review-output"></div>
+            </div>
+
+            <h3>✅ Backend Validation คือหัวใจสำคัญ!</h3>
+            <p>การตรวจสอบฝั่ง Frontend ช่วยให้ UX ดีขึ้น แต่ Hacker สามารถข้ามผ่านได้ง่าย ดังนั้นการ Validate ที่ฝั่ง
+                Backend จึงเป็นสิ่งจำเป็นอย่างยิ่ง</p>
+            <pre><code>// Express Middleware สำหรับตรวจสอบข้อมูลรีวิว
+const validateReview = (req, res, next) => {
+  const { userName, comment, rating } = req.body;
+  const errors = [];
+  
+  if (!userName || userName.trim().length < 2) errors.push('ชื่อต้องมีอย่างน้อย 2 ตัวอักษร');
+  if (!comment || comment.trim().length < 10) errors.push('ความคิดเห็นต้องมีอย่างน้อย 10 ตัวอักษร');
+  if (/<script|iframe|onerror/i.test(comment)) errors.push('พบโค้ดที่ไม่อนุญาตในความคิดเห็น');
+  if (!rating || rating < 1 || rating > 5) errors.push('คะแนนต้องอยู่ระหว่าง 1-5');
+
+  if (errors.length > 0) {
+    return res.status(400).json({ errors });
+  }
+  
+  // Sanitize data
+  req.body.userName = userName.trim();
+  req.body.comment = comment.trim();
+  next();
+};
+
+app.post('/api/reviews', validateReview, createReviewHandler);</code></pre>
+            <div class="slide-number">3/8</div>
+        </section>
+
+        <section class="slide security">
+            <h2>Validation Patterns และ Best Practices</h2>
+            <p>การใช้ Regular Expressions (Regex) เป็นเครื่องมือที่มีประสิทธิภาพในการตรวจสอบรูปแบบข้อมูล ลองทดสอบ
+                Pattern ที่ใช้บ่อยได้ข้างล่างนี้</p>
+
+            <div class="interactive-demo" id="validation-tester">
+                <h4><i class="fas fa-keyboard"></i> ทดสอบ Validation Patterns</h4>
+                <div class="pattern-selector">
+                    <label for="pattern-select">เลือก Pattern ที่จะทดสอบ:</label>
+                    <div class="select-wrapper">
+                        <select id="pattern-select">
+                            <option value="email">Email</option>
+                            <option value="phone">เบอร์โทรศัพท์ไทย</option>
+                            <option value="password">Password Strength</option>
+                            <option value="name">ชื่อ (ไทย-อังกฤษ)</option>
+                        </select>
+                        <button id="pattern-info-btn" title="ดูคำอธิบาย Pattern"><i
+                                class="fas fa-info-circle"></i></button>
+                    </div>
+                </div>
+
+                <div id="pattern-explanation" class="explanation-box" style="display: none;"></div>
+
+                <input type="text" id="pattern-input" placeholder="พิมพ์เพื่อทดสอบที่นี่..." autocomplete="off">
+                <div id="pattern-output"></div>
+            </div>
+
+            <h3><i class="fas fa-star"></i> Best Practices</h3>
+            <ul>
+                <li data-icon=" แยก"><strong>แยก Logic:</strong> สร้างฟังก์ชันสำหรับ Validate
+                    แต่ละอย่างเพื่อนำมาใช้ซ้ำได้</li>
+                <li data-icon="🗣️"><strong>Error Message ที่ชัดเจน:</strong> บอกผู้ใช้ให้ชัดเจนว่าผิดพลาดตรงไหน เช่น
+                    "รหัสผ่านต้องมีตัวพิมพ์ใหญ่อย่างน้อย 1 ตัว"</li>
+                <li data-icon="⚡"><strong>ใช้ Library ช่วย:</strong> ในโปรเจคจริง ควรใช้ Library ที่น่าเชื่อถือ เช่น
+                    <code>express-validator</code>, <code>yup</code> หรือ <code>zod</code>
+                    เพื่อลดความซับซ้อนและข้อผิดพลาด</li>
+            </ul>
+            <div class="slide-number">4/8</div>
+        </section>
+
+        <section class="slide security">
+            <h2>HTTPS: ช่องทางสื่อสารที่ปลอดภัย</h2>
+            <p>ข้อมูลทั้งหมดที่ส่งผ่าน HTTP จะเป็น <span class="highlight-danger">Plain Text</span> ที่ใครๆ
+                ก็สามารถดักอ่านได้ ส่วน HTTPS จะเข้ารหัสข้อมูลทั้งหมด ทำให้ปลอดภัย</p>
+
+            <div class="interactive-demo" id="https-demo">
+                <h4><i class="fas fa-exchange-alt"></i> จำลองการส่งข้อมูลลับ</h4>
+                <div class="demo-controls">
+                    <input type="text" id="secret-input" placeholder="ลองพิมพ์รหัสผ่านของคุณที่นี่..."
+                        value="P@ssw0rd1234">
+                    <div class="toggle-switch">
+                        <span>HTTP (ไม่ปลอดภัย)</span>
+                        <label class="switch">
+                            <input type="checkbox" id="https-toggle" checked>
+                            <span class="slider round"></span>
+                        </label>
+                        <span>HTTPS (ปลอดภัย)</span>
+                    </div>
+                    <button id="send-data-btn">ลองส่งข้อมูล</button>
+                </div>
+                <div class="demo-flow">
+                    <div class="flow-node">
+                        <h5><i class="fas fa-user"></i> คุณ (Client)</h5>
+                        <div class="flow-box client-box">P@ssw0rd1234</div>
+                    </div>
+                    <div class="flow-arrow"><i class="fas fa-arrow-right"></i></div>
+                    <div class="flow-node">
+                        <h5><i class="fas fa-wifi"></i> อินเทอร์เน็ต (Hacker ดักดู)</h5>
+                        <div class="flow-box internet-box"></div>
+                    </div>
+                    <div class="flow-arrow"><i class="fas fa-arrow-right"></i></div>
+                    <div class="flow-node">
+                        <h5><i class="fas fa-server"></i> เซิร์ฟเวอร์ (Server)</h5>
+                        <div class="flow-box server-box"></div>
+                    </div>
+                </div>
+            </div>
+
+            <blockquote><strong>กฎเหล็ก:</strong> เว็บไซต์ที่ใช้งานจริง (Production) <strong>ต้องใช้ HTTPS
+                    เสมอ!</strong> ปัจจุบันสามารถขอ SSL Certificate ได้ฟรีผ่าน Let's Encrypt และผู้ให้บริการ Hosting
+                ส่วนใหญ่มีให้ใช้ฟรี</blockquote>
+            <div class="slide-number">5/8</div>
+        </section>
+
+        <section class="slide security">
+            <h2>Environment Variables: อย่าเก็บความลับไว้ในโค้ด</h2>
+            <p>การเก็บข้อมูลลับ เช่น API Keys หรือรหัสผ่านฐานข้อมูล ไว้ในซอร์สโค้ดโดยตรง (Hardcode)
+                เป็นหนึ่งในความผิดพลาดที่ร้ายแรงที่สุด</p>
+            <h3>❌ อย่าทำแบบนี้เด็ดขาด!</h3>
+            <pre><code>// db.js
+const connection = createConnection({
+    host: 'prod.database.server',
+    user: 'admin',
+    password: 'MySup3rS3cureP@ssw0rd!', // 😱 รั่วไหลทันทีที่ Push code
+    database: 'main_db'
+});</code></pre>
+            <p>หากโค้ดนี้ถูก push ขึ้น GitHub ทุกคนที่เข้าถึง Repository
+                จะเห็นรหัสผ่านและสามารถเข้าถึงฐานข้อมูลของคุณได้</p>
+            <h3>✅ วิธีที่ถูกต้อง: ใช้ไฟล์ <code>.env</code></h3>
+            <ol>
+                <li style="padding-left:0;"><strong>1. สร้างไฟล์ <code>.env</code></strong> เพื่อเก็บข้อมูลลับ
+                    (ไฟล์นี้ห้าม commit)</li>
+                <pre><code>DB_USER=admin
+DB_PASSWORD=MySup3rS3cureP@ssw0rd!</code></pre>
+                <li style="padding-left:0;"><strong>2. เพิ่ม <code>.env</code> ในไฟล์ <code>.gitignore</code></strong>
+                    เพื่อป้องกันการ commit</li>
+                <pre><code># .gitignore
+node_modules
+.env</code></pre>
+                <li style="padding-left:0;"><strong>3. ติดตั้งและใช้ <code>dotenv</code></strong> เพื่อโหลดค่าจาก
+                    <code>.env</code> เข้าสู่ระบบ
+                </li>
+                <pre><code>npm install dotenv
+
+// server.js
+require('dotenv').config();
+
+const dbUser = process.env.DB_USER;
+const dbPassword = process.env.DB_PASSWORD;</code></pre>
+            </ol>
+            <blockquote>การใช้ Environment Variables ช่วยแยก Configuration ออกจากโค้ด ทำให้ปลอดภัยและยืดหยุ่นมากขึ้น
+            </blockquote>
+            <div class="slide-number">6/8</div>
+        </section>
+
+        <section class="slide security">
+            <h2>7 ข้อผิดพลาดด้านความปลอดภัยที่พบบ่อย</h2>
+            <p>ข้อผิดพลาดเหล่านี้มักถูกมองข้าม แต่สามารถสร้างช่องโหว่ร้ายแรงให้กับระบบได้</p>
+            <div class="mistake-cards-container detailed">
+                <div class="mistake-card">
+                    <div class="mistake-icon"><i class="fas fa-file-code"></i></div>
+                    <div class="mistake-content">
+                        <h4>1. ส่ง Error ที่มีรายละเอียดมากเกินไป</h4>
+                        <p class="mistake-desc">เปิดเผยโครงสร้างภายในของระบบให้ Hacker รู้</p>
+                        <div class="mistake-code-examples">
+                            <div>
+                                <strong><i class="fas fa-times-circle"></i> ไม่ควรทำ</strong>
+                                <pre><code>res.status(500)
+  .json({ error: err.stack });</code></pre>
+                            </div>
+                            <div>
+                                <strong><i class="fas fa-check-circle"></i> ควรทำ</strong>
+                                <pre><code>console.error(err);
+res.status(500)
+  .json({ message: 'Error' });</code></pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="mistake-card">
+                    <div class="mistake-icon"><i class="fas fa-key"></i></div>
+                    <div class="mistake-content">
+                        <h4>2. เก็บรหัสผ่านเป็น Plain Text</h4>
+                        <p class="mistake-desc">หากข้อมูลรั่วไหล รหัสผ่านทั้งหมดจะถูกขโมยไปทันที</p>
+                        <div class="mistake-code-examples">
+                            <div>
+                                <strong><i class="fas fa-times-circle"></i> ไม่ควรทำ</strong>
+                                <pre><code>// password: '1234'
+saveUser(username, password);</code></pre>
+                            </div>
+                            <div>
+                                <strong><i class="fas fa-check-circle"></i> ควรทำ</strong>
+                                <pre><code>const hashed = await bcrypt
+  .hash(password, 10);
+saveUser(username, hashed);</code></pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="mistake-card">
+                    <div class="mistake-icon"><i class="fas fa-user-unlock"></i></div>
+                    <div class="mistake-content">
+                        <h4>3. ให้สิทธิ์ผู้ใช้มากเกินจำเป็น</h4>
+                        <p class="mistake-desc">User ทั่วไปไม่ควรจัดการข้อมูลของผู้ใช้อื่นได้</p>
+                        <div class="mistake-code-examples">
+                            <div>
+                                <strong><i class="fas fa-times-circle"></i> ไม่ควรทำ</strong>
+                                <pre><code>// ใครๆ ก็ลบได้
+app.delete('/users/:id', ...);</code></pre>
+                            </div>
+                            <div>
+                                <strong><i class="fas fa-check-circle"></i> ควรทำ</strong>
+                                <pre><code>// เช็คสิทธิ์ก่อน
+app.delete('/users/:id', isAdmin, ...);</code></pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="mistake-card">
+                    <div class="mistake-icon"><i class="fas fa-bolt-lightning"></i></div>
+                    <div class="mistake-content">
+                        <h4>4. ไม่จำกัดจำนวนการเรียก API (Rate Limiting)</h4>
+                        <p class="mistake-desc">เสี่ยงต่อการถูกโจมตี Brute-force หรือ DDoS</p>
+                        <div class="mistake-code-examples single">
+                            <div>
+                                <strong><i class="fas fa-check-circle"></i> ควรทำ</strong>
+                                <pre><code>const limiter = rateLimit({ max: 5 });
+app.post('/login', limiter, ...);</code></pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="mistake-card">
+                    <div class="mistake-icon"><i class="fas fa-user-secret"></i></div>
+                    <div class="mistake-content">
+                        <h4>5. เชื่อข้อมูลจากฝั่ง Client มากเกินไป</h4>
+                        <p class="mistake-desc">Hacker สามารถแก้ไขข้อมูลที่ส่งมาได้เสมอ</p>
+                        <div class="mistake-code-examples">
+                            <div>
+                                <strong><i class="fas fa-times-circle"></i> ไม่ควรทำ</strong>
+                                <pre><code>// เชื่อราคาจาก Client
+const { price } = req.body;
+createOrder(price);</code></pre>
+                            </div>
+                            <div>
+                                <strong><i class="fas fa-check-circle"></i> ควรทำ</strong>
+                                <pre><code>// ดึงราคาจาก DB
+const product = getFromDB();
+createOrder(product.price);</code></pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="mistake-card">
+                    <div class="mistake-icon"><i class="fas fa-terminal"></i></div>
+                    <div class="mistake-content">
+                        <h4>6. ใช้ <code>console.log</code> ใน Production</h4>
+                        <p class="mistake-desc">อาจทำให้ข้อมูลสำคัญรั่วไหลไปใน Log ได้</p>
+                        <div class="mistake-code-examples">
+                            <div>
+                                <strong><i class="fas fa-times-circle"></i> ไม่ควรทำ</strong>
+                                <pre><code>console.log(user.token);</code></pre>
+                            </div>
+                            <div>
+                                <strong><i class="fas fa-check-circle"></i> ควรทำ</strong>
+                                <pre><code>logger.info('User logged in');</code></pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="mistake-card">
+                    <div class="mistake-icon"><i class="fas fa-id-badge"></i></div>
+                    <div class="mistake-content">
+                        <h4>7. ใช้รหัสผ่านตั้งต้น (Default Credentials)</h4>
+                        <p class="mistake-desc">รหัสผ่านง่ายๆ เช่น 'admin', 'password123' เป็นเป้าหมายแรกๆ ที่ Hacker
+                            จะลองใช้เสมอ</p>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-number">7/8</div>
+        </section>
+
+        <section class="slide security">
+            <h2>Security Checklist สำหรับนักพัฒนา</h2>
+            <p>10 ข้อที่ควรตรวจสอบเสมอก่อนนำเว็บไซต์ขึ้น Production</p>
+            <div class="checklist-grid">
+                <div class="checklist-item">
+                    <h4><i class="fas fa-check-double"></i> Input Validation</h4>
+                    <ul>
+                        <li>ตรวจสอบข้อมูลทุกอย่างที่มาจากผู้ใช้ทั้ง Frontend และ Backend</li>
+                    </ul>
+                </div>
+                <div class="checklist-item">
+                    <h4><i class="fas fa-lock"></i> HTTPS</h4>
+                    <ul>
+                        <li>ใช้งาน HTTPS บน Production เสมอ</li>
+                    </ul>
+                </div>
+                <div class="checklist-item">
+                    <h4><i class="fas fa-key"></i> Environment Variables</h4>
+                    <ul>
+                        <li>เก็บข้อมูลลับในไฟล์ .env และไม่ commit ขึ้น Git</li>
+                    </ul>
+                </div>
+                <div class="checklist-item">
+                    <h4><i class="fas fa-user-secret"></i> Hash Passwords</h4>
+                    <ul>
+                        <li>ใช้ bcrypt หรือ Argon2 ในการ Hash รหัสผ่าน</li>
+                    </ul>
+                </div>
+                <div class="checklist-item">
+                    <h4><i class="fas fa-traffic-light"></i> Rate Limiting</h4>
+                    <ul>
+                        <li>จำกัดการเรียก API ที่สำคัญ เช่น Login, Register</li>
+                    </ul>
+                </div>
+                <div class="checklist-item">
+                    <h4><i class="fas fa-exchange-alt"></i> CORS ที่รัดกุม</h4>
+                    <ul>
+                        <li>ระบุ Origin ที่อนุญาตให้ชัดเจนใน Production</li>
+                    </ul>
+                </div>
+                <div class="checklist-item">
+                    <h4><i class="fas fa-bug"></i> Error Handling ที่ดี</h4>
+                    <ul>
+                        <li>ไม่ส่งรายละเอียด Error ที่ไม่จำเป็นให้ผู้ใช้</li>
+                    </ul>
+                </div>
+                <div class="checklist-item">
+                    <h4><i class="fas fa-box-open"></i> อัปเดต Dependencies</h4>
+                    <ul>
+                        <li>รัน <code>npm audit</code> เพื่อหาช่องโหว่ใน Library ที่ใช้</li>
+                    </ul>
+                </div>
+                <div class="checklist-item">
+                    <h4><i class="fas fa-shield-alt"></i> Security Headers</h4>
+                    <ul>
+                        <li>ใช้ Library เช่น <code>helmet</code> เพื่อเพิ่ม Security Headers พื้นฐาน</li>
+                    </ul>
+                </div>
+                <div class="checklist-item">
+                    <h4><i class="fas fa-users-cog"></i> การจัดการสิทธิ์</h4>
+                    <ul>
+                        <li>ตรวจสอบสิทธิ์ผู้ใช้ทุกครั้งก่อนอนุญาตให้เข้าถึงข้อมูลหรือกระทำการใดๆ</li>
+                    </ul>
+                </div>
+            </div>
+            <blockquote>ความปลอดภัยไม่ใช่ฟีเจอร์ แต่เป็นรากฐานที่ต้องสร้างไปพร้อมกับการพัฒนา</blockquote>
+            <div class="slide-number">8/8</div>
+        </section>
+
+    </div>
+
+    <div class="presentation-controls">
+        <button id="prev-btn" class="nav-btn" title="สไลด์ก่อนหน้า"><i class="fas fa-chevron-left"></i></button>
+        <span id="slide-counter"></span>
+        <button id="next-btn" class="nav-btn" title="สไลด์ถัดไป"><i class="fas fa-chevron-right"></i></button>
+        <button id="fullscreen-btn" class="nav-btn" title="เต็มจอ"><i class="fas fa-expand"></i></button>
+    </div>
+
+    <script>
+        function toggleExplanation(btn, id) {
+            const explanationBox = document.querySelector(`.explanation-box[data-id="${id}"]`);
+            if (explanationBox) {
+                const isVisible = explanationBox.style.display === 'block';
+                explanationBox.style.display = isVisible ? 'none' : 'block';
+                if (!isVisible) {
+                    explanationBox.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'nearest'
+                    });
+                }
+            }
+        }
+
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const slides = document.querySelectorAll('.slide');
+            const totalSlides = slides.length;
+            let currentSlideIndex = 0;
+
+            const nextBtn = document.getElementById('next-btn');
+            const prevBtn = document.getElementById('prev-btn');
+            const slideCounter = document.getElementById('slide-counter');
+            const progressBar = document.getElementById('progress-bar');
+            const fullscreenBtn = document.getElementById('fullscreen-btn');
+
+            function showSlide(index) {
+                if (index < 0 || index >= totalSlides) return;
+                slides.forEach((slide, i) => slide.classList.toggle('active', i === index));
+                currentSlideIndex = index;
+                updateControls();
+                runInteractiveDemos(slides[index]);
+            }
+
+            function updateControls() {
+                slideCounter.textContent = `${currentSlideIndex + 1} / ${totalSlides}`;
+                progressBar.style.width = `${((currentSlideIndex + 1) / totalSlides) * 100}%`;
+                prevBtn.disabled = currentSlideIndex === 0;
+                nextBtn.disabled = currentSlideIndex === totalSlides - 1;
+            }
+
+            function toggleFullScreen() {
+                if (!document.fullscreenElement) {
+                    document.documentElement.requestFullscreen().catch(err => {
+                        alert(`ไม่สามารถเปิดโหมดเต็มจอได้: ${err.message}`);
+                    });
+                    fullscreenBtn.innerHTML = '<i class="fas fa-compress"></i>';
+                } else {
+                    if (document.exitFullscreen) {
+                        document.exitFullscreen();
+                        fullscreenBtn.innerHTML = '<i class="fas fa-expand"></i>';
+                    }
+                }
+            }
+
+            nextBtn.addEventListener('click', () => showSlide(currentSlideIndex + 1));
+            prevBtn.addEventListener('click', () => showSlide(currentSlideIndex - 1));
+            fullscreenBtn.addEventListener('click', toggleFullScreen);
+
+            document.addEventListener('keydown', (e) => {
+                if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) return;
+                if (e.key === 'ArrowRight' || e.key === ' ') {
+                    e.preventDefault();
+                    nextBtn.click();
+                }
+                if (e.key === 'ArrowLeft') {
+                    e.preventDefault();
+                    prevBtn.click();
+                }
+                if (e.key === 'f') {
+                    e.preventDefault();
+                    toggleFullScreen();
+                }
+            });
+
+            function runInteractiveDemos(activeSlide) {
+                if (!activeSlide) return;
+
+                // XSS Demo (Slide 3)
+                const xssDemo = activeSlide.querySelector('#unsafe-submit');
+                if (xssDemo && !xssDemo.dataset.initialized) {
+                    xssDemo.dataset.initialized = true;
+
+                    const unsafeBtn = activeSlide.querySelector('#unsafe-submit');
+                    const safeBtn = activeSlide.querySelector('#safe-submit');
+                    const commentInput = activeSlide.querySelector('#xss-comment');
+                    const outputDiv = activeSlide.querySelector('#review-output');
+
+                    unsafeBtn.addEventListener('click', () => {
+                        outputDiv.className = "output";
+                        outputDiv.innerHTML = `<h4>ความคิดเห็นล่าสุด:</h4>${commentInput.value}`;
+                    });
+
+                    safeBtn.addEventListener('click', () => {
+                        const comment = commentInput.value;
+                        if (/<script|<iframe|javascript:|onerror/i.test(comment)) {
+                            outputDiv.className = "output error";
+                            outputDiv.innerHTML = `ตรวจพบเนื้อหาที่ไม่อนุญาต! ไม่สามารถแสดงผลได้`;
+                        } else {
+                            const sanitized = comment.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+                            outputDiv.className = "output";
+                            outputDiv.innerHTML = `<h4>ความคิดเห็นล่าสุด (ปลอดภัย):</h4><p>${sanitized}</p>`;
+                        }
+                    });
+                }
+
+                // UPDATED: Validation Tester Demo (Slide 4)
+                const validationTester = activeSlide.querySelector('#validation-tester');
+                if (validationTester && !validationTester.dataset.initialized) {
+                    validationTester.dataset.initialized = true;
+
+                    const select = activeSlide.querySelector('#pattern-select');
+                    const input = activeSlide.querySelector('#pattern-input');
+                    const output = activeSlide.querySelector('#pattern-output');
+                    const infoBtn = activeSlide.querySelector('#pattern-info-btn');
+                    const explanationBox = activeSlide.querySelector('#pattern-explanation');
+
+                    const patterns = {
+                        email: {
+                            regex: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+                            message: 'รูปแบบอีเมลไม่ถูกต้อง',
+                            explanation: `<h4>Email Pattern</h4><p>ตรวจสอบโครงสร้างพื้นฐาน <code>name@domain.com</code></p><code>/^[^\s@]+@[^\s@]+\.[^\s@]+$/</code>`
+                        },
+                        phone: {
+                            regex: /^0[0-9]{9}$/,
+                            message: 'เบอร์โทรศัพท์ไทยต้องขึ้นต้นด้วย 0 และมี 10 หลัก',
+                            explanation: `<h4>Thai Phone Pattern</h4><p>ตรวจสอบว่าขึ้นต้นด้วย '0' และตามด้วยตัวเลขอีก 9 ตัว รวมเป็น 10 หลัก</p><code>/^0[0-9]{9}$/</code>`
+                        },
+                        name: {
+                            regex: /^[a-zA-Zก-๙\s]{2,}$/,
+                            message: 'ชื่อต้องเป็นตัวอักษร (ไทย/อังกฤษ) และมีอย่างน้อย 2 ตัวอักษร',
+                            explanation: `<h4>Name Pattern</h4><p>อนุญาตตัวอักษรไทย, อังกฤษ (ตัวพิมพ์เล็ก/ใหญ่) และเว้นวรรค ต้องมีความยาวอย่างน้อย 2 ตัวอักษร</p><code>/^[a-zA-Zก-๙\s]{2,}$/</code>`
+                        },
+                        password: {
+                            explanation: `<h4>Password Strength</h4><p>ตรวจสอบความแข็งแรงของรหัสผ่านตามกฎหลายข้อพร้อมกัน</p>`
+                        }
+                    };
+
+                    const updateExplanation = () => {
+                        const patternKey = select.value;
+                        explanationBox.innerHTML = patterns[patternKey].explanation;
+                    };
+
+                    infoBtn.addEventListener('click', () => {
+                        const isVisible = explanationBox.style.display === 'block';
+                        explanationBox.style.display = isVisible ? 'none' : 'block';
+                    });
+
+                    const validate = () => {
+                        const patternKey = select.value;
+                        const value = input.value;
+
+                        output.innerHTML = '';
+                        input.className = '';
+                        output.className = '';
+
+                        if (value === '') return;
+
+                        if (patternKey === 'password') {
+                            const results = {
+                                length: value.length >= 8,
+                                uppercase: /[A-Z]/.test(value),
+                                lowercase: /[a-z]/.test(value),
+                                number: /[0-9]/.test(value),
+                            };
+
+                            let html = '<ul>';
+                            html += `<li class="${results.length ? 'valid' : 'invalid'}">ต้องมีอย่างน้อย 8 ตัวอักษร</li>`;
+                            html += `<li class="${results.uppercase ? 'valid' : 'invalid'}">ต้องมีตัวพิมพ์ใหญ่อย่างน้อย 1 ตัว</li>`;
+                            html += `<li class="${results.lowercase ? 'valid' : 'invalid'}">ต้องมีตัวพิมพ์เล็กอย่างน้อย 1 ตัว</li>`;
+                            html += `<li class="${results.number ? 'valid' : 'invalid'}">ต้องมีตัวเลขอย่างน้อย 1 ตัว</li>`;
+                            html += '</ul>';
+                            output.innerHTML = html;
+
+                            const allValid = Object.values(results).every(v => v);
+                            if (allValid) {
+                                input.className = 'valid';
+                                output.className = 'success';
+                            } else {
+                                input.className = 'invalid';
+                                output.className = 'error';
+                            }
+                        } else {
+                            const { regex, message } = patterns[patternKey];
+                            if (regex.test(value)) {
+                                input.className = 'valid';
+                                output.className = 'success';
+                                output.textContent = '✅ รูปแบบถูกต้อง';
+                            } else {
+                                input.className = 'invalid';
+                                output.className = 'error';
+                                output.textContent = `❌ ${message}`;
+                            }
+                        }
+                    };
+
+                    select.addEventListener('change', () => {
+                        input.value = '';
+                        validate();
+                        updateExplanation(); // อัปเดตคำอธิบายเมื่อเลือกใหม่
+                        explanationBox.style.display = 'none'; // ซ่อน pop-up เมื่อเปลี่ยน
+                    });
+                    input.addEventListener('input', validate);
+
+                    // Initial setup
+                    updateExplanation();
+                    validate();
+                }
+
+                // HTTPS Demo (Slide 5)
+                const httpsDemo = activeSlide.querySelector('#https-demo');
+                if (httpsDemo && !httpsDemo.dataset.initialized) {
+                    httpsDemo.dataset.initialized = true;
+
+                    const toggle = activeSlide.querySelector('#https-toggle');
+                    const input = activeSlide.querySelector('#secret-input');
+                    const sendBtn = activeSlide.querySelector('#send-data-btn');
+                    const clientBox = activeSlide.querySelector('.client-box');
+                    const internetBox = activeSlide.querySelector('.internet-box');
+                    const serverBox = activeSlide.querySelector('.server-box');
+
+                    const sendData = () => {
+                        const secret = input.value;
+                        clientBox.textContent = secret;
+
+                        internetBox.classList.remove('safe', 'unsafe');
+                        serverBox.classList.remove('hacked');
+
+                        if (toggle.checked) { // HTTPS Mode
+                            internetBox.classList.add('safe');
+                            // ใช้ btoa() เพื่อจำลองการเข้ารหัส (Base64)
+                            internetBox.textContent = btoa(secret);
+                            serverBox.textContent = secret;
+                        } else { // HTTP Mode
+                            internetBox.classList.add('unsafe');
+                            internetBox.textContent = secret;
+                            serverBox.textContent = secret;
+                            serverBox.classList.add('hacked');
+                        }
+                    };
+
+                    sendBtn.addEventListener('click', sendData);
+
+                    // เรียกใช้ครั้งแรกเพื่อแสดงผล
+                    sendData();
+                }
+
+
+
+            }
+
+            showSlide(0);
+        });
+    </script>
+</body>
+
+</html>

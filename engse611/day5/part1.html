@@ -1,0 +1,1429 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ENGSE611 - Day 5: Connecting Frontend & Backend</title>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --react-color: #61DAFB;
+            --express-color: #4A5568;
+            --node-color: #339933;
+            --accent-color: #805AD5;
+            /* Purple */
+
+            --success-color: #10B981;
+            --danger-color: #ef4444;
+            --slide-bg: #ffffff;
+            --text-color: #2D3748;
+            --header-color: #1A202C;
+            --base-font-size: clamp(16px, 1.5vw, 22px);
+            --border-radius: 15px;
+            --code-font: 'Fira Code', 'Courier New', monospace;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            overflow: hidden;
+            height: 100%;
+        }
+
+        body {
+            font-family: 'Sarabun', sans-serif;
+            background: #F7FAFC;
+            color: var(--text-color);
+            font-size: 16px;
+            line-height: 1.7;
+        }
+
+        .presentation {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2vh 3vw;
+        }
+
+        .slide {
+            background: var(--slide-bg);
+            padding: 30px 40px 80px 40px;
+            border-radius: var(--border-radius);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            height: 100%;
+            font-size: var(--base-font-size);
+            overflow-y: auto;
+            display: none;
+            animation: fadeIn 0.5s ease-in-out;
+            position: relative;
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        .slide::-webkit-scrollbar {
+            display: none;
+        }
+
+        .slide.active {
+            display: block;
+        }
+
+        .title-slide.active {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            background: linear-gradient(135deg, #805AD5 0%, #3182CE 100%);
+            color: white;
+        }
+
+        .title-slide h1,
+        .title-slide h2,
+        .title-slide h3,
+        .title-slide p {
+            color: white !important;
+        }
+
+        .title-slide h1 {
+            font-size: 3em;
+            margin-bottom: 10px;
+            border: none;
+            text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .title-slide h2 {
+            font-size: 1.8em;
+            margin-bottom: 20px;
+            border: none;
+            opacity: 0.9;
+        }
+
+        .title-slide h3 {
+            font-size: 1.5em;
+            font-weight: 400;
+            opacity: 0.9;
+        }
+
+        .title-slide .logos {
+            font-size: 4em;
+            display: flex;
+            gap: 40px;
+            margin-bottom: 30px;
+        }
+
+        .title-slide .logos .fa-react {
+            color: var(--react-color);
+        }
+
+        .title-slide .logos .fa-node-js {
+            color: var(--node-color);
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: scale(0.98);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .progress-bar-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 8px;
+            background-color: #E2E8F0;
+            z-index: 2000;
+        }
+
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(120deg, var(--accent-color) 0%, var(--react-color) 100%);
+            transition: width 0.3s ease-out;
+        }
+
+        .presentation-controls {
+            position: fixed;
+            bottom: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(26, 32, 44, 0.9);
+            padding: 10px 15px;
+            border-radius: 50px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(8px);
+            z-index: 1000;
+        }
+
+        .nav-btn {
+            background: transparent;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 45px;
+            height: 45px;
+            font-size: 1.5rem;
+        }
+
+        .nav-btn:hover:not(:disabled) {
+            background: var(--accent-color);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .nav-btn:disabled {
+            background-color: transparent;
+            color: #718096;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        #slide-counter {
+            color: white;
+            font-weight: 500;
+            font-size: 1.1em;
+            min-width: 70px;
+            text-align: center;
+        }
+
+        .slide-number {
+            position: absolute;
+            bottom: 15px;
+            right: 20px;
+            background: rgba(26, 32, 44, 0.8);
+            color: white;
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 0.8em;
+            font-weight: 600;
+        }
+
+        .slide h2 {
+            font-size: 2.2em;
+            color: var(--header-color);
+            border-bottom: 3px solid var(--accent-color);
+            padding-bottom: 8px;
+            margin-bottom: 1em;
+            font-weight: 700;
+        }
+
+        .slide h3 {
+            font-size: 1.6em;
+            color: var(--header-color);
+            margin-top: 1.5em;
+            margin-bottom: 0.5em;
+            font-weight: 600;
+        }
+
+        p,
+        ul,
+        ol {
+            font-size: 1em;
+            max-width: 85ch;
+            margin-bottom: 1rem;
+            color: #4A5568;
+        }
+
+        ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        ul li {
+            position: relative;
+            padding-left: 35px;
+            margin-bottom: 12px;
+        }
+
+        ul li::before {
+            content: attr(data-icon);
+            position: absolute;
+            left: 0;
+            top: 0px;
+            font-weight: 900;
+            font-family: 'Font Awesome 6 Free';
+            color: var(--accent-color);
+        }
+
+        pre {
+            background: #1A202C;
+            color: #E2E8F0;
+            border-radius: 10px;
+            padding: 1em;
+            margin: 1em 0;
+            font-family: var(--code-font);
+            font-size: 0.9em;
+            overflow-x: auto;
+            line-height: 1.6;
+        }
+
+        code {
+            font-family: var(--code-font);
+            background-color: #EDF2F7;
+            color: #2D3748;
+            padding: 3px 6px;
+            border-radius: 4px;
+        }
+
+        pre code {
+            background-color: transparent;
+            padding: 0;
+            color: inherit;
+        }
+
+        .grid-2,
+        .grid-3 {
+            display: grid;
+            gap: 25px;
+            margin: 20px 0;
+            align-items: start;
+        }
+
+        .grid-2 {
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        }
+
+        .grid-3 {
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        }
+
+        blockquote {
+            border-left: 5px solid var(--accent-color);
+            margin: 1.5em 0;
+            padding: 1em 1.5em;
+            background-color: #F7FAFC;
+            font-style: italic;
+            font-weight: 500;
+            color: #2D3748;
+        }
+
+        .highlight {
+            background-color: #E9D8FD;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 600;
+            color: #553C9A;
+        }
+
+        .info-card {
+            padding: 1.5rem;
+            border-radius: var(--border-radius);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            border-top: 4px solid;
+            height: 100%;
+        }
+
+        .info-card h4 {
+            font-size: 1.3em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 0;
+            color: var(--header-color);
+        }
+
+        .info-card ul li::before {
+            top: 4px;
+        }
+
+        .info-card.good {
+            border-color: var(--success-color);
+        }
+
+        .info-card.bad {
+            border-color: var(--danger-color);
+        }
+
+        .info-card.good ul li::before {
+            content: '\f00c';
+            color: var(--success-color);
+        }
+
+        .info-card.bad ul li::before {
+            content: '\f00d';
+            color: var(--danger-color);
+        }
+
+        .flow-diagram .step {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .flow-diagram .icon {
+            font-size: 2rem;
+            width: 50px;
+            height: 50px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            color: white;
+        }
+
+        .flow-diagram .content h5 {
+            font-size: 1.1em;
+            margin: 0;
+            color: var(--header-color);
+        }
+
+        .flow-diagram .content p {
+            font-size: 0.9em;
+            margin: 0;
+            color: #718096;
+        }
+
+        .flow-diagram .arrow {
+            text-align: center;
+            font-size: 1.5em;
+            color: #CBD5E0;
+            margin: -0.5rem 0;
+        }
+
+        .explanation-btn {
+            background-color: #ECC94B;
+            color: #2D3748;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: 'Sarabun', sans-serif;
+            font-size: 0.9em;
+            font-weight: bold;
+            margin-top: 1em;
+            transition: all 0.2s ease;
+        }
+
+        .explanation-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .explanation-box {
+            display: none;
+            margin-top: 1em;
+            padding: 15px;
+            background-color: #EBF8FF;
+            border-left: 5px solid #3182CE;
+            border-radius: 0 8px 8px 0;
+            animation: fadeIn 0.3s;
+        }
+
+        .explanation-box h4 {
+            margin-top: 0;
+            margin-bottom: 0.5em;
+            color: #2C5282;
+        }
+
+        .explanation-box p {
+            font-size: 0.95em;
+            margin-bottom: 0.5em;
+        }
+
+        .interactive-demo {
+            border: 1px solid #E2E8F0;
+            border-radius: 10px;
+            padding: 1.5em;
+            background: white;
+            margin-top: 1em;
+        }
+
+        .interactive-demo input,
+        .interactive-demo textarea,
+        .interactive-demo button,
+        .interactive-demo select {
+            font-family: 'Sarabun', sans-serif;
+            font-size: 0.9em;
+            padding: 8px 12px;
+            margin: 5px;
+            border-radius: 5px;
+            border: 1px solid #CBD5E0;
+        }
+
+        .interactive-demo button {
+            background-color: var(--accent-color);
+            color: white;
+            cursor: pointer;
+            border: none;
+            transition: background-color 0.2s ease;
+        }
+
+        .interactive-demo button:hover {
+            background-color: #6B46C1;
+        }
+
+        .interactive-demo .output {
+            margin-top: 1em;
+            padding: 1em;
+            background: #F7FAFC;
+            border-radius: 8px;
+            font-family: var(--code-font);
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
+        .interactive-demo .output.error {
+            background: #FFF5F5;
+            color: #C53030;
+        }
+
+        .infographic-container {
+            background-color: #F7FAFC;
+            border-radius: var(--border-radius);
+            padding: 2em;
+            font-family: var(--code-font);
+        }
+
+        .layer {
+            display: flex;
+            align-items: center;
+            gap: 1.5em;
+            padding: 1.5em;
+            border: 1px solid #E2E8F0;
+            border-radius: 10px;
+            background: white;
+        }
+
+        .layer-icon {
+            font-size: 2.5em;
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            color: white;
+        }
+
+        .layer.presentation .layer-icon {
+            background-color: var(--react-color);
+        }
+
+        .layer.application .layer-icon {
+            background-color: var(--express-color);
+        }
+
+        .layer.data .layer-icon {
+            background-color: var(--node-color);
+        }
+
+        .layer-content h4 {
+            font-family: 'Sarabun', sans-serif;
+            margin: 0 0 0.5em 0;
+            color: var(--header-color);
+        }
+
+        .components span {
+            background-color: #EDF2F7;
+            padding: 0.3em 0.8em;
+            border-radius: 20px;
+            font-size: 0.8em;
+            margin-right: 0.5em;
+            display: inline-block;
+            margin-bottom: 0.3em;
+        }
+
+        .arrow-down {
+            text-align: center;
+            font-size: 1.5em;
+            color: #A0AEC0;
+            margin: 1em 0;
+            position: relative;
+        }
+
+        .arrow-down .protocol {
+            position: absolute;
+            top: 50%;
+            left: 55%;
+            transform: translateY(-50%);
+            background: #F7FAFC;
+            padding: 0 10px;
+            font-size: 0.7em;
+            color: #718096;
+        }
+
+        .arch-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0 15px;
+            margin-top: 1.5em;
+        }
+
+        .arch-table td {
+            background: #F7FAFC;
+            padding: 1.5em;
+            vertical-align: middle;
+            border: 1px solid #E2E8F0;
+        }
+
+        .arch-table .layer-icon-cell {
+            width: 80px;
+            text-align: center;
+            font-size: 2.5em;
+            border-right: none;
+            border-radius: var(--border-radius) 0 0 var(--border-radius);
+        }
+
+        .arch-table td:not(.layer-icon-cell) {
+            border-left: none;
+            border-radius: 0 var(--border-radius) var(--border-radius) 0;
+        }
+
+        .arch-table strong {
+            font-size: 1.2em;
+            color: var(--header-color);
+        }
+
+        .arch-table .components {
+            margin-top: 0.5em;
+        }
+
+        .arch-table .arrow-row td {
+            background: transparent;
+            border: none;
+            text-align: center;
+            padding: 0.5em;
+            font-size: 1.5em;
+            color: #A0AEC0;
+        }
+
+        .arch-table .arrow-row .protocol {
+            font-size: 0.6em;
+            font-family: var(--code-font);
+            color: #718096;
+            margin-left: 10px;
+            vertical-align: middle;
+        }
+
+        .vertical-stack {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            /* สร้างระยะห่างระหว่าง card */
+            margin-top: 1.5em;
+        }
+
+        .horizontal-infographic {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    text-align: center;
+    margin: 2em 0;
+    padding: 1.5em 1em;
+    background-color: #F7FAFC;
+    border-radius: var(--border-radius);
+    overflow-x: auto; /* ทำให้เลื่อนซ้ายขวาได้บนจอมือถือ */
+}
+.info-node {
+    flex-shrink: 0;
+    width: 150px;
+    padding: 0 10px;
+}
+.info-node .icon-bg {
+    width: 70px;
+    height: 70px;
+    margin: 0 auto 10px auto;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.5em;
+    background-color: var(--node-color);
+    color: white;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+.info-node h4 {
+    margin: 0;
+    color: var(--header-color);
+    font-size: 1.1em;
+}
+.info-node p {
+    margin: 0;
+    font-size: 0.9em;
+    color: #718096;
+}
+.arrow-connector {
+    flex-grow: 1;
+    font-size: 2em;
+    color: #A0AEC0;
+    text-align: center;
+}
+.arrow-connector span {
+    display: block;
+    font-size: 0.5em;
+    font-weight: bold;
+    color: #718096;
+    margin-top: 5px;
+}
+
+        @media (max-width: 900px) {
+            .slide {
+                padding: 20px 25px 70px 25px;
+            }
+
+            .slide h2 {
+                font-size: 1.8em;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="progress-bar-container">
+        <div class="progress-bar" id="progress-bar"></div>
+    </div>
+
+    <div class="presentation">
+
+        <section class="slide title-slide active">
+            <div class="logos">
+                <i class="fab fa-react"></i>
+                <i class="fas fa-plus"></i>
+                <i class="fab fa-node-js"></i>
+            </div>
+            <h1>การเชื่อมต่อ Frontend-Backend</h1>
+            <h2>React + Express API Integration</h2>
+            <h3 style="margin-top: 30px;">วันที่ 5: Fullstack Development</h3>
+            <div class="slide-number">1/20</div>
+        </section>
+
+        <section class="slide">
+            <h2>วิวัฒนาการของ Web Architecture</h2>
+            <h3>🏛️ สมัยก่อน: Monolithic Application</h3>
+            <p>ในอดีต ทุกส่วนของเว็บ (หน้าตา, Logic, ข้อมูล) จะรวมอยู่ในโปรเจคเดียวกัน Server มีหน้าที่สร้างหน้าเว็บ
+                (HTML) ทั้งหมดแล้วส่งให้ผู้ใช้</p>
+            <div class="grid-2">
+                <div class="info-card good">
+                    <h4>ข้อดี ✅</h4>
+                    <ul>
+                        <li data-icon="👍">ง่ายต่อการเริ่มต้น</li>
+                        <li data-icon="👍">Deploy ง่าย (โปรเจคเดียว)</li>
+                        <li data-icon="👍">SEO ดีเพราะ Server สร้าง HTML</li>
+                    </ul>
+                </div>
+                <div class="info-card bad">
+                    <h4>ข้อเสีย ❌</h4>
+                    <ul>
+                        <li data-icon="👎">แก้ไขยาก (Frontend-Backend ปนกัน)</li>
+                        <li data-icon="👎">ขยายระบบ (Scale) ยาก</li>
+                        <li data-icon="👎">ทีมทำงานร่วมกันลำบาก</li>
+                        <li data-icon="👎">User Experience ไม่ดี (ต้องโหลดใหม่ทั้งหน้า)</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="slide-number">2/20</div>
+        </section>
+
+<section class="slide">
+    <h2>Modern Web Architecture</h2>
+    <h3>🎯 ปัจจุบัน: Separation of Concerns (การแยกส่วน)</h3>
+    <p>แนวคิดปัจจุบันคือการ <span class="highlight">แยก Frontend และ Backend ออกจากกันอย่างเด็ดขาด</span> ทำให้แต่ละส่วนพัฒนาและขยายระบบได้อย่างอิสระ โดยสื่อสารกันผ่าน API</p>
+
+    <div class="horizontal-infographic">
+        <div class="info-node">
+            <div class="icon-bg" style="--node-color: var(--react-color);"><i class="fab fa-react"></i></div>
+            <h4>Frontend</h4>
+            <p>React</p>
+        </div>
+        <div class="arrow-connector">
+            <i class="fas fa-exchange-alt"></i>
+            <span>API (HTTP)</span>
+        </div>
+        <div class="info-node">
+            <div class="icon-bg" style="--node-color: var(--express-color);"><i class="fas fa-cogs"></i></div>
+            <h4>Backend</h4>
+            <p>Express.js</p>
+        </div>
+        <div class="arrow-connector">
+            <i class="fas fa-exchange-alt"></i>
+        </div>
+        <div class="info-node">
+            <div class="icon-bg" style="--node-color: var(--node-color);"><i class="fas fa-database"></i></div>
+            <h4>Database</h4>
+            <p>JSON / DB</p>
+        </div>
+    </div>
+
+    <h3>ข้อดีของการแยกส่วน:</h3>
+    <ul>
+        <li data-icon="✅"><strong>พัฒนาอิสระ:</strong> Frontend ไม่ต้องรอ Backend เสร็จ</li>
+        <li data-icon="✅"><strong>ขยายง่าย:</strong> เพิ่ม Server ให้ Frontend หรือ Backend แยกกันได้</li>
+        <li data-icon="✅"><strong>ใช้ API ซ้ำ:</strong> Mobile App หรือ Desktop App สามารถใช้ API เดียวกันได้</li>
+        <li data-icon="✅"><strong>UX ดีขึ้น:</strong> เป็น Single Page Application (SPA) ที่เปลี่ยนแค่ข้อมูล ไม่ต้องโหลดใหม่ทั้งหน้า</li>
+    </ul>
+    <blockquote>แล้วเราจะเชื่อมต่อทั้งสองส่วนเข้าด้วยกันอย่างไร? 🤔</blockquote>
+    <div class="slide-number">3/20</div>
+</section>
+
+        <section class="slide">
+            <h2>N-Tier Architecture</h2>
+            <h3>📐 สถาปัตยกรรมแบบแบ่งชั้น</h3>
+            <p>คือการแบ่งระบบออกเป็น <span class="highlight">หลายชั้น (Tiers/Layers)</span>
+                โดยแต่ละชั้นมีหน้าที่รับผิดชอบชัดเจน และสื่อสารกันผ่าน Interface ที่กำหนดไว้</p>
+            <h3>ทำไมต้องแบ่งชั้น?</h3>
+            <ul>
+                <li data-icon="🎯"><strong>แยกความรับผิดชอบชัดเจน (Separation of Concerns):</strong>
+                    แต่ละส่วนทำหน้าที่ของตัวเอง</li>
+                <li data-icon="🔧"><strong>ง่ายต่อการดูแลและแก้ไข:</strong> แก้ไขชั้นหนึ่งไม่กระทบอีกชั้น</li>
+                <li data-icon="📈"><strong>ขยายระบบได้ง่าย (Scalability):</strong>
+                    เพิ่มทรัพยากรให้เฉพาะชั้นที่ทำงานหนักได้</li>
+                <li data-icon="👥"><strong>ทีมทำงานร่วมกันได้ดี:</strong> ทีม Frontend และ Backend ทำงานขนานกันได้</li>
+                <li data-icon="🔒"><strong>เพิ่มความปลอดภัย:</strong> จำกัดการเข้าถึงระหว่างชั้นได้</li>
+            </ul>
+            <div class="slide-number">4/20</div>
+        </section>
+
+        <section class="slide">
+            <h2>3-Tier Architecture (โครงสร้างที่เราใช้)</h2>
+            <p>นี่คือโครงสร้าง 3 ชั้นที่เป็นมาตรฐานสำหรับ Web Application สมัยใหม่</p>
+
+            <div class="vertical-stack">
+                <div class="info-card" style="border-color:var(--react-color)">
+                    <h4><i class="fas fa-desktop"></i> 1. Presentation Layer (Frontend)</h4>
+                    <p><strong>เทคโนโลยี:</strong> React, HTML, CSS <br> <strong>หน้าที่:</strong> แสดงผล UI/UX, รับ
+                        Input จากผู้ใช้ และแสดงข้อมูลที่ได้จาก Backend</p>
+                </div>
+                <div class="info-card" style="border-color:var(--express-color)">
+                    <h4><i class="fas fa-cogs"></i> 2. Application Layer (Backend)</h4>
+                    <p><strong>เทคโนโลยี:</strong> Node.js + Express <br> <strong>หน้าที่:</strong> จัดการ Business
+                        Logic, ตรวจสอบข้อมูล, และเป็น API Gateway สื่อสารกับ Database</p>
+                </div>
+                <div class="info-card" style="border-color:var(--node-color)">
+                    <h4><i class="fas fa-database"></i> 3. Data Layer (Database)</h4>
+                    <p><strong>เทคโนโลยี:</strong> JSON Files, MongoDB, SQL <br> <strong>หน้าที่:</strong>
+                        จัดเก็บข้อมูลอย่างถาวร (Persistent Storage) และจัดการการเข้าถึงข้อมูล</p>
+                </div>
+            </div>
+
+            <div class="slide-number">5/20</div>
+        </section>
+
+        <section class="slide">
+            <h2>Data Flow: ข้อมูลไหลผ่านระบบอย่างไร?</h2>
+            <p>ลองมาดูการเดินทางของข้อมูลเมื่อมีการร้องขอและบันทึกข้อมูล</p>
+            <div class="grid-2">
+                <div class="flow-diagram">
+                    <h3>📊 การดึงข้อมูล (GET)</h3>
+                    <div class="step">
+                        <div class="icon" style="background-color:var(--react-color)"><i
+                                class="fas fa-mouse-pointer"></i></div>
+                        <div class="content">
+                            <h5>1. User Click</h5>
+                            <p>React ส่ง GET /api/foods</p>
+                        </div>
+                    </div>
+                    <div class="arrow"><i class="fas fa-arrow-down"></i></div>
+                    <div class="step">
+                        <div class="icon" style="background-color:var(--express-color)"><i class="fas fa-server"></i>
+                        </div>
+                        <div class="content">
+                            <h5>2. Express Process</h5>
+                            <p>Express อ่านข้อมูลจาก foods.json</p>
+                        </div>
+                    </div>
+                    <div class="arrow"><i class="fas fa-arrow-down"></i></div>
+                    <div class="step">
+                        <div class="icon" style="background-color:var(--react-color)"><i class="fas fa-desktop"></i>
+                        </div>
+                        <div class="content">
+                            <h5>3. React Display</h5>
+                            <p>React รับ JSON และแสดงผล</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="flow-diagram">
+                    <h3>📝 การบันทึกข้อมูล (POST)</h3>
+                    <div class="step">
+                        <div class="icon" style="background-color:var(--react-color)"><i class="fas fa-keyboard"></i>
+                        </div>
+                        <div class="content">
+                            <h5>1. User Submit</h5>
+                            <p>React ส่ง POST /api/reviews พร้อมข้อมูล</p>
+                        </div>
+                    </div>
+                    <div class="arrow"><i class="fas fa-arrow-down"></i></div>
+                    <div class="step">
+                        <div class="icon" style="background-color:var(--express-color)"><i class="fas fa-save"></i>
+                        </div>
+                        <div class="content">
+                            <h5>2. Express Save</h5>
+                            <p>Express ตรวจสอบและบันทึกข้อมูล</p>
+                        </div>
+                    </div>
+                    <div class="arrow"><i class="fas fa-arrow-down"></i></div>
+                    <div class="step">
+                        <div class="icon" style="background-color:var(--react-color)"><i
+                                class="fas fa-check-circle"></i></div>
+                        <div class="content">
+                            <h5>3. React Confirm</h5>
+                            <p>React รับ Response และแจ้งผู้ใช้</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <blockquote style="text-align:center;">Key Point: Frontend และ Backend ไม่ได้คุยกันโดยตรง แต่ผ่าน HTTP
+                Protocol</blockquote>
+            <div class="slide-number">6/20</div>
+        </section>
+
+        <section class="slide">
+            <h2>ภาพรวม Fullstack App: Restaurant Review</h2>
+            <p>นี่คือแผนผังการทำงานของโปรเจคที่เรากำลังจะสร้างในรูปแบบตารางที่เข้าใจง่าย</p>
+            <table class="arch-table">
+                <tbody>
+                    <tr>
+                        <td class="layer-icon-cell"><i class="fab fa-react" style="color:var(--react-color)"></i></td>
+                        <td>
+                            <strong>Browser (Presentation Layer)</strong>
+                            <div class="components">
+                                <span>RestaurantList</span>
+                                <span>ReviewForm</span>
+                                <span>SearchBar</span>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr class="arrow-row">
+                        <td colspan="2">
+                            <i class="fas fa-arrow-down"></i>
+                            <span class="protocol">HTTP (fetch API)</span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="layer-icon-cell"><i class="fas fa-cogs" style="color:var(--express-color)"></i></td>
+                        <td>
+                            <strong>Server (Application Layer)</strong>
+                            <div class="components">
+                                <span>Express.js Routes</span>
+                                <span>Validation</span>
+                                <span>Business Logic</span>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr class="arrow-row">
+                        <td colspan="2">
+                            <i class="fas fa-arrow-down"></i>
+                            <span class="protocol">File System (fs)</span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="layer-icon-cell"><i class="fas fa-database" style="color:var(--node-color)"></i></td>
+                        <td>
+                            <strong>Data Layer</strong>
+                            <div class="components">
+                                <span>restaurants.json</span>
+                                <span>reviews.json</span>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            <p style="margin-top: 1em;">สิ่งที่เราจะโฟกัสในวันนี้คือการสร้างสะพานเชื่อมระหว่าง <span
+                    class="highlight">React ↔ Express</span></p>
+            <div class="slide-number">7/20</div>
+        </section>
+
+        <section class="slide">
+            <h2>HTTP Methods: ภาษาที่ใช้คุยกัน</h2>
+            <p>HTTP Methods (หรือ Verbs) คือ "คำสั่ง" ที่ Frontend ใช้บอก Backend ว่าต้องการให้ทำอะไรกับข้อมูล</p>
+            <ul>
+                <li data-icon="🔍"><strong>GET - ขอดูข้อมูล:</strong> ดึงข้อมูลมาแสดง เช่น
+                    <code>GET /api/restaurants</code></li>
+                <li data-icon="➕"><strong>POST - สร้างข้อมูลใหม่:</strong> เพิ่มข้อมูลใหม่ เช่น
+                    <code>POST /api/reviews</code></li>
+                <li data-icon="✏️"><strong>PUT - แก้ไขข้อมูลทั้งหมด:</strong> อัปเดตข้อมูลทั้ง object เช่น
+                    <code>PUT /api/restaurants/1</code></li>
+                <li data-icon="🗑️"><strong>DELETE - ลบข้อมูล:</strong> ลบข้อมูล เช่น <code>DELETE /api/reviews/5</code>
+                </li>
+            </ul>
+            <blockquote>แล้ว React จะเรียกใช้ HTTP Methods เหล่านี้ได้อย่างไร? 🤔</blockquote>
+            <div class="slide-number">8/20</div>
+        </section>
+
+        <section class="slide">
+            <h2>fetch() API: เครื่องมือเรียก API ใน JavaScript</h2>
+            <h3>🎣 fetch() API</h3>
+            <p>เป็นฟังก์ชันมาตรฐานของ JavaScript ที่มีอยู่ในเบราว์เซอร์ทุกตัวสำหรับส่ง HTTP Requests โดยไม่ต้องติดตั้ง
+                library เพิ่มเติม และทำงานแบบ Asynchronous โดย trả về (return) Promise</p>
+            <h3>ทำไมต้องใช้ fetch()?</h3>
+            <ul>
+                <li data-icon="✅">เขียนง่าย อ่านง่าย และเป็นมาตรฐาน</li>
+                <li data-icon="✅">รองรับ async/await ทำให้โค้ดดูสะอาดตา</li>
+                <li data-icon="✅">ทำงานกับ JSON ได้ดีเยี่ยม</li>
+            </ul>
+            <pre><code>fetch(url, options)
+  .then(response => response.json()) // แปลง response เป็น JSON
+  .then(data => console.log(data))   // ใช้งานข้อมูล
+  .catch(error => console.error(error)); // จัดการ error</code></pre>
+            <div class="slide-number">9/20</div>
+        </section>
+
+        <section class="slide">
+            <h2>โครงสร้างของ fetch()</h2>
+            <p>มาดูตัวอย่างการใช้งาน `fetch()` ในรูปแบบต่างๆ</p>
+            <h3>1. GET Request (แบบ async/await)</h3>
+            <pre><code>async function getRestaurants() {
+  try {
+    const response = await fetch('http://localhost:3000/api/restaurants');
+    const data = await response.json();
+    console.log(data);
+  } catch (error) {
+    console.error('Error:', error);
+  }
+}</code></pre>
+            <h3>2. POST Request (ส่งข้อมูล)</h3>
+            <pre><code>async function addReview(reviewData) {
+  const response = await fetch('http://localhost:3000/api/reviews', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json' // บอกว่าเราส่งข้อมูลประเภท JSON
+    },
+    body: JSON.stringify(reviewData) // แปลง Object เป็น String ก่อนส่ง
+  });
+  return response.json();
+}</code></pre>
+            <div class="slide-number">10/20</div>
+        </section>
+
+        <section class="slide">
+            <h2>ตัวอย่าง: fetch() GET ใน React</h2>
+            <p>นี่คือ Pattern ที่ใช้บ่อยที่สุดในการดึงข้อมูลมาแสดงใน Component</p>
+            <pre><code>import { useState, useEffect } from 'react';
+
+function RestaurantList() {
+  const [restaurants, setRestaurants] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchRestaurants = async () => {
+      try {
+        const response = await fetch('http://localhost:3000/api/restaurants');
+        const data = await response.json();
+        setRestaurants(data);
+      } catch (error) {
+        console.error('Error fetching data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchRestaurants();
+  }, []); // [] หมายถึงให้รัน Effect นี้แค่ครั้งเดียวตอน Component ถูกสร้าง
+
+  if (loading) return &lt;p&gt;กำลังโหลด...&lt;/p&gt;;
+
+  return (
+    &lt;div&gt;
+      {restaurants.map(r => &lt;div key={r.id}&gt;{r.name}&lt;/div&gt;)}
+    &lt;/div&gt;
+  );
+}</code></pre>
+            <button class="explanation-btn" onclick="toggleExplanation(this, 'get-react')"><i
+                    class="fas fa-lightbulb"></i> อธิบายโค้ดส่วนนี้</button>
+            <div class="explanation-box" data-id="get-react">
+                <h4>การทำงานทีละขั้นตอน:</h4>
+                <p>1. <code>useState([])</code>: สร้าง state `restaurants` เพื่อเก็บข้อมูลร้านอาหาร (เริ่มต้นเป็น array
+                    ว่าง)</p>
+                <p>2. <code>useState(true)</code>: สร้าง state `loading` เพื่อบอกสถานะการโหลด (เริ่มต้นเป็น `true`)</p>
+                <p>3. <code>useEffect(() => {...}, [])</code>: สั่งให้โค้ดข้างในทำงานแค่ครั้งเดียวหลังจากที่ Component
+                    แสดงผลครั้งแรก</p>
+                <p>4. <code>fetch(...)</code>: ส่ง request ไปยัง API</p>
+                <p>5. <code>setRestaurants(data)</code>: เมื่อได้ข้อมูลแล้ว ให้อัปเดต state `restaurants`</p>
+                <p>6. <code>setLoading(false)</code>: เปลี่ยนสถานะการโหลดเป็น `false` ไม่ว่าจะสำเร็จหรือล้มเหลว</p>
+                <p>7. <code>if (loading) ...</code>: ถ้ายังโหลดอยู่ ให้แสดงข้อความ "กำลังโหลด..."</p>
+                <p>8. <code>restaurants.map(...)</code>: เมื่อโหลดเสร็จแล้ว ให้แสดงรายชื่อร้านอาหาร</p>
+            </div>
+            <div class="slide-number">11/20</div>
+        </section>
+
+        <section class="slide">
+            <h2>ตัวอย่าง: fetch() POST ใน React</h2>
+            <p>การส่งข้อมูลจากฟอร์มเพื่อไปบันทึกที่ Backend</p>
+            <pre><code>import { useState } from 'react';
+
+function ReviewForm({ restaurantId }) {
+  const [comment, setComment] = useState('');
+
+  const handleSubmit = async (e) => {
+    e.preventDefault(); // ป้องกันไม่ให้หน้าเว็บโหลดใหม่
+    
+    const reviewData = { restaurantId, comment, rating: 5 };
+
+    const response = await fetch('http://localhost:3000/api/reviews', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(reviewData)
+    });
+
+    if (response.ok) {
+      alert('บันทึกรีวิวสำเร็จ!');
+      setComment(''); // เคลียร์ฟอร์ม
+    } else {
+      alert('เกิดข้อผิดพลาด');
+    }
+  };
+
+  return (
+    &lt;form onSubmit={handleSubmit}&gt;
+      &lt;textarea value={comment} onChange={e => setComment(e.target.value)} /&gt;
+      &lt;button type="submit"&gt;ส่งรีวิว&lt;/button&gt;
+    &lt;/form&gt;
+  );
+}</code></pre>
+            <p><strong>Key Points:</strong> ใช้ <code>method: 'POST'</code>, กำหนด <code>headers</code> เป็น
+                <code>'application/json'</code>, และแปลงข้อมูลเป็น JSON string ด้วย <code>JSON.stringify()</code> ใน
+                <code>body</code></p>
+            <div class="slide-number">12/20</div>
+        </section>
+
+        <section class="slide">
+            <h2>การจัดการสถานะ: Loading, Error, Success</h2>
+            <p>การเรียก API ที่ดีควรจัดการสถานะทั้ง 3 รูปแบบ เพื่อสร้าง User Experience ที่ดี</p>
+            <div class="grid-3">
+                <div class="info-card" style="border-color:#F6E05E">
+                    <h4>⏳ 1. Loading State</h4>
+                    <p>แสดงระหว่างรอข้อมูล เพื่อให้ผู้ใช้รู้ว่าระบบกำลังทำงาน</p>
+                    <pre><code>if (loading) {
+  return &lt;LoadingSpinner /&gt;;
+}</code></pre>
+                </div>
+                <div class="info-card" style="border-color:var(--danger-color)">
+                    <h4>⚠️ 2. Error State</h4>
+                    <p>แสดงเมื่อเกิดข้อผิดพลาด พร้อมทางเลือกให้ "ลองใหม่"</p>
+                    <pre><code>if (error) {
+  return &lt;ErrorMessage message={error} /&gt;;
+}</code></pre>
+                </div>
+                <div class="info-card" style="border-color:var(--success-color)">
+                    <h4>✅ 3. Success State</h4>
+                    <p>แสดงผลข้อมูลที่ได้รับมาเมื่อทุกอย่างสำเร็จ</p>
+                    <pre><code>return &lt;DataDisplay data={data} /&gt;;
+</code></pre>
+                </div>
+            </div>
+            <h3>Pattern ที่ใช้บ่อย (Best Practice)</h3>
+            <p>นี่คือโครงสร้างที่ครอบคลุมทั้ง 3 สถานะในการเรียก API</p>
+            <pre><code>function DataComponent() {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch('API_URL');
+        if (!response.ok) {
+          throw new Error('Failed to fetch data');
+        }
+        const result = await response.json();
+        setData(result);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []); // รันครั้งเดียว
+
+  if (loading) return &lt;LoadingSpinner /&gt;;
+  if (error) return &lt;ErrorMessage message={error} /&gt;;
+  return &lt;DataDisplay data={data} /&gt;;
+}</code></pre>
+            <div class="slide-number">13/20</div>
+        </section>
+
+        <section class="slide">
+            <h2>Error Handling ที่ถูกต้อง</h2>
+            <p>การจัดการข้อผิดพลาดเป็นสิ่งสำคัญมากในการพัฒนา Fullstack App</p>
+            <h3>ประเภทของ Error ที่ต้องจัดการ:</h3>
+            <ul>
+                <li data-icon="🌐">
+                    <strong>Network Errors:</strong> เกิดขึ้นเมื่อไม่สามารถเชื่อมต่อกับ Server ได้เลย (เช่น
+                    ไม่มีอินเทอร์เน็ต) <code>fetch()</code> จะ reject และเข้าสู่ <code>catch</code> block ทันที
+                </li>
+                <li data-icon="🚦">
+                    <strong>HTTP Errors:</strong> Server ตอบกลับมา แต่ด้วย Status Code ที่ไม่ใช่ 2xx (เช่น 404 Not
+                    Found, 500 Internal Server Error) <span class="highlight">`fetch()` จะไม่เข้า `catch` block</span>
+                    เราต้องเช็ค <code>response.ok</code> เอง
+                </li>
+                <li data-icon="📄">
+                    <strong>Data Validation Errors:</strong> เกิดขึ้นเมื่อได้รับข้อมูลจาก Server สำเร็จ
+                    แต่ข้อมูลที่ได้มามีรูปแบบไม่ถูกต้อง (เช่น คาดหวัง array แต่ได้ object)
+                    เราต้องเขียนโค้ดเพื่อตรวจสอบเอง
+                    <pre><code>const data = await response.json();
+if (!Array.isArray(data)) {
+  throw new Error('รูปแบบข้อมูลไม่ถูกต้อง');
+}</code></pre>
+                </li>
+            </ul>
+            <blockquote>คำถามท้าทาย: ถ้า API trả về (return) status 404, โค้ดจะเข้า `catch` block โดยอัตโนมัติหรือไม่?
+                <br><strong>คำตอบ:</strong> ไม่, ต้องเช็ค `if (!response.ok)` เองก่อน</blockquote>
+            <div class="slide-number">14/20</div>
+        </section>
+
+        <section class="slide">
+            <h2>CORS คืออะไร? 🚫</h2>
+            <h3>Cross-Origin Resource Sharing</h3>
+            <p>เป็นนโยบายความปลอดภัยของเบราว์เซอร์ ที่จะ <span class="highlight">บล็อกการเรียก API</span>
+                จากเว็บหนึ่งไปยังอีกเว็บหนึ่งที่มี "Origin" ต่างกัน</p>
+            <h3>Origin คืออะไร?</h3>
+            <p>Origin = Protocol + Domain + Port</p>
+            <pre><code>Frontend (React):   http://localhost:5173  ← Origin 1
+Backend (Express):  http://localhost:3000  ← Origin 2</code></pre>
+            <p>เนื่องจาก <strong>Port ต่างกัน</strong> (5173 vs 3000) เบราว์เซอร์จึงมองว่าเป็นคนละ Origin และจะบล็อก
+                Request ทันที ทำให้เกิด <strong>CORS Error!</strong></p>
+            <h3>ทำไมต้องมี CORS?</h3>
+            <p>เพื่อป้องกันไม่ให้เว็บไซต์อันตรายแอบขโมยข้อมูลของผู้ใช้จากเว็บไซต์อื่น (เช่น แอบเรียก API
+                ของธนาคารจากเว็บหลอกลวง)</p>
+            <blockquote>CORS เป็นปัญหาที่เจอบ่อยที่สุดในการพัฒนา Fullstack แต่เป็นปัญหาของ "ฝั่ง Backend" ที่ต้องแก้ไข
+            </blockquote>
+            <div class="slide-number">15/20</div>
+        </section>
+
+        <section class="slide">
+            <h2>CORS Error ใน Console</h2>
+            <p>นี่คือหน้าตาของ Error ที่ทุกคนต้องเคยเจอ</p>
+            <div class="interactive-demo" id="cors-demo">
+                <p><strong>จำลองสถานการณ์:</strong> React App ที่ <code>localhost:5173</code> พยายามเรียก API ที่
+                    <code>localhost:3000</code></p>
+                <button>ลองเรียก API</button>
+                <div class="output error" style="display:none; font-size: 0.8em;">
+                    Access to fetch at 'http://localhost:3000/api/restaurants' from origin 'http://localhost:5173' has
+                    been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested
+                    resource.
+                </div>
+            </div>
+            <h3>แปลความหมาย Error:</h3>
+            <ul>
+                <li data-icon="👉">Server ที่ <code>localhost:3000</code> <strong>ไม่ตอบกลับมาพร้อมกับ Header</strong>
+                    ที่ชื่อว่า <code>Access-Control-Allow-Origin</code></li>
+                <li data-icon="👉">เบราว์เซอร์จึงไม่แน่ใจว่า Server อนุญาตให้เว็บจาก <code>localhost:5173</code>
+                    เรียกใช้ API ได้หรือไม่</li>
+                <li data-icon="👉">เพื่อความปลอดภัย เบราว์เซอร์จึงบล็อก Request นั้นไว้ก่อน</li>
+            </ul>
+            <div class="slide-number">16/20</div>
+        </section>
+
+        <section class="slide">
+            <h2>วิธีแก้ไข CORS ใน Express</h2>
+            <p>เราต้องไปแก้ที่ฝั่ง Backend (Express) เพื่อบอกเบราว์เซอร์ว่า "ฉันอนุญาตให้เว็บนี้เรียก API ของฉันได้"</p>
+            <h3>✅ วิธีที่ง่ายและนิยมที่สุด: ใช้ Middleware <code>cors</code></h3>
+            <h4>1. ติดตั้ง Package</h4>
+            <pre><code>npm install cors</code></pre>
+
+            <h4>2. ใช้งานใน `server.js`</h4>
+            <pre><code>const express = require('express');
+const cors = require('cors'); // 1. import package
+const app = express();
+
+// 2. ใช้งาน cors middleware
+// วิธีที่ 1: อนุญาตทุก Origin (เหมาะสำหรับตอนพัฒนา)
+app.use(cors());
+
+// วิธีที่ 2: ระบุ Origin ที่อนุญาต (ปลอดภัยกว่าสำหรับ Production)
+const corsOptions = {
+  origin: 'http://localhost:5173' 
+};
+app.use(cors(corsOptions));
+
+// ... routes ของคุณ ...
+app.listen(3000);</code></pre>
+            <p>เพียงเท่านี้ Server ของเราก็จะส่ง Header <code>Access-Control-Allow-Origin</code> กลับไปให้เบราว์เซอร์
+                และ Frontend ก็จะสามารถเรียก API ได้สำเร็จ!</p>
+            <div class="slide-number">17/20</div>
+        </section>
+
+        <section class="slide">
+            <h2>CORS Best Practices</h2>
+            <p>การตั้งค่า CORS อย่างถูกต้องและปลอดภัยเป็นสิ่งสำคัญ</p>
+            <h3>Development vs. Production</h3>
+            <div class="grid-2">
+                <div class="info-card" style="border-color:#F6E05E">
+                    <h4>ตอนพัฒนา (Development)</h4>
+                    <p>เพื่อความสะดวก เรามักจะเปิดรับทุก Origin</p>
+                    <pre><code>app.use(cors());</code></pre>
+                </div>
+                <div class="info-card" style="border-color:var(--success-color)">
+                    <h4>ตอนใช้งานจริง (Production)</h4>
+                    <p><strong>ห้ามใช้ <code>app.use(cors())</code> เด็ดขาด!</strong> ควรระบุเฉพาะโดเมนของ Frontend
+                        เราเท่านั้น</p>
+                    <pre><code>const allowedOrigins = [
+  'https://your-frontend.com',
+  'https://www.your-frontend.com'
+];
+
+const corsOptions = {
+  origin: allowedOrigins
+};
+app.use(cors(corsOptions));</code></pre>
+                </div>
+            </div>
+            <h3>สิ่งที่ควรระวัง:</h3>
+            <ul>
+                <li data-icon="❌">อย่าใช้ <code>origin: '*'</code> ใน Production เพราะจะเปิดให้เว็บไซต์ใดก็ได้มาเรียก
+                    API ของเรา</li>
+                <li data-icon="✅">ระบุ <code>methods</code> ที่อนุญาตให้ชัดเจน เช่น <code>['GET', 'POST']</code></li>
+                <li data-icon="✅">ใช้ HTTPS ใน Production เสมอ</li>
+            </ul>
+            <div class="slide-number">18/20</div>
+        </section>
+
+        <section class="slide">
+            <h2>สรุปและทบทวนความเข้าใจ 🎓</h2>
+            <h3>✅ สิ่งที่เราเรียนรู้ในส่วนนี้:</h3>
+            <ul>
+                <li data-icon="🏛️"><strong>Architecture:</strong> เข้าใจสถาปัตยกรรมแบบ 3-Tier และการไหลของข้อมูล</li>
+                <li data-icon="🔄"><strong>HTTP & API:</strong> รู้จัก HTTP Methods และการสื่อสารผ่าน API</li>
+                <li data-icon="🎣"><strong>Fetch API:</strong> สามารถใช้ `fetch()` เพื่อดึง (GET) และส่ง (POST) ข้อมูลใน
+                    React ได้</li>
+                <li data-icon="⏳"><strong>State Management:</strong> จัดการสถานะ Loading, Error, Success เพื่อ UX ที่ดี
+                </li>
+                <li data-icon="🚫"><strong>CORS:</strong> เข้าใจปัญหา CORS และวิธีแก้ไขใน Express</li>
+            </ul>
+
+            <h3>🤔 คำถามท้าทาย:</h3>
+            <ol style="padding-left: 2em; color: #4A5568;">
+                <li style="margin-bottom: 1em;">ถ้า API response ช้า user ควรเห็นอะไรบนหน้าจอ และเราจัดการด้วย Hook
+                    อะไร?</li>
+                <li style="margin-bottom: 1em;">ถ้า `fetch()` ได้รับ status code 500 (Server Error) จะเข้า `catch` block
+                    โดยอัตโนมัติหรือไม่? เพราะอะไร?</li>
+                <li style="margin-bottom: 1em;">ใครเป็นคนแก้ปัญหา CORS? Frontend หรือ Backend? และแก้ด้วยวิธีใด?</li>
+            </ol>
+            <div class="slide-number">19/20</div>
+        </section>
+
+        <section class="slide title-slide">
+            <div class="logos" style="font-size: 5em;">
+                <i class="fas fa-shield-alt" style="color: #48BB78;"></i>
+            </div>
+            <h2 style="font-size: 2.5em; border: none;">เตรียมพบกับหัวข้อถัดไป</h2>
+            <h1 style="font-size: 2.8em;">ความปลอดภัยเว็บไซต์เบื้องต้น</h1>
+            <h3 style="margin-top: 30px;">(Website Security Basics)</h3>
+            <p style="font-size: 1.2em; opacity: 0.9;">ทำไมการแบ่ง Layer ถึงสำคัญต่อความปลอดภัย? มาหาคำตอบกัน!</p>
+            <p style="margin-top: 40px;">พักเบรก 10 นาที ☕</p>
+            <div class="slide-number">20/20</div>
+        </section>
+
+    </div>
+
+    <div class="presentation-controls">
+        <button id="prev-btn" class="nav-btn" title="สไลด์ก่อนหน้า"><i class="fas fa-chevron-left"></i></button>
+        <span id="slide-counter"></span>
+        <button id="next-btn" class="nav-btn" title="สไลด์ถัดไป"><i class="fas fa-chevron-right"></i></button>
+        <button id="fullscreen-btn" class="nav-btn" title="เต็มจอ"><i class="fas fa-expand"></i></button>
+    </div>
+
+    <script>
+        function toggleExplanation(btn, id) {
+            const explanationBox = document.querySelector(`.explanation-box[data-id="${id}"]`);
+            if (explanationBox) {
+                const isVisible = explanationBox.style.display === 'block';
+                explanationBox.style.display = isVisible ? 'none' : 'block';
+                if (!isVisible) {
+                    explanationBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }
+            }
+        }
+
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const slides = document.querySelectorAll('.slide');
+            const totalSlides = slides.length;
+            let currentSlideIndex = 0;
+
+            const nextBtn = document.getElementById('next-btn');
+            const prevBtn = document.getElementById('prev-btn');
+            const slideCounter = document.getElementById('slide-counter');
+
+            const fullscreenBtn = document.getElementById('fullscreen-btn'); // เพิ่มบรรทัดนี้
+
+            function showSlide(index) {
+                if (index < 0 || index >= totalSlides) return;
+                slides.forEach((slide, i) => slide.classList.toggle('active', i === index));
+                currentSlideIndex = index;
+                updateControls();
+                runInteractiveDemos(slides[index]);
+            }
+
+            function updateControls() {
+                slideCounter.textContent = `${currentSlideIndex + 1} / ${totalSlides}`;
+                progressBar.style.width = `${((currentSlideIndex + 1) / totalSlides) * 100}%`;
+                prevBtn.disabled = currentSlideIndex === 0;
+                nextBtn.disabled = currentSlideIndex === totalSlides - 1;
+            }
+
+            // เพิ่มฟังก์ชัน toggleFullScreen ทั้งหมด
+            function toggleFullScreen() {
+                if (!document.fullscreenElement) {
+                    document.documentElement.requestFullscreen().catch(err => {
+                        alert(`ไม่สามารถเปิดโหมดเต็มจอได้: ${err.message}`);
+                    });
+                    fullscreenBtn.innerHTML = '<i class="fas fa-compress"></i>';
+                } else {
+                    if (document.exitFullscreen) {
+                        document.exitFullscreen();
+                        fullscreenBtn.innerHTML = '<i class="fas fa-expand"></i>';
+                    }
+                }
+            }
+
+            nextBtn.addEventListener('click', () => showSlide(currentSlideIndex + 1));
+            prevBtn.addEventListener('click', () => showSlide(currentSlideIndex - 1));
+            fullscreenBtn.addEventListener('click', toggleFullScreen); // เพิ่มบรรทัดนี้
+
+            document.addEventListener('keydown', (e) => {
+                if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) return;
+                if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); nextBtn.click(); }
+                if (e.key === 'ArrowLeft') { e.preventDefault(); prevBtn.click(); }
+                if (e.key === 'f') { e.preventDefault(); toggleFullScreen(); } // เพิ่มบรรทัดนี้
+            });
+
+            function runInteractiveDemos(activeSlide) {
+                if (!activeSlide) return;
+
+                const corsDemo = activeSlide.querySelector('#cors-demo');
+                if (corsDemo && !corsDemo.dataset.initialized) {
+                    corsDemo.dataset.initialized = true;
+                    const btn = corsDemo.querySelector('button');
+                    const output = corsDemo.querySelector('.output');
+                    btn.addEventListener('click', () => {
+                        output.style.display = 'block';
+                    });
+                }
+            }
+
+            showSlide(0);
+        });
+    </script>
+</body>
+
+</html>
