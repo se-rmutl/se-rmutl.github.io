@@ -1,0 +1,1446 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ENGSE206 - สัปดาห์ที่ 11: การออกแบบ UX และ UI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #0D204E;
+            /* RMUTL Navy Blue */
+            --secondary-color: #D4A237;
+            /* RMUTL Gold */
+            --accent-color: #10B981;
+            /* Tech Green */
+            --background-gradient: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            --slide-bg: rgba(255, 255, 255, 1);
+            --text-color: #2c2f33;
+            --header-color: #0D204E;
+            --base-font-size: clamp(18px, 1.8vw, 28px);
+            --border-radius: 15px;
+            --code-font: 'Fira Code', 'Courier New', monospace;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            overflow: hidden;
+            height: 100%;
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Sarabun', sans-serif;
+            background: var(--background-gradient);
+            color: var(--text-color);
+            font-size: 18px;
+            line-height: 1.8;
+        }
+
+        .presentation {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2.5vh 3.5vw;
+        }
+
+        .slide {
+            background: var(--slide-bg);
+            padding: 35px 50px 90px 50px;
+            border-radius: var(--border-radius);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            width: 100%;
+            height: 100%;
+            font-size: var(--base-font-size);
+            overflow: hidden;
+            display: none;
+            animation: fadeIn 0.5s ease-in-out;
+            position: relative;
+        }
+
+        .slide.active {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .slide-content {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding-right: 15px;
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .slide-content::-webkit-scrollbar {
+            display: none;
+        }
+
+        .title-slide.active {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            background: linear-gradient(135deg, #0D204E 0%, #1a3a8a 100%);
+            color: white;
+        }
+
+        .title-slide h1,
+        .title-slide h2,
+        .title-slide h3,
+        .title-slide p {
+            color: white !important;
+        }
+
+        .title-slide h1 {
+            font-size: 3em;
+            margin-bottom: 10px;
+            border: none;
+        }
+
+        .title-slide h2 {
+            font-size: 2.2em;
+            margin-bottom: 20px;
+            border: none;
+            font-weight: 500;
+        }
+
+        .title-slide h3 {
+            font-size: 1.6em;
+            font-weight: 400;
+            opacity: 0.9;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .progress-bar-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 6px;
+            background-color: rgba(255, 255, 255, 0.2);
+            z-index: 2000;
+        }
+
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(120deg, var(--secondary-color) 0%, #f1c40f 100%);
+            transition: width 0.3s ease-out;
+        }
+
+        .presentation-controls {
+            position: fixed;
+            bottom: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(13, 32, 78, 0.9);
+            padding: 8px 15px;
+            border-radius: 50px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(8px);
+            z-index: 1000;
+        }
+
+        .nav-btn,
+        .font-btn,
+        .fullscreen-btn {
+            background: transparent;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 44px;
+            height: 44px;
+            font-size: 1.6rem;
+        }
+
+        .nav-btn:hover:not(:disabled),
+        .font-btn:hover,
+        .fullscreen-btn:hover {
+            background: var(--secondary-color);
+            transform: translateY(-2px);
+        }
+
+        .nav-btn:disabled {
+            background-color: transparent;
+            color: #777;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        #slide-counter {
+            color: white;
+            font-weight: 500;
+            font-size: 1.1rem;
+            min-width: 80px;
+            text-align: center;
+        }
+        
+        .slide-footer {
+            margin-top: auto; /* Push footer to the bottom */
+            padding-top: 20px;
+            font-size: 0.7em;
+            color: #aaa;
+            text-align: left;
+            width: 100%;
+        }
+
+        .slide-number {
+            position: absolute;
+            bottom: 25px;
+            right: 50px;
+            font-size: 0.7em;
+            color: #aaa;
+        }
+
+        .slide-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eee;
+            flex-shrink: 0; /* Prevent header from shrinking */
+        }
+
+        .slide-header h2 {
+            font-size: 2.4em;
+            color: var(--header-color);
+            border: none;
+            margin: 0;
+            padding: 0;
+            font-weight: 700;
+        }
+        
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 30px;
+            margin-top: 25px;
+        }
+
+        .infographic-card {
+            background-color: #f8f9fa;
+            border-radius: var(--border-radius);
+            padding: 25px;
+            border-left: 6px solid;
+            transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+        }
+
+        .infographic-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+
+        .infographic-card h4 {
+            font-size: 1.2em;
+            color: var(--header-color);
+            margin-bottom: 8px;
+            font-weight: 700;
+        }
+
+        .infographic-card p,
+        .infographic-card ul,
+        .infographic-card code {
+            font-size: 0.9em;
+            color: #444;
+        }
+
+        code, pre {
+            font-family: var(--code-font);
+            background-color: #eef2ff;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.85em;
+        }
+        
+        pre {
+            padding: 15px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        
+        .interactive-question {
+            background-color: #fffbe6;
+            border: 2px dashed #f59e0b;
+            border-radius: var(--border-radius);
+            padding: 20px;
+            margin-top: 25px;
+            font-size: 1.1em;
+        }
+        
+        .interactive-question .answer {
+            display: none;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #fee2e2;
+            color: #b91c1c;
+            font-weight: 500;
+        }
+        
+        .interactive-question button {
+            background-color: var(--secondary-color);
+            color: var(--primary-color);
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-top: 10px;
+            transition: transform 0.2s;
+        }
+
+        .interactive-question button:hover {
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="progress-bar-container">
+        <div class="progress-bar" id="progress-bar"></div>
+    </div>
+
+    <div class="presentation">
+
+        <section class="slide title-slide active">
+            <h2>ENGSE206: Software Requirements Specification and Design</h2>
+            <h1>สัปดาห์ที่ 11: User Experience & Interface Design</h1>
+            <h3>มหาวิทยาลัยเทคโนโลยีราชมงคลล้านนา (ดอยสะเก็ด)</h3>
+            <div class="slide-number"></div>
+        </section>
+
+        <section class="slide">
+            <div class="slide-header">
+                <h2>📋 วันนี้เรียนอะไร?</h2>
+            </div>
+            <div class="slide-content" style="font-size: 1.0em;">
+                <div class="grid-2">
+                    <div>
+                        <h3 class="font-bold text-xl text-indigo-700">Session 1: Introduction to UX/UI</h3>
+                        <ul class="list-disc pl-5 mt-2">
+                            <li>UX vs UI คืออะไร?</li>
+                            <li>ทำไม UX/UI สำคัญ?</li>
+                            <li>User-Centered Design (UCD) Process</li>
+                        </ul>
+                        <h3 class="font-bold text-xl mt-6 text-indigo-700">Session 2: User Research & Personas</h3>
+                        <ul class="list-disc pl-5 mt-2">
+                            <li>วิธีทำ User Research</li>
+                            <li>การสร้าง Personas</li>
+                            <li>Agent Wallboard Case Study</li>
+                        </ul>
+                         <h3 class="font-bold text-xl mt-6 text-indigo-700">Session 3: User Journey & UI Basics</h3>
+                        <ul class="list-disc pl-5 mt-2">
+                           <li>User Journey Mapping</li>
+                            <li>Design Systems</li>
+                            <li>Figma Quick Demo</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-xl text-green-700">🎯 วัตถุประสงค์การเรียนรู้</h3>
+                        <p class="mt-4">หลังเรียนวันนี้ นักศึกษาจะสามารถ:</p>
+                        <ol class="list-decimal pl-5 mt-2">
+                            <li>✅ อธิบายความแตกต่างระหว่าง UX และ UI ได้</li>
+                            <li>✅ ทำ user research และสร้าง personas ได้</li>
+                            <li>✅ สร้าง user journey map ได้</li>
+                            <li>✅ เข้าใจหลักการ UI Design และใช้ Figma พื้นฐานได้</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-footer">Agenda & Learning Objectives</div>
+            <div class="slide-number"></div>
+        </section>
+
+        <section class="slide">
+            <div class="slide-header">
+                <h2>📊 Course Progress - เรามาถึงไหนแล้ว</h2>
+            </div>
+            <div class="slide-content" style="font-size: 1.0em;">
+                <h3 class="font-bold text-xl">ภาพรวม Week 1-15</h3>
+                <pre class="mt-4 text-base p-4 bg-gray-100 rounded-lg shadow-inner">
+✅ Week 1-4:   Requirements Engineering
+✅ Week 5-7:   Design Principles & Patterns
+✅ Week 8:     Midterm Exam
+✅ Week 9:     Advanced Architecture
+✅ Week 10:    Database Design
+➡️ Week 11:    UX/UI Design & Frontend ← เราอยู่ตรงนี้!
+📍 Week 12:    Mobile & Responsive Design
+📍 Week 13:    Security & Performance
+📍 Week 14:    DevOps & Deployment
+📍 Week 15:    Final Project Presentation
+                </pre>
+                <div class="mt-8 p-5 bg-blue-50 border-l-4 border-blue-500 rounded-r-lg shadow">
+                     <h4 class="font-bold text-xl text-blue-800">🎯 Today's Focus: จาก Technical สู่ User-Facing Design</h4>
+                     <p class="mt-2">เราได้วางรากฐาน Backend, Database, และ Architecture ที่แข็งแกร่งแล้ว วันนี้เราจะมาเรียนรู้วิธีสร้าง "หน้าตาและประสบการณ์" ที่ดีให้กับผู้ใช้ ซึ่งเป็นส่วนที่เชื่อมต่อทุกอย่างเข้าด้วยกัน</p>
+                </div>
+            </div>
+            <div class="slide-footer">Course Progress</div>
+            <div class="slide-number"></div>
+        </section>
+        
+        <section class="slide">
+            <div class="slide-header">
+                <h2>🎭 The Cost of Bad Design</h2>
+            </div>
+            <div class="slide-content" style="font-size: 1.0em; line-height: 1.7;">
+                <div class="grid-2">
+                    <div>
+                        <h3 class="font-bold text-xl text-red-700">Case Study 1: NASA Mars Climate Orbiter (1999)</h3>
+                        <img src="https://placehold.co/400x200/ef4444/FFFFFF?text=NASA+Orbiter+Loss" alt="NASA Mars Climate Orbiter" class="rounded-md shadow-md my-3 w-full">
+                        <p><strong>มูลค่า:</strong> $327.6 ล้าน</p>
+                        <p><strong>ผลลัพธ์:</strong> ยานสูญหาย</p>
+                        <p class="text-red-600 font-semibold"><strong>สาเหตุ:</strong> Interface error - ซอฟต์แวร์ 2 ตัวใช้หน่วยวัดต่างกัน และไม่มี UI ที่บ่งชี้หรือป้องกันข้อผิดพลาดนี้</p>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-xl text-red-700">Case Study 2: Therac-25 (1985-1987)</h3>
+                        <img src="https://placehold.co/400x200/ef4444/FFFFFF?text=Therac-25+Fatalities" alt="Therac-25 Machine" class="rounded-md shadow-md my-3 w-full">
+                        <p><strong>ผลลัพธ์:</strong> ผู้ป่วย 6 คนเสียชีวิต</p>
+                        <p class="text-red-600 font-semibold"><strong>สาเหตุ:</strong> Poor UI design - Interface ซับซ้อน, ป้อนข้อมูลง่ายผิดพลาด, และไม่มี Feedback ที่ชัดเจน</p>
+                    </div>
+                </div>
+                <div class="mt-8 p-6 bg-yellow-100 border-l-8 border-yellow-500 text-center rounded-lg shadow-lg">
+                    <p class="text-xl font-bold text-yellow-800">💡 บทเรียนสำคัญ: "Good UX/UI ไม่ใช่แค่เรื่องความสวยงาม แต่มันคือเรื่องความปลอดภัย, การใช้งานได้จริง และความสำเร็จของธุรกิจ"</p>
+                </div>
+            </div>
+            <div class="slide-footer">Why UX/UI Matters</div>
+            <div class="slide-number"></div>
+        </section>
+
+        <section class="slide">
+            <div class="slide-header">
+                <h2>🎨 UX vs UI - ความแตกต่างที่ต้องเข้าใจ</h2>
+            </div>
+            <div class="slide-content" style="font-size: 1.05em;">
+                 <div class="grid-2">
+                    <div class="infographic-card" style="border-left-color: #3b82f6;">
+                        <h4>UX (User Experience)</h4>
+                        <p class="italic">"ความรู้สึกและประสบการณ์โดยรวมของผู้ใช้"</p>
+                        <ul class="list-disc pl-5 mt-3">
+                            <li><strong>Focus:</strong> HOW it works (มันทำงานอย่างไร)</li>
+                            <li><strong>Goal:</strong> Solve problems (แก้ปัญหาให้ผู้ใช้)</li>
+                            <li><strong>Keywords:</strong> Usability, Accessibility, User Journey</li>
+                        </ul>
+                    </div>
+                    <div class="infographic-card" style="border-left-color: #8b5cf6;">
+                        <h4>UI (User Interface)</h4>
+                        <p class="italic">"ส่วนต่อประสานที่ผู้ใช้เห็นและโต้ตอบ"</p>
+                        <ul class="list-disc pl-5 mt-3">
+                            <li><strong>Focus:</strong> HOW it looks (หน้าตาเป็นอย่างไร)</li>
+                            <li><strong>Goal:</strong> Visual appeal & Interaction (สวยงามน่าใช้)</li>
+                            <li><strong>Keywords:</strong> Visual Design, Buttons, Typography, Colors</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="mt-8 p-5 bg-gray-100 rounded-lg shadow-md">
+                    <h4 class="font-bold text-xl text-center text-gray-800">🏠 อุปมาเหมือนบ้าน</h4>
+                    <p class="text-center mt-3"><strong>UX คือ สถาปัตยกรรม (Architecture):</strong> โครงสร้างดีไหม? ห้องครัวใกล้ห้องกินข้าวไหม? บันไดปลอดภัยไหม?</p>
+                    <p class="text-center mt-2"><strong>UI คือ การตกแต่งภายใน (Interior Design):</strong> สีสวยไหม? เฟอร์นิเจอร์เข้ากันไหม? แสงสว่างดีไหม?</p>
+                    <p class="text-center mt-3 font-bold text-lg text-green-700">Product ที่ดีต้องมีทั้ง UX และ UI ที่ดี</p>
+                </div>
+            </div>
+            <div class="slide-footer">UX vs UI</div>
+            <div class="slide-number"></div>
+        </section>
+
+        <section class="slide">
+            <div class="slide-header">
+                <h2>🔄 กระบวนการออกแบบที่ยึดผู้ใช้เป็นศูนย์กลาง (UCD)</h2>
+            </div>
+            <div class="slide-content">
+                <p><strong>UCD คืออะไร?</strong> "กระบวนการออกแบบที่ใส่ใจผู้ใช้งานตั้งแต่เริ่มต้น"</p>
+                <div class="flex justify-center my-4">
+                    <img src="https://placehold.co/900x300/0D204E/FFFFFF?text=UCD+Process:+Understand+->+Explore+->+Prototype+->+Evaluate" alt="UCD Process Infographic" class="rounded-md shadow-lg">
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="infographic-card" style="border-left-color: #d946ef;">
+                        <h4>🎯 Principle 1: Early focus on users</h4>
+                        <p>เริ่มจาก user research ก่อนเสมอ</p>
+                    </div>
+                    <div class="infographic-card" style="border-left-color: #14b8a6;">
+                        <h4>🎯 Principle 2: Empirical measurement</h4>
+                        <p>วัดผลจากการใช้งานจริง ใช้ data</p>
+                    </div>
+                    <div class="infographic-card" style="border-left-color: #f59e0b;">
+                        <h4>🎯 Principle 3: Iterative design</h4>
+                        <p>ออกแบบ → ทดสอบ → ปรับปรุง → ทำซ้ำ</p>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-footer">User-Centered Design</div>
+            <div class="slide-number"></div>
+        </section>
+
+        <section class="slide">
+             <div class="slide-header">
+                <h2>🎨 10 หลักการออกแบบ UI (UI Design Principles)</h2>
+            </div>
+            <div class="slide-content" style="font-size: 0.9em; line-height: 1.6;">
+                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                    <div class="p-3 bg-gray-50 rounded-lg shadow-sm hover:shadow-lg transition-shadow"><strong>1. Clarity:</strong> ชัดเจน เข้าใจทันที</div>
+                    <div class="p-3 bg-gray-50 rounded-lg shadow-sm hover:shadow-lg transition-shadow"><strong>2. Consistency:</strong> สม่ำเสมอ เหมือนกันทุกส่วน</div>
+                    <div class="p-3 bg-gray-50 rounded-lg shadow-sm hover:shadow-lg transition-shadow"><strong>3. Feedback:</strong> มีการตอบสนองต่อผู้ใช้</div>
+                    <div class="p-3 bg-gray-50 rounded-lg shadow-sm hover:shadow-lg transition-shadow"><strong>4. Hierarchy:</strong> จัดลำดับความสำคัญ</div>
+                    <div class="p-3 bg-gray-50 rounded-lg shadow-sm hover:shadow-lg transition-shadow"><strong>5. Simplicity:</strong> เรียบง่าย ตัดสิ่งไม่จำเป็น</div>
+                    <div class="p-3 bg-gray-50 rounded-lg shadow-sm hover:shadow-lg transition-shadow"><strong>6. Affordance:</strong> บ่งบอกการใช้งานในตัว</div>
+                    <div class="p-3 bg-gray-50 rounded-lg shadow-sm hover:shadow-lg transition-shadow"><strong>7. Accessibility:</strong> ทุกคนเข้าถึงได้</div>
+                    <div class="p-3 bg-gray-50 rounded-lg shadow-sm hover:shadow-lg transition-shadow"><strong>8. Error Prevention:</strong> ป้องกันข้อผิดพลาด</div>
+                    <div class="p-3 bg-gray-50 rounded-lg shadow-sm hover:shadow-lg transition-shadow"><strong>9. Responsiveness:</strong> ตอบสนองรวดเร็ว</div>
+                    <div class="p-3 bg-gray-50 rounded-lg shadow-sm hover:shadow-lg transition-shadow"><strong>10. Familiar Patterns:</strong> ใช้รูปแบบที่คุ้นเคย</div>
+                </div>
+                 <div class="interactive-question mt-6">
+                    <p><strong>🤔 คำถาม:</strong> การที่ปุ่ม "บันทึก" เป็นสีเขียว และปุ่ม "ลบ" เป็นสีแดงเสมอในทุกหน้าของแอปพลิเคชัน เป็นการใช้หลักการข้อใด?</p>
+                    <button onclick="toggleAnswer(this)">แสดงคำตอบ</button>
+                    <div class="answer">
+                        <p><strong>คำตอบ: Consistency (ความสม่ำเสมอ)</strong> และ <strong>Familiar Patterns (รูปแบบที่คุ้นเคย)</strong></p>
+                        <p>เพราะทำให้ผู้ใช้เรียนรู้และคาดเดาการทำงานของปุ่มได้ถูกต้องเสมอ และเป็นรูปแบบที่คนส่วนใหญ่คุ้นเคยกันดี</p>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-footer">UI Design Principles</div>
+            <div class="slide-number"></div>
+        </section>
+        
+        <section class="slide">
+            <div class="slide-header">
+                <h2>📊 กรณีศึกษา: Agent Wallboard System</h2>
+            </div>
+            <div class="slide-content" style="font-size: 1.0em;">
+                <p>ระบบที่เราจะใช้ออกแบบในวันนี้คือ <strong>Agent Wallboard System</strong> ซึ่งเป็นระบบจัดการ Call Center แบบ real-time ที่มีผู้ใช้งาน 4 ประเภทหลัก:</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
+                    <div class="p-4 bg-blue-50 rounded-lg shadow-md">
+                        <h4 class="font-bold text-lg">🎧 Agent</h4>
+                        <p class="text-sm"><strong>Goals:</strong> เปลี่ยนสถานะเร็ว, อ่านข้อความ</p>
+                        <p class="text-sm text-red-600"><strong>Pain Points:</strong> ระบบเดิมช้า, UI ซับซ้อน</p>
+                    </div>
+                    <div class="p-4 bg-green-50 rounded-lg shadow-md">
+                        <h4 class="font-bold text-lg">👨‍💼 Supervisor</h4>
+                        <p class="text-sm"><strong>Goals:</strong> Monitor ทีม, ส่งข้อความ</p>
+                        <p class="text-sm text-red-600"><strong>Pain Points:</strong> ดู agent หลายคนยาก, ข้อมูลช้า</p>
+                    </div>
+                    <div class="p-4 bg-yellow-50 rounded-lg shadow-md">
+                        <h4 class="font-bold text-lg">🏢 Operations Manager</h4>
+                        <p class="text-sm"><strong>Goals:</strong> ดูภาพรวม, สร้าง report</p>
+                        <p class="text-sm text-red-600"><strong>Pain Points:</strong> ข้อมูลกระจัดกระจาย</p>
+                    </div>
+                     <div class="p-4 bg-red-50 rounded-lg shadow-md">
+                        <h4 class="font-bold text-lg">🔧 System Admin</h4>
+                        <p class="text-sm"><strong>Goals:</strong> จัดการ user, monitor ระบบ</p>
+                        <p class="text-sm text-red-600"><strong>Pain Points:</strong> ไม่มี admin panel</p>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-footer">Case Study Introduction</div>
+            <div class="slide-number"></div>
+        </section>
+
+        <section class="slide">
+             <div class="slide-header">
+                <h2>💰 สถิติที่น่าสนใจเกี่ยวกับ UX/UI</h2>
+            </div>
+            <div class="slide-content" style="font-size: 1.1em;">
+                <div class="grid-2">
+                    <div class="infographic-card" style="border-left-color: #22c55e;">
+                        <h4>ROI of Good UX</h4>
+                        <ul class="list-disc pl-5">
+                            <li>💰 ทุก $1 ที่ลงทุนใน UX ได้ผลตอบแทนกลับมา $100</li>
+                            <li>📈 Good UX เพิ่ม conversion rate ได้ถึง 400%</li>
+                             <li>⏱️ 88% ของผู้ใช้จะไม่กลับมาอีกถ้าเจอประสบการณ์ที่ไม่ดี</li>
+                        </ul>
+                    </div>
+                    <div class="infographic-card" style="border-left-color: #ef4444;">
+                        <h4>Cost of Bad UX</h4>
+                        <ul class="list-disc pl-5">
+                            <li>❌ 70% ของโครงการล้มเหลวเพราะ UX ที่ไม่ดี</li>
+                            <li>💸 การแก้ error หลัง release แพงกว่าแก้ตอนออกแบบถึง 100 เท่า</li>
+                            <li>😤 62% ของผู้ใช้ถอนการติดตั้งแอปเพราะ UX แย่</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="mt-8 p-6 bg-blue-100 border-l-8 border-blue-500 text-center rounded-lg shadow-lg">
+                    <p class="text-2xl font-bold">💡 Key Takeaway: "Good UX/UI is not a cost. It's an investment."</p>
+                </div>
+            </div>
+            <div class="slide-footer">The Value of UX/UI</div>
+            <div class="slide-number"></div>
+        </section>
+        
+        <section class="slide">
+            <div class="slide-header">
+                <h2>🛠️ Workshop Preview - กิจกรรมวันนี้</h2>
+            </div>
+            <div class="slide-content">
+                <h3 class="font-bold text-xl text-center">3-Hour Workshop</h3>
+                <div class="grid-2 mt-4">
+                    <div class="p-4 bg-green-50 rounded-lg shadow-md">
+                        <h4 class="font-bold text-lg">Activity 1: User Interview & Persona (90 min)</h4>
+                        <ol class="list-decimal pl-5 mt-2 text-sm">
+                            <li>Role-play interview (30 min)</li>
+                            <li>Analyze data (15 min)</li>
+                            <li>Create Persona in Figma (30 min)</li>
+                            <li>Present (15 min)</li>
+                        </ol>
+                    </div>
+                    <div class="p-4 bg-yellow-50 rounded-lg shadow-md">
+                        <h4 class="font-bold text-lg">Activity 2: User Journey Mapping (90 min)</h4>
+                        <ol class="list-decimal pl-5 mt-2 text-sm">
+                            <li>Define scenario (10 min)</li>
+                            <li>Map journey in Figma (50 min)</li>
+                            <li>Emotion graph (10 min)</li>
+                            <li>Identify insights (15 min)</li>
+                            <li>Present (5 min)</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-footer">Workshop Preview</div>
+            <div class="slide-number"></div>
+        </section>
+        
+        <section class="slide">
+            <div class="slide-header">
+                <h2>🔍 User Research - รากฐานของ UX ที่ดี</h2>
+            </div>
+            <div class="slide-content">
+                 <p><strong>User Research คืออะไร?</strong> "กระบวนการเก็บข้อมูลเพื่อเข้าใจพฤติกรรม, ความต้องการ และ pain points ของผู้ใช้"</p>
+                <div class="grid-2 mt-4">
+                    <div class="infographic-card" style="border-left-color: #3b82f6;">
+                        <h4>🎯 ทำไมต้องทำ?</h4>
+                        <ul class="list-disc pl-5">
+                            <li>เข้าใจ real needs (ไม่ใช่สิ่งที่เราคิดเอง)</li>
+                            <li>หา pain points ที่ควรแก้ไข</li>
+                            <li>Validate ideas ก่อนลงมือทำ</li>
+                            <li>ลดความเสี่ยงในการสร้างของที่ไม่มีคนใช้</li>
+                        </ul>
+                    </div>
+                    <div class="infographic-card" style="border-left-color: #ef4444;">
+                        <h4>❌ ข้อผิดพลาดที่พบบ่อย</h4>
+                        <ul class="list-disc pl-5">
+                             <li>"เรารู้ว่า users ต้องการอะไร" → Assumption</li>
+                             <li>"เราก็เป็น users เอง" → Biased</li>
+                             <li>"ไม่มีเวลาทำ research" → เสียเวลามากกว่าเดิมทีหลัง</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-footer">User Research</div>
+            <div class="slide-number"></div>
+        </section>
+
+        <section class="slide">
+            <div class="slide-header">
+                <h2>📝 การบ้าน (Homework Preview)</h2>
+            </div>
+            <div class="slide-content">
+                <h3 class="font-bold text-xl">Assignment: Complete UX Research & UI Prototype</h3>
+                <p><strong>Due:</strong> สัปดาห์หน้า (ก่อนเรียน) | <strong>Weight:</strong> 10% ของเกรดรวม</p>
+                <div class="grid-2 mt-4">
+                    <div class="p-4 bg-indigo-50 rounded-lg">
+                        <h4 class="font-bold text-lg">Part 1: UX Research (30%)</h4>
+                        <ul class="list-disc pl-5 mt-2">
+                            <li><strong>Refined Persona Card:</strong> เพิ่มรายละเอียดจาก workshop ให้สมบูรณ์</li>
+                            <li><strong>Enhanced Journey Map:</strong> เพิ่ม touchpoints และการวิเคราะห์ที่ลึกขึ้น</li>
+                        </ul>
+                    </div>
+                    <div class="p-4 bg-teal-50 rounded-lg">
+                        <h4 class="font-bold text-lg">Part 2: UI Design (70%)</h4>
+                        <ul class="list-disc pl-5 mt-2">
+                             <li><strong>Wireframes (20%):</strong> 5-7 screens (mid-fidelity)</li>
+                             <li><strong>Hi-Fi UI Design (30%):</strong> 3-4 screens (full design)</li>
+                             <li><strong>Interactive Prototype (20%):</strong> สร้าง flow ที่คลิกได้จริง</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-footer">Homework</div>
+            <div class="slide-number"></div>
+        </section>
+
+        <section class="slide title-slide">
+            <h1>Go Go! 🚀</h1>
+            <h3>Let's start the workshop!</h3>
+            <p class="mt-8">"Good design is obvious. Great design is transparent." - Joe Sparano</p>
+            <div class="slide-number"></div>
+        </section>
+
+<section class="slide">
+            <div class="slide-header">
+                <h2>🔍 User Research - รากฐานของ UX ที่ดี</h2>
+            </div>
+            <div class="slide-content" style="font-size: 1.1em;">
+                 <p><strong>User Research คืออะไร?</strong> "กระบวนการเก็บข้อมูลเพื่อเข้าใจพฤติกรรม, ความต้องการ และ pain points ของผู้ใช้"</p>
+                <div class="grid-2 mt-4">
+                    <div class="infographic-card" style="border-left-color: #3b82f6;">
+                        <h4>🎯 ทำไมต้องทำ?</h4>
+                        <ul class="list-disc pl-5">
+                            <li>เข้าใจความต้องการที่แท้จริง (ไม่ใช่สิ่งที่เราคิดเอง)</li>
+                            <li>หา pain points ที่ควรแก้ไข</li>
+                            <li>ตรวจสอบไอเดียก่อนลงมือทำ</li>
+                            <li>ลดความเสี่ยงในการสร้างของที่ไม่มีคนใช้</li>
+                        </ul>
+                    </div>
+                    <div class="infographic-card" style="border-left-color: #ef4444;">
+                        <h4>❌ ข้อผิดพลาดที่พบบ่อย</h4>
+                        <ul class="list-disc pl-5">
+                             <li>"เรารู้ว่า users ต้องการอะไร" → Assumption (การทึกทักเอาเอง)</li>
+                             <li>"เราก็เป็น users เอง" → Biased (มีอคติ)</li>
+                             <li>"ไม่มีเวลาทำ research" → เสียเวลามากกว่าเดิมทีหลัง</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-footer">Session 1.2: User Research & Personas</div>
+            <div class="slide-number"></div>
+        </section>
+
+        <section class="slide">
+            <div class="slide-header">
+                <h2>📝 วิธีการทำ User Research</h2>
+            </div>
+            <div class="slide-content" style="font-size: 1.0em;">
+                <div class="grid-2 mt-4">
+                    <div class="infographic-card" style="border-left-color: #10B981;">
+                        <h4 class="text-green-700">1. Qualitative Research (เชิงคุณภาพ)</h4>
+                        <p class="italic">"เน้นความลึก ทำความเข้าใจ 'ทำไม' และ 'อย่างไร'"</p>
+                        <ul class="list-disc pl-5 mt-2">
+                            <li>🗣️ <strong>User Interviews:</strong> สัมภาษณ์แบบเจาะลึก 1:1</li>
+                            <li>👀 <strong>Contextual Inquiry:</strong> สังเกตการใช้งานจริงในสภาพแวดล้อมของผู้ใช้</li>
+                            <li>👥 <strong>Focus Groups:</strong> สนทนากลุ่มเพื่อระดมความคิดเห็น</li>
+                        </ul>
+                    </div>
+                    <div class="infographic-card" style="border-left-color: #F59E0B;">
+                        <h4 class="text-yellow-700">2. Quantitative Research (เชิงปริมาณ)</h4>
+                        <p class="italic">"เน้นตัวเลข วัดผล 'อะไร' 'มากแค่ไหน' และ 'บ่อยแค่ไหน'"</p>
+                        <ul class="list-disc pl-5 mt-2">
+                            <li>📝 <strong>Surveys:</strong> แบบสอบถามกับผู้ใช้จำนวนมาก</li>
+                            <li>📈 <strong>Analytics Data:</strong> วิเคราะห์ข้อมูลการใช้งานจากระบบ</li>
+                            <li>🧪 <strong>A/B Testing:</strong> ทดสอบเปรียบเทียบ 2 เวอร์ชั่นของ UI</li>
+                        </ul>
+                    </div>
+                </div>
+                 <div class="interactive-question mt-6">
+                    <p><strong>🎯 Scenario:</strong> หากเราต้องการทราบว่า "Supervisor ส่วนใหญ่ใช้งาน Dashboard ในช่วงเวลาใด และฟังก์ชันใดที่ถูกใช้งานบ่อยที่สุด?" เราควรใช้วิธีวิจัยแบบใดที่เหมาะสมที่สุด?</p>
+                    <button onclick="toggleAnswer(this)">แสดงคำตอบ</button>
+                    <div class="answer">
+                        <p><strong>คำตอบ: Quantitative Research โดยใช้ Analytics Data</strong></p>
+                        <p>การวิเคราะห์ข้อมูลการใช้งาน (Analytics Data) จากระบบจะให้ข้อมูลเชิงปริมาณที่แม่นยำเกี่ยวกับพฤติกรรมการใช้งาน เช่น เวลาเข้าใช้งาน, ฟังก์ชันที่ถูกคลิกบ่อยที่สุด ซึ่งช่วยให้เราเข้าใจ "อะไร" และ "มากแค่ไหน" ได้ดีที่สุด</p>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-footer">Session 1.2: User Research & Personas</div>
+            <div class="slide-number"></div>
+        </section>
+
+        <section class="slide">
+            <div class="slide-header">
+                <h2>🗣️ เทคนิคการสัมภาษณ์ผู้ใช้ (User Interviews)</h2>
+            </div>
+            <div class="slide-content" style="font-size: 0.95em;">
+                <div class="grid-2">
+                    <div class="infographic-card" style="border-left-color: #22c55e;">
+                        <h4>✅ Do's (สิ่งที่ควรทำ)</h4>
+                        <ul class="list-disc pl-5">
+                           <li><strong>ถามคำถามปลายเปิด (Open-ended):</strong> "ช่วยอธิบายวันทำงานของคุณให้ฟังหน่อยครับ"</li>
+                           <li><strong>ฟังมากกว่าพูด (80/20 Rule):</strong> ให้ผู้ใช้เป็นคนเล่าเรื่อง</li>
+                           <li><strong>ถาม "Why?" ซ้ำๆ:</strong> เพื่อเจาะลึกถึงรากของปัญหา</li>
+                           <li><strong>สังเกตภาษากาย:</strong> บางครั้งสิ่งที่ไม่ได้พูดก็สำคัญ</li>
+                           <li><strong>ใช้ความเงียบให้เป็นประโยชน์:</strong> การหยุดเงียบ 3-5 วินาที อาจทำให้ผู้ใช้ให้ข้อมูลเพิ่มเติม</li>
+                        </ul>
+                    </div>
+                    <div class="infographic-card" style="border-left-color: #ef4444;">
+                        <h4>❌ Don'ts (สิ่งที่ไม่ควรทำ)</h4>
+                        <ul class="list-disc pl-5">
+                           <li><strong>ถามคำถามชี้นำ:</strong> "ระบบนี้มันดีใช่ไหมครับ?" ❌</li>
+                           <li><strong>ถามคำถามปลายปิด (ใช่/ไม่ใช่):</strong> "คุณชอบฟีเจอร์นี้ไหม?" ❌</li>
+                           <li><strong>แนะนำวิธีแก้ปัญหา:</strong> หน้าที่ของเราคือ "ฟัง" ไม่ใช่ "สอน"</li>
+                           <li><strong>ขัดจังหวะ:</strong> ปล่อยให้ผู้ใช้เล่าจนจบความคิด</li>
+                           <li><strong>ตัดสินความคิดเห็น:</strong> ไม่ว่าเขาจะพูดอะไร หน้าที่ของเราคือรับฟัง</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-footer">Session 1.2: User Research & Personas</div>
+            <div class="slide-number"></div>
+        </section>
+
+        <section class="slide">
+            <div class="slide-header">
+                <h2>❓ ตัวอย่างคำถามสัมภาษณ์</h2>
+            </div>
+            <div class="slide-content" style="font-size: 1.0em;">
+                <div class="grid-2">
+                    <div class="p-4 bg-blue-50 rounded-lg shadow-sm">
+                        <h4 class="font-bold text-lg text-blue-800">🎧 สำหรับ Agent (พนักงาน Call Center)</h4>
+                        <strong class="block mt-2">Background:</strong>
+                        <ul class="list-disc pl-5 text-sm">
+                            <li>บอกเกี่ยวกับงานของคุณหน่อย?</li>
+                            <li>วันทำงานปกติเป็นยังไง?</li>
+                        </ul>
+                        <strong class="block mt-2">Current Problems:</strong>
+                        <ul class="list-disc pl-5 text-sm">
+                            <li>อะไรคือปัญหาที่เจอบ่อยที่สุดในการทำงานกับระบบปัจจุบัน?</li>
+                            <li>อะไรทำให้คุณรู้สึกหงุดหงิดที่สุด?</li>
+                        </ul>
+                        <strong class="block mt-2">Goals & Needs:</strong>
+                        <ul class="list-disc pl-5 text-sm">
+                            <li>ถ้าจะเปลี่ยนอะไรในระบบได้ 1 อย่าง จะเปลี่ยนอะไร?</li>
+                            <li>มีฟีเจอร์อะไรที่อยากให้มีมากที่สุด?</li>
+                        </ul>
+                    </div>
+                    <div class="p-4 bg-green-50 rounded-lg shadow-sm">
+                        <h4 class="font-bold text-lg text-green-800">👨‍💼 สำหรับ Supervisor (หัวหน้าทีม)</h4>
+                         <strong class="block mt-2">Monitoring:</strong>
+                        <ul class="list-disc pl-5 text-sm">
+                            <li>คุณติดตามการทำงานของทีมอย่างไร?</li>
+                            <li>ข้อมูลอะไรที่คุณต้องเห็นแบบ real-time?</li>
+                        </ul>
+                        <strong class="block mt-2">Communication:</strong>
+                        <ul class="list-disc pl-5 text-sm">
+                            <li>คุณสื่อสารกับ Agent อย่างไรเมื่อมีเรื่องด่วน?</li>
+                            <li>มีปัญหาในการสื่อสารกับทีมไหม?</li>
+                        </ul>
+                        <strong class="block mt-2">Reporting:</strong>
+                        <ul class="list-disc pl-5 text-sm">
+                            <li>ต้องทำ Report อะไรส่งผู้บริหารบ้าง?</li>
+                            <li>ข้อมูลอะไรที่ขาดหายไปจาก Report ปัจจุบัน?</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-footer">Session 1.2: User Research & Personas</div>
+            <div class="slide-number"></div>
+        </section>
+
+        <section class="slide">
+            <div class="slide-header">
+                <h2>🧑‍🤝‍🧑 Personas - สร้างผู้ใช้ในจินตนาการ</h2>
+            </div>
+            <div class="slide-content">
+                <p><strong>Persona คืออะไร?</strong> "ตัวแทนสมมติของผู้ใช้งานหลัก โดยอิงจากข้อมูล User Research จริง เพื่อช่วยให้ทีมเข้าใจและ empathy กับผู้ใช้มากขึ้น"</p>
+                <div class="grid-2 mt-6">
+                     <div class="infographic-card" style="border-left-color: #1d4ed8;">
+                        <h4 class="text-blue-700">🎯 ทำไมต้องสร้าง Persona?</h4>
+                        <ul class="list-disc pl-5">
+                            <li><strong>Focus:</strong> ช่วยให้ทีมมีเป้าหมายที่ชัดเจนว่าจะออกแบบเพื่อใคร</li>
+                            <li><strong>Empathy:</strong> สร้างความเข้าใจและเอาใจใส่ผู้ใช้</li>
+                            <li><strong>Decision Making:</strong> ใช้เป็นเกณฑ์ในการตัดสินใจออกแบบ ("ฟีเจอร์นี้ 'พี่สมชาย' จะชอบไหม?")</li>
+                            <li><strong>Communication:</strong> สื่อสารความต้องการของผู้ใช้ในทีมง่ายขึ้น</li>
+                        </ul>
+                    </div>
+                    <div class="infographic-card" style="border-left-color: #be123c;">
+                        <h4 class="text-red-700">ถ้าไม่มี Persona จะเกิดอะไรขึ้น?</h4>
+                        <ul class="list-disc pl-5">
+                           <li>ทุกคนในทีมจินตนาการผู้ใช้คนละแบบ</li>
+                           <li>การออกแบบไม่มีจุดโฟกัสที่ชัดเจน</li>
+                           <li>ใช้ความเห็นส่วนตัวแทนข้อมูลจริงในการตัดสินใจ</li>
+                           <li>อาจสร้างฟีเจอร์ที่ไม่มีใครต้องการใช้งานจริง</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-footer">Session 1.2: User Research & Personas</div>
+            <div class="slide-number"></div>
+        </section>
+
+        <section class="slide">
+            <div class="slide-header">
+                <h2> ภาพรวมของ  persona (Anatomy of a Persona)</h2>
+            </div>
+            <div class="slide-content">
+                <p>องค์ประกอบสำคัญของ Persona ที่ดี:</p>
+                <div class="flex justify-center my-4">
+                    <img src="https://placehold.co/900x500/0D204E/FFFFFF?text=Anatomy+of+a+Persona+Card" alt="Anatomy of a Persona Card Infographic" class="rounded-md shadow-lg">
+                </div>
+                <div class="interactive-question">
+                    <p><strong>🤔 คำถาม:</strong> ระหว่าง "Goals" กับ "Demographics (ข้อมูลประชากร)" ส่วนไหนสำคัญกว่าในการออกแบบ UX?</p>
+                    <button onclick="toggleAnswer(this)">แสดงคำตอบ</button>
+                    <div class="answer">
+                        <p><strong>คำตอบ: Goals (เป้าหมาย) สำคัญกว่ามาก!</strong></p>
+                        <p>Demographics บอกเราว่าผู้ใช้ "เป็นใคร" แต่ Goals บอกเราว่าผู้ใช้ "ต้องการทำอะไร" ซึ่งเป็นหัวใจของการออกแบบ UX ที่ดี</p>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-footer">Session 1.2: User Research & Personas</div>
+            <div class="slide-number"></div>
+        </section>
+
+        <section class="slide">
+            <div class="slide-header">
+                <h2>ตัวอย่าง Persona: "พี่นก"</h2>
+            </div>
+            <div class="slide-content" style="font-size: 0.9em;">
+                <pre class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+👤 **ชื่อ:** นก สุริยวงศ์, 25 ปี
+💼 **ตำแหน่ง:** Customer Service Agent (ประสบการณ์ 2 ปี)
+💻 **ความถนัดด้านเทคโนโลยี:** ★★★☆☆ (ปานกลาง)
+
+💬 **Quote:** "ถ้าเปลี่ยนสถานะได้เร็วขึ้น หนูจะรับสายลูกค้าได้มากขึ้น"
+
+🎯 **เป้าหมาย (GOALS):**
+    - เปลี่ยนสถานะการทำงานได้ใน 1-2 คลิก
+    - เห็นข้อความประกาศจากหัวหน้าทันที
+    - ดูสถิติการทำงานของตัวเองได้ง่ายๆ
+    - ทำงานให้มีประสิทธิภาพสูงสุด
+
+😫 **ปัญหา (PAIN POINTS):**
+    - ระบบเดิมช้ามาก ต้องรอโหลด 10-15 วินาที
+    - เปลี่ยนสถานะแล้ว UI ไม่ยอมอัปเดตทันที
+    - ปุ่มเปลี่ยนสถานะหาเจอยาก ไม่เด่น
+    - Notification ไม่ชัดเจน ทำให้พลาดข้อมูลสำคัญ
+
+💡 **แนวทางการออกแบบ (DESIGN IMPLICATIONS):**
+    → ปุ่มเปลี่ยนสถานะต้องใหญ่และเห็นได้ชัด
+    → ต้องมีการอัปเดตแบบ Real-time (WebSocket)
+    → Notification ต้องชัดเจน มีเสียงเตือน
+    → ควรมี Keyboard shortcuts สำหรับการเปลี่ยนสถานะ
+                </pre>
+            </div>
+            <div class="slide-footer">Session 1.2: User Research & Personas</div>
+            <div class="slide-number"></div>
+        </section>
+
+        <section class="slide">
+            <div class="slide-header">
+                <h2>📝 ขั้นตอนการสร้าง Persona</h2>
+            </div>
+            <div class="slide-content">
+                <div class="flex justify-center my-4">
+                    <img src="https://placehold.co/900x300/10b981/FFFFFF?text=Step+1.+Analyze+Data+->+2.+Identify+Segments+->+3.+Create+Persona+->+4.+Validate" alt="Persona Creation Steps" class="rounded-md shadow-lg">
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                    <div>
+                        <h4 class="font-bold text-lg text-indigo-700">1. วิเคราะห์ข้อมูล Research</h4>
+                        <p class="text-sm">ทบทวนบันทึกจากการสัมภาษณ์, มองหา Pattern ของพฤติกรรม, ปัญหา, และเป้าหมายที่คล้ายกัน</p>
+                    </div>
+                     <div>
+                        <h4 class="font-bold text-lg text-indigo-700">2. จัดกลุ่มผู้ใช้ (Segments)</h4>
+                        <p class="text-sm">แบ่งผู้ใช้ออกเป็นกลุ่มๆ ตามพฤติกรรมและความต้องการ เช่น Agent, Supervisor, Manager</p>
+                    </div>
+                     <div>
+                        <h4 class="font-bold text-lg text-indigo-700">3. สร้าง Persona</h4>
+                        <p class="text-sm">สร้างเรื่องราวและใส่รายละเอียดให้แต่ละกลุ่ม โดยอิงจากข้อมูลจริงที่รวบรวมมา</p>
+                    </div>
+                     <div>
+                        <h4 class="font-bold text-lg text-indigo-700">4. ตรวจสอบและปรับปรุง</h4>
+                        <p class="text-sm">นำ Persona ที่สร้างไปให้ทีมและ Stakeholders ดูเพื่อตรวจสอบความถูกต้องและสมจริง</p>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-footer">Session 1.2: User Research & Personas</div>
+            <div class="slide-number"></div>
+        </section>
+
+<section class="slide">
+            <div class="slide-header">
+                <h2>🗺️ User Journey Mapping - มองผ่านสายตาผู้ใช้</h2>
+            </div>
+            <div class="slide-content" style="font-size: 1.0em;">
+                <p><strong>User Journey Map คืออะไร?</strong> "แผนภาพที่แสดงประสบการณ์ของผู้ใช้ตั้งแต่เริ่มต้นจนจบในการทำภารกิจหนึ่งๆ"</p>
+                <div class="flex justify-center my-4">
+                    <img src="https://placehold.co/900x300/10b981/FFFFFF?text=Start+->+Middle+->+End+Journey" alt="User Journey Map Infographic" class="rounded-md shadow-lg">
+                </div>
+                <div class="infographic-card" style="border-left-color: #3b82f6;">
+                    <h4>🎯 ทำไมต้องทำ Journey Map?</h4>
+                    <ul class="list-disc pl-5">
+                        <li>เห็นภาพรวมประสบการณ์ของผู้ใช้แบบ End-to-End</li>
+                        <li>ช่วยค้นหา "Pain Points" หรือจุดที่ผู้ใช้ติดขัดในแต่ละขั้นตอน</li>
+                        <li>ค้นพบ "Opportunities" หรือโอกาสในการปรับปรุง UX</li>
+                        <li>เข้าใจอารมณ์ (Emotions) ของผู้ใช้ในแต่ละช่วงเวลา</li>
+                        <li>ช่วยให้ทีมเห็นภาพเดียวกันและจัดลำดับความสำคัญของงานได้ดีขึ้น</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="slide-footer">Session 1.3: User Journey & UI Basics</div>
+            <div class="slide-number"></div>
+        </section>
+
+        <section class="slide">
+            <div class="slide-header">
+                <h2>🧩 องค์ประกอบของ Journey Map</h2>
+            </div>
+            <div class="slide-content" style="font-size: 0.9em; line-height: 1.6;">
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div class="p-3 bg-gray-50 rounded-lg shadow-sm"><strong>1. Persona:</strong> ใครคือผู้ใช้?</div>
+                    <div class="p-3 bg-gray-50 rounded-lg shadow-sm"><strong>2. Scenario:</strong> สถานการณ์และเป้าหมายคืออะไร?</div>
+                    <div class="p-3 bg-gray-50 rounded-lg shadow-sm"><strong>3. Phases:</strong> ขั้นตอนหลักๆ ของการเดินทาง</div>
+                    <div class="p-3 bg-gray-50 rounded-lg shadow-sm"><strong>4. Actions:</strong> ผู้ใช้ทำอะไรในแต่ละขั้นตอน?</div>
+                    <div class="p-3 bg-gray-50 rounded-lg shadow-sm"><strong>5. Thoughts 💭:</strong> ผู้ใช้คิดอะไรอยู่?</div>
+                    <div class="p-3 bg-gray-50 rounded-lg shadow-sm"><strong>6. Emotions 😊😟:</strong> ผู้ใช้รู้สึกอย่างไร?</div>
+                    <div class="p-3 bg-gray-50 rounded-lg shadow-sm"><strong>7. Pain Points ❗:</strong> ปัญหาที่พบเจอ</div>
+                    <div class="p-3 bg-gray-50 rounded-lg shadow-sm"><strong>8. Opportunities 💡:</strong> โอกาสในการปรับปรุง</div>
+                </div>
+                <div class="mt-6 p-4 bg-blue-50 border-l-4 border-blue-500 rounded-r-lg">
+                    <p>องค์ประกอบเหล่านี้ช่วยให้เราวิเคราะห์ประสบการณ์ของผู้ใช้ได้อย่างละเอียด และเปลี่ยนปัญหาที่พบให้เป็นแนวทางการออกแบบที่จับต้องได้</p>
+                </div>
+            </div>
+            <div class="slide-footer">Session 1.3: User Journey & UI Basics</div>
+            <div class="slide-number"></div>
+        </section>
+
+        <section class="slide">
+            <div class="slide-header">
+                <h2>ตัวอย่าง Journey Map: Agent "พี่นก"</h2>
+            </div>
+            <div class="slide-content" style="font-size: 0.85em;">
+                <h3 class="font-bold text-center">Scenario: เช้าวันจันทร์ - พี่นกต้องการเปลี่ยนสถานะเป็น "Available"</h3>
+                <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mt-4">
+                    <div class="p-3 bg-gray-50 rounded-lg">
+                        <h4 class="font-bold">Phase 1: Arrival</h4>
+                        <p><strong>Actions:</strong> เปิดคอม, เปิดแอป</p>
+                        <p><strong>Thoughts:</strong> "หวังว่าระบบจะเร็ว"</p>
+                        <p class="text-2xl">😐</p>
+                    </div>
+                    <div class="p-3 bg-gray-50 rounded-lg">
+                        <h4 class="font-bold">Phase 2: Login</h4>
+                        <p><strong>Actions:</strong> พิมพ์ user/pass, คลิก Login</p>
+                        <p><strong>Thoughts:</strong> "Password ยากจัง"</p>
+                        <p class="text-2xl">😟</p>
+                        <p class="text-red-600"><strong>Pain:</strong> Password ซับซ้อน</p>
+                    </div>
+                    <div class="p-3 bg-gray-50 rounded-lg">
+                        <h4 class="font-bold">Phase 3: Find Button</h4>
+                        <p><strong>Actions:</strong> มองหาปุ่มเปลี่ยนสถานะ</p>
+                        <p><strong>Thoughts:</strong> "ปุ่มอยู่ไหนนะ?"</p>
+                        <p class="text-2xl">😟</p>
+                         <p class="text-red-600"><strong>Pain:</strong> ปุ่มไม่เด่น</p>
+                    </div>
+                    <div class="p-3 bg-gray-50 rounded-lg">
+                        <h4 class="font-bold">Phase 4: Change Status</h4>
+                        <p><strong>Actions:</strong> คลิกปุ่ม, รอ update</p>
+                        <p><strong>Thoughts:</strong> "Update แล้วยัง?"</p>
+                        <p class="text-2xl">😰</p>
+                         <p class="text-red-600"><strong>Pain:</strong> ไม่มี feedback, ช้า</p>
+                    </div>
+                    <div class="p-3 bg-gray-50 rounded-lg">
+                        <h4 class="font-bold">Phase 5: Ready</h4>
+                        <p><strong>Actions:</strong> เห็นสถานะเปลี่ยนเป็นสีเขียว</p>
+                        <p><strong>Thoughts:</strong> "โอเค พร้อมแล้ว!"</p>
+                        <p class="text-2xl">😊</p>
+                         <p class="text-green-600"><strong>Opportunity:</strong> ทำให้มี Instant Feedback</p>
+                    </div>
+                </div>
+                <img src="https://placehold.co/900x200/e0e7ff/312e81?text=Emotion+Graph+(Anxious+dip+at+phase+4)" alt="Emotion Graph" class="mt-4 rounded-lg w-full">
+            </div>
+            <div class="slide-footer">Session 1.3: User Journey & UI Basics</div>
+            <div class="slide-number"></div>
+        </section>
+
+        <section class="slide">
+            <div class="slide-header">
+                <h2>🎨 Design Systems - สร้างความสม่ำเสมอ</h2>
+            </div>
+            <div class="slide-content">
+                <p><strong>Design System คืออะไร?</strong> "ชุดของ components, patterns, และ guidelines ที่ช่วยให้ออกแบบและพัฒนาผลิตภัณฑ์ได้อย่างสม่ำเสมอและมีประสิทธิภาพ"</p>
+                <div class="grid-2 mt-4">
+                    <div class="infographic-card" style="border-left-color: #10B981;">
+                        <h4>🎯 ทำไมต้องมี?</h4>
+                        <ul class="list-disc pl-5">
+                            <li><strong>Consistency:</strong> ทุกหน้าจอและทุกผลิตภัณฑ์ดูเป็นหนึ่งเดียวกัน</li>
+                            <li><strong>Efficiency:</strong> ออกแบบและพัฒนาเร็วขึ้นโดยการนำ components กลับมาใช้ใหม่</li>
+                            <li><strong>Scalability:</strong> ง่ายต่อการขยายและดูแลรักษาระบบ</li>
+                            <li><strong>Collaboration:</strong> Designer และ Developer พูดภาษาเดียวกัน</li>
+                        </ul>
+                    </div>
+                    <div class="infographic-card" style="border-left-color: #3B82F6;">
+                        <h4>🧩 องค์ประกอบหลัก</h4>
+                        <ul class="list-disc pl-5">
+                            <li><strong>Design Tokens:</strong> ค่าพื้นฐาน เช่น สี, ระยะห่าง, ขนาดตัวอักษร</li>
+                            <li><strong>Component Library:</strong> ชุด UI ที่สร้างไว้แล้ว เช่น Buttons, Cards, Inputs</li>
+                            <li><strong>Patterns:</strong> วิธีแก้ปัญหาการออกแบบที่พบบ่อย เช่น รูปแบบฟอร์ม, Navigation</li>
+                            <li><strong>Guidelines:</strong> เอกสารอธิบายวิธีใช้, Do's & Don'ts</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-footer">Session 1.3: User Journey & UI Basics</div>
+            <div class="slide-number"></div>
+        </section>
+
+        <section class="slide">
+            <div class="slide-header">
+                <h2>Design System: 🎨 Color</h2>
+            </div>
+            <div class="slide-content" style="font-size: 0.9em;">
+                <h3 class="font-bold">Status Colors (Semantic)</h3>
+                <div class="grid grid-cols-5 gap-2 mt-2">
+                    <div class="p-2 rounded text-white text-center" style="background-color: #10B981;">Available</div>
+                    <div class="p-2 rounded text-white text-center" style="background-color: #3B82F6;">Active</div>
+                    <div class="p-2 rounded text-white text-center" style="background-color: #F59E0B;">Wrap-up</div>
+                    <div class="p-2 rounded text-white text-center" style="background-color: #EF4444;">Break</div>
+                    <div class="p-2 rounded text-white text-center" style="background-color: #6B7280;">Offline</div>
+                </div>
+                <h3 class="font-bold mt-4">UI Colors</h3>
+                <pre>
+Primary   : #3B82F6  (Blue) - Main actions
+Success   : #22C55E  (Green) - Confirmations
+Warning   : #F97316  (Orange) - Warnings
+Error     : #DC2626  (Red) - Errors
+Info      : #0EA5E9  (Sky Blue) - Info messages
+                </pre>
+                <h3 class="font-bold mt-4">Neutral Colors</h3>
+                <pre>
+Background: #FFFFFF  (White)
+Surface:    #F9FAFB  (Light Gray)
+Border:     #E5E7EB  (Gray)
+Text:       #111827  (Almost Black)
+Text 2nd:   #6B7280  (Medium Gray)
+                </pre>
+            </div>
+            <div class="slide-footer">Session 1.3: User Journey & UI Basics</div>
+            <div class="slide-number"></div>
+        </section>
+
+        <section class="slide">
+            <div class="slide-header">
+                <h2>Design System: 🔤 Typography</h2>
+            </div>
+            <div class="slide-content">
+                <div class="grid-2">
+                    <div>
+                        <h3 class="font-bold">Font Family</h3>
+                        <pre class="mt-2">
+Primary: 'Inter', sans-serif
+- Modern, clean, readable
+- Excellent for UI
+- Free & open source
+                        </pre>
+                    </div>
+                    <div>
+                        <h3 class="font-bold">Type Scale</h3>
+                        <p class="text-4xl font-bold">H1: 36px Bold</p>
+                        <p class="text-3xl font-semibold">H2: 30px Semibold</p>
+                        <p class="text-xl">Body: 16px Regular</p>
+                        <p class="text-sm">Small: 14px Regular</p>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-footer">Session 1.3: User Journey & UI Basics</div>
+            <div class="slide-number"></div>
+        </section>
+        
+        <section class="slide">
+            <div class="slide-header">
+                <h2>Design System: 📏 Spacing (8px Grid)</h2>
+            </div>
+            <div class="slide-content">
+                <div class="grid-2">
+                    <div>
+                        <h3 class="font-bold">Why 8px Grid?</h3>
+                        <ul class="list-disc pl-5">
+                            <li>เป็น standard ของอุตสาหกรรม (Google, Apple)</li>
+                            <li>หารด้วย 2 และ 4 ลงตัว ทำให้ยืดหยุ่น</li>
+                            <li>คมชัดในทุกหน้าจอ (even numbers)</li>
+                            <li>ง่ายต่อการสื่อสารในทีม (e.g., "ใช้ 2 unit" = 16px)</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h3 class="font-bold">Spacing Scale</h3>
+                        <pre>
+xs:   4px  (0.5 unit)
+sm:   8px  (1 unit)
+md:   16px (2 units)
+lg:   24px (3 units)
+xl:   32px (4 units)
+2xl:  48px (6 units)
+                        </pre>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-footer">Session 1.3: User Journey & UI Basics</div>
+            <div class="slide-number"></div>
+        </section>
+        
+        <section class="slide">
+            <div class="slide-header">
+                <h2>Design System: 🧩 Component Library</h2>
+            </div>
+            <div class="slide-content" style="font-size: 0.9em;">
+                <p>ตัวอย่าง Components ที่เราจะสร้างสำหรับ Agent Wallboard:</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
+                    <div class="p-4 bg-gray-100 rounded-lg">
+                        <h4 class="font-bold">Buttons</h4>
+                        <p>Primary, Secondary, Danger. มีสถานะ Default, Hover, Disabled.</p>
+                        <button class="bg-blue-600 text-white py-1 px-3 rounded-md mt-2">Primary</button>
+                    </div>
+                    <div class="p-4 bg-gray-100 rounded-lg">
+                        <h4 class="font-bold">Cards</h4>
+                        <p>ใช้แสดงข้อมูล Agent แต่ละคน</p>
+                        <div class="mt-2 p-2 border rounded-md shadow-sm">Agent Card</div>
+                    </div>
+                    <div class="p-4 bg-gray-100 rounded-lg">
+                        <h4 class="font-bold">Status Badge</h4>
+                        <p>ป้ายแสดงสถานะพร้อมสีที่กำหนด</p>
+                        <span class="mt-2 inline-block py-1 px-3 rounded-full bg-green-200 text-green-800">Available</span>
+                    </div>
+                    <div class="p-4 bg-gray-100 rounded-lg">
+                        <h4 class="font-bold">Inputs</h4>
+                        <p>ช่องกรอกข้อความสำหรับส่ง Message</p>
+                        <input type="text" placeholder="Text Input" class="mt-2 p-1 border rounded-md w-full">
+                    </div>
+                </div>
+            </div>
+            <div class="slide-footer">Session 1.3: User Journey & UI Basics</div>
+            <div class="slide-number"></div>
+        </section>
+        
+        <section class="slide">
+            <div class="slide-header">
+                <h2>🎨 Introduction to Figma</h2>
+            </div>
+            <div class="slide-content">
+                <p><strong>Figma คืออะไร?</strong> "เครื่องมือออกแบบ UI/UX บน Cloud ที่ทำงานร่วมกันได้แบบ Real-time"</p>
+                <div class="infographic-card mt-4" style="border-left-color: var(--secondary-color);">
+                    <h4>⭐ ทำไมเราถึงเลือกใช้ Figma?</h4>
+                    <ul class="list-disc pl-5">
+                        <li><strong>ฟรีสำหรับนักศึกษา:</strong> เข้าถึงฟีเจอร์ระดับโปรได้โดยไม่มีค่าใช้จ่าย</li>
+                        <li><strong>Cloud-based:</strong> ใช้งานได้ทุกที่ผ่าน Browser ไม่ต้องติดตั้งโปรแกรม</li>
+                        <li><strong>Real-time Collaboration:</strong> ทำงานร่วมกับเพื่อนในทีมได้พร้อมกัน เห็นการเปลี่ยนแปลงทันที</li>
+                        <li><strong>Prototyping:</strong> สร้าง Prototype ที่กดคลิกได้ในตัว</li>
+                        <li><strong>Developer Handoff:</strong> Developer สามารถเข้ามาดูโค้ด CSS และ Export Assets ได้ง่าย</li>
+                        <li><strong>Community:</strong> มี Template, Plugin, และไฟล์ตัวอย่างให้ศึกษามากมาย</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="slide-footer">Session 1.3: User Journey & UI Basics</div>
+            <div class="slide-number"></div>
+        </section>
+        
+        <section class="slide">
+            <div class="slide-header">
+                <h2>🖥️ หน้าตาโปรแกรม Figma (Interface Tour)</h2>
+            </div>
+            <div class="slide-content">
+                <pre class="text-xs">
+┌─────────────────────────────────────────────┐
+│ 🛠️ Tools     [Logo]    File  Edit  View     │ Top Bar
+├────┬────────────────────────────────────┬────┤
+│    │                                    │    │
+│ L  │                                    │ R  │
+│ E  │                                    │ I  │
+│ F  │               CANVAS               │ G  │
+│ T  │        (พื้นที่ทำงานออกแบบ)         │ H  │
+│    │                                    │ T  │
+│ P  │                                    │    │
+│ A  │                                    │ P  │
+│ N  │                                    │ A  │
+│ E  │                                    │ N  │
+│ L  │                                    │ E  │
+│    │                                    │ L  │
+├────┴────────────────────────────────────┴────┤
+└─────────────────────────────────────────────┘
+                </pre>
+                <div class="grid-2 text-base">
+                    <div><strong>Left Panel (แผงด้านซ้าย):</strong> แสดง Layers, Assets, และ Pages</div>
+                    <div><strong>Right Panel (แผงด้านขวา):</strong> แสดง Properties ของสิ่งที่เลือก (Design, Prototype, Inspect)</div>
+                </div>
+            </div>
+            <div class="slide-footer">Session 1.3: User Journey & UI Basics</div>
+            <div class="slide-number"></div>
+        </section>
+        
+        <section class="slide">
+            <div class="slide-header">
+                <h2>💡 5 แนวคิดหลักใน Figma</h2>
+            </div>
+            <div class="slide-content" style="font-size: 0.9em;">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div class="p-3 bg-gray-50 rounded-lg"><strong>1. Frames:</strong> คือ Artboard หรือหน้าจอที่เราออกแบบ</div>
+                    <div class="p-3 bg-gray-50 rounded-lg"><strong>2. Components:</strong> คือ UI Element ที่นำกลับมาใช้ซ้ำได้ (แก้ที่เดียวเปลี่ยนทุกที่)</div>
+                    <div class="p-3 bg-gray-50 rounded-lg"><strong>3. Auto Layout:</strong> คือการจัดเรียง Element แบบยืดหยุ่น (เหมือน Flexbox)</div>
+                    <div class="p-3 bg-gray-50 rounded-lg"><strong>4. Constraints:</strong> คือการกำหนดให้ Element "ยึดติด" กับขอบของ Frame</div>
+                    <div class="p-3 bg-gray-50 rounded-lg"><strong>5. Prototyping:</strong> คือการเชื่อม Frame ต่างๆ เข้าด้วยกันเพื่อให้คลิกได้</div>
+                </div>
+            </div>
+            <div class="slide-footer">Session 1.3: User Journey & UI Basics</div>
+            <div class="slide-number"></div>
+        </section>
+
+        <section class="slide">
+            <div class="slide-header">
+                <h2>👨‍💻 Live Demo: สร้าง Button Component (5 นาที)</h2>
+            </div>
+            <div class="slide-content" style="font-size: 0.9em;">
+                <ol class="list-decimal pl-5">
+                    <li><strong>Create Frame (F):</strong> สร้าง Frame ขนาด Desktop</li>
+                    <li><strong>Add Rectangle (R):</strong> วาดสี่เหลี่ยมขนาด 120x40px, border-radius 8px</li>
+                    <li><strong>Style:</strong> เติมสี Primary Blue (#3B82F6)</li>
+                    <li><strong>Add Text (T):</strong> พิมพ์คำว่า "Button", ขนาด 16px, สีขาว</li>
+                    <li><strong>Apply Auto Layout (Shift + A):</strong> จัดเรียง Text และ Rectangle ให้มี Padding ที่เหมาะสม</li>
+                    <li><strong>Make Component (Cmd/Ctrl + Option/Alt + K):</strong> เปลี่ยนเป็น Component เพื่อนำไปใช้ซ้ำ</li>
+                    <li><strong>Add Hover State:</strong> เพิ่ม Interaction on Hover ให้เปลี่ยนเป็นสีเข้มขึ้น</li>
+                </ol>
+                <div class="mt-4 p-4 bg-yellow-100 border-l-4 border-yellow-500">
+                    <p><strong>เป้าหมาย:</strong> เพื่อแสดงให้เห็นว่าเราสามารถสร้าง UI ที่นำกลับมาใช้ใหม่ได้ง่ายๆ ด้วย Figma</p>
+                </div>
+            </div>
+            <div class="slide-footer">Session 1.3: User Journey & UI Basics</div>
+            <div class="slide-number"></div>
+        </section>
+
+        <section class="slide">
+            <div class="slide-header">
+                <h2>🎯 Workshop Time - สิ่งที่เราจะทำกันต่อ</h2>
+            </div>
+            <div class="slide-content">
+                <h3 class="font-bold text-xl text-center">3-Hour Workshop</h3>
+                <div class="grid-2 mt-4">
+                    <div class="p-4 bg-green-50 rounded-lg shadow-md">
+                        <h4 class="font-bold text-lg">Activity 1: User Interview & Persona (90 min)</h4>
+                        <p class="text-sm mt-2"><strong>สิ่งที่คุณจะได้:</strong> ประสบการณ์ interview จริง, 1 Persona Card ที่สมบูรณ์, และความเข้าใจใน user needs ที่ลึกซึ้ง</p>
+                    </div>
+                    <div class="p-4 bg-yellow-50 rounded-lg shadow-md">
+                        <h4 class="font-bold text-lg">Activity 2: User Journey Mapping (90 min)</h4>
+                        <p class="text-sm mt-2"><strong>สิ่งที่คุณจะได้:</strong> 1 User Journey Map, Emotion Graph, และการวิเคราะห์ Pain Points & Opportunities</p>
+                    </div>
+                </div>
+                 <div class="mt-8 text-center">
+                    <p class="text-2xl font-bold text-red-600 animate-pulse">พัก 5 นาที แล้วมาเริ่ม Workshop กันครับ! 🎉</p>
+                </div>
+            </div>
+            <div class="slide-footer">Session 1.3: User Journey & UI Basics</div>
+            <div class="slide-number"></div>
+        </section>
+
+    </div>
+
+    <div class="presentation-controls">
+        <button id="prev-btn" class="nav-btn" title="สไลด์ก่อนหน้า">‹</button>
+        <span id="slide-counter"></span>
+        <button id="next-btn" class="nav-btn" title="สไลด์ถัดไป">›</button>
+        <button id="font-decrease-btn" class="font-btn" title="ลดขนาดตัวอักษร">-</button>
+        <button id="font-increase-btn" class="font-btn" title="เพิ่มขนาดตัวอักษร">+</button>
+        <button id="fullscreen-btn" class="fullscreen-btn" title="เต็มจอ">⛶</button>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const slides = document.querySelectorAll('.slide');
+            const nextBtn = document.getElementById('next-btn');
+            const prevBtn = document.getElementById('prev-btn');
+            const fullscreenBtn = document.getElementById('fullscreen-btn');
+            const slideCounter = document.getElementById('slide-counter');
+            const progressBar = document.getElementById('progress-bar');
+            const fontIncreaseBtn = document.getElementById('font-increase-btn');
+            const fontDecreaseBtn = document.getElementById('font-decrease-btn');
+
+            let currentFontSize = 1.0;
+            let currentSlideIndex = 0;
+            const totalSlides = slides.length;
+
+            function updateFontSize() {
+                document.documentElement.style.setProperty('--base-font-size', `clamp(18px, ${1.8 * currentFontSize}vw, ${32 * currentFontSize}px)`);
+            }
+
+            function showSlide(index) {
+                if (index < 0 || index >= totalSlides) return;
+                slides.forEach((slide, i) => {
+                    slide.classList.toggle('active', i === index);
+                    const slideNumberEl = slide.querySelector('.slide-number');
+                    if (slideNumberEl) {
+                        slideNumberEl.textContent = `${i + 1} / ${totalSlides}`;
+                    }
+                });
+                currentSlideIndex = index;
+                updateControls();
+            }
+
+            function updateControls() {
+                slideCounter.textContent = `${currentSlideIndex + 1} / ${totalSlides}`;
+                const progressPercentage = totalSlides > 1 ? ((currentSlideIndex) / (totalSlides - 1)) * 100 : 0;
+                progressBar.style.width = `${progressPercentage}%`;
+                prevBtn.disabled = currentSlideIndex === 0;
+                nextBtn.disabled = currentSlideIndex === totalSlides - 1;
+            }
+
+            function toggleFullscreen() {
+                if (!document.fullscreenElement) {
+                    document.documentElement.requestFullscreen().catch(err => {
+                        alert(`ไม่สามารถเข้าสู่โหมดเต็มจอได้: ${err.message}`);
+                    });
+                } else if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+            }
+            
+            window.toggleAnswer = (button) => {
+                const answerDiv = button.nextElementSibling;
+                const isHidden = answerDiv.style.display === 'none' || answerDiv.style.display === '';
+                answerDiv.style.display = isHidden ? 'block' : 'none';
+                button.textContent = isHidden ? 'ซ่อนคำตอบ' : 'แสดงคำตอบ';
+            };
+
+            fontIncreaseBtn.addEventListener('click', () => {
+                if (currentFontSize < 1.5) {
+                    currentFontSize += 0.1;
+                    updateFontSize();
+                }
+            });
+
+            fontDecreaseBtn.addEventListener('click', () => {
+                if (currentFontSize > 0.7) {
+                    currentFontSize -= 0.1;
+                    updateFontSize();
+                }
+            });
+
+            nextBtn.addEventListener('click', () => showSlide(currentSlideIndex + 1));
+            prevBtn.addEventListener('click', () => showSlide(currentSlideIndex - 1));
+            fullscreenBtn.addEventListener('click', toggleFullscreen);
+
+            document.addEventListener('keydown', (event) => {
+                if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA' || event.target.isContentEditable) return;
+                if (event.key === 'ArrowRight' || event.key === 'PageDown' || event.key === ' ') {
+                    event.preventDefault();
+                    nextBtn.click();
+                } else if (event.key === 'ArrowLeft' || event.key === 'PageUp') {
+                    event.preventDefault();
+                    prevBtn.click();
+                } else if (event.key === 'f') {
+                    event.preventDefault();
+                    toggleFullscreen();
+                } else if (event.key === 'Home') {
+                    event.preventDefault();
+                    showSlide(0);
+                } else if (event.key === 'End') {
+                    event.preventDefault();
+                    showSlide(totalSlides - 1);
+                }
+            });
+
+            showSlide(0);
+        });
+    </script>
+</body>
+
+</html>
