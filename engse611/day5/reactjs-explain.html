@@ -1,0 +1,1067 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ENGSE611 - React Hooks: useState & useEffect</title>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --react-color: #61DAFB;
+            --react-dark-color: #20232A;
+            --accent-color: #0d7f9c;
+
+            --success-color: #10B981;
+            --danger-color: #C53030;
+            --slide-bg: #ffffff;
+            --text-color: #2D3748;
+            --header-color: #1A202C;
+            --base-font-size: clamp(16px, 1.5vw, 22px);
+            --border-radius: 15px;
+            --code-font: 'Fira Code', 'Courier New', monospace;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { overflow: hidden; height: 100%; }
+
+        body {
+            font-family: 'Sarabun', sans-serif;
+            background: #F0F2F5;
+            color: var(--text-color);
+            font-size: 16px;
+            line-height: 1.7;
+        }
+
+        .presentation {
+            width: 100vw; height: 100vh;
+            display: flex; align-items: center; justify-content: center;
+            padding: 2vh 3vw;
+        }
+
+        .slide {
+            background: var(--slide-bg); padding: 30px 40px 80px 40px;
+            border-radius: var(--border-radius); box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            width: 100%; height: 100%; font-size: var(--base-font-size);
+            overflow-y: auto; display: none;
+            animation: fadeIn 0.5s ease-in-out; position: relative;
+            -ms-overflow-style: none; scrollbar-width: none;
+        }
+
+        .slide::-webkit-scrollbar { display: none; }
+        .slide.active { display: block; }
+
+        .title-slide.active {
+            display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;
+            color: white; background: var(--react-dark-color);
+        }
+
+        .title-slide h1, .title-slide h2, .title-slide h3, .title-slide p { color: white !important; }
+
+        .title-slide h1 {
+            font-size: 3em; margin-bottom: 10px; border: none; text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.3);
+            display: flex; align-items: center; gap: 20px;
+        }
+
+        .title-slide h1 .fa-react { color: var(--react-color); animation: spin 8s linear infinite; }
+        
+        .title-slide h2 { font-size: 1.8em; margin-bottom: 20px; border: none; opacity: 0.9; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+        .progress-bar-container {
+            position: fixed; top: 0; left: 0; width: 100%; height: 8px;
+            background-color: #E2E8F0; z-index: 2000;
+        }
+        .progress-bar {
+            height: 100%; width: 0%;
+            background: linear-gradient(120deg, var(--react-color) 0%, var(--accent-color) 100%);
+            transition: width 0.3s ease-out;
+        }
+
+        .presentation-controls {
+            position: fixed; bottom: 15px; left: 50%; transform: translateX(-50%);
+            display: flex; align-items: center; gap: 10px; background: rgba(26, 32, 44, 0.9);
+            padding: 10px 15px; border-radius: 50px; box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(8px); z-index: 1000;
+        }
+
+        .nav-btn {
+            background: transparent; color: white; border: none; border-radius: 50%; cursor: pointer;
+            transition: all 0.3s ease; display: flex; align-items: center; justify-content: center;
+            width: 45px; height: 45px; font-size: 1.5rem;
+        }
+
+        .nav-btn:hover:not(:disabled) { background: var(--react-color); color: var(--react-dark-color); transform: translateY(-2px); }
+        .nav-btn:disabled { color: #718096; cursor: not-allowed; transform: none; }
+
+        #slide-counter {
+            color: white; font-weight: 500; font-size: 1.1em;
+            min-width: 70px; text-align: center;
+        }
+
+        .slide-number {
+            position: absolute; bottom: 15px; right: 20px; background: rgba(26, 32, 44, 0.8);
+            color: white; padding: 5px 12px; border-radius: 15px;
+            font-size: 0.8em; font-weight: 600;
+        }
+
+        .slide h2 {
+            font-size: 2.2em; color: var(--header-color);
+            border-bottom: 3px solid var(--react-color);
+            padding-bottom: 8px; margin-bottom: 1em; font-weight: 700;
+        }
+
+        .slide h3 {
+            font-size: 1.6em; color: var(--header-color);
+            margin-top: 1.5em; margin-bottom: 0.5em; font-weight: 600;
+        }
+
+        ul { list-style: none; padding-left: 0; }
+        ul li { position: relative; padding-left: 35px; margin-bottom: 12px; }
+        ul li::before {
+            content: attr(data-icon); position: absolute; left: 0; top: 0px;
+            font-weight: 900; font-family: 'Font Awesome 6 Free'; color: var(--accent-color);
+        }
+
+        pre {
+            background: var(--react-dark-color); color: #E2E8F0; border-radius: 10px;
+            padding: 1em; margin: 1em 0; font-family: var(--code-font);
+            font-size: 0.9em; overflow-x: auto; line-height: 1.6;
+        }
+
+        code {
+            font-family: var(--code-font); background-color: #EDF2F7;
+            color: #2D3748; padding: 3px 6px; border-radius: 4px;
+        }
+        pre code { background-color: transparent; padding: 0; color: inherit; }
+        
+        .grid-2, .grid-3 {
+            display: grid; gap: 25px; margin: 20px 0; align-items: start;
+        }
+        .grid-2 { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+        .grid-3 { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+        
+        .info-card {
+            background: #f0f8ff; border: 1px solid #d1eaff;
+            border-left: 5px solid var(--accent-color);
+            border-radius: 8px; padding: 1.5em; height: 100%;
+        }
+        .info-card h4 { font-size: 1.2em; color: var(--header-color); margin-top: 0; }
+        
+        .interactive-demo {
+            border: 1px solid #E2E8F0; border-radius: 10px;
+            padding: 1.5em; background: white; margin-top: 1em;
+        }
+        .interactive-demo button {
+            font-family: 'Sarabun', sans-serif; font-size: 0.9em; padding: 8px 12px;
+            margin: 5px; border-radius: 5px; border: 1px solid #CBD5E0;
+            background-color: var(--accent-color); color: white; cursor: pointer;
+            border: none; transition: background-color 0.2s ease;
+        }
+        .interactive-demo button:hover { background-color: #0b6981; }
+        .interactive-demo .output {
+            margin-top: 1em; padding: 1em; background: #F7FAFC; border-radius: 8px;
+            font-family: var(--code-font); text-align: center; font-size: 1.5em; font-weight: bold;
+        }
+
+        table {
+            width: 100%; border-collapse: collapse; margin-top: 1em; font-size: 0.9em;
+        }
+        th, td { padding: 12px; border: 1px solid #E2E8F0; text-align: left; }
+        thead { background-color: var(--react-dark-color); color: white; }
+        td:first-child { font-family: var(--code-font); font-weight: bold; }
+        .center { text-align: center; }
+
+        .code-comparison {
+    background: #F7FAFC;
+    border-radius: 10px;
+    padding: 1em;
+    border: 1px solid #E2E8F0;
+}
+.code-comparison h4 {
+    margin-top: 0;
+    font-size: 1.1em;
+    text-align: center;
+    margin-bottom: 0.5em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+.code-comparison h4 .fa-cube { color: #A0AEC0; }
+.code-comparison h4 .fa-feather-alt { color: var(--react-color); }
+
+
+/* === CSS for Tab Interface === */
+.tabs {
+    display: flex;
+    border-bottom: 2px solid #E2E8F0;
+    margin-bottom: 1.5em;
+}
+.tab-button {
+    padding: 10px 20px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-size: 1em;
+    font-weight: 600;
+    color: #718096;
+    position: relative;
+    bottom: -2px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.tab-button.active {
+    color: var(--accent-color);
+    border-bottom: 3px solid var(--accent-color);
+}
+.tab-content {
+    display: none;
+    animation: fadeIn 0.5s;
+}
+.tab-content.active {
+    display: block;
+}
+
+
+        @media (max-width: 900px) {
+            .slide { padding: 20px 25px 70px 25px; }
+            .slide h2 { font-size: 1.8em; }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="progress-bar-container"><div class="progress-bar" id="progress-bar"></div></div>
+    <div class="presentation">
+        
+        <section class="slide title-slide active">
+            <h1><i class="fab fa-react"></i> React Hooks</h1>
+            <h2>useState & useEffect</h2>
+            <p style="margin-top: 1em; font-size: 1.2em;">หัวใจสำคัญของการจัดการข้อมูลและ Logic ในโปรเจค</p>
+            <div class="slide-number">1/16</div>
+        </section>
+<section class="slide">
+    <h2>React Hooks คืออะไร?</h2>
+    <p><strong>Hooks</strong> คือฟังก์ชันพิเศษที่ช่วยให้ "เกี่ยว" (hook into) State และฟีเจอร์อื่นๆ ของ React เข้ามาใช้ใน Function Component ได้</p>
+    
+    <h3>Class Component (แบบเก่า) vs. Function Component + Hooks (แบบใหม่)</h3>
+    <div class="grid-2">
+        <div class="code-comparison">
+            <h4><i class="fas fa-cube"></i> Class Component (ซับซ้อนกว่า)</h4>
+            <pre><code class="language-javascript" style="font-size: 0.8em;">class Counter extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { count: 0 };
+  }
+
+  render() {
+    return (
+      &lt;div&gt;
+        &lt;p&gt;Count: {this.state.count}&lt;/p&gt;
+        &lt;button onClick={() => 
+          this.setState({ count: this.state.count + 1 })
+        }&gt;
+          Increment
+        &lt;/button&gt;
+      &lt;/div&gt;
+    );
+  }
+}</code></pre>
+        </div>
+        <div class="code-comparison">
+            <h4><i class="fas fa-feather-alt"></i> Function Component + Hook (เรียบง่ายกว่า)</h4>
+            <pre><code class="language-javascript" style="font-size: 0.8em;">import { useState } from 'react';
+
+function Counter() {
+  const [count, setCount] = useState(0);
+
+  return (
+    &lt;div&gt;
+      &lt;p&gt;Count: {count}&lt;/p&gt;
+      &lt;button onClick={() => 
+        setCount(count + 1)
+      }&gt;
+        Increment
+      &lt;/button&gt;
+    &lt;/div&gt;
+  );
+}</code></pre>
+        </div>
+    </div>
+    <p>จะเห็นว่า Hooks ช่วยให้เราเขียนโค้ดที่สั้นลง, อ่านง่ายขึ้น, และไม่ต้องจัดการกับ `this` ที่น่าสับสน</p>
+    <div class="slide-number">2/16</div>
+</section>
+        
+        <section class="slide">
+            <h2>`useState` - จัดการ State (ความจำ)</h2>
+            <p><strong>State</strong> คือข้อมูลใดๆ ก็ตามที่เมื่อมีการเปลี่ยนแปลง จะทำให้ React ต้องวาดหน้าจอ (re-render) ใหม่</p>
+            <h3>Syntax (โครงสร้าง)</h3>
+            <pre><code>const [state, setState] = useState(initialValue);</code></pre>
+            <ul>
+                <li data-icon="📦"><strong>state:</strong> ตัวแปรสำหรับ "อ่าน" ค่าปัจจุบัน</li>
+                <li data-icon="✍️"><strong>setState:</strong> ฟังก์ชันสำหรับ "เขียน" หรืออัปเดตค่าใหม่</li>
+                <li data-icon="🏁"><strong>initialValue:</strong> ค่าเริ่มต้นของ state</li>
+            </ul>
+             <h3>เปรียบเทียบกับกระดานคะแนน</h3>
+             <div style="text-align:center; font-family: var(--code-font);">
+                <p style="font-size: 1.2em;"><code>const [score, setScore] = useState(0);</code></p>
+                <i class="fas fa-arrow-down" style="font-size: 1.5em; color: var(--accent-color); margin: 1em 0;"></i>
+                <div style="border: 2px solid var(--react-dark-color); padding: 1em; border-radius: 10px; background: #F7FAFC;">
+                    <p style="margin:0; font-size: 1.5em;">คะแนนปัจจุบัน: <strong style="color: var(--accent-color);">{score}</strong></p>
+                    <p style="margin:0.5em 0 0 0; font-size:0.9em;">เมื่อเราเรียก `setScore(5)`, React จะลบกระดานแล้ววาดใหม่ด้วยเลข 5</p>
+                </div>
+             </div>
+            <div class="slide-number">3/16</div>
+        </section>
+
+        <section class="slide">
+            <h2>`useState` - ตัวอย่าง Counter</h2>
+            <p>มาดูตัวอย่างที่ง่ายที่สุดของการใช้ `useState` ในการสร้างปุ่มนับเลข</p>
+            <div class="grid-2">
+                <div>
+                    <h3>โค้ด</h3>
+                    <pre><code>import { useState } from 'react';
+
+function Counter() {
+  const [count, setCount] = useState(0);
+  
+  return (
+    &lt;div&gt;
+      &lt;p&gt;You clicked {count} times&lt;/p&gt;
+      &lt;button 
+        onClick={() => setCount(count + 1)}
+      &gt;
+        Click me
+      &lt;/button&gt;
+    &lt;/div&gt;
+  );
+}</code></pre>
+                </div>
+                <div>
+                    <h3>ทดลองใช้งาน (Interactive)</h3>
+                    <div class="interactive-demo" id="counter-demo">
+                         <div class="output" id="counter-output">0</div>
+                         <button id="counter-btn">Click me</button>
+                         <button id="counter-reset-btn" style="background-color: #A0AEC0;">Reset</button>
+                    </div>
+                </div>
+            </div>
+             <h3>สิ่งที่เกิดขึ้นเมื่อคลิกปุ่ม</h3>
+             <ol style="padding-left: 2em; font-size: 0.9em;">
+                 <li>Event `onClick` ทำงาน</li>
+                 <li>เรียกฟังก์ชัน `setCount(count + 1)`</li>
+                 <li>React รู้ว่า state `count` เปลี่ยนแปลง</li>
+                 <li>React ทำการ "re-render" Component `Counter` ใหม่ทั้งหมด</li>
+                 <li>หน้าจออัปเดตเพื่อแสดงค่า `count` ใหม่</li>
+             </ol>
+            <div class="slide-number">4/16</div>
+        </section>
+
+<section class="slide">
+    <h2>`useState` - ตัวอย่าง Input Form</h2>
+    <p>ในโปรเจคของเรา เราจะใช้ `useState` เพื่อเก็บค่าที่ผู้ใช้พิมพ์ในช่องค้นหาหรือฟอร์มต่างๆ ซึ่งเป็นหลักการที่เรียกว่า "Controlled Component"</p>
+    
+    <div class="grid-2">
+        <div>
+            <h3>โค้ด (ใช้ใน SearchBar.jsx)</h3>
+             <pre><code>import { useState } from 'react';
+
+function SearchBar() {
+  const [searchTerm, setSearchTerm] = useState('');
+  
+  return (
+    &lt;input 
+      value={searchTerm}
+      onChange={(e) => setSearchTerm(e.target.value)}
+      placeholder="ค้นหาร้านอาหาร..."
+    /&gt;
+  );
+}</code></pre>
+        </div>
+        <div>
+            <h3>ทดลองใช้งาน (Interactive)</h3>
+            <div class="interactive-demo" id="search-demo">
+                <input type="text" id="search-input" placeholder="ลองพิมพ์ที่นี่..." style="width: 100%; padding: 10px; font-size: 1em;"/>
+                <div class="output" style="margin-top: 1em; padding: 1em; font-size: 1em; text-align: left;">
+                    <p style="margin:0; font-family: 'Sarabun', sans-serif; font-size: 0.9em;">ค่าใน State `searchTerm` ปัจจุบัน:</p>
+                    <code id="search-output" style="font-weight: bold; color: var(--accent-color);"></code>
+                </div>
+            </div>
+        </div>
+    </div>
+    <p>ทุกครั้งที่คุณพิมพ์, `onChange` จะทำงานและเรียก `setSearchTerm` เพื่ออัปเดต State ทำให้ React รู้และ re-render ค่าใหม่ให้ตรงกัน</p>
+    <div class="slide-number">5/16</div>
+</section>
+
+        <section class="slide">
+            <h2>`useState` - จัดการหลาย State</h2>
+            <p>ในหนึ่ง Component เราสามารถมี `useState` กี่ตัวก็ได้ เพื่อจัดการข้อมูลคนละส่วนกัน</p>
+            <h3>ตัวอย่าง (ใช้ใน RestaurantList.jsx)</h3>
+            <pre><code>function RestaurantList() {
+  const [restaurants, setRestaurants] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // ... (โค้ดดึงข้อมูล) ...
+
+  if (loading) return &lt;div&gt;กำลังโหลด...&lt;/div&gt;;
+  if (error) return &lt;div&gt;Error: {error}&lt;/div&gt;;
+  
+  return (
+    &lt;ul&gt;
+      {restaurants.map(r => &lt;li key={r.id}&gt;{r.name}&lt;/li&gt;)}
+    &lt;/ul&gt;
+  );
+}</code></pre>
+            <h3>หลักการ: แยก State ตามหน้าที่ (Separation of Concerns)</h3>
+            <ul>
+                <li data-icon="🍽️"><code>restaurants</code>: เก็บข้อมูลร้านอาหาร (Data State)</li>
+                <li data-icon="⏳"><code>loading</code>: บอกสถานะว่ากำลังโหลดข้อมูลหรือไม่ (UI State)</li>
+                <li data-icon="⚠️"><code>error</code>: เก็บข้อความ error เมื่อโหลดข้อมูลไม่สำเร็จ (UI State)</li>
+            </ul>
+            <div class="slide-number">6/16</div>
+        </section>
+        
+        <section class="slide">
+            <h2>`useState` - State ที่เป็น Object</h2>
+             <p>เราสามารถเก็บ Object ทั้งก้อนไว้ใน State ได้ ซึ่งมีประโยชน์มากในการจัดการฟอร์มหรือฟิลเตอร์ที่ซับซ้อน</p>
+             <h3>ตัวอย่าง (ใช้ใน FilterPanel.jsx)</h3>
+             <pre><code>function FilterPanel() {
+  const [filters, setFilters] = useState({
+    category: '',
+    minRating: 0,
+    priceRange: 0
+  });
+  
+  const handleCategoryChange = (e) => {
+    setFilters({
+      ...filters, // 1. คัดลอกค่าเดิมทั้งหมด
+      category: e.target.value // 2. เขียนทับเฉพาะค่าที่ต้องการเปลี่ยน
+    });
+  };
+
+  // ...
+}</code></pre>
+            <h3>⚠️ ข้อควรระวัง: ต้องใช้ Spread Operator (`...`) เสมอ!</h3>
+            <p>เมื่ออัปเดต State ที่เป็น Object เราต้องสร้าง Object ใหม่โดยคัดลอกค่าเก่ามาด้วยเสมอ เพราะ React จะ re-render ก็ต่อเมื่อ "reference" ของ Object เปลี่ยนไปเท่านั้น</p>
+            <pre><code>// ❌ ผิด: React จะไม่รู้ว่า state เปลี่ยน
+filters.category = 'อาหารไทย';
+
+// ✅ ถูก: สร้าง object ใหม่ ทำให้ React รู้และ re-render
+setFilters({ ...filters, category: 'อาหารไทย' });</code></pre>
+
+<h3>ทดลองอัปเดต Object State (Interactive)</h3>
+<div class="interactive-demo" id="object-state-demo">
+    <p>ลองกดปุ่มเพื่ออัปเดต State ของ `filters`</p>
+    <div class="filter-buttons">
+        <button id="btn-category">Category: 'อาหารไทย'</button>
+        <button id="btn-rating">minRating: 4</button>
+        <button id="btn-price">priceRange: 2</button>
+        <button id="btn-reset" style="background-color:#A0AEC0;">Reset</button>
+    </div>
+    <p style="margin-top: 1em; font-size: 0.9em;">ค่า State `filters` ปัจจุบัน:</p>
+    <pre id="object-output" style="margin:0;"><code></code></pre>
+</div>
+
+            <div class="slide-number">7/16</div>
+        </section>
+        
+        <section class="slide">
+            <h2>`useEffect` - จัดการ Side Effects</h2>
+            <p><strong>Side Effects</strong> คือการทำงานใดๆ ที่ Component ของคุณต้องทำนอกเหนือจากการคำนวณและแสดงผล UI เช่น การติดต่อกับโลกภายนอก</p>
+            <h3>ตัวอย่าง Side Effects ในโปรเจคของเรา</h3>
+             <div class="grid-3">
+                 <div class="info-card"><h4>📡 Fetch ข้อมูลจาก API</h4><p>การดึงข้อมูลร้านอาหารจาก Express Server</p></div>
+                 <div class="info-card"><h4>⏰ ตั้ง Timer</h4><p>เช่น การทำ Debounce ในช่องค้นหา</p></div>
+                 <div class="info-card"><h4>🔄 อัปเดต Document Title</h4><p>เปลี่ยนชื่อบนแท็บของเบราว์เซอร์ตามหน้าเว็บ</p></div>
+             </div>
+             <h3>Syntax (โครงสร้าง)</h3>
+            <pre><code>useEffect(() => {
+  // Effect: โค้ดที่จะให้ทำงาน (เช่น fetch data)
+
+  return () => {
+    // Cleanup: โค้ดสำหรับทำความสะอาด (optional)
+  };
+}, [dependencies]); // Dependencies: ตัวแปรที่คอยจับตาดู</code></pre>
+            <div class="slide-number">8/16</div>
+        </section>
+
+        <section class="slide">
+            <h2>`useEffect` - Dependency Array คืออะไร?</h2>
+            <p>Dependency Array คือ "เงื่อนไข" ที่บอก `useEffect` ว่าควรจะทำงาน (re-run) เมื่อไหร่</p>
+            <table>
+                <thead><tr><th>Dependency Array</th><th class="center">Effect จะทำงานเมื่อไหร่?</th><th>เหมาะสำหรับ</th></tr></thead>
+                <tbody>
+                    <tr>
+                        <td><code>[]</code> (Array ว่าง)</td>
+                        <td class="center">ทำงานแค่ <strong>ครั้งเดียว</strong> หลังจาก Component แสดงผลครั้งแรก (mount)</td>
+                        <td>การ Fetch ข้อมูลเริ่มต้น</td>
+                    </tr>
+                    <tr>
+                        <td><code>[count, name]</code></td>
+                        <td class="center">ทำงานครั้งแรก และทำงานซ้ำทุกครั้งที่ค่า <code>count</code> <strong>หรือ</strong> <code>name</code> เปลี่ยนแปลง</td>
+                        <td>การ Fetch ข้อมูลใหม่เมื่อมีการกรอง (Filter)</td>
+                    </tr>
+                     <tr>
+                        <td>*ไม่มี*</td>
+                        <td class="center">ทำงาน <strong>ทุกครั้ง</strong> ที่ Component มีการ re-render (อันตราย!)</td>
+                        <td>(ควรหลีกเลี่ยง)</td>
+                    </tr>
+                </tbody>
+            </table>
+            <blockquote>การใส่ Dependency Array ให้ถูกต้อง คือหัวใจสำคัญของการใช้ `useEffect` อย่างมีประสิทธิภาพและป้องกัน Bug ที่หาได้ยาก</blockquote>
+            <div class="slide-number">9/16</div>
+        </section>
+
+        <section class="slide">
+            <h2>`useEffect` - Fetch ข้อมูลเมื่อ Mount</h2>
+            <p>นี่คือ Pattern ที่ใช้บ่อยที่สุดในโปรเจคของเรา: ดึงข้อมูลจาก API มาแสดงผลแค่ครั้งเดียวเมื่อเปิดหน้าเว็บ</p>
+            <h3>ตัวอย่าง (ใช้ใน RestaurantList.jsx)</h3>
+            <pre><code>import { useState, useEffect } from 'react';
+
+function RestaurantList() {
+  const [restaurants, setRestaurants] = useState([]);
+  
+  useEffect(() => {
+    console.log('Effect is running!');
+    // ทำงานครั้งเดียวหลังจาก Component แสดงผลครั้งแรก
+    fetch('http://localhost:3000/api/restaurants')
+      .then(res => res.json())
+      .then(result => setRestaurants(result.data));
+  }, []); // <-- Dependency Array ว่าง ทำให้ Effect ทำงานแค่ครั้งเดียว
+
+  return (
+     &lt;ul&gt;
+      {restaurants.map(r => &lt;li key={r.id}&gt;{r.name}&lt;/li&gt;)}
+    &lt;/ul&gt;
+  );
+}</code></pre>
+            <h3>Flow การทำงาน:</h3>
+            <ol style="padding-left: 2em; font-size: 0.9em;">
+                <li>Component render ครั้งแรก (<code>restaurants</code> ยังเป็น array ว่าง)</li>
+                <li>React แสดงผลหน้าจอว่างๆ</li>
+                <li>`useEffect` ทำงานเพราะเป็นครั้งแรก</li>
+                <li>`fetch` ข้อมูลจาก API</li>
+                <li>เมื่อได้ข้อมูลกลับมา เรียก `setRestaurants(...)`</li>
+                <li>State เปลี่ยน, Component re-render อีกครั้งพร้อมกับข้อมูลร้านอาหาร</li>
+            </ol>
+            <div class="slide-number">10/16</div>
+        </section>
+
+        <section class="slide">
+    <h2>`useEffect`: Fetch ข้อมูลเมื่อ Mount</h2>
+    <p>Pattern ที่ใช้บ่อยที่สุด: ดึงข้อมูลจาก API มาแสดงผลแค่ครั้งเดียวเมื่อเปิดหน้าเว็บ โดยใช้ Dependency Array ว่าง <code>[]</code></p>
+    
+    <h3>โค้ด (ใช้ใน RestaurantList.jsx)</h3>
+    <pre><code>function RestaurantList() {
+  const [restaurants, setRestaurants] = useState([]);
+  
+  useEffect(() => {
+    // ทำงานครั้งเดียวหลังจาก Component แสดงผล
+    fetch('/api/restaurants')
+      .then(res => res.json())
+      .then(data => setRestaurants(data));
+  }, []); // &lt;-- Array ว่าง = ทำงานครั้งเดียว
+
+  return &lt;div&gt;{/* ...แสดงรายการ restaurants... */}&lt;/div&gt;;
+}</code></pre>
+
+    <h3>ทดลอง (Interactive)</h3>
+    <div class="interactive-demo" id="fetch-demo">
+        <h4>จำลองการโหลดข้อมูลร้านอาหาร</h4>
+        <p>กดปุ่มเพื่อจำลองการทำงานของ <code>useEffect(..., [])</code></p>
+        <button id="fetch-btn">Load Restaurants</button>
+        <div id="fetch-output" class="output" style="text-align: left; font-size: 1rem; min-height: 150px;">
+            กรุณากดปุ่มเพื่อโหลดข้อมูล...
+        </div>
+    </div>
+            <div class="slide-number">11/16</div>
+        </section>
+        
+        <section class="slide">
+    <h2>`useEffect`: การทำงานตามเงื่อนไข</h2>
+    <p>เราสามารถควบคุมให้ <code>useEffect</code> ทำงานซ้ำได้เมื่อมีข้อมูลเปลี่ยนแปลง หรือหน่วงเวลาก่อนทำงานเพื่อ Performance ที่ดีขึ้น</p>
+
+    <div class="tabs">
+        <button class="tab-button active" data-tab="dependency">
+            <i class="fas fa-sync-alt"></i> Fetch on Dependency Change
+        </button>
+        <button class="tab-button" data-tab="debounce">
+            <i class="fas fa-hourglass-half"></i> Debounce Pattern
+        </button>
+    </div>
+
+    <div class="tab-content-container">
+        <div id="dependency" class="tab-content active">
+            <h3>ทำงานเมื่อ Dependency เปลี่ยน</h3>
+            <p>Pattern นี้ใช้เมื่อต้องการดึงข้อมูลใหม่ทุกครั้งที่ State หรือ Props ที่เกี่ยวข้องมีการเปลี่ยนแปลง เช่น การกรองข้อมูล</p>
+            <pre><code>useEffect(() => {
+  fetch(`/api/restaurants?category=${category}`)
+    .then(res => res.json())
+    .then(data => setRestaurants(data));
+}, [category]); // &lt;-- ทำงานใหม่ทุกครั้งที่ category เปลี่ยน</code></pre>
+            <div class="interactive-demo" id="deps-demo">
+                <h4>จำลองการ Fetch ข้อมูลตาม Category</h4>
+                <div class="category-buttons">
+                    <button data-category="อาหารไทย">อาหารไทย 🇹🇭</button>
+                    <button data-category="อาหารญี่ปุ่น">อาหารญี่ปุ่น 🇯🇵</button>
+                    <button data-category="อาหารอิตาเลียน">อาหารอิตาเลียน 🇮🇹</button>
+                </div>
+                <div id="deps-output" class="output" style="text-align: left; font-size: 1rem; min-height: 100px;">กรุณาเลือกหมวดหมู่...</div>
+            </div>
+        </div>
+
+        <div id="debounce" class="tab-content">
+            <h3>Debounce: หน่วงเวลาก่อนทำงาน</h3>
+            <p>เทคนิคนี้มีประโยชน์มากสำหรับช่องค้นหา เพื่อป้องกันการยิง API ไปยัง Server ทุกครั้งที่ผู้ใช้พิมพ์ แต่จะรอจนผู้ใช้หยุดพิมพ์แล้วจึงยิง API เพียงครั้งเดียว</p>
+            <pre><code>useEffect(() => {
+  const timer = setTimeout(() => {
+    onSearch(searchTerm); // ทำงานหลังผู้ใช้หยุดพิมพ์ 500ms
+  }, 500);
+  
+  return () => clearTimeout(timer); // ยกเลิก timer เก่าทุกครั้งที่พิมพ์
+}, [searchTerm]);</code></pre>
+            <div class="interactive-demo" id="debounce-demo">
+                <h4>จำลองการค้นหาแบบ Debounce</h4>
+                <input type="text" id="debounce-input" placeholder="ลองพิมพ์เร็วๆ ที่นี่..." style="width: 100%; padding: 10px; font-size: 1em;">
+                <div class="grid-2" style="margin-top: 1em;">
+                    <div>
+                        <strong><i class="fas fa-keyboard"></i> สิ่งที่คุณพิมพ์ (Real-time):</strong>
+                        <div id="debounce-raw" class="output" style="font-size: 0.9em; min-height: 50px;"></div>
+                    </div>
+                    <div>
+                        <strong><i class="fas fa-satellite-dish"></i> API Call (Debounced 500ms):</strong>
+                        <div id="debounce-output" class="output" style="font-size: 0.9em; min-height: 50px; background-color: #F0FFF4;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>        
+            
+            <div class="slide-number">12/16</div>
+        </section>
+
+        <section class="slide">
+ <h2>`useEffect`: รูปแบบการใช้งานขั้นสูงและข้อควรระวัง</h2>
+    <p>มาดู Pattern การใช้งานที่สำคัญอย่าง Cleanup Function และข้อผิดพลาดที่เจอบ่อยในการใช้ <code>useEffect</code></p>
+    
+    <div class="tabs">
+        <button class="tab-button active" data-tab="cleanup">
+            <i class="fas fa-broom"></i> Cleanup Function
+        </button>
+        <button class="tab-button" data-tab="mistakes">
+            <i class="fas fa-exclamation-triangle"></i> Common Mistakes
+        </button>
+    </div>
+
+    <div class="tab-content-container">
+        <div id="cleanup" class="tab-content active">
+            <h3>Cleanup: การทำความสะอาด Side Effect</h3>
+            <p>เมื่อ Side Effect ของเรามีการทำงานต่อเนื่อง (เช่น ตั้ง Timer) เราต้องมีฟังก์ชัน Cleanup เพื่อ "เก็บกวาด" ทุกครั้งที่ Component ถูกทำลาย (unmount) เพื่อป้องกัน Memory Leak</p>
+            <pre><code>useEffect(() => {
+  const intervalId = setInterval(() => console.log('Tick'), 1000);
+  
+  // Cleanup function จะถูกเรียกเมื่อ unmount
+  return () => {
+    clearInterval(intervalId);
+    console.log('Timer stopped!');
+  };
+}, []);</code></pre>
+            <div class="interactive-demo" id="cleanup-demo">
+                <h4>จำลองการ Mount/Unmount Timer Component</h4>
+                <p>กด "Start" เพื่อเริ่มนับเลข กด "Stop" เพื่อทำลาย Component และดูว่า Cleanup Function ทำงาน (เลขหยุดนับ)</p>
+                <button id="start-timer-btn">Start Timer (Mount)</button>
+                <button id="stop-timer-btn" style="background-color: #A0AEC0;">Stop Timer (Unmount)</button>
+                <div id="cleanup-output" class="output" style="min-height: 80px;">Timer is not running.</div>
+            </div>
+        </div>
+
+        <div id="mistakes" class="tab-content">
+            <h3>ข้อผิดพลาดที่พบบ่อย</h3>
+            <h4>1. Infinite Loop (ลูปไม่รู้จบ)</h4>
+            <p>เกิดจากการอัปเดต State ภายใน <code>useEffect</code> โดยไม่ได้กำหนด Dependency Array ให้ถูกต้อง</p>
+            <pre><code>// ❌ ผิด: Loop ไม่รู้จบ!
+useEffect(() => {
+  // ทุกครั้งที่ setCount -> re-render -> effect ทำงานอีกครั้ง
+  setCount(prevCount => prevCount + 1);
+}); // ไม่มี dependency array</code></pre>
+            <div class="interactive-demo" id="loop-demo">
+                <h4>จำลองการเกิด Infinite Loop</h4>
+                <p style="color: var(--danger-color); font-weight: bold;">คำเตือน: การกดปุ่มนี้อาจทำให้เบราว์เซอร์ช้าลงชั่วขณะ</p>
+                <button id="start-loop-btn" style="background-color: var(--danger-color);">Start Infinite Loop</button>
+                <button id="stop-loop-btn" style="background-color: #A0AEC0;">Stop & Reset</button>
+                <div id="loop-output" class="output" style="min-height: 80px;">Loop counter: 0</div>
+            </div>
+
+            <h4>2. Missing Dependencies (ลืมใส่ Dependency)</h4>
+            <p>ทำให้ Effect ไม่ทำงานใหม่เมื่อค่าที่ควรจะจับตาดูมีการเปลี่ยนแปลง</p>
+             <pre><code>// ❌ ผิด: Effect จะใช้ค่า 'id' แค่ครั้งแรกและไม่ทำงานอีก
+useEffect(() => {
+  fetch(`/api/items/${id}`);
+}, []); // <-- ลืมใส่ [id]</code></pre>
+        </div>
+    </div>
+            <div class="slide-number">13/16</div>
+        </section>
+
+        <section class="slide">
+            <h2>ข้อผิดพลาดที่พบบ่อย (Common Mistakes)</h2>
+            <h3>1. Infinite Loop (ลูปไม่รู้จบ)</h3>
+            <pre><code>// ❌ ผิด: อัปเดต state โดยไม่มี dependency array
+useEffect(() => {
+  // ทุกครั้งที่ setCount, component จะ re-render
+  // และ effect ก็จะทำงานอีกครั้ง วนไปไม่รู้จบ!
+  setCount(prevCount => prevCount + 1);
+});</code></pre>
+
+            <h3>2. Stale State (State ที่ไม่อัปเดต)</h3>
+            <pre><code>// ❌ ผิด: ขาด dependency
+function MyComponent({ id }) {
+  useEffect(() => {
+    // Effect นี้จะจำค่า 'id' แค่ครั้งแรก
+    // ถึงแม้ props 'id' จะเปลี่ยนไป แต่ effect จะไม่ทำงานใหม่
+    fetch(`/api/items/${id}`);
+  }, []); // <-- ขาด [id]
+}</code></pre>
+            
+             <h3>3. แก้ไข State โดยตรง</h3>
+            <pre><code>// ❌ ผิด: React จะไม่รู้ว่า state เปลี่ยนและไม่ re-render
+const handleUpdate = () => {
+  filters.category = 'อาหารไทย'; // ไม่ทำงาน!
+  setFilters(filters); // ไม่ทำงาน เพราะ object reference ไม่เปลี่ยน
+}
+
+// ✅ ถูก:
+const handleUpdate = () => {
+  setFilters({ ...filters, category: 'อาหารไทย' });
+}</code></pre>
+            <div class="slide-number">14/16</div>
+        </section>
+
+        <section class="slide">
+            <h2>สรุปการใช้งานในโปรเจค</h2>
+            <h3>`useState` ใช้เก็บอะไรบ้าง?</h3>
+            <div class="grid-2">
+                <div>
+                    <h4>Data State</h4>
+                    <ul>
+                        <li data-icon="🍽️"><code>restaurants</code>: รายการร้านอาหาร</li>
+                        <li data-icon="💬"><code>reviews</code>: รีวิวของร้านที่เลือก</li>
+                    </ul>
+                </div>
+                 <div>
+                    <h4>UI State</h4>
+                     <ul>
+                        <li data-icon="⏳"><code>loading</code>, <code>error</code>: สถานะการโหลดข้อมูล</li>
+                         <li data-icon="🆔"><code>selectedRestaurantId</code>: ID ของร้านที่ถูกเลือก</li>
+                    </ul>
+                </div>
+                 <div>
+                    <h4>Form State</h4>
+                     <ul>
+                        <li data-icon="📝"><code>filters</code>: ค่าในช่องค้นหาและตัวกรอง</li>
+                         <li data-icon="✍️"><code>formData</code>: ข้อมูลในฟอร์มเขียนรีวิว</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <h3>`useEffect` ใช้ทำอะไรบ้าง?</h3>
+             <ul>
+                <li data-icon="📡"><strong>Fetch ข้อมูล:</strong> ดึงข้อมูลร้าน, รีวิว, สถิติ จาก API เมื่อ Component โหลดครั้งแรก หรือเมื่อ Filter เปลี่ยน</li>
+                <li data-icon="⏱️"><strong>Debounce:</strong> หน่วงเวลาการค้นหาใน `SearchBar` เพื่อลดการเรียก API</li>
+            </ul>
+            <div class="slide-number">15/16</div>
+        </section>
+
+        <section class="slide title-slide">
+             <h1><i class="fab fa-react"></i> You are ready!</h1>
+            <h2>คุณพร้อมสำหรับ Final Project แล้ว</h2>
+            <h3>สรุป Key Takeaways</h3>
+            <div style="text-align: left; max-width: 60ch; margin: 2em auto; font-size: 1.1em; line-height: 1.8;">
+                <p><i class="fas fa-check-circle" style="color:var(--success-color);"></i> <strong>`useState`</strong> คือ "ความจำ" ของ Component</p>
+                <p><i class="fas fa-check-circle" style="color:var(--success-color);"></i> <strong>`useEffect`</strong> คือ "งานเบื้องหลัง" ที่ทำเมื่อมีเหตุการณ์เกิดขึ้น</p>
+                <p><i class="fas fa-check-circle" style="color:var(--success-color);"></i> ใช้ <strong>Dependency Array `[]`</strong> เพื่อให้ Effect ทำงานครั้งเดียว</p>
+                <p><i class="fas fa-check-circle" style="color:var(--success-color);"></i> ใช้ <strong>Dependency Array `[value]`</strong> เพื่อให้ Effect ทำงานใหม่เมื่อ `value` เปลี่ยน</p>
+            </div>
+            <p style="margin-top:2em;">Good luck! 🚀</p>
+            <div class="slide-number">16/16</div>
+        </section>
+
+    </div>
+
+    <div class="presentation-controls">
+        <button id="prev-btn" class="nav-btn" title="สไลด์ก่อนหน้า"><i class="fas fa-chevron-left"></i></button>
+        <span id="slide-counter"></span>
+        <button id="next-btn" class="nav-btn" title="สไลด์ถัดไป"><i class="fas fa-chevron-right"></i></button>
+        <button id="fullscreen-btn" class="nav-btn" title="เต็มจอ"><i class="fas fa-expand"></i></button>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const slides = document.querySelectorAll('.slide');
+            const totalSlides = slides.length;
+            let currentSlideIndex = 0;
+
+            const nextBtn = document.getElementById('next-btn');
+            const prevBtn = document.getElementById('prev-btn');
+            const slideCounter = document.getElementById('slide-counter');
+            const progressBar = document.getElementById('progress-bar');
+            const fullscreenBtn = document.getElementById('fullscreen-btn');
+
+            function showSlide(index) {
+                if (index < 0 || index >= totalSlides) return;
+                slides.forEach((slide, i) => slide.classList.toggle('active', i === index));
+                currentSlideIndex = index;
+                updateControls();
+                runInteractiveDemos(slides[index]);
+            }
+
+            function updateControls() {
+                slideCounter.textContent = `${currentSlideIndex + 1} / ${totalSlides}`;
+                progressBar.style.width = `${((currentSlideIndex + 1) / totalSlides) * 100}%`;
+                prevBtn.disabled = currentSlideIndex === 0;
+                nextBtn.disabled = currentSlideIndex === totalSlides - 1;
+            }
+
+            function toggleFullScreen() {
+                if (!document.fullscreenElement) {
+                    document.documentElement.requestFullscreen().catch(err => {
+                        alert(`ไม่สามารถเปิดโหมดเต็มจอได้: ${err.message}`);
+                    });
+                    fullscreenBtn.innerHTML = '<i class="fas fa-compress"></i>';
+                } else {
+                    if (document.exitFullscreen) {
+                        document.exitFullscreen();
+                        fullscreenBtn.innerHTML = '<i class="fas fa-expand"></i>';
+                    }
+                }
+            }
+
+            nextBtn.addEventListener('click', () => showSlide(currentSlideIndex + 1));
+            prevBtn.addEventListener('click', () => showSlide(currentSlideIndex - 1));
+            fullscreenBtn.addEventListener('click', toggleFullScreen);
+
+            document.addEventListener('keydown', (e) => {
+                if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) return;
+                if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); nextBtn.click(); }
+                if (e.key === 'ArrowLeft') { e.preventDefault(); prevBtn.click(); }
+                if (e.key === 'f') { e.preventDefault(); toggleFullScreen(); }
+            });
+            
+function runInteractiveDemos(activeSlide) {
+    if (!activeSlide) return;
+
+    // Counter Demo (Slide 4)
+    const counterDemo = activeSlide.querySelector('#counter-demo');
+    if (counterDemo && !counterDemo.dataset.initialized) {
+        counterDemo.dataset.initialized = true;
+        let count = 0;
+        const output = activeSlide.querySelector('#counter-output');
+        const btn = activeSlide.querySelector('#counter-btn');
+        const resetBtn = activeSlide.querySelector('#counter-reset-btn');
+        const updateCounter = () => { output.textContent = count; };
+        btn.addEventListener('click', () => { count++; updateCounter(); });
+        resetBtn.addEventListener('click', () => { count = 0; updateCounter(); });
+        updateCounter();
+    }
+    
+    // Search Demo (Slide 5)
+    const searchDemo = activeSlide.querySelector('#search-demo');
+    if (searchDemo && !searchDemo.dataset.initialized) {
+        searchDemo.dataset.initialized = true;
+        const input = activeSlide.querySelector('#search-input');
+        const output = activeSlide.querySelector('#search-output');
+        input.addEventListener('input', (e) => {
+            output.textContent = `"${e.target.value}"`;
+        });
+        output.textContent = `""`;
+    }
+
+    // Object State Demo (Slide 7)
+    const objectStateDemo = activeSlide.querySelector('#object-state-demo');
+    if (objectStateDemo && !objectStateDemo.dataset.initialized) {
+        objectStateDemo.dataset.initialized = true;
+        const initialFilters = { category: '', minRating: 0, priceRange: 0 };
+        let filters = { ...initialFilters };
+        
+        const output = activeSlide.querySelector('#object-output code');
+        const updateOutput = () => { output.textContent = JSON.stringify(filters, null, 2); };
+
+        activeSlide.querySelector('#btn-category').addEventListener('click', () => {
+            filters = { ...filters, category: 'อาหารไทย' };
+            updateOutput();
+        });
+        activeSlide.querySelector('#btn-rating').addEventListener('click', () => {
+            filters = { ...filters, minRating: 4 };
+            updateOutput();
+        });
+        activeSlide.querySelector('#btn-price').addEventListener('click', () => {
+            filters = { ...filters, priceRange: 2 };
+            updateOutput();
+        });
+        activeSlide.querySelector('#btn-reset').addEventListener('click', () => {
+            filters = { ...initialFilters };
+            updateOutput();
+        });
+        updateOutput();
+    }
+
+ // NEW: Fetch Demo (Slide 11)
+    const fetchDemo = activeSlide.querySelector('#fetch-demo');
+    if (fetchDemo && !fetchDemo.dataset.initialized) {
+        fetchDemo.dataset.initialized = true;
+        const btn = activeSlide.querySelector('#fetch-btn');
+        const output = activeSlide.querySelector('#fetch-output');
+        
+        btn.addEventListener('click', () => {
+            output.innerHTML = "<h4>Loading...</h4>";
+            setTimeout(() => {
+                output.innerHTML = `<h4><i class="fas fa-check-circle" style="color:var(--success-color);"></i> Loaded Restaurants:</h4>
+                <ul>
+                    <li>- ร้านส้มตำป้าแดง</li>
+                    <li>- Sushi Master</li>
+                    <li>- Pizza Roma</li>
+                </ul>`;
+            }, 1000); // Simulate 1 second delay
+        });
+    }
+
+    // UPDATED: Combined Tab Demo (Slide 12)
+    const tabDemo = activeSlide.querySelector('.tabs');
+    if (tabDemo && !tabDemo.dataset.initialized) {
+        tabDemo.dataset.initialized = true;
+
+        const tabButtons = activeSlide.querySelectorAll('.tab-button');
+        const tabContents = activeSlide.querySelectorAll('.tab-content');
+
+        tabButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                tabButtons.forEach(btn => btn.classList.remove('active'));
+                tabContents.forEach(content => content.classList.remove('active'));
+
+                button.classList.add('active');
+                activeSlide.querySelector(`#${button.dataset.tab}`).classList.add('active');
+            });
+        });
+
+        // --- Logic for Deps Change Demo (Tab 1) ---
+        const buttons = activeSlide.querySelectorAll('.category-buttons button');
+        const depsOutput = activeSlide.querySelector('#deps-output');
+        const mockData = {
+            'อาหารไทย': ['- ผัดไทย', '- ต้มยำกุ้ง', '- แกงเขียวหวาน'],
+            'อาหารญี่ปุ่น': ['- ซูชิ', '- ราเมน', '- เทมปุระ'],
+            'อาหารอิตาเลียน': ['- พิซซ่า', '- พาสต้า', '- ลาซานญ่า']
+        };
+        buttons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const category = btn.dataset.category;
+                depsOutput.innerHTML = `<h4>Fetching for ${category}...</h4>`;
+                setTimeout(() => {
+                     depsOutput.innerHTML = `<h4><i class="fas fa-check-circle" style="color:var(--success-color);"></i> Results for ${category}:</h4>
+                     <ul><li>${mockData[category].join('</li><li>')}</li></ul>`;
+                }, 500);
+            });
+        });
+
+        // --- Logic for Debounce Demo (Tab 2) ---
+        const debounceInput = activeSlide.querySelector('#debounce-input');
+        const debounceRaw = activeSlide.querySelector('#debounce-raw');
+        const debounceOutput = activeSlide.querySelector('#debounce-output');
+        let debounceTimer = null;
+
+        debounceInput.addEventListener('input', (e) => {
+            const value = e.target.value;
+            debounceRaw.textContent = value;
+            debounceOutput.textContent = '...typing...';
+            
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(() => {
+                debounceOutput.textContent = `API Call with: "${value}"`;
+            }, 500);
+        });
+    }
+
+// NEW: Combined Tab Demo (Slide 13)
+    const tabDemo13 = activeSlide.querySelector('#cleanup-demo');
+    if (tabDemo13 && !tabDemo13.dataset.initialized) {
+        // Mark as initialized to prevent re-attaching listeners
+        // We use one demo element to detect if the whole slide is initialized
+        tabDemo13.dataset.initialized = true;
+
+        const tabButtons = activeSlide.querySelectorAll('.tab-button');
+        const tabContents = activeSlide.querySelectorAll('.tab-content');
+
+        tabButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                tabButtons.forEach(btn => btn.classList.remove('active'));
+                tabContents.forEach(content => content.classList.remove('active'));
+                button.classList.add('active');
+                activeSlide.querySelector(`#${button.dataset.tab}`).classList.add('active');
+            });
+        });
+
+        // --- Logic for Cleanup Demo (Tab 1) ---
+        let timerId_cleanup = null;
+        let count_cleanup = 0;
+        const output_cleanup = activeSlide.querySelector('#cleanup-output');
+        const startBtn_cleanup = activeSlide.querySelector('#start-timer-btn');
+        const stopBtn_cleanup = activeSlide.querySelector('#stop-timer-btn');
+        
+        startBtn_cleanup.addEventListener('click', () => {
+            if (timerId_cleanup === null) {
+                count_cleanup = 0;
+                timerId_cleanup = setInterval(() => {
+                    count_cleanup++;
+                    output_cleanup.innerHTML = `<h4>Timer Running...</h4><p style="font-size:1.5em">${count_cleanup}</p>`;
+                }, 1000);
+                output_cleanup.innerHTML = `<h4>Timer Started!</h4>`;
+            }
+        });
+        
+        stopBtn_cleanup.addEventListener('click', () => {
+            if (timerId_cleanup !== null) {
+                clearInterval(timerId_cleanup); // Simulate cleanup
+                timerId_cleanup = null;
+                output_cleanup.innerHTML = `<h4>Timer Stopped at ${count_cleanup}! (Cleanup successful)</h4>`;
+            }
+        });
+
+        // --- Logic for Infinite Loop Demo (Tab 2) ---
+        let loopTimerId = null;
+        let loopCount = 0;
+        const loopOutput = activeSlide.querySelector('#loop-output');
+        const startLoopBtn = activeSlide.querySelector('#start-loop-btn');
+        const stopLoopBtn = activeSlide.querySelector('#stop-loop-btn');
+
+        startLoopBtn.addEventListener('click', () => {
+            if (loopTimerId === null) {
+                loopTimerId = setInterval(() => {
+                    loopCount++;
+                    loopOutput.textContent = `Loop counter: ${loopCount}`;
+                }, 50); // Fast interval to simulate loop
+            }
+        });
+
+        stopLoopBtn.addEventListener('click', () => {
+            if (loopTimerId !== null) {
+                clearInterval(loopTimerId);
+                loopTimerId = null;
+                loopCount = 0;
+                loopOutput.textContent = 'Loop stopped. Counter reset to 0.';
+            }
+        });
+    }
+
+
+}
+
+            showSlide(0);
+        });
+    </script>
+</body>
+</html>
