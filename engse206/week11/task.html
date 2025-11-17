@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ENGSE206 - W11: UX/UI Design for Agent Wallboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #0D204E; /* RMUTL Navy Blue */
+            --secondary-color: #D4A237; /* RMUTL Gold */
+            --accent-color: #10B981; /* Tech Green */
+            --background-gradient: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            --slide-bg: rgba(255, 255, 255, 1);
+            --text-color: #111827; /* Almost Black */
+            --header-color: #0D204E;
+            --base-font-size: clamp(18px, 1.8vw, 28px);
+            --border-radius: 15px;
+            --code-font: 'Fira Code', 'Courier New', monospace;
+
+            /* Design System Colors from week11-task.md */
+            --status-available: #10B981;
+            --status-busy: #F59E0B;
+            --status-break: #3B82F6;
+            --status-offline: #6B7280;
+            --ui-primary: #3B82F6;
+            --ui-success: #22C55E;
+            --ui-warning: #F97316;
+            --ui-error: #DC2626;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { overflow: hidden; height: 100%; scroll-behavior: smooth; }
+        body { font-family: 'Inter', 'Sarabun', sans-serif; background: var(--background-gradient); color: var(--text-color); font-size: 18px; line-height: 1.8; }
+        .slide-header h2, .slide-header h1, .title-slide h1, .title-slide h2 { font-family: 'Sarabun', sans-serif; }
+        .presentation { width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center; padding: 2.5vh 3.5vw; }
+        .slide { background: var(--slide-bg); padding: 35px 50px 90px 50px; border-radius: var(--border-radius); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); width: 100%; height: 100%; font-size: var(--base-font-size); overflow: hidden; display: none; animation: fadeIn 0.5s ease-in-out; position: relative; flex-direction: column;}
+        .slide.active { display: flex; }
+        .slide-content { flex-grow: 1; overflow-y: auto; padding-right: 15px; -ms-overflow-style: none; scrollbar-width: none; }
+        .slide-content::-webkit-scrollbar { display: none; }
+
+        .title-slide.active { justify-content: center; align-items: center; text-align: center; background: linear-gradient(135deg, #0D204E 0%, #1a3a8a 100%); color: white; }
+        .title-slide h1, .title-slide h2, .title-slide h3, .title-slide p { color: white !important; }
+        .title-slide h1 { font-size: 3em; margin-bottom: 10px; border: none; }
+        .title-slide h2 { font-size: 2.2em; margin-bottom: 20px; border: none; font-weight: 500; }
+        .title-slide h3 { font-size: 1.6em; font-weight: 400; opacity: 0.9; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        .progress-bar-container { position: fixed; top: 0; left: 0; width: 100%; height: 6px; background-color: rgba(255, 255, 255, 0.2); z-index: 2000; }
+        .progress-bar { height: 100%; width: 0%; background: linear-gradient(120deg, var(--secondary-color) 0%, #f1c40f 100%); transition: width 0.3s ease-out; }
+        .presentation-controls { /* Styles for controls */ }
+        .nav-btn, .font-btn, .fullscreen-btn { /* Styles for buttons */ }
+        .nav-btn:hover:not(:disabled), .font-btn:hover, .fullscreen-btn:hover { /* Styles for button hovers */ }
+        .nav-btn:disabled { /* Styles for disabled buttons */ }
+        #slide-counter { /* Styles for slide counter */ }
+        
+        .slide-footer { margin-top: auto; padding-top: 20px; font-size: 0.7em; color: #aaa; text-align: left; width: 100%; }
+        .slide-number { position: absolute; bottom: 25px; right: 50px; font-size: 0.7em; color: #aaa; }
+        .slide-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; padding-bottom: 15px; border-bottom: 1px solid #eee; flex-shrink: 0; }
+        .slide-header h2 { font-size: 2.4em; color: var(--header-color); border: none; margin: 0; padding: 0; font-weight: 700; }
+        
+        .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 30px; margin-top: 25px; }
+        .infographic-card { background-color: #f8f9fa; border-radius: var(--border-radius); padding: 25px; border-left: 6px solid; transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out; }
+        .infographic-card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
+        .infographic-card h4 { font-size: 1.2em; color: var(--header-color); margin-bottom: 8px; font-weight: 700; }
+        .infographic-card p, .infographic-card ul, .infographic-card code { font-size: 0.9em; color: #444; }
+
+        code, pre { font-family: var(--code-font); background-color: #eef2ff; padding: 2px 6px; border-radius: 4px; font-size: 0.85em; }
+        pre { padding: 15px; white-space: pre-wrap; word-wrap: break-word; }
+        
+        .interactive-question { background-color: #fffbe6; border: 2px dashed #f59e0b; border-radius: var(--border-radius); padding: 20px; margin-top: 25px; font-size: 1.1em; }
+        .interactive-question .answer { display: none; margin-top: 15px; padding-top: 15px; border-top: 1px solid #fee2e2; color: #b91c1c; font-weight: 500; }
+        .interactive-question button { background-color: var(--secondary-color); color: var(--primary-color); border: none; padding: 8px 16px; border-radius: 20px; cursor: pointer; font-weight: bold; margin-top: 10px; transition: transform 0.2s; }
+        .interactive-question button:hover { transform: scale(1.05); }
+
+        .persona-card { border-left-width: 8px; border-radius: var(--border-radius); }
+        .persona-card h4 { font-size: 1.4em; }
+    </style>
+</head>
+
+<body>
+
+    <div class="progress-bar-container">
+        <div class="progress-bar" id="progress-bar"></div>
+    </div>
+
+    <div class="presentation">
+
+        <section class="slide title-slide active">
+            <h2>ENGSE206: Software Requirements Specification and Design</h2>
+            <h1>สัปดาห์ที่ 11: UX/UI Design Assignment</h1>
+            <h3>Agent Wallboard System Redesign Challenge</h3>
+            <div class="slide-number"></div>
+        </section>
+
+        <section class="slide">
+            <div class="slide-header">
+                <h2>🎯 โจทย์หลัก: Agent Wallboard System</h2>
+            </div>
+            <div class="slide-content" style="font-size: 1.0em;">
+                <p>เป้าหมาย: ออกแบบระบบ Call Center Wallboard ใหม่ โดยเน้นแก้ปัญหา **Pain Points** ของผู้ใช้หลักสองกลุ่ม</p>
+                <div class="grid-2">
+                    <div class="p-4 bg-blue-50 rounded-lg shadow-md persona-card" style="border-left-color: var(--ui-primary);">
+                        <h4 class="font-bold text-lg">Persona 1: "Nok" - Agent (พนักงาน)</h4>
+                        <ul class="list-disc pl-5 mt-2 text-sm">
+                            <li>**Goals:** เปลี่ยนสถานะได้เร็ว (1-2 คลิก), อ่านข้อความได้ทันที, ดูสถิติของตัวเองได้ง่าย</li>
+                            <li>**Pain Points:** ระบบเดิมช้า, เปลี่ยนสถานะแล้วไม่ update ทันที, หาปุ่มเปลี่ยนสถานะไม่เจอ</li>
+                        </ul>
+                    </div>
+                    <div class="p-4 bg-green-50 rounded-lg shadow-md persona-card" style="border-left-color: var(--ui-success);">
+                        <h4 class="font-bold text-lg">Persona 2: "Sarah" - Supervisor (หัวหน้าทีม)</h4>
+                        <ul class="list-disc pl-5 mt-2 text-sm">
+                            <li>**Goals:** Monitor ทีม real-time (4+ agents), ส่งข้อความถึง agents เร็ว, ดู team performance ภาพรวม</li>
+                            <li>**Pain Points:** ดู agent หลายคนพร้อมกันยาก, ต้อง scroll มาก, ข้อมูล update ช้า</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="interactive-question mt-8">
+                    <p><strong>🤔 คำถาม:</strong> การออกแบบ UX สำหรับ **"Nok" (Agent)** ควรให้ความสำคัญกับอะไรมากกว่ากัน? **A. ความสวยงามของ UI** หรือ **B. ความรวดเร็วในการเปลี่ยนสถานะ (Efficiency)**</p>
+                    <button onclick="toggleAnswer(this)">แสดงคำตอบ</button>
+                    <div class="answer">
+                        <p><strong>คำตอบ: B. ความรวดเร็วในการเปลี่ยนสถานะ (Efficiency)</strong></p>
+                        <p>เพราะ Pain Point หลักคือ "เปลี่ยนสถานะแล้วไม่ update ทันที" และ "หาปุ่มเปลี่ยนสถานะไม่เจอ" ซึ่งส่งผลต่อประสิทธิภาพในการทำงานโดยตรง (Goal: เปลี่ยนสถานะได้เร็ว)</p>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-footer">UX/UI Design Challenge Introduction</div>
+            <div class="slide-number"></div>
+        </section>
+
+        <section class="slide">
+            <div class="slide-header">
+                <h2>🛠️ Part 1: UX Research & Analysis (30%)</h2>
+            </div>
+            <div class="slide-content">
+                <h3 class="font-bold text-xl text-indigo-700">1.1 User Journey Mapping (15 pts)</h3>
+                <p>สร้างแผนภาพประสบการณ์ของผู้ใช้ (Journey Map) สำหรับ 2 สถานการณ์ เพื่อค้นหา Pain Points และ Opportunities</p>
+                <div class="grid-2 mt-4">
+                    <div class="infographic-card" style="border-left-color: #d946ef;">
+                        <h4>Scenario A: Agent - เริ่มต้นวันทำงาน</h4>
+                        <ul class="list-disc pl-5 text-sm">
+                            <li>Phases: Arrival → Login → Check Messages → Change Status to Available → Receive First Call → Wrap-up & Next Call</li>
+                        </ul>
+                    </div>
+                    <div class="infographic-card" style="border-left-color: #14b8a6;">
+                        <h4>Scenario B: Supervisor - Monitor Team</h4>
+                        <ul class="list-disc pl-5 text-sm">
+                            <li>Phases: Login & Overview → Check Individual Agent → Send Message to Agent → Handle Emergency → Generate Report</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <h3 class="font-bold text-xl text-indigo-700 mt-8">1.2 Comparative Analysis (15 pts)</h3>
+                <p>วิเคราะห์ระบบคู่แข่ง 2-3 ระบบ เพื่อหาจุดแข็งและรูปแบบ UX ที่น่าสนใจ</p>
+                <ul class="list-disc pl-5 text-sm mt-2">
+                    <li>**Competitors:** Zendesk, Freshdesk, Genesys Cloud</li>
+                    <li>**Deliverables:** ระบุ Features ที่ดีกว่า, UX patterns ที่น่าสนใจ และสิ่งที่เราจะทำได้ดีกว่า</li>
+                </ul>
+            </div>
+            <div class="slide-footer">Assignment Part 1: Research & Analysis</div>
+            <div class="slide-number"></div>
+        </section>
+
+        <section class="slide">
+            <div class="slide-header">
+                <h2>🎨 Part 2: UI Design - Design System (10%)</h2>
+            </div>
+            <div class="slide-content" style="font-size: 1.0em;">
+                <p>สร้าง Design System ที่สมบูรณ์และสม่ำเสมอ โดยอิงจากข้อกำหนดทางเทคนิค</p>
+                
+                <h3 class="font-bold mt-4 text-lg" style="color: var(--ui-primary);">Colors & Accessibility (WCAG AA)</h3>
+                <div class="grid grid-cols-2 gap-4 mt-2 text-sm">
+                    <div class="p-3 bg-gray-100 rounded-lg">
+                        <p class="font-semibold">Status Colors (Semantic)</p>
+                        <pre>Available: #10B981 | Busy: #F59E0B</pre>
+                        <pre>Break: #3B82F6 | Offline: #6B7280</pre>
+                    </div>
+                    <div class="p-3 bg-gray-100 rounded-lg">
+                        <p class="font-semibold">UI Colors (Semantic)</p>
+                        <pre>Primary: #3B82F6 | Success: #22C55E</pre>
+                        <pre>Warning: #F97316 | Error: #DC2626</pre>
+                    </div>
+                </div>
+
+                <h3 class="font-bold mt-4 text-lg" style="color: var(--ui-primary);">Typography & Spacing</h3>
+                <div class="grid-2 text-sm">
+                    <div>
+                        <p class="font-semibold">Typography (Font: Inter)</p>
+                        <pre>H1: 24px/600 (Semibold)
+H2: 20px/600 (Semibold)
+Body: 16px/400 (Regular)</pre>
+                    </div>
+                    <div>
+                        <p class="font-semibold">Spacing (8px Grid System)</p>
+                        <pre>xs: 4px | sm: 8px (1 unit)
+md: 16px (2 units) | lg: 24px</pre>
+                    </div>
+                </div>
+
+                <div class="mt-4 p-4 bg-red-50 border-l-4 border-red-500 rounded-r-lg">
+                    <p class="text-sm font-semibold text-red-800">❗ Constraint: Colors & Spacing ต้องใช้ **CSS Variables** หรือ **Tailwind classes** ในการ Implement</p>
+                </div>
+            </div>
+            <div class="slide-footer">Assignment Part 2.1: Design System</div>
+            <div class="slide-number"></div>
+        </section>
+
+        <section class="slide">
+            <div class="slide-header">
+                <h2>🖥️ Part 2: Wireframes & Hi-Fi Design (50%)</h2>
+            </div>
+            <div class="slide-content">
+                <h3 class="font-bold text-xl text-teal-700">2.2 Wireframes (Mid-Fidelity, 20 pts)</h3>
+                <p>สร้าง Wireframes 5 Screens เพื่อกำหนดโครงสร้างและลำดับข้อมูล (Information Hierarchy)</p>
+                <ul class="list-disc pl-5 mt-2 text-sm">
+                    <li>**Screens Required:** 1. Agent View, 2. Supervisor View, 3. Agent Detail Modal, 4. Messaging Interface, 5. Settings/Preferences</li>
+                    <li>**Requirement:** ต้องมีการ **Annotations** อธิบาย Interactions และ Hierarchy</li>
+                </ul>
+
+                <h3 class="font-bold text-xl text-teal-700 mt-6">2.3 High-Fidelity UI Design (30 pts)</h3>
+                <p>ออกแบบ 4 Screens หลักให้สมบูรณ์แบบ (Pixel-Perfect) โดยใช้ Design System</p>
+                <ul class="list-disc pl-5 mt-2 text-sm">
+                    <li>**Screens Required:** 1. Agent Dashboard - Main View, 2. Supervisor Dashboard - Team Overview, 3. Agent Detail View (for Supervisor), 4. Messaging Interface</li>
+                    <li>**Requirement:** ต้องผ่าน **Accessibility** (contrast ratio $\ge 4.5:1$), ใช้ **Real Content**, และมี Visual Hierarchy ที่ชัดเจน</li>
+                </ul>
+            </div>
+            <div class="slide-footer">Assignment Part 2.2-2.3: Design & Screens</div>
+            <div class="slide-number"></div>
+        </section>
+
+        <section class="slide">
+            <div class="slide-header">
+                <h2>💡 Key Improvements ที่ต้องแก้ไข Pain Points</h2>
+            </div>
+            <div class="slide-content" style="font-size: 0.95em;">
+                <p>การออกแบบที่ส่งมอบต้องมีการปรับปรุงที่ชัดเจน เพื่อแก้ปัญหาที่พบใน UI เดิม</p>
+                <div class="grid-2">
+                    <div class="infographic-card" style="border-left-color: var(--status-available);">
+                        <h4>🎧 Agent View Improvements</h4>
+                        <ul class="list-disc pl-5">
+                            <li>**Quick Status Toggle** (1 คลิก - ไม่ใช่ 4 ปุ่มใหญ่)</li>
+                            <li>**Keyboard Shortcuts** (F2-F5 for status)</li>
+                            <li>**Unread Message Badge** เด่นชัด</li>
+                            <li>**Personal Stats Widget** (ดูสถิติตัวเอง)</li>
+                            <li>**Collapsible Message Panel**</li>
+                        </ul>
+                    </div>
+                    <div class="infographic-card" style="border-left-color: var(--status-break);">
+                        <h4>👨‍💼 Supervisor View Improvements</h4>
+                        <ul class="list-disc pl-5">
+                            <li>**Compact Agent Cards** (Grid 3x2 หรือ 4x2)</li>
+                            <li>**Real-time Status Updates** (ใช้ WebSocket)</li>
+                            <li>**Team Performance Metrics Dashboard**</li>
+                            <li>**Alert System** (highlight agents needing help)</li>
+                            <li>**Quick Message Shortcut**</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-footer">Mandatory Key Improvements</div>
+            <div class="slide-number"></div>
+        </section>
+
+        <section class="slide">
+            <div class="slide-header">
+                <h2>⚙️ Design Challenges และ Technical Constraints</h2>
+            </div>
+            <div class="slide-content">
+                <h3 class="font-bold text-xl text-red-700">Challenge 1: Status Control Redesign</h3>
+                <p class="text-sm">Current: 4 large buttons (waste space). Goal: **1-click status change**</p>
+                <div class="infographic-card mt-2" style="border-left-color: var(--ui-warning);">
+                    <p class="text-sm">**โจทย์:** ให้ออกแบบ **4 Options** (FAB, Dropdown, Shortcuts, Status bar) แล้วเลือก 1 ที่ดีที่สุดพร้อมอธิบายเหตุผล</p>
+                </div>
+
+                <h3 class="font-bold text-xl text-red-700 mt-6">Challenge 2: Agent Card Optimization</h3>
+                <p class="text-sm">Current: Large cards, 4 per screen. Goal: **Show 8+ agents without scrolling**</p>
+                <div class="infographic-card mt-2" style="border-left-color: var(--ui-warning);">
+                    <p class="text-sm">**โจทย์:** ให้ออกแบบ 2-3 **Compact Versions** ของ Agent Card แล้วเปรียบเทียบ</p>
+                </div>
+
+                <h3 class="font-bold text-xl text-blue-700 mt-6">Technical Constraints (for ENGSE203)</h3>
+                <ul class="list-disc pl-5 text-sm mt-2">
+                    <li>**Stack:** React + TypeScript, Tailwind CSS, shadcn/ui (UI Library), Socket.io (Real-time)</li>
+                    <li>**Requirement:** Design ต้องรองรับ **Responsive Layout**, Components ต้อง **Reusable**, และมีพิจารณาเรื่อง **Performance** (Lazy Loading)</li>
+                </ul>
+            </div>
+            <div class="slide-footer">Design Challenges & Technical Stack</div>
+            <div class="slide-number"></div>
+        </section>
+
+        <section class="slide">
+            <div class="slide-header">
+                <h2>✅ Part 2: Prototype & Rationale (30%)</h2>
+            </div>
+            <div class="slide-content">
+                <h3 class="font-bold text-xl text-purple-700">2.4 Interactive Prototype (20 pts)</h3>
+                <p>สร้าง Flow การใช้งานที่สามารถคลิกได้จริงใน Figma</p>
+                <ul class="list-disc pl-5 mt-2 text-sm">
+                    <li>**Flow 1:** Agent Login → Change Status → Read Message</li>
+                    <li>**Flow 2:** Supervisor Login → View Agent Detail → Send Message</li>
+                    <li>**Requirement:** ต้องใช้ **Smart Animate** และมี **Hover states** สำหรับ Interactive Elements</li>
+                </ul>
+
+                <h3 class="font-bold text-xl text-purple-700 mt-6">2.5 Design Rationale Document (10 pts)</h3>
+                <p>เขียนอธิบายการตัดสินใจในการออกแบบ (สำคัญเท่ากับการออกแบบเอง)</p>
+                <ul class="list-disc pl-5 mt-2 text-sm">
+                    <li>**Explain:** Design Decisions (Layout/Color), UX Improvements (แก้ Pain Points), Accessibility, และ Technical Feasibility</li>
+                </ul>
+                
+                <div class="mt-6 p-4 bg-yellow-100 border-l-4 border-yellow-500 rounded-r-lg">
+                    <p class="text-sm font-semibold text-yellow-800">💡 Tip: **"Document ไปพร้อมกับการออกแบบ"** เพื่อให้ Rationale มีน้ำหนักและอ้างอิงข้อมูลได้จริง</p>
+                </div>
+            </div>
+            <div class="slide-footer">Assignment Part 2.4-2.5: Final Deliverables</div>
+            <div class="slide-number"></div>
+        </section>
+
+        <section class="slide">
+            <div class="slide-header">
+                <h2>📊 Evaluation Criteria (สรุปเกณฑ์การให้คะแนน)</h2>
+            </div>
+            <div class="slide-content">
+                <pre class="mt-4 text-sm p-4 bg-gray-100 rounded-lg shadow-inner">
+UX Research (30 points)
+├─ User Journey Maps (15 pts) - 2 Scenarios, Detailed analysis, Emotion graphs
+└─ Comparative Analysis (15 pts) - 2-3 competitors, Meaningful insights
+
+UI Design (70 points)
+├─ Design System (10 pts) - Complete, Consistent, Accessible colors
+├─ Wireframes (20 pts) - 5 screens, Clear hierarchy, Annotations
+├─ Hi-Fi Design (30 pts) - 4 screens, Pixel-perfect, Accessibility compliance
+├─ Interactive Prototype (20 pts) - 2+ complete flows, Smooth transitions
+└─ Design Rationale (10 pts) - Clear explanations, Evidence-based decisions
+                </pre>
+                
+                <h3 class="font-bold text-xl text-red-600 mt-6 text-center">**❌ ห้ามลืม: Base decisions on research (ไม่ใช่ opinion)**</h3>
+            </div>
+            <div class="slide-footer">Evaluation Criteria</div>
+            <div class="slide-number"></div>
+        </section>
+
+        <section class="slide title-slide">
+            <h1>Good Luck!</h1>
+            <h3>เริ่ม Workshop และการทำ Assignment ได้เลยครับ 🚀</h3>
+            <p class="mt-8">"Keep it simple - ไม่ต้องใส่ feature ทุกอย่าง"</p>
+            <div class="slide-number"></div>
+        </section>
+
+    </div>
+
+    <div class="presentation-controls">
+        <button id="prev-btn" class="nav-btn" title="สไลด์ก่อนหน้า">‹</button>
+        <span id="slide-counter"></span>
+        <button id="next-btn" class="nav-btn" title="สไลด์ถัดไป">›</button>
+        <button id="font-decrease-btn" class="font-btn" title="ลดขนาดตัวอักษร">-</button>
+        <button id="font-increase-btn" class="font-btn" title="เพิ่มขนาดตัวอักษร">+</button>
+        <button id="fullscreen-btn" class="fullscreen-btn" title="เต็มจอ">⛶</button>
+    </div>
+
+    <script>
+        // --- JavaScript สำหรับควบคุมสไลด์ (ใช้โค้ดเดิมเพื่อให้สไลด์ใช้งานได้จริง) ---
+        document.addEventListener('DOMContentLoaded', () => {
+            const slides = document.querySelectorAll('.slide');
+            const nextBtn = document.getElementById('next-btn');
+            const prevBtn = document.getElementById('prev-btn');
+            const fullscreenBtn = document.getElementById('fullscreen-btn');
+            const slideCounter = document.getElementById('slide-counter');
+            const progressBar = document.getElementById('progress-bar');
+            const fontIncreaseBtn = document.getElementById('font-increase-btn');
+            const fontDecreaseBtn = document.getElementById('font-decrease-btn');
+
+            let currentFontSize = 1.0;
+            let currentSlideIndex = 0;
+            const totalSlides = slides.length;
+
+            function updateFontSize() {
+                document.documentElement.style.setProperty('--base-font-size', `clamp(18px, ${1.8 * currentFontSize}vw, ${32 * currentFontSize}px)`);
+            }
+
+            function showSlide(index) {
+                if (index < 0 || index >= totalSlides) return;
+                slides.forEach((slide, i) => {
+                    slide.classList.toggle('active', i === index);
+                    const slideNumberEl = slide.querySelector('.slide-number');
+                    if (slideNumberEl) {
+                        slideNumberEl.textContent = `${i + 1} / ${totalSlides}`;
+                    }
+                });
+                currentSlideIndex = index;
+                updateControls();
+            }
+
+            function updateControls() {
+                slideCounter.textContent = `${currentSlideIndex + 1} / ${totalSlides}`;
+                const progressPercentage = totalSlides > 1 ? ((currentSlideIndex) / (totalSlides - 1)) * 100 : 0;
+                progressBar.style.width = `${progressPercentage}%`;
+                prevBtn.disabled = currentSlideIndex === 0;
+                nextBtn.disabled = currentSlideIndex === totalSlides - 1;
+            }
+
+            function toggleFullscreen() {
+                if (!document.fullscreenElement) {
+                    document.documentElement.requestFullscreen().catch(err => {
+                        alert(`ไม่สามารถเข้าสู่โหมดเต็มจอได้: ${err.message}`);
+                    });
+                } else if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+            }
+            
+            window.toggleAnswer = (button) => {
+                const answerDiv = button.nextElementSibling;
+                const isHidden = answerDiv.style.display === 'none' || answerDiv.style.display === '';
+                answerDiv.style.display = isHidden ? 'block' : 'none';
+                button.textContent = isHidden ? 'ซ่อนคำตอบ' : 'แสดงคำตอบ';
+            };
+
+            fontIncreaseBtn.addEventListener('click', () => {
+                if (currentFontSize < 1.5) {
+                    currentFontSize += 0.1;
+                    updateFontSize();
+                }
+            });
+
+            fontDecreaseBtn.addEventListener('click', () => {
+                if (currentFontSize > 0.7) {
+                    currentFontSize -= 0.1;
+                    updateFontSize();
+                }
+            });
+
+            nextBtn.addEventListener('click', () => showSlide(currentSlideIndex + 1));
+            prevBtn.addEventListener('click', () => showSlide(currentSlideIndex - 1));
+            fullscreenBtn.addEventListener('click', toggleFullscreen);
+
+            document.addEventListener('keydown', (event) => {
+                if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA' || event.target.isContentEditable) return;
+                if (event.key === 'ArrowRight' || event.key === 'PageDown' || event.key === ' ') {
+                    event.preventDefault();
+                    nextBtn.click();
+                } else if (event.key === 'ArrowLeft' || event.key === 'PageUp') {
+                    event.preventDefault();
+                    prevBtn.click();
+                } else if (event.key === 'f') {
+                    event.preventDefault();
+                    toggleFullscreen();
+                } else if (event.key === 'Home') {
+                    event.preventDefault();
+                    showSlide(0);
+                } else if (event.key === 'End') {
+                    event.preventDefault();
+                    showSlide(totalSlides - 1);
+                }
+            });
+
+            showSlide(0);
+        });
+    </script>
+</body>
+
+</html>

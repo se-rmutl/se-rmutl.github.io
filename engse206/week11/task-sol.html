@@ -1,0 +1,930 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ENGSE206 - สัปดาห์ที่ 11: การออกแบบ UX และ UI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #0D204E;
+            /* RMUTL Navy Blue */
+            --secondary-color: #D4A237;
+            /* RMUTL Gold */
+            --accent-color: #10B981;
+            /* Tech Green */
+            --background-gradient: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            --slide-bg: rgba(255, 255, 255, 1);
+            --text-color: #2c2f33;
+            --header-color: #0D204E;
+            --base-font-size: clamp(16px, 1.7vw, 24px);
+            --border-radius: 15px;
+            --code-font: 'Fira Code', 'Courier New', monospace;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            overflow: hidden;
+            height: 100%;
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Sarabun', sans-serif;
+            background: var(--background-gradient);
+            color: var(--text-color);
+            font-size: 18px;
+            line-height: 1.7;
+        }
+
+        .presentation {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2.5vh 3.5vw;
+        }
+
+        .slide {
+            background: var(--slide-bg);
+            padding: 35px 50px 90px 50px;
+            border-radius: var(--border-radius);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            width: 100%;
+            height: 100%;
+            font-size: var(--base-font-size);
+            overflow: hidden;
+            display: none;
+            animation: fadeIn 0.5s ease-in-out;
+            position: relative;
+        }
+
+        .slide.active {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .slide-content {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding-right: 15px;
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        .slide-content::-webkit-scrollbar {
+            display: none;
+        }
+
+        .title-slide.active {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            background: linear-gradient(135deg, #0D204E 0%, #1a3a8a 100%);
+            color: white;
+        }
+
+        .title-slide h1,
+        .title-slide h2,
+        .title-slide h3,
+        .title-slide p {
+            color: white !important;
+        }
+
+        .title-slide h1 {
+            font-size: 3em;
+            margin-bottom: 10px;
+            border: none;
+        }
+
+        .title-slide h2 {
+            font-size: 2.2em;
+            margin-bottom: 20px;
+            border: none;
+            font-weight: 500;
+        }
+
+        .title-slide h3 {
+            font-size: 1.6em;
+            font-weight: 400;
+            opacity: 0.9;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .progress-bar-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 6px;
+            background-color: rgba(255, 255, 255, 0.2);
+            z-index: 2000;
+        }
+
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(120deg, var(--secondary-color) 0%, #f1c40f 100%);
+            transition: width 0.3s ease-out;
+        }
+
+        .presentation-controls {
+            position: fixed;
+            bottom: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(13, 32, 78, 0.9);
+            padding: 8px 15px;
+            border-radius: 50px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(8px);
+            z-index: 1000;
+        }
+
+        .nav-btn,
+        .font-btn,
+        .fullscreen-btn {
+            background: transparent;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 44px;
+            height: 44px;
+            font-size: 1.6rem;
+        }
+
+        .nav-btn:hover:not(:disabled),
+        .font-btn:hover,
+        .fullscreen-btn:hover {
+            background: var(--secondary-color);
+            transform: translateY(-2px);
+        }
+
+        .nav-btn:disabled {
+            background-color: transparent;
+            color: #777;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        #slide-counter {
+            color: white;
+            font-weight: 500;
+            font-size: 1.1rem;
+            min-width: 80px;
+            text-align: center;
+        }
+
+        .slide-footer {
+            margin-top: auto;
+            padding-top: 20px;
+            font-size: 0.7em;
+            color: #aaa;
+            text-align: left;
+            width: 100%;
+            border-top: 1px solid #eee;
+        }
+
+        .slide-number {
+            position: absolute;
+            bottom: 25px;
+            right: 50px;
+            font-size: 0.7em;
+            color: #aaa;
+        }
+
+        .slide-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eee;
+            flex-shrink: 0;
+        }
+
+        .slide-header h2 {
+            font-size: 2.2em;
+            color: var(--header-color);
+            border: none;
+            margin: 0;
+            padding: 0;
+            font-weight: 700;
+        }
+        
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 30px;
+            margin-top: 25px;
+        }
+
+        .infographic-card {
+            background-color: #f8f9fa;
+            border-radius: var(--border-radius);
+            padding: 25px;
+            border-left: 6px solid;
+            transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+        }
+
+        .infographic-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+
+        .infographic-card h4 {
+            font-size: 1.2em;
+            color: var(--header-color);
+            margin-bottom: 8px;
+            font-weight: 700;
+        }
+
+        .infographic-card p,
+        .infographic-card ul,
+        .infographic-card code {
+            font-size: 0.9em;
+            color: #444;
+        }
+
+        code, pre {
+            font-family: var(--code-font);
+            background-color: #eef2ff;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.85em;
+            color: #37352f;
+        }
+        
+        pre {
+            padding: 15px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            border-radius: var(--border-radius);
+            border: 1px solid #ddd;
+        }
+        
+        .interactive-question {
+            background-color: #fffbe6;
+            border: 2px dashed #f59e0b;
+            border-radius: var(--border-radius);
+            padding: 20px;
+            margin-top: 25px;
+            font-size: 1.0em;
+        }
+        
+        .interactive-question .answer {
+            display: none;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #fee2e2;
+            color: #b91c1c;
+            font-weight: 500;
+        }
+        
+        .interactive-question button {
+            background-color: var(--secondary-color);
+            color: var(--primary-color);
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-top: 10px;
+            transition: transform 0.2s;
+        }
+
+        .interactive-question button:hover {
+            transform: scale(1.05);
+        }
+
+        .color-palette {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .color-swatch {
+            width: 50px;
+            height: 50px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7em;
+            color: white;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+        }
+
+    </style>
+</head>
+
+<body>
+
+    <div class="progress-bar-container">
+        <div class="progress-bar" id="progress-bar"></div>
+    </div>
+
+    <div class="presentation">
+
+        <section class="slide title-slide active">
+            <h2>ENGSE206: Software Requirements Specification and Design</h2>
+            <h1>สัปดาห์ที่ 11: User Experience (UX) & User Interface (UI) Design</h1>
+            <h3>มหาวิทยาลัยเทคโนโลยีราชมงคลล้านนา (ดอยสะเก็ด)</h3>
+            <div class="slide-number"></div>
+        </section>
+        
+        <section class="slide">
+            <div class="slide-header">
+                <h2>📋 วันนี้เรียนอะไร? (Agenda)</h2>
+            </div>
+            <div class="slide-content" style="font-size: 1.0em;">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div>
+                        <h3 class="font-bold text-xl text-indigo-700">Part 1: Foundations  фундамент</h3>
+                        <ul class="list-disc pl-5 mt-2 space-y-2">
+                            <li>ความสำคัญของ UX/UI และ The Cost of Bad Design</li>
+                            <li>UX vs UI คืออะไร? และเกี่ยวข้องกันอย่างไร?</li>
+                            <li>กระบวนการออกแบบที่ยึดผู้ใช้เป็นศูนย์กลาง (User-Centered Design)</li>
+                        </ul>
+                        <h3 class="font-bold text-xl mt-6 text-indigo-700">Part 2: UX Research & Analysis 🕵️‍♀️</h3>
+                        <ul class="list-disc pl-5 mt-2 space-y-2">
+                            <li>กรณีศึกษา: Agent Wallboard System</li>
+                            <li>การสร้าง Persona จากข้อมูลผู้ใช้จริง</li>
+                            <li>การทำ User Journey Mapping เพื่อหา Pain Points & Opportunities</li>
+                             <li>Comparative Analysis: เรียนรู้จากคู่แข่งและระบบอื่น</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-xl text-indigo-700">Part 3: UI Design & Prototyping 🎨</h3>
+                        <ul class="list-disc pl-5 mt-2 space-y-2">
+                           <li>Design Systems คืออะไร? (Color, Typography, Spacing, Components)</li>
+                           <li>Wireframing: จากโครงร่างสู่หน้าจอ</li>
+                           <li>High-Fidelity Design: ทำให้เหมือนจริง</li>
+                           <li>Interactive Prototyping: ทำให้คลิกได้</li>
+                           <li>แนะนำเครื่องมือ: Figma</li>
+                        </ul>
+                        <div class="mt-6 p-4 bg-green-50 border-l-4 border-green-500 rounded-r-lg">
+                            <h4 class="font-bold text-green-800">🎯 วัตถุประสงค์การเรียนรู้</h4>
+                            <p class="mt-2 text-sm">เมื่อสิ้นสุดคาบเรียนนี้ นักศึกษาจะสามารถประยุกต์ใช้กระบวนการ UX/UI ทั้งหมด ตั้งแต่การทำความเข้าใจผู้ใช้ไปจนถึงการสร้าง Prototype ที่สามารถทดสอบได้จริง สำหรับโปรเจกต์ Agent Wallboard System</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-footer">Agenda & Learning Objectives</div>
+            <div class="slide-number"></div>
+        </section>
+
+        <section class="slide">
+            <div class="slide-header">
+                <h2>🎭 The Cost of Bad Design: ทำไม UX/UI ถึงสำคัญ?</h2>
+            </div>
+            <div class="slide-content" style="font-size: 1.0em; line-height: 1.7;">
+                 <div class="grid-2">
+                    <div class="infographic-card" style="border-left-color: #ef4444;">
+                        <h4>💰 Business Impact</h4>
+                        <ul class="list-disc pl-5">
+                            <li><strong>88%</strong> ของผู้ใช้จะไม่กลับมาอีกถ้าเจอประสบการณ์ที่ไม่ดี</li>
+                            <li>การแก้ปัญหาหลัง release **แพงกว่า**แก้ตอนออกแบบถึง **100 เท่า**</li>
+                             <li>Good UX เพิ่ม conversion rates ได้ถึง **400%**</li>
+                        </ul>
+                    </div>
+                    <div class="infographic-card" style="border-left-color: #f97316;">
+                        <h4>👷‍♂️ Development Impact</h4>
+                        <ul class="list-disc pl-5">
+                            <li>**50%** ของเวลา dev ถูกใช้ไปกับการแก้ Rework ที่ป้องกันได้</li>
+                            <li>UX ที่ดีช่วยลด Development time และลด Bugs</li>
+                            <li>Clarity in design = Faster implementation</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="mt-8 p-6 bg-blue-100 border-l-8 border-blue-500 text-center rounded-lg shadow-lg">
+                    <p class="text-2xl font-bold text-blue-800">💡 Key Takeaway: "Good UX/UI is not a cost. It's an investment."</p>
+                </div>
+            </div>
+            <div class="slide-footer">Why UX/UI Matters</div>
+            <div class="slide-number"></div>
+        </section>
+
+        <section class="slide">
+            <div class="slide-header">
+                <h2>🎨 UX vs UI - ความแตกต่างที่ต้องเข้าใจ</h2>
+            </div>
+            <div class="slide-content" style="font-size: 1.05em;">
+                 <div class="grid-2">
+                    <div class="infographic-card" style="border-left-color: #3b82f6;">
+                        <h4>UX (User Experience) - ประสบการณ์</h4>
+                        <p class="italic">"ความรู้สึกและประสบการณ์โดยรวมของผู้ใช้"</p>
+                        <ul class="list-disc pl-5 mt-3">
+                            <li><strong>Focus:</strong> การเดินทางของผู้ใช้ (The Journey)</li>
+                            <li><strong>Goal:</strong> ทำให้มีประสิทธิภาพ, ใช้งานง่าย, แก้ปัญหาได้จริง</li>
+                            <li><strong>Keywords:</strong> Usability, Accessibility, User Journey, Research</li>
+                        </ul>
+                    </div>
+                    <div class="infographic-card" style="border-left-color: #8b5cf6;">
+                        <h4>UI (User Interface) - หน้าตา</h4>
+                        <p class="italic">"ส่วนต่อประสานที่ผู้ใช้เห็นและโต้ตอบ"</p>
+                        <ul class="list-disc pl-5 mt-3">
+                            <li><strong>Focus:</strong> หน้าตาและการโต้ตอบ (The Look & Feel)</li>
+                            <li><strong>Goal:</strong> สวยงามน่าใช้, ใช้งานได้จริง, สื่อสารชัดเจน</li>
+                            <li><strong>Keywords:</strong> Visual Design, Buttons, Typography, Colors</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="mt-8 p-5 bg-gray-100 rounded-lg shadow-md">
+                    <h4 class="font-bold text-xl text-center text-gray-800">🏠 อุปมาเหมือนบ้าน</h4>
+                    <p class="text-center mt-3"><strong>UX คือ สถาปัตยกรรม (Architecture):</strong> โครงสร้างดีไหม? ห้องครัวใกล้ห้องกินข้าวไหม? บันไดปลอดภัยไหม?</p>
+                    <p class="text-center mt-2"><strong>UI คือ การตกแต่งภายใน (Interior Design):</strong> สีสวยงามไหม? เฟอร์นิเจอร์เข้ากันไหม? แสงสว่างดีไหม?</p>
+                    <p class="text-center mt-3 font-bold text-lg text-green-700">Product ที่ดีต้องมีทั้ง UX ที่แก้ปัญหาได้จริง และ UI ที่สวยงามน่าใช้</p>
+                </div>
+            </div>
+            <div class="slide-footer">UX vs UI</div>
+            <div class="slide-number"></div>
+        </section>
+
+        <section class="slide">
+            <div class="slide-header">
+                <h2>Part 1: UX Research & Analysis</h2>
+            </div>
+            <div class="slide-content">
+                <p>หัวใจของการออกแบบที่ดีคือการเข้าใจผู้ใช้ของเราอย่างลึกซึ้ง เราจะมาเริ่มกันที่การทำ User Research สำหรับโปรเจกต์ Agent Wallboard System</p>
+                <div class="interactive-question">
+                    <p><strong>🤔 คำถาม:</strong> ทำไมเราถึงไม่ควรเริ่มจากการออกแบบหน้าตาโปรแกรม (UI) เลยทันที?</p>
+                    <button onclick="toggleAnswer(this)">แสดงคำตอบ</button>
+                    <div class="answer">
+                        <p><strong>คำตอบ:</strong> เพราะเรายังไม่รู้ว่า "ปัญหาที่แท้จริง" ของผู้ใช้คืออะไร การออกแบบโดยไม่มีข้อมูลก็เหมือนการสร้างบ้านโดยไม่มีพิมพ์เขียว อาจจะสวยแต่ใช้งานไม่ได้จริง หรือแก้ปัญหาไม่ตรงจุด ทำให้เสียเวลาและทรัพยากรไปโดยเปล่าประโยชน์</p>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-footer">UX Research & Analysis</div>
+            <div class="slide-number"></div>
+        </section>
+
+        <section class="slide">
+            <div class="slide-header">
+                <h2>🧑‍🤝‍🧑 Persona: สร้างตัวแทนผู้ใช้จากข้อมูลจริง</h2>
+            </div>
+            <div class="slide-content" style="font-size: 0.95em;">
+                <p><strong>Persona คืออะไร?</strong> "ตัวแทนสมมติของผู้ใช้งานหลัก โดยอิงจากข้อมูล User Research จริง เพื่อช่วยให้ทีมเข้าใจและ Empathy กับผู้ใช้มากขึ้น"</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                    <div class="p-4 bg-blue-50 border border-blue-200 rounded-lg shadow-inner">
+                        <h4 class="font-bold">Anatomy of a Persona</h4>
+                        <ul class="list-disc pl-5 text-sm mt-2 space-y-1">
+                            <li><strong>Photo & Name:</strong> ทำให้ดูสมจริง</li>
+                            <li><strong>Demographics:</strong> อายุ, ตำแหน่ง, ประสบการณ์</li>
+                            <li class="font-bold text-red-600"><strong>Goals:</strong> เป้าหมายที่เขาต้องการทำให้สำเร็จ (สำคัญที่สุด!)</li>
+                            <li class="font-bold text-red-600"><strong>Pain Points:</strong> ปัญหาที่เขาเจอในปัจจุบัน</li>
+                            <li><strong>Quote:</strong> คำพูดที่สรุปตัวตนของเขา</li>
+                        </ul>
+                    </div>
+                    <div class="p-4 bg-gray-100 rounded-lg">
+                         <h4 class="font-bold">ตัวอย่าง: "Nok" - Call Center Agent</h4>
+                         <p class="text-sm"><strong>อายุ:</strong> 25 ปี, <strong>ประสบการณ์:</strong> 2 ปี</p>
+                         <p class="text-sm"><strong>Tech Savvy:</strong> 3/5</p>
+                         <p class="text-sm italic mt-2">"ถ้าเปลี่ยนสถานะได้เร็วขึ้น หนูจะรับสายลูกค้าได้มากขึ้น"</p>
+                         <p class="text-sm mt-2"><strong>Goal:</strong> รับสายให้เร็วที่สุด ไม่พลาดข้อมูลสำคัญ</p>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-footer">UX Research: Personas</div>
+            <div class="slide-number"></div>
+        </section>
+
+        <section class="slide">
+            <div class="slide-header">
+                <h2>🗺️ User Journey Mapping: มองผ่านสายตาผู้ใช้</h2>
+            </div>
+            <div class="slide-content" style="font-size: 0.8em; line-height: 1.6;">
+                <p><strong>User Journey Map คืออะไร?</strong> "แผนภาพที่แสดงประสบการณ์ของผู้ใช้ตั้งแต่ต้นจนจบในการทำภารกิจหนึ่งๆ เพื่อค้นหา Pain Points และ Opportunities"</p>
+                <h3 class="font-bold text-center mt-2">Scenario: เช้าวันจันทร์, Agent "Nok" ต้องการเข้าระบบและเปลี่ยนสถานะเป็น "Available"</h3>
+                <div class="grid grid-cols-1 md:grid-cols-5 gap-2 mt-2">
+                     <div class="p-2 bg-gray-100 rounded">
+                        <h4 class="font-bold">1. Arrival & Login</h4>
+                        <p><strong>Actions:</strong> เปิดคอม, พิมพ์ URL, กรอก username/password, รอ 15-20 วิ</p>
+                        <p><strong>Thoughts:</strong> "Password นี้จำยากจัง", "หวังว่าระบบจะไม่ช้า"</p>
+                        <p class="text-2xl text-center">😐 → 😟</p>
+                        <p class="text-red-700"><strong>Pain:</strong> โหลดช้า, Password ซับซ้อน</p>
+                    </div>
+                    <div class="p-2 bg-red-100 rounded">
+                        <h4 class="font-bold">2. Check Messages</h4>
+                        <p><strong>Actions:</strong> เห็น "Messages (6)", scroll หาข้อความที่ยังไม่ได้อ่าน</p>
+                        <p><strong>Thoughts:</strong> "ข้อความไหนยังไม่ได้อ่านนะ หาไม่เจอ"</p>
+                        <p class="text-2xl text-center">😟 → 😰</p>
+                        <p class="text-red-700"><strong>Pain:</strong> Unread message ไม่เด่น, ต้องคลิกทีละข้อความ</p>
+                    </div>
+                    <div class="p-2 bg-red-200 rounded">
+                        <h4 class="font-bold">3. Change Status</h4>
+                        <p><strong>Actions:</strong> มองหาปุ่ม, งงว่าต้องกดอีกไหม, กดปุ่ม "Available"</p>
+                        <p><strong>Thoughts:</strong> "เห็นว่า Current: Available แล้ว ต้องกดอีกไหม?"</p>
+                        <p class="text-2xl text-center">😰 → 😖</p>
+                         <p class="text-red-700"><strong>Pain:</strong> ปุ่มไม่เด่น, ไม่มี feedback ทันที</p>
+                    </div>
+                     <div class="p-2 bg-gray-100 rounded">
+                        <h4 class="font-bold">4. Ready & Wait</h4>
+                        <p><strong>Actions:</strong> นั่งรอสาย, Refresh หน้าจอเพื่อเช็ค status</p>
+                        <p><strong>Thoughts:</strong> "Status ยัง Available อยู่ใช่ไหม กลัวหลุด"</p>
+                        <p class="text-2xl text-center">😐 → 😊</p>
+                         <p class="text-red-700"><strong>Pain:</strong> ไม่แน่ใจว่า status ยังอยู่, ไม่มีสถิติส่วนตัว</p>
+                    </div>
+                    <div class="p-2 bg-green-100 rounded">
+                        <h4 class="font-bold">5. Receive First Call</h4>
+                        <p><strong>Actions:</strong> ได้ยินเสียง beep, Wallboard เปลี่ยนเป็น "Busy" อัตโนมัติ</p>
+                        <p><strong>Thoughts:</strong> "เริ่มแล้ว! ดีที่ status เปลี่ยนอัตโนมัติ"</p>
+                        <p class="text-2xl text-center">😊 → 😌</p>
+                         <p class="text-green-700"><strong>Success Moment!</strong></p>
+                    </div>
+                </div>
+                <img src="https://placehold.co/900x150/e0e7ff/312e81?text=Emotion+Graph+(Anxious+dip+at+phase+2-3)" alt="Emotion Graph" class="mt-2 rounded-lg w-full">
+            </div>
+            <div class="slide-footer">UX Research: User Journey Mapping</div>
+            <div class="slide-number"></div>
+        </section>
+
+        <section class="slide">
+            <div class="slide-header">
+                <h2>💡 Key Insights & Opportunities</h2>
+            </div>
+            <div class="slide-content">
+                <p>จากการทำ Persona และ Journey Map เราสามารถสรุปปัญหาและโอกาสในการออกแบบได้ดังนี้:</p>
+                <div class="grid-2 mt-4">
+                    <div class="infographic-card" style="border-left-color: #ef4444;">
+                        <h4 class="text-red-700">Top 3 Pain Points 😫</h4>
+                        <ol class="list-decimal pl-5 space-y-2">
+                           <li><strong>Status Control ซับซ้อนและช้า:</strong> ใช้ 4 ปุ่มใหญ่, ไม่มี keyboard shortcuts, feedback ช้า</li>
+                           <li><strong>Message List งง:</strong> หา unread ไม่เจอ, ต้องคลิกทีละข้อความ, ไม่มี priority</li>
+                           <li><strong>ขาด Personal Dashboard:</strong> ไม่มีสถิติส่วนตัว, ไม่รู้ progress, ไม่มี motivation</li>
+                        </ol>
+                    </div>
+                    <div class="infographic-card" style="border-left-color: #10B981;">
+                        <h4 class="text-green-700">Top 3 Opportunities 💡</h4>
+                         <ol class="list-decimal pl-5 space-y-2">
+                           <li><strong>Quick Status Toggle:</strong> สร้างปุ่มเดียว (dropdown) ใน header + เพิ่ม keyboard shortcuts</li>
+                           <li><strong>Smart Message Center:</strong> ทำให้ unread เด่นขึ้น, มี preview, และมี priority badges</li>
+                           <li><strong>Personal Stats Widget:</strong> สร้าง widget แสดงสถิติ performance และ goal progress แบบ real-time</li>
+                        </ol>
+                    </div>
+                </div>
+                <div class="mt-8 p-4 bg-yellow-100 text-center rounded-lg">
+                    <p class="font-bold text-yellow-800">นี่คือหัวใจของการทำ UX Research: เราเปลี่ยน "ปัญหา" ของผู้ใช้ให้เป็น "แนวทางการออกแบบ" ที่ชัดเจน</p>
+                </div>
+            </div>
+            <div class="slide-footer">UX Research: Insights</div>
+            <div class="slide-number"></div>
+        </section>
+
+        <section class="slide">
+            <div class="slide-header">
+                <h2>Part 2: UI Design</h2>
+            </div>
+            <div class="slide-content">
+                <p>เมื่อเราเข้าใจปัญหาและมีความต้องการที่ชัดเจนแล้ว ก็ถึงเวลาที่จะเริ่มออกแบบ "หน้าตา" ของระบบกันครับ</p>
+                <h3 class="font-bold text-xl mt-4">ขั้นตอนการออกแบบ UI ของเรา:</h3>
+                <ol class="list-decimal pl-5 mt-2 space-y-2">
+                    <li>สร้าง <strong>Design System</strong> เพื่อคุมโทนและสร้างความสม่ำเสมอ</li>
+                    <li>ร่างโครงสร้างด้วย <strong>Wireframes</strong> (Mid-Fidelity)</li>
+                    <li>ลงรายละเอียดและสีสันใน <strong>High-Fidelity Design</strong></li>
+                    <li>ทำให้คลิกได้ด้วย <strong>Interactive Prototype</strong></li>
+                </ol>
+            </div>
+            <div class="slide-footer">UI Design Process</div>
+            <div class="slide-number"></div>
+        </section>
+        
+        <section class="slide">
+            <div class="slide-header">
+                <h2>🎨 Design System: สร้างความสม่ำเสมอ</h2>
+            </div>
+            <div class="slide-content" style="font-size: 0.9em;">
+                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div>
+                        <h4 class="font-bold">1. Color Palette</h4>
+                        <p class="text-xs">WCAG AA Compliant</p>
+                        <div class="color-palette">
+                            <div class="color-swatch" style="background-color: #10B981;" title="Available"></div>
+                            <div class="color-swatch" style="background-color: #F59E0B;" title="Busy"></div>
+                            <div class="color-swatch" style="background-color: #3B82F6;" title="Break"></div>
+                            <div class="color-swatch" style="background-color: #6B7280;" title="Offline"></div>
+                            <div class="color-swatch" style="background-color: #2563EB;" title="Primary"></div>
+                        </div>
+                        <pre class="text-xs mt-2 p-2">--status-available: #10B981;</pre>
+                    </div>
+                    <div>
+                        <h4 class="font-bold">2. Typography</h4>
+                        <p class="text-xs">Font: 'Inter', sans-serif</p>
+                        <p class="text-3xl font-bold mt-1">H1: 30px</p>
+                        <p class="text-xl font-semibold">H2: 24px</p>
+                        <p class="text-base">Body: 16px</p>
+                    </div>
+                    <div>
+                        <h4 class="font-bold">3. Spacing</h4>
+                        <p class="text-xs">8px Grid System</p>
+                         <pre class="text-xs mt-2 p-2">
+--space-1: 4px
+--space-2: 8px
+--space-4: 16px
+--space-6: 24px
+--space-8: 32px
+                         </pre>
+                    </div>
+                </div>
+                 <h4 class="font-bold mt-6">4. Component Library</h4>
+                <div class="flex gap-4 items-center">
+                    <button class="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg">Primary Button</button>
+                    <span class="py-1 px-3 rounded-full bg-green-100 text-green-800 text-sm font-medium">Available</span>
+                </div>
+            </div>
+            <div class="slide-footer">UI Design: Design System</div>
+            <div class="slide-number"></div>
+        </section>
+
+        <section class="slide">
+            <div class="slide-header">
+                <h2>✍️ Wireframe: Agent Dashboard (Redesigned)</h2>
+            </div>
+            <div class="slide-content" style="font-size: 0.8em; line-height: 1.5;">
+                <pre class="bg-gray-50 h-full">
+┌───────────────────────────────────────────────────────────────────┐
+│ HEADER (60px height, fixed)                                       │
+│ [Logo] Agent Wallboard        [🟢 Available ▾]  [🔔3] [Nok] [⚙]   │
+└───────────────────────────────────────────────────────────────────┘
+┌──────────────────────────────┬────────────────────────────────────┐
+│ LEFT COLUMN (70%)            │ RIGHT COLUMN (30%)                 │
+│                              │                                    │
+│ ┌─ PERSONAL STATS WIDGET ──┐ │ ┌─ MESSAGES CENTER (Scrollable) ─┐ │
+│ │ Today's Progress         │ │ │ Messages (6)  [1 unread]       │ │
+│ │ Calls: 12/45  [Progress] │ │ │ [Filter: All, Unread, Urgent]  │ │
+│ │ Avg Handle: 5m 32s       │ │ │                                │ │
+│ │ Satisfaction: 4.8⭐      │ │ │ ┌─ 🔴 UNREAD From: Sarah     ─┐ │ │
+│ │                          │ │ │ │   Team meeting in 15 mins    │ │ │
+│ └──────────────────────────┘ │ │ └──────────────────────────────┘ │ │
+│                              │ │ ┌─ From: HR                  ─┐ │ │
+│ ┌─ UPCOMING SCHEDULE ──────┐ │ │ │   Payroll reminder           │ │ │
+│ │ 🕒 10:30 Break (15 mins) │ │ │ └──────────────────────────────┘ │ │
+│ │ 📅 11:00 Team Meeting    │ │ │                                │ │
+│ └──────────────────────────┘ │ │ ...                            │ │
+│                              │ │                                │ │
+│ ┌─ TIPS & UPDATES ─────────┐ │ └────────────────────────────────┘ │
+│ │ 💡 Tip of the Day        │ │                                    │
+│ │ Use F2 for Available     │ │                                    │
+│ └──────────────────────────┘ │                                    │
+└──────────────────────────────┴────────────────────────────────────┘
+                </pre>
+                <div class="interactive-question mt-2">
+                    <p><strong>🤔 คำถาม:</strong> การออกแบบนี้แก้ Pain Points ของ "พี่นก" ที่เราเจอใน Journey Map ได้อย่างไรบ้าง?</p>
+                    <button onclick="toggleAnswer(this)">แสดงคำตอบ</button>
+                    <div class="answer" style="font-size: 0.9em;">
+                        <ul class="list-disc pl-5">
+                            <li><strong>แก้ปัญหา Status Control:</strong> ย้ายปุ่มเปลี่ยนสถานะไปไว้ที่ Header ทำให้เห็นและใช้งานง่ายตลอดเวลา</li>
+                            <li><strong>แก้ปัญหา Message งง:</strong> สร้าง Message Center ที่มี Filter, Highlight Unread message และแสดง Preview</li>
+                            <li><strong>แก้ปัญหาขาด Dashboard:</strong> เพิ่ม Personal Stats Widget เพื่อให้ Agent ติดตาม Performance ของตัวเองได้</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-footer">UI Design: Wireframing</div>
+            <div class="slide-number"></div>
+        </section>
+
+        <section class="slide">
+            <div class="slide-header">
+                <h2>🎨 High-Fidelity Design: ทำให้มีชีวิตชีวา</h2>
+            </div>
+            <div class="slide-content">
+                <p>หลังจากได้โครงสร้างจาก Wireframe แล้ว เราจะนำ Design System (สี, ฟอนต์, ระยะห่าง) มาประยุกต์ใช้เพื่อสร้าง High-Fidelity Design ที่สวยงามและเหมือนจริง</p>
+                <div class="flex justify-center my-4">
+                    <img src="https://placehold.co/900x500/1e3a8a/FFFFFF?text=High-Fidelity+Agent+Dashboard+UI" alt="High-Fidelity UI" class="rounded-md shadow-lg">
+                </div>
+                <div class="grid-2 text-sm">
+                    <div class="infographic-card" style="border-left-color: #2563eb;">
+                        <h4>หลักการออกแบบที่ใช้ (Design Rationale)</h4>
+                        <ul class="list-disc pl-5">
+                            <li><strong>Color Psychology:</strong> ใช้สีเขียวสำหรับ Available (Positive), สีฟ้าสำหรับ Primary Actions</li>
+                            <li><strong>Layout Strategy (F-Pattern):</strong> จัดวางข้อมูลสำคัญ (Status, Stats) ทางซ้ายบน และข้อมูลที่ใช้บ่อย (Messages) ทางขวา</li>
+                            <li><strong>Information Hierarchy:</strong> ข้อมูลสำคัญที่สุด (Status) จะเด่นและอยู่บนสุดเสมอ</li>
+                        </ul>
+                    </div>
+                     <div class="infographic-card" style="border-left-color: #f59e0b;">
+                        <h4>Interaction Feedback</h4>
+                        <p>ทุกปุ่มและส่วนที่คลิกได้ จะมีสถานะ Hover, Active, Disabled ที่ชัดเจน เพื่อให้ผู้ใช้รู้ว่ากำลังโต้ตอบกับอะไรอยู่ และระบบตอบสนองอย่างไร</p>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-footer">UI Design: High-Fidelity</div>
+            <div class="slide-number"></div>
+        </section>
+
+        <section class="slide">
+            <div class="slide-header">
+                <h2>🚀 Interactive Prototype: ทำให้คลิกได้</h2>
+            </div>
+            <div class="slide-content" style="font-size: 0.9em;">
+                <p>ขั้นตอนสุดท้ายของการออกแบบคือการสร้าง Prototype ที่สามารถโต้ตอบได้ เพื่อนำไปทดสอบกับผู้ใช้จริง และสื่อสารกับทีม Developer ให้เข้าใจตรงกัน</p>
+                <h4 class="font-bold mt-4">Flow 1: Agent Status Change</h4>
+                <pre class="text-xs p-2 mt-2">
+1. User clicks [Available ▾] dropdown in header.
+2. An overlay menu appears with status options.
+3. User clicks "Busy".
+4. The dropdown badge animates, changing color and text to "Busy".
+5. A success toast "Status changed to Busy" appears and fades out.
+                </pre>
+                 <h4 class="font-bold mt-4">Flow 2: Supervisor Views Agent Detail</h4>
+                <pre class="text-xs p-2 mt-2">
+1. Supervisor hovers on an Agent Card.
+2. The card elevates with a shadow and blue border.
+3. Supervisor clicks the card.
+4. An Agent Detail Modal opens as an overlay.
+5. Supervisor can switch between tabs (Overview, Performance).
+6. Supervisor clicks "Close" or outside the modal to dismiss.
+                </pre>
+                 <div class="mt-4 p-4 bg-green-100 border-l-4 border-green-500">
+                    <p class="font-bold text-green-800">เป้าหมายของ Prototype:</strong> เพื่อ Validate การออกแบบกับผู้ใช้จริงก่อนที่จะเขียนโค้ดแม้แต่บรรทัดเดียว ช่วยลดความเสี่ยงและค่าใช้จ่ายในการแก้ไขภายหลัง</p>
+                </div>
+            </div>
+            <div class="slide-footer">UI Design: Prototyping</div>
+            <div class="slide-number"></div>
+        </section>
+
+        <section class="slide">
+            <div class="slide-header">
+                <h2>📝 สรุปและมอบหมายงาน</h2>
+            </div>
+            <div class="slide-content">
+                <h3 class="font-bold text-xl">Assignment: Complete UX Research & UI Design for Agent Wallboard</h3>
+                <p><strong>Due:</strong> สัปดาห์หน้า (ก่อนเรียน) | <strong>Weight:</strong> 10% ของเกรดรวม</p>
+                <div class="grid-2 mt-4">
+                    <div class="p-4 bg-indigo-50 rounded-lg">
+                        <h4 class="font-bold text-lg">Part 1: UX Research & Analysis (30%)</h4>
+                        <ul class="list-disc pl-5 mt-2 text-sm space-y-1">
+                            <li><strong>User Journey Map:</strong> สร้าง Journey Map 2 scenarios (Agent เริ่มงาน, Supervisor Monitor ทีม) ให้ละเอียด</li>
+                            <li><strong>Comparative Analysis:</strong> วิเคราะห์ UI ของแอปอื่นๆ ที่คล้ายกัน 2-3 ตัว (เช่น Zendesk, Freshdesk)</li>
+                            <li><strong>Key Insights:</strong> สรุป Top 3 Pain Points และ Top 3 Opportunities</li>
+                        </ul>
+                    </div>
+                    <div class="p-4 bg-teal-50 rounded-lg">
+                        <h4 class="font-bold text-lg">Part 2: UI Design (70%)</h4>
+                        <ul class="list-disc pl-5 mt-2 text-sm space-y-1">
+                             <li><strong>Design System:</strong> กำหนด Color, Typography, Spacing, Components</li>
+                             <li><strong>Wireframes:</strong> ออกแบบอย่างน้อย 5 screens (mid-fidelity)</li>
+                             <li><strong>Hi-Fi UI Design:</strong> เลือก 3 screens ที่สำคัญที่สุดมาทำ High-Fidelity Design</li>
+                             <li><strong>Interactive Prototype:</strong> สร้าง 2 key flows ที่คลิกได้จริงใน Figma</li>
+                        </ul>
+                    </div>
+                </div>
+                 <div class="mt-6 p-4 bg-yellow-100 border-l-4 border-yellow-500">
+                    <p><strong>คำแนะนำ:</strong> ใช้ข้อมูลและตัวอย่างจากไฟล์ `week11-task-sol.md` เป็นแนวทางหลักในการออกแบบ และใส่ความคิดสร้างสรรค์ของตัวเองเข้าไปเพื่อปรับปรุงให้ดียิ่งขึ้น</p>
+                </div>
+            </div>
+            <div class="slide-footer">Homework & Next Steps</div>
+            <div class="slide-number"></div>
+        </section>
+        
+        <section class="slide title-slide">
+            <h1>Q&A 🙋‍♂️</h1>
+            <h3>คำถามและข้อสงสัย</h3>
+            <p class="mt-8">"Design is not just what it looks like and feels like. Design is how it works." - Steve Jobs</p>
+            <div class="slide-number"></div>
+        </section>
+
+    </div>
+
+    <div class="presentation-controls">
+        <button id="prev-btn" class="nav-btn" title="สไลด์ก่อนหน้า">‹</button>
+        <span id="slide-counter"></span>
+        <button id="next-btn" class="nav-btn" title="สไลด์ถัดไป">›</button>
+        <button id="font-decrease-btn" class="font-btn" title="ลดขนาดตัวอักษร">-</button>
+        <button id="font-increase-btn" class="font-btn" title="เพิ่มขนาดตัวอักษร">+</button>
+        <button id="fullscreen-btn" class="fullscreen-btn" title="เต็มจอ">⛶</button>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const slides = document.querySelectorAll('.slide');
+            const nextBtn = document.getElementById('next-btn');
+            const prevBtn = document.getElementById('prev-btn');
+            const fullscreenBtn = document.getElementById('fullscreen-btn');
+            const slideCounter = document.getElementById('slide-counter');
+            const progressBar = document.getElementById('progress-bar');
+            const fontIncreaseBtn = document.getElementById('font-increase-btn');
+            const fontDecreaseBtn = document.getElementById('font-decrease-btn');
+
+            let currentFontSize = 1.0;
+            let currentSlideIndex = 0;
+            const totalSlides = slides.length;
+
+            function updateFontSize() {
+                 document.documentElement.style.setProperty('--base-font-size', `clamp(${16 * currentFontSize}px, ${1.7 * currentFontSize}vw, ${24 * currentFontSize}px)`);
+            }
+
+            function showSlide(index) {
+                if (index < 0 || index >= totalSlides) return;
+                slides.forEach((slide, i) => {
+                    slide.classList.toggle('active', i === index);
+                    const slideNumberEl = slide.querySelector('.slide-number');
+                    if (slideNumberEl) {
+                        slideNumberEl.textContent = `${i + 1} / ${totalSlides}`;
+                    }
+                });
+                currentSlideIndex = index;
+                updateControls();
+            }
+
+            function updateControls() {
+                slideCounter.textContent = `${currentSlideIndex + 1} / ${totalSlides}`;
+                const progressPercentage = totalSlides > 1 ? ((currentSlideIndex) / (totalSlides - 1)) * 100 : 0;
+                progressBar.style.width = `${progressPercentage}%`;
+                prevBtn.disabled = currentSlideIndex === 0;
+                nextBtn.disabled = currentSlideIndex === totalSlides - 1;
+            }
+
+            function toggleFullscreen() {
+                if (!document.fullscreenElement) {
+                    document.documentElement.requestFullscreen().catch(err => {
+                        alert(`ไม่สามารถเข้าสู่โหมดเต็มจอได้: ${err.message}`);
+                    });
+                } else if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+            }
+
+            window.toggleAnswer = (button) => {
+                const answerDiv = button.nextElementSibling;
+                const isHidden = answerDiv.style.display === 'none' || answerDiv.style.display === '';
+                answerDiv.style.display = isHidden ? 'block' : 'none';
+                button.textContent = isHidden ? 'ซ่อนคำตอบ' : 'แสดงคำตอบ';
+            };
+
+            fontIncreaseBtn.addEventListener('click', () => {
+                if (currentFontSize < 1.5) {
+                    currentFontSize += 0.1;
+                    updateFontSize();
+                }
+            });
+
+            fontDecreaseBtn.addEventListener('click', () => {
+                if (currentFontSize > 0.7) {
+                    currentFontSize -= 0.1;
+                    updateFontSize();
+                }
+            });
+
+            nextBtn.addEventListener('click', () => showSlide(currentSlideIndex + 1));
+            prevBtn.addEventListener('click', () => showSlide(currentSlideIndex - 1));
+            fullscreenBtn.addEventListener('click', toggleFullscreen);
+
+            document.addEventListener('keydown', (event) => {
+                if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA' || event.target.isContentEditable) return;
+                if (event.key === 'ArrowRight' || event.key === 'PageDown' || event.key === ' ') {
+                    event.preventDefault();
+                    nextBtn.click();
+                } else if (event.key === 'ArrowLeft' || event.key === 'PageUp') {
+                    event.preventDefault();
+                    prevBtn.click();
+                } else if (event.key === 'f' || event.key === 'F') {
+                    event.preventDefault();
+                    toggleFullscreen();
+                } else if (event.key === 'Home') {
+                    event.preventDefault();
+                    showSlide(0);
+                } else if (event.key === 'End') {
+                    event.preventDefault();
+                    showSlide(totalSlides - 1);
+                }
+            });
+
+            showSlide(0);
+        });
+    </script>
+</body>
+
+</html>
