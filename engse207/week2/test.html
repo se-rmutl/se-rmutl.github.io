@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Week 2: Quality Attributes & Architectural Drivers</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Prompt:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    
+    <style>
+        :root {
+            --primary: #3B82F6;
+            --secondary: #8B5CF6;
+            --accent: #10B981;
+            --danger: #EF4444;
+            --bg-dark: #0F172A;
+            --card-bg: #1E293B;
+            --text-main: #F8FAFC;
+            --text-muted: #94A3B8;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Prompt', sans-serif; }
+
+        body {
+            background-color: var(--bg-dark);
+            background-image: radial-gradient(circle at top right, #1e293b 0%, #0f172a 100%);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 800px;
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(10px);
+            border-radius: 24px;
+            border: 1px solid rgba(255,255,255,0.1);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            padding: 20px;
+            text-align: center;
+        }
+        .header h1 { font-size: 1.5rem; font-weight: 700; margin-bottom: 5px; }
+        .header p { font-size: 0.9rem; opacity: 0.9; }
+
+        /* Sections */
+        .section { display: none; padding: 40px; animation: fadeIn 0.5s ease; }
+        .section.active { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Start Screen */
+        .input-group { margin-bottom: 20px; }
+        .input-group label { display: block; margin-bottom: 8px; color: var(--text-muted); }
+        .input-group input {
+            width: 100%;
+            padding: 12px 16px;
+            border-radius: 8px;
+            border: 1px solid #475569;
+            background: #0F172A;
+            color: white;
+            font-size: 1rem;
+            outline: none;
+            transition: 0.3s;
+        }
+        .input-group input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2); }
+
+        /* Quiz Screen */
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: #334155;
+            margin-bottom: 30px;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background: var(--accent);
+            width: 0%;
+            transition: width 0.3s;
+        }
+        .question-text { font-size: 1.4rem; font-weight: 600; margin-bottom: 30px; line-height: 1.6; }
+        .options-grid { display: grid; grid-template-columns: 1fr; gap: 15px; }
+        .option-btn {
+            background: #334155;
+            border: 1px solid transparent;
+            padding: 15px 20px;
+            border-radius: 12px;
+            color: var(--text-main);
+            text-align: left;
+            cursor: pointer;
+            transition: 0.2s;
+            font-size: 1rem;
+        }
+        .option-btn:hover { background: #475569; transform: translateX(5px); }
+        .option-btn.selected { background: var(--primary); border-color: white; }
+
+        /* Result Screen */
+        .result-summary { text-align: center; margin-bottom: 30px; }
+        .score-circle {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: #0F172A;
+            border: 5px solid var(--accent);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            margin: 0 auto 20px;
+            box-shadow: 0 0 20px rgba(16, 185, 129, 0.3);
+        }
+        .score-number { font-size: 2.5rem; font-weight: 800; color: var(--accent); }
+        .score-total { font-size: 0.9rem; color: var(--text-muted); }
+        
+        .status-pass { color: var(--accent); font-size: 1.5rem; font-weight: bold; }
+        .status-fail { color: var(--danger); font-size: 1.5rem; font-weight: bold; }
+
+        .student-info-display {
+            background: rgba(255,255,255,0.05);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            text-align: left;
+            font-size: 0.95rem;
+        }
+
+        .analysis-container { text-align: left; margin-top: 20px; max-height: 400px; overflow-y: auto; padding-right: 10px; }
+        .wrong-item {
+            background: rgba(239, 68, 68, 0.1);
+            border-left: 4px solid var(--danger);
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 4px;
+        }
+        .wrong-question { font-weight: bold; margin-bottom: 8px; font-size: 1rem; }
+        .wrong-answer { color: var(--danger); font-size: 0.9rem; }
+        .correct-answer { color: var(--accent); font-size: 0.9rem; margin-top: 4px; }
+
+        /* Buttons */
+        .btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 50px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+            margin-top: 10px;
+        }
+        .btn:hover { filter: brightness(1.1); transform: translateY(-2px); }
+        .btn-secondary { background: #475569; }
+        .btn-success { background: var(--accent); }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #1e293b; }
+        ::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
+
+    </style>
+</head>
+<body>
+
+    <div class="container" id="main-container">
+        
+        <div class="header">
+            <h1>ENGSE207 Quiz: Week 2</h1>
+            <p>Quality Attributes & Architectural Drivers</p>
+        </div>
+
+        <div id="start-screen" class="section active">
+            <div style="text-align: center; margin-bottom: 30px;">
+                <h2>ลงทะเบียนเข้าสอบ</h2>
+                <p style="color: var(--text-muted);">กรุณากรอกข้อมูลให้ครบถ้วนก่อนเริ่มทำแบบทดสอบ</p>
+            </div>
+            
+            <div class="input-group">
+                <label>รหัสนักศึกษา</label>
+                <input type="text" id="student-id" placeholder="Ex. 64000000-0">
+            </div>
+            <div class="input-group">
+                <label>ชื่อ-นามสกุล</label>
+                <input type="text" id="student-name" placeholder="Ex. นายสมชาย ใจดี">
+            </div>
+            <div class="input-group">
+                <label>Section (กลุ่มเรียน)</label>
+                <input type="text" id="student-sec" placeholder="Ex. 001">
+            </div>
+
+            <button class="btn" onclick="startQuiz()">เริ่มทำแบบทดสอบ</button>
+        </div>
+
+        <div id="quiz-screen" class="section">
+            <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 10px; color: var(--text-muted); font-size: 0.9rem;">
+                <span id="question-counter">Question 1/20</span>
+                <span>เลือกคำตอบที่ถูกต้องที่สุด</span>
+            </div>
+            
+            <div class="question-text" id="question-text">Loading...</div>
+            <div class="options-grid" id="options-container">
+                </div>
+        </div>
+
+        <div id="result-screen" class="section">
+            <div id="capture-area" style="padding: 20px; background: var(--card-bg); border-radius: 10px;">
+                <div class="result-summary">
+                    <div class="student-info-display" id="result-info"></div>
+                    
+                    <div class="score-circle" id="score-circle">
+                        <span class="score-number" id="final-score">0</span>
+                        <span class="score-total">/ 20</span>
+                    </div>
+                    
+                    <div id="pass-fail-msg"></div>
+                </div>
+
+                <div class="analysis-container" id="wrong-answers-list">
+                    </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px;">
+                <button class="btn btn-secondary" id="retry-btn" onclick="restartQuiz()" style="display: none;">ทำแบบทดสอบใหม่</button>
+                <button class="btn btn-success" onclick="captureResult()">📸 บันทึกผลสอบ (Capture)</button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // --- Data: 20 Questions ---
+        const questions = [
+            {
+                q: "ข้อใดคือความหมายที่ถูกต้องที่สุดของ Quality Attributes (QA)?",
+                options: ["สิ่งที่ระบบต้องทำ (Functional Requirements)", "คุณสมบัติที่บ่งบอกว่าระบบทำงานได้ดีแค่ไหน (How well it does)", "หน้าตาการออกแบบของ User Interface", "เครื่องมือที่ใช้ในการเขียนโปรแกรม"],
+                correct: 1
+            },
+            {
+                q: "หากระบบ E-Commerce ต้องรองรับผู้ใช้งานพร้อมกัน 1 ล้านคนในวัน Flash Sale นี่คือ Quality Attribute ด้านใด?",
+                options: ["Performance", "Security", "Scalability", "Modifiability"],
+                correct: 2
+            },
+            {
+                q: "ข้อใดคือตัวชี้วัด (Metric) ที่เหมาะสมสำหรับ Performance?",
+                options: ["Response Time (Latency)", "Encryption Algorithm", "Code Lines", "Number of Users"],
+                correct: 0
+            },
+            {
+                q: "Availability 99.9% (Three Nines) ยอมให้ระบบล่มได้ประมาณเท่าไหร่ต่อปี?",
+                options: ["3.65 วัน", "8.76 ชั่วโมง", "5.26 นาที", "ห้ามล่มเลย"],
+                correct: 1
+            },
+            {
+                q: "การใช้ 'Caching' (เช่น Redis) มักจะช่วยปรับปรุง Quality Attribute ด้านใดมากที่สุด?",
+                options: ["Security", "Performance", "Modifiability", "Usability"],
+                correct: 1
+            },
+            {
+                q: "CIA Triad ในด้าน Security ประกอบด้วยอะไรบ้าง?",
+                options: ["Cost, Integrity, Availability", "Confidentiality, Integrity, Availability", "Control, Identity, Authorization", "Confidentiality, Intelligence, Authentication"],
+                correct: 1
+            },
+            {
+                q: "ข้อใดอธิบาย Trade-off ระหว่าง Security และ Performance ได้ดีที่สุด?",
+                options: ["การเพิ่ม Security มักทำให้ Performance ดีขึ้นเสมอ", "การเข้ารหัสข้อมูล (Encryption) เพิ่มความปลอดภัยแต่กินทรัพยากรและเวลาประมวลผล", "ไม่มีความเกี่ยวข้องสัมพันธ์กัน", "Performance ที่ดีต้องไม่มี Security"],
+                correct: 1
+            },
+            {
+                q: "หากต้องการออกแบบระบบให้ 'แก้ไขโค้ดได้ง่าย และไม่กระทบส่วนอื่น' เรากำลังโฟกัสที่ Attribute ใด?",
+                options: ["Reliability", "Modifiability", "Scalability", "Availability"],
+                correct: 1
+            },
+            {
+                q: "ใน QA Scenario องค์ประกอบ 'Stimulus' หมายถึงอะไร?",
+                options: ["ผู้กระทำเหตุการณ์", "สิ่งกระตุ้นหรือเหตุการณ์ที่เกิดขึ้น", "สภาพแวดล้อมขณะเกิดเหตุ", "ผลลัพธ์ที่ระบบตอบสนอง"],
+                correct: 1
+            },
+            {
+                q: "ประโยค 'ระบบต้องตอบสนองภายใน 2 วินาที' จัดอยู่ในส่วนใดของ Scenario?",
+                options: ["Source", "Artifact", "Response", "Response Measure"],
+                correct: 3
+            },
+            {
+                q: "ข้อใดไม่ใช่ส่วนประกอบของ Architectural Drivers?",
+                options: ["Functional Requirements", "Design Patterns", "Constraints", "Quality Attributes"],
+                correct: 1
+            },
+            {
+                q: "ข้อจำกัด (Constraint) ด้านเทคนิคคือข้อใด?",
+                options: ["ต้องใช้ภาษา Node.js เท่านั้น", "ผู้ใช้ต้องการปุ่มสีแดง", "ระบบต้องเร็ว", "ต้องรองรับผู้ใช้ 500 คน"],
+                correct: 0
+            },
+            {
+                q: "'สมมติว่าผู้ใช้งานจะมีอินเทอร์เน็ต 4G ตลอดเวลา' จัดเป็น Driver ประเภทใด?",
+                options: ["Functional Requirement", "Constraint", "Assumption", "Quality Attribute"],
+                correct: 2
+            },
+            {
+                q: "Business Goal เรื่อง 'Time-to-market' (ต้องรีบขาย) มักส่งผลให้เกิด Trade-off อย่างไร?",
+                options: ["ทำให้ระบบมีคุณภาพสูงสุดในทุกด้าน", "อาจต้องลด Quality บางอย่างเพื่อให้เสร็จทันเวลา", "ทำให้ไม่ต้องมี Security", "ทำให้ทีมพัฒนาว่างงาน"],
+                correct: 1
+            },
+            {
+                q: "CAP Theorem กล่าวถึง Trade-off ระหว่าง Consistency และอะไร?",
+                options: ["Performance", "Security", "Availability", "Usability"],
+                correct: 2
+            },
+            {
+                q: "ข้อใดคือตัวอย่างของ Architectural Driver ประเภท Functional Requirement?",
+                options: ["ระบบต้องรองรับ 1,000 TPS", "ผู้ใช้สามารถกดปุ่มเพื่อสร้างรายงาน PDF ได้", "ระบบต้องใช้ AWS Cloud", "งบประมาณไม่เกิน 1 ล้านบาท"],
+                correct: 1
+            },
+            {
+                q: "การทำ 'Vertical Scaling' (Scale Up) หมายถึงอะไร?",
+                options: ["การเพิ่มจำนวนเครื่อง Server", "การเพิ่ม RAM/CPU ให้กับเครื่องเดิม", "การขยายสาขาบริษัท", "การเพิ่มจำนวนโปรแกรมเมอร์"],
+                correct: 1
+            },
+            {
+                q: "ทำไมเราต้องเขียน QA Scenario แทนที่จะบอกแค่ว่า 'ระบบต้องเร็ว'?",
+                options: ["เพื่อให้เอกสารยาวขึ้น", "เพื่อให้วัดผลได้จริง (Measurable) และไม่กำกวม", "เพื่อให้โปรแกรมเมอร์สับสน", "เป็นกฎของกฎหมาย"],
+                correct: 1
+            },
+            {
+                q: "หากระบบแยกส่วนประกอบออกจากกัน (Low Coupling) จะส่งผลดีต่อด้านใดมากที่สุด?",
+                options: ["Modifiability", "Performance", "Security", "Usability"],
+                correct: 0
+            },
+            {
+                q: "ข้อใดคือ Artifact ใน Scenario: 'Hacker พยายามเจาะเข้าระบบ Login'?",
+                options: ["Hacker", "พยายามเจาะ", "ระบบ Login (Authentication Service)", "ระบบล่ม"],
+                correct: 2
+            }
+        ];
+
+        // --- State Variables ---
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let userAnswers = []; // Store {qIndex, selectedOption, isCorrect}
+        let studentInfo = {};
+
+        // --- Elements ---
+        const startScreen = document.getElementById('start-screen');
+        const quizScreen = document.getElementById('quiz-screen');
+        const resultScreen = document.getElementById('result-screen');
+        
+        const questionText = document.getElementById('question-text');
+        const optionsContainer = document.getElementById('options-container');
+        const progressFill = document.getElementById('progress-fill');
+        const questionCounter = document.getElementById('question-counter');
+
+        // --- Functions ---
+
+        function startQuiz() {
+            const id = document.getElementById('student-id').value.trim();
+            const name = document.getElementById('student-name').value.trim();
+            const sec = document.getElementById('student-sec').value.trim();
+
+            if (!id || !name || !sec) {
+                alert("กรุณากรอกข้อมูลให้ครบถ้วน");
+                return;
+            }
+
+            studentInfo = { id, name, sec };
+            
+            // Hide Start, Show Quiz
+            startScreen.classList.remove('active');
+            quizScreen.classList.add('active');
+            
+            loadQuestion();
+        }
+
+        function loadQuestion() {
+            const q = questions[currentQuestionIndex];
+            
+            // Update text
+            questionText.textContent = `${currentQuestionIndex + 1}. ${q.q}`;
+            questionCounter.textContent = `Question ${currentQuestionIndex + 1}/${questions.length}`;
+            
+            // Update progress bar
+            const progress = ((currentQuestionIndex) / questions.length) * 100;
+            progressFill.style.width = `${progress}%`;
+
+            // Clear options
+            optionsContainer.innerHTML = '';
+
+            // Generate options
+            q.options.forEach((opt, index) => {
+                const btn = document.createElement('div');
+                btn.className = 'option-btn';
+                btn.textContent = opt;
+                btn.onclick = () => selectAnswer(index);
+                optionsContainer.appendChild(btn);
+            });
+        }
+
+        function selectAnswer(selectedIndex) {
+            const q = questions[currentQuestionIndex];
+            const isCorrect = selectedIndex === q.correct;
+            
+            if (isCorrect) score++;
+
+            userAnswers.push({
+                qIndex: currentQuestionIndex,
+                selected: selectedIndex,
+                isCorrect: isCorrect
+            });
+
+            currentQuestionIndex++;
+
+            if (currentQuestionIndex < questions.length) {
+                loadQuestion();
+            } else {
+                finishQuiz();
+            }
+        }
+
+        function finishQuiz() {
+            quizScreen.classList.remove('active');
+            resultScreen.classList.add('active');
+            
+            // Render Info
+            document.getElementById('result-info').innerHTML = `
+                <strong>ID:</strong> ${studentInfo.id}<br>
+                <strong>Name:</strong> ${studentInfo.name}<br>
+                <strong>Sec:</strong> ${studentInfo.sec}
+            `;
+
+            // Render Score
+            document.getElementById('final-score').textContent = score;
+            const scoreCircle = document.getElementById('score-circle');
+            const passFailMsg = document.getElementById('pass-fail-msg');
+            const retryBtn = document.getElementById('retry-btn');
+
+            // 12/20 is Pass (60%)
+            if (score >= 12) {
+                scoreCircle.style.borderColor = "var(--accent)";
+                scoreCircle.style.boxShadow = "0 0 20px rgba(16, 185, 129, 0.3)";
+                passFailMsg.textContent = "✨ ยินดีด้วย คุณสอบผ่าน!";
+                passFailMsg.className = "status-pass";
+                retryBtn.style.display = "none"; // Hide retry if pass
+            } else {
+                scoreCircle.style.borderColor = "var(--danger)";
+                scoreCircle.style.boxShadow = "0 0 20px rgba(239, 68, 68, 0.3)";
+                passFailMsg.textContent = "❌ คุณสอบไม่ผ่าน (ต้องได้ 12 คะแนนขึ้นไป)";
+                passFailMsg.className = "status-fail";
+                retryBtn.style.display = "inline-flex"; // Show retry if fail
+            }
+
+            // Render Wrong Answers
+            const list = document.getElementById('wrong-answers-list');
+            list.innerHTML = ""; // Clear
+
+            if (score === 20) {
+                list.innerHTML = "<p style='text-align:center; color: var(--accent);'>Perfect Score! ไม่มีข้อผิด</p>";
+            } else {
+                list.innerHTML = "<h3 style='margin-bottom:10px;'>เฉลยข้อที่ตอบผิด:</h3>";
+                userAnswers.forEach(ans => {
+                    if (!ans.isCorrect) {
+                        const q = questions[ans.qIndex];
+                        const item = document.createElement('div');
+                        item.className = 'wrong-item';
+                        item.innerHTML = `
+                            <div class="wrong-question">${ans.qIndex + 1}. ${q.q}</div>
+                            <div class="wrong-answer">❌ ตอบ: ${q.options[ans.selected]}</div>
+                            <div class="correct-answer">✅ เฉลย: ${q.options[q.correct]}</div>
+                        `;
+                        list.appendChild(item);
+                    }
+                });
+            }
+        }
+
+        function restartQuiz() {
+            currentQuestionIndex = 0;
+            score = 0;
+            userAnswers = [];
+            
+            resultScreen.classList.remove('active');
+            quizScreen.classList.add('active');
+            loadQuestion();
+        }
+
+        function captureResult() {
+            const captureElement = document.getElementById('capture-area');
+            
+            html2canvas(captureElement, {
+                backgroundColor: "#1E293B", // Ensure dark background
+                scale: 2 // High resolution
+            }).then(canvas => {
+                // Create fake link to download
+                const link = document.createElement('a');
+                link.download = `Quiz_Result_${studentInfo.id}.png`;
+                link.href = canvas.toDataURL();
+                link.click();
+            });
+        }
+
+    </script>
+</body>
+</html>

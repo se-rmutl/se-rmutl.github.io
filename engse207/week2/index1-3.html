@@ -1,0 +1,1077 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ENGSE207 Week 2: Quality Attributes & Architectural Drivers</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Prompt:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* Theme Colors */
+            --bg-dark: #0F172A;
+            --bg-gradient: radial-gradient(circle at top right, #1E293B 0%, #0F172A 100%);
+            --primary: #3B82F6;     /* Blue */
+            --secondary: #8B5CF6;   /* Purple */
+            --accent: #F59E0B;      /* Amber/Orange */
+            --success: #10B981;     /* Green */
+            --danger: #EF4444;      /* Red */
+            --text-main: #F8FAFC;
+            --text-muted: #94A3B8;
+            
+            /* Dimensions */
+            --slide-width: 1600px;
+            --slide-height: 900px;
+            
+            /* Typography */
+            --font-base: 24px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: #000;
+            font-family: 'Prompt', 'Inter', sans-serif;
+            color: var(--text-main);
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Scaler Container */
+        #scaler {
+            width: var(--slide-width);
+            height: var(--slide-height);
+            transform-origin: center center;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 0 100px rgba(0,0,0,0.5);
+        }
+
+        /* Slide Styles */
+        .slide {
+            width: 100%;
+            height: 100%;
+            background: var(--bg-gradient);
+            display: none;
+            flex-direction: column;
+            padding: 60px 80px;
+            position: relative;
+            border: 1px solid #334155;
+        }
+
+        .slide.active {
+            display: flex;
+            animation: fadeIn 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Typography */
+        h1 {
+            font-size: 4.5rem;
+            line-height: 1.1;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, #60A5FA 0%, #C084FC 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 800;
+        }
+
+        h2 {
+            font-size: 3rem;
+            margin-bottom: 40px;
+            padding-left: 20px;
+            border-left: 10px solid var(--primary);
+            color: white;
+            font-weight: 700;
+        }
+
+        h3 {
+            font-size: 2rem;
+            color: var(--primary);
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        p, li {
+            font-size: var(--font-base);
+            line-height: 1.6;
+            color: #CBD5E1;
+            margin-bottom: 15px;
+        }
+
+        .chapter-number {
+            font-size: 8rem;
+            font-weight: 800;
+            color: rgba(255,255,255,0.05);
+            position: absolute;
+            top: 20px;
+            right: 40px;
+            line-height: 1;
+            pointer-events: none;
+        }
+
+        /* Components */
+        .card {
+            background: rgba(30, 41, 59, 0.7);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 20px;
+            padding: 30px;
+            backdrop-filter: blur(12px);
+            height: 100%;
+            transition: transform 0.3s;
+        }
+
+        .tag {
+            background: rgba(139, 92, 246, 0.2);
+            border: 1px solid var(--secondary);
+            color: #D8B4FE;
+            padding: 8px 20px;
+            border-radius: 50px;
+            font-size: 1.2rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            display: inline-block;
+            margin-bottom: 20px;
+        }
+
+        /* Flip Card Styles (Interactive) */
+        .flip-container {
+            perspective: 1000px;
+            height: 100%;
+            cursor: pointer;
+        }
+        
+        .flip-card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            text-align: center;
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+        }
+
+        .flip-container.flipped .flip-card-inner {
+            transform: rotateY(180deg);
+        }
+
+        .flip-front, .flip-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+            border-radius: 20px;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .flip-front {
+            background: rgba(30, 41, 59, 0.8);
+        }
+
+        .flip-back {
+            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+            transform: rotateY(180deg);
+            border: 2px solid var(--accent);
+        }
+
+        .click-hint {
+            position: absolute;
+            bottom: 15px;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            opacity: 0.7;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 0.5; }
+            50% { opacity: 1; }
+            100% { opacity: 0.5; }
+        }
+
+        /* Interactive Trade-off Box */
+        .tradeoff-box {
+            background: rgba(0,0,0,0.3);
+            border-radius: 15px;
+            padding: 20px;
+            margin-top: 15px;
+            cursor: pointer;
+            border: 1px solid transparent;
+            transition: 0.3s;
+        }
+        .tradeoff-box:hover {
+            border-color: var(--primary);
+            background: rgba(59, 130, 246, 0.1);
+        }
+        .tradeoff-content {
+            display: none;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            color: var(--accent);
+        }
+
+        /* Layouts */
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 50px; height: 100%; }
+        .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px; height: 100%;}
+        .flex-center { display: flex; justify-content: center; align-items: center; text-align: center; height: 100%; flex-direction: column; }
+
+        /* Diagram Placeholder */
+        .diagram-container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border: 2px dashed #475569;
+            border-radius: 20px;
+            background: rgba(0,0,0,0.2);
+            position: relative;
+        }
+        .diagram-container img {
+            max-width: 95%;
+            max-height: 95%;
+            object-fit: contain;
+        }
+
+        /* Controls */
+        .controls {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(15, 23, 42, 0.9);
+            padding: 10px 30px;
+            border-radius: 60px;
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            border: 1px solid #334155;
+            z-index: 1000;
+        }
+
+        .btn {
+            background: transparent;
+            border: none;
+            color: white;
+            cursor: pointer;
+            font-size: 1.2rem;
+            padding: 10px;
+            border-radius: 50%;
+            transition: 0.2s;
+        }
+        .btn:hover { background: rgba(255,255,255,0.1); color: var(--primary); }
+
+        .progress-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            height: 6px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            width: 0%;
+            transition: width 0.3s;
+            z-index: 1001;
+        }
+    </style>
+</head>
+<body>
+
+<div id="scaler">
+
+    <div class="slide active">
+        <div class="flex-center">
+            <span class="tag">ENGSE207 Software Architecture</span>
+            <h1>Quality Attributes &<br>Architectural Drivers</h1>
+            <p style="font-size: 2rem; color: var(--text-muted); margin-top: 20px;">
+                สัปดาห์ที่ 2: คุณลักษณะคุณภาพและปัจจัยขับเคลื่อนสถาปัตยกรรม
+            </p>
+            <div style="margin-top: 60px; display: flex; gap: 40px;">
+                <div class="card" style="min-width: 300px;">
+                    <div style="color: var(--primary); font-size: 0.9rem; font-weight: bold; margin-bottom: 5px;">INSTRUCTOR</div>
+                    <div style="font-size: 1.4rem; font-weight: 600;">อ.ธนิต เกตุแก้ว</div>
+                </div>
+                <div class="card" style="min-width: 300px;">
+                    <div style="color: var(--secondary); font-size: 0.9rem; font-weight: bold; margin-bottom: 5px;">DEPARTMENT</div>
+                    <div style="font-size: 1.4rem; font-weight: 600;">Software Engineering</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="slide">
+        <h2>🎯 วัตถุประสงค์การเรียนรู้ (Learning Outcomes)</h2>
+        <div class="grid-2">
+            <div>
+                <h3>สิ่งที่จะได้เรียนรู้ในวันนี้</h3>
+                <ul style="line-height: 2;">
+                    <li><strong>1. Quality Attributes (QA):</strong> พระเอกตัวจริงของสถาปัตยกรรม</li>
+                    <li><strong>2. The Big 6:</strong> เจาะลึก 6 คุณลักษณะคุณภาพหลัก</li>
+                    <li><strong>3. Trade-offs:</strong> ศิลปะการแลกเปลี่ยน "ได้อย่าง-เสียอย่าง"</li>
+                    <li><strong>4. QA Scenarios:</strong> การเปลี่ยน "นามธรรม" ให้เป็น "ตัวเลข"</li>
+                    <li><strong>5. Architectural Drivers:</strong> ปัจจัยที่บังคับให้เราออกแบบแบบนี้</li>
+                </ul>
+            </div>
+            <div class="card" style="border-left: 5px solid var(--accent);">
+                <h3>🔗 สอดคล้องกับ CLO รายวิชา</h3>
+                <ul style="list-style: none; margin: 0; padding-top: 10px;">
+                    <li style="margin-bottom: 20px;">
+                        <strong style="color: var(--accent);">CLO2/3 (Knowledge):</strong><br>
+                        อธิบาย Quality Attributes และรูปแบบสถาปัตยกรรมได้
+                    </li>
+                    <li style="margin-bottom: 20px;">
+                        <strong style="color: var(--accent);">CLO5 (Cognitive):</strong><br>
+                        วิเคราะห์ Architectural Drivers จากโจทย์ที่กำหนด
+                    </li>
+                    <li>
+                        <strong style="color: var(--accent);">CLO7 (Cognitive):</strong><br>
+                        ประเมิน Trade-offs และเลือกทางเลือกที่เหมาะสม
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="slide">
+        <h2>🔄 Recap Week 1: What is Software Architecture?</h2>
+        <div class="grid-2">
+            <div class="card">
+                <h3>Definition</h3>
+                <p style="font-size: 1.6rem; color: white;">"โครงสร้างรากฐานของระบบ"</p>
+                <ul>
+                    <li>🧩 <strong>Components:</strong> ส่วนประกอบหลัก</li>
+                    <li>🔗 <strong>Relationships:</strong> ความสัมพันธ์ระหว่างส่วนต่างๆ</li>
+                    <li>📐 <strong>Principles:</strong> กฎเกณฑ์ในการออกแบบ</li>
+                </ul>
+            </div>
+            <div class="card" style="display: flex; flex-direction: column; justify-content: center; align-items: center; border-color: var(--accent);">
+                <h3 style="color: var(--accent);">Why it matters?</h3>
+                <ul style="font-size: 1.5rem;">
+                    <li>💰 ลดต้นทุนระยะยาว</li>
+                    <li>⚡ เพิ่มประสิทธิภาพ</li>
+                    <li>🛡️ ความปลอดภัย</li>
+                    <li>🗣️ สื่อสารกับทีมได้เข้าใจตรงกัน</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="slide">
+        <h2>🔄 Recap Week 1: The Pyramid</h2>
+        <p>ความแตกต่างระหว่าง Architecture, Design และ Implementation</p>
+        <div class="flex-center" style="margin-top: 20px;">
+            <div style="width: 600px; display: flex; flex-direction: column; gap: 10px;">
+                <div style="background: var(--primary); padding: 30px; border-radius: 10px 10px 0 0; color: white; font-weight: bold; font-size: 1.8rem;">
+                    🏛️ Architecture (What/Why)
+                    <div style="font-size: 1rem; opacity: 0.8; font-weight: normal;">ตัดสินใจยาก, แก้ไขยาก, ภาพรวมทั้งระบบ</div>
+                </div>
+                <div style="background: var(--secondary); padding: 30px; width: 90%; margin: 0 auto; color: white; font-weight: bold; font-size: 1.6rem;">
+                    📐 Design (How)
+                    <div style="font-size: 1rem; opacity: 0.8; font-weight: normal;">รายละเอียดโมดูล, Class Diagram, DB Schema</div>
+                </div>
+                <div style="background: #334155; padding: 30px; width: 80%; margin: 0 auto; border-radius: 0 0 10px 10px; color: white; font-weight: bold; font-size: 1.4rem;">
+                    ⚙️ Implementation (Do)
+                    <div style="font-size: 1rem; opacity: 0.8; font-weight: normal;">Coding, Testing, Debugging</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="slide">
+        <h2>🔄 Recap Week 1: Stakeholders</h2>
+        <p>ใครสนใจอะไรบ้างในสถาปัตยกรรมของเรา?</p>
+        <div class="grid-3" style="height: auto; margin-top: 40px;">
+            <div class="card">
+                <h3>👨‍💼 ผู้บริหาร (Business)</h3>
+                <p>สนใจ: Cost, Time-to-market, ROI</p>
+                <small style="color: var(--accent);">"เสร็จเมื่อไหร่? คุ้มทุนไหม?"</small>
+            </div>
+            <div class="card">
+                <h3>👩‍💻 นักพัฒนา (Devs)</h3>
+                <p>สนใจ: Modifiability, Maintainability</p>
+                <small style="color: var(--accent);">"โค้ดแก้ง่ายไหม? วุ่นวายหรือเปล่า?"</small>
+            </div>
+            <div class="card">
+                <h3>👥 ผู้ใช้งาน (Users)</h3>
+                <p>สนใจ: Performance, Availability, Usability</p>
+                <small style="color: var(--accent);">"เร็วไหม? ล่มบ่อยไหม? ใช้ง่ายไหม?"</small>
+            </div>
+        </div>
+    </div>
+
+    <div class="slide">
+        <div class="chapter-number">01</div>
+        <h2>1. Quality Attributes (QA)</h2>
+        <h3>พระเอกตัวจริงของสถาปัตยกรรม</h3>
+        
+        <div class="grid-2" style="margin-top: 40px;">
+            <div class="card" style="border-left: 8px solid #334155;">
+                <h3 style="color: white;">Functional Requirements</h3>
+                <p style="font-size: 1.8rem;">ระบบ "ทำอะไร"</p>
+                <p>(What the system does)</p>
+                <ul style="color: var(--text-muted);">
+                    <li>Login ได้</li>
+                    <li>คำนวณภาษีได้</li>
+                    <li>กดปุ่มแล้วบันทึก</li>
+                </ul>
+            </div>
+            <div class="card" style="border-left: 8px solid var(--accent); background: rgba(245, 158, 11, 0.1);">
+                <h3 style="color: var(--accent);">Quality Attributes (NFRs)</h3>
+                <p style="font-size: 1.8rem;">ระบบ "ทำได้ดีแค่ไหน"</p>
+                <p>(How well the system does it)</p>
+                <ul style="color: white;">
+                    <li>Login ได้ภายใน <strong>1 วินาที</strong></li>
+                    <li>รองรับ <strong>1 ล้านคน</strong></li>
+                    <li>ระบบ <strong>ไม่ล่ม</strong> 99.9%</li>
+                </ul>
+            </div>
+        </div>
+        <p style="text-align: center; margin-top: 30px; font-size: 1.5rem; color: var(--success);">
+            "Functionality is required, but Quality Attributes drive the Architecture."
+        </p>
+    </div>
+
+    <div class="slide">
+        <h2>1.1 ภาพรวม Quality Attributes</h2>
+        <p>ความสัมพันธ์ระหว่าง NFRs กับส่วนต่างๆ ของระบบ</p>
+        <div class="diagram-container">
+            
+
+[Image of Quality Attributes Overview Diagram]
+
+            <img src="diagram1_quality_attributes_overview.png" alt="QA Overview" onerror="this.src='https://placehold.co/1200x600/1e293b/FFF?text=Insert:+Diagram+1+Overview'">
+        </div>
+    </div>
+
+    <div class="slide">
+        <div class="chapter-number">02</div>
+        <h2>2. The Big 6</h2>
+        <h3>เจาะลึก 6 คุณลักษณะคุณภาพหลัก</h3>
+        <p>คลิกที่การ์ดแต่ละใบเพื่อดูตัวอย่างจริง (Real World Examples)</p>
+        
+        <div class="grid-3" style="height: 600px; margin-top: 20px;">
+            <div class="flip-container" onclick="this.classList.toggle('flipped')">
+                <div class="flip-card-inner">
+                    <div class="flip-front">
+                        <div style="font-size: 4rem;">🚀</div>
+                        <h3>Performance</h3>
+                        <p>ความเร็ว / การตอบสนอง</p>
+                        <small>Response Time, Throughput</small>
+                        <div class="click-hint">🖱️ Click to see Example</div>
+                    </div>
+                    <div class="flip-back">
+                        <h3>Example: PUBG / ROV</h3>
+                        <p><strong>Requirement:</strong> Latency < 50ms</p>
+                        <p>ถ้าช้า = ผู้เล่นแพ้ = เลิกเล่น</p>
+                        <p style="color: var(--accent);">Solution: ใช้ UDP, Edge Server</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flip-container" onclick="this.classList.toggle('flipped')">
+                <div class="flip-card-inner">
+                    <div class="flip-front">
+                        <div style="font-size: 4rem;">📈</div>
+                        <h3>Scalability</h3>
+                        <p>การรองรับโหลดที่เพิ่มขึ้น</p>
+                        <small>Scale Up vs Scale Out</small>
+                        <div class="click-hint">🖱️ Click to see Example</div>
+                    </div>
+                    <div class="flip-back">
+                        <h3>Example: Shopee 11.11</h3>
+                        <p><strong>Requirement:</strong> รับ Order 100k/sec</p>
+                        <p>ถ้าล่ม = เสียรายได้มหาศาล</p>
+                        <p style="color: var(--accent);">Solution: Cloud Auto-scaling, Queue</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flip-container" onclick="this.classList.toggle('flipped')">
+                <div class="flip-card-inner">
+                    <div class="flip-front">
+                        <div style="font-size: 4rem;">⏱️</div>
+                        <h3>Availability</h3>
+                        <p>ความพร้อมใช้งาน (Uptime)</p>
+                        <small>99.9% vs 99.999%</small>
+                        <div class="click-hint">🖱️ Click to see Example</div>
+                    </div>
+                    <div class="flip-back">
+                        <h3>Example: K-Plus / SCB</h3>
+                        <p><strong>Requirement:</strong> ห้ามล่มตอนสิ้นเดือน</p>
+                        <p>เกี่ยวข้องกับความเชื่อมั่นทางการเงิน</p>
+                        <p style="color: var(--accent);">Solution: Redundancy, Failover</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="slide">
+        <h2>2. The Big 6 (ต่อ)</h2>
+        <div class="grid-3" style="height: 600px; margin-top: 20px;">
+            <div class="flip-container" onclick="this.classList.toggle('flipped')">
+                <div class="flip-card-inner">
+                    <div class="flip-front">
+                        <div style="font-size: 4rem;">🛡️</div>
+                        <h3>Security</h3>
+                        <p>ความปลอดภัยของข้อมูล</p>
+                        <small>CIA Triad</small>
+                        <div class="click-hint">🖱️ Click to see Example</div>
+                    </div>
+                    <div class="flip-back">
+                        <h3>Example: Banking App</h3>
+                        <p><strong>Requirement:</strong> ข้อมูลรั่วไหลไม่ได้เลย</p>
+                        <p>ต้องเข้ารหัสทุกขั้นตอน</p>
+                        <p style="color: var(--accent);">Solution: Encryption, 2FA, OAuth2</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flip-container" onclick="this.classList.toggle('flipped')">
+                <div class="flip-card-inner">
+                    <div class="flip-front">
+                        <div style="font-size: 4rem;">🧩</div>
+                        <h3>Modifiability</h3>
+                        <p>ความง่ายในการแก้ไข</p>
+                        <small>Low Coupling, High Cohesion</small>
+                        <div class="click-hint">🖱️ Click to see Example</div>
+                    </div>
+                    <div class="flip-back">
+                        <h3>Example: Super App</h3>
+                        <p><strong>Requirement:</strong> เพิ่มฟีเจอร์ใหม่ทุกสัปดาห์</p>
+                        <p>แก้จุดหนึ่ง ต้องไม่พังอีกจุด</p>
+                        <p style="color: var(--accent);">Solution: Microservices, Plugins</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flip-container" onclick="this.classList.toggle('flipped')">
+                <div class="flip-card-inner">
+                    <div class="flip-front">
+                        <div style="font-size: 4rem;">👍</div>
+                        <h3>Usability</h3>
+                        <p>ความง่ายในการใช้งาน</p>
+                        <small>UX, Learnability</small>
+                        <div class="click-hint">🖱️ Click to see Example</div>
+                    </div>
+                    <div class="flip-back">
+                        <h3>Example: Grab / Lineman</h3>
+                        <p><strong>Requirement:</strong> กดสั่งข้าวได้ใน 3 คลิก</p>
+                        <p>ผู้สูงอายุต้องใช้ได้</p>
+                        <p style="color: var(--accent);">Solution: Simple Flow, API Speed</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="slide">
+        <div class="chapter-number">03</div>
+        <h2>3. Trade-offs</h2>
+        <h3>ศิลปะการแลกเปลี่ยน "ได้อย่าง-เสียอย่าง"</h3>
+        <div class="flex-center">
+            <h1 style="color: var(--accent); margin: 30px 0; font-size: 4rem;">"There is no perfect architecture."</h1>
+            <p style="font-size: 2rem;">มีแต่สถาปัตยกรรมที่ <em>"เหมาะสมที่สุด"</em> สำหรับบริบทนั้นๆ</p>
+            <div class="diagram-container" style="height: 400px; margin-top: 30px;">
+                
+                <img src="diagram3_tradeoffs.png" alt="Trade-offs Diagram" onerror="this.src='https://placehold.co/800x400/1e293b/FFF?text=Insert:+Diagram+3+Trade-offs'">
+            </div>
+        </div>
+    </div>
+
+    <div class="slide">
+        <h2>3.1 Common Trade-offs Analysis</h2>
+        <p>ลองคลิกที่หัวข้อเพื่อดูการตัดสินใจ</p>
+        
+        <div class="grid-2">
+            <div>
+                <div class="tradeoff-box" onclick="toggleTradeoff(this)">
+                    <h3>⚔️ Performance vs Security</h3>
+                    <p>อยากให้ระบบเร็วที่สุด หรือปลอดภัยที่สุด?</p>
+                    <div class="tradeoff-content">
+                        <p><strong>ถ้าเลือก Performance:</strong> ลดการเช็ค Security → เร็วแต่เสี่ยง</p>
+                        <p><strong>ถ้าเลือก Security:</strong> เข้ารหัสทุกชั้น (HTTPS/Encrypt) → ช้าลงเล็กน้อย</p>
+                        <p style="color: white;">👉 <strong>Banking App:</strong> เลือก Security ยอมช้าได้</p>
+                    </div>
+                </div>
+
+                <div class="tradeoff-box" onclick="toggleTradeoff(this)">
+                    <h3>⚔️ Scalability vs Cost</h3>
+                    <p>รองรับคนได้เยอะๆ หรือประหยัดงบ?</p>
+                    <div class="tradeoff-content">
+                        <p><strong>ถ้าเลือก Scale:</strong> ใช้ Cloud Auto-scale → ค่าใช้จ่ายพุ่งตาม User</p>
+                        <p><strong>ถ้าเลือก Cost:</strong> ใช้ Server Fix → ประหยัดแต่ล่มเมื่อคนเยอะ</p>
+                        <p style="color: white;">👉 <strong>Startup ช่วงแรก:</strong> อาจเลือก Cost ก่อน</p>
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <div class="tradeoff-box" onclick="toggleTradeoff(this)">
+                    <h3>⚔️ Consistency vs Availability (CAP)</h3>
+                    <p>ข้อมูลตรงเป๊ะ หรือ ระบบห้ามล่ม?</p>
+                    <div class="tradeoff-content">
+                        <p><strong>Consistency:</strong> โอนเงิน ยอดต้องตัดทันที (อาจต้องรอถ้าเน็ตช้า)</p>
+                        <p><strong>Availability:</strong> กดดูหน้า Feed ได้เสมอ (ยอด Like อาจไม่ตรงแป๊บนึง)</p>
+                        <p style="color: white;">👉 <strong>Social Media:</strong> เลือก Availability</p>
+                    </div>
+                </div>
+
+                <div class="tradeoff-box" onclick="toggleTradeoff(this)">
+                    <h3>⚔️ Modifiability vs Performance</h3>
+                    <p>แก้โค้ดง่าย หรือ ทำงานเร็ว?</p>
+                    <div class="tradeoff-content">
+                        <p><strong>Modifiability:</strong> แบ่งเป็น Microservices → แก้แยกกันง่าย แต่ช้าเพราะ Network</p>
+                        <p><strong>Performance:</strong> เขียนรวมกัน (Monolith) → เร็วมาก แต่แก้ยาก</p>
+                        <p style="color: white;">👉 <strong>High Frequency Trading:</strong> เลือก Performance</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="slide">
+        <h2>Case Study: Hotel Booking App</h2>
+        <p>การตัดสินใจเลือก Trade-offs ในสถานการณ์จริง</p>
+        <table style="width: 100%; border-collapse: collapse; margin-top: 30px; font-size: 1.5rem;">
+            <tr style="background: #334155;">
+                <th style="padding: 20px;">Attribute</th>
+                <th style="padding: 20px;">Priority</th>
+                <th style="padding: 20px;">Trade-off Decision</th>
+            </tr>
+            <tr>
+                <td style="padding: 20px; border-bottom: 1px solid #475569;">Performance</td>
+                <td style="padding: 20px; border-bottom: 1px solid #475569; color: var(--success); font-weight: bold;">Critical</td>
+                <td style="padding: 20px; border-bottom: 1px solid #475569;">
+                    ยอมใช้ <strong>Caching</strong> (ข้อมูลอาจเก่าเล็กน้อย) เพื่อให้โหลดเร็วทันที
+                </td>
+            </tr>
+            <tr>
+                <td style="padding: 20px; border-bottom: 1px solid #475569;">Security</td>
+                <td style="padding: 20px; border-bottom: 1px solid #475569; color: var(--success); font-weight: bold;">Critical</td>
+                <td style="padding: 20px; border-bottom: 1px solid #475569;">
+                    ยอมให้ระบบ <strong>ช้าลงเล็กน้อย</strong> เพื่อ Encrypt ข้อมูลบัตรเครดิตทุกขั้นตอน
+                </td>
+            </tr>
+            <tr>
+                <td style="padding: 20px; border-bottom: 1px solid #475569;">Modifiability</td>
+                <td style="padding: 20px; border-bottom: 1px solid #475569; color: var(--text-muted);">Medium</td>
+                <td style="padding: 20px; border-bottom: 1px solid #475569;">
+                    ฟีเจอร์หลักนิ่งแล้ว ไม่ต้องทำระบบ Plugin ที่ซับซ้อน (ประหยัดเวลา Dev)
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="slide">
+        <div class="chapter-number">04</div>
+        <h2>4. QA Scenarios</h2>
+        <h3>การเปลี่ยน "นามธรรม" ให้เป็น "ตัวเลข"</h3>
+        
+        <div class="grid-2">
+            <div>
+                <h3 style="color: var(--danger);">The Problem</h3>
+                <p>Requirement แบบ "นามธรรม" วัดผลไม่ได้:</p>
+                <div class="card" style="border-color: var(--danger); background: rgba(239, 68, 68, 0.1);">
+                    <ul style="color: white; font-size: 1.6rem; list-style: none;">
+                        <li>❌ "ระบบต้องเร็ว"</li>
+                        <li>❌ "ระบบต้องปลอดภัย"</li>
+                        <li>❌ "ระบบต้องรองรับคนได้เยอะๆ"</li>
+                    </ul>
+                </div>
+                <p style="margin-top: 20px;">เร็วแค่ไหน? 1 วิ หรือ 10 วิ? เยอะแค่ไหน?</p>
+            </div>
+            <div>
+                <h3 style="color: var(--success);">The Solution</h3>
+                <p>ใช้ <strong>Scenario</strong> ระบุให้เป็น "รูปธรรม":</p>
+                <div class="card" style="border-color: var(--success); background: rgba(16, 185, 129, 0.1);">
+                    <ul style="color: white; font-size: 1.6rem; list-style: none;">
+                        <li>✅ "เมื่อ User 5,000 คน กดค้นหาพร้อมกัน"</li>
+                        <li>✅ "ระบบต้องแสดงผลภายใน <strong>2 วินาที</strong>"</li>
+                        <li>✅ "ใน 95% ของการร้องขอ"</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="slide">
+        <h2>4.1 โครงสร้าง 6 ส่วนของ Scenario</h2>
+        <p>มาตรฐานการเขียน QA Requirement</p>
+        <div class="diagram-container">
+            
+
+[Image of Scenario Structure Diagram]
+
+            <img src="diagram2_qa_scenario_structure.png" alt="Scenario Structure" onerror="this.src='https://placehold.co/1200x600/1e293b/FFF?text=Insert:+Diagram+2+Structure'">
+        </div>
+    </div>
+
+    <div class="slide">
+        <h2>4.2 ตัวอย่าง: Performance Scenario Flow</h2>
+        <p>กรณีศึกษา: Food Delivery App</p>
+        <div class="diagram-container">
+            
+            <img src="diagram5_scenario_example.png" alt="Scenario Example" onerror="this.src='https://placehold.co/1200x600/1e293b/FFF?text=Insert:+Diagram+5+Example'">
+        </div>
+    </div>
+    
+    <div class="slide">
+        <h2>ตัวอย่าง Scenarios อื่นๆ</h2>
+        <div class="grid-2">
+            <div class="card">
+                <h3>🛡️ Security Scenario</h3>
+                <p><strong>Source:</strong> Hacker</p>
+                <p><strong>Stimulus:</strong> พยายาม Login ผิด 5 ครั้งติดต่อกัน</p>
+                <p><strong>Artifact:</strong> Authentication Service</p>
+                <p><strong>Response:</strong> Lock Account ชั่วคราว 15 นาที และบันทึก Log</p>
+                <p><strong>Measure:</strong> Lock ทันทีหลังจากครั้งที่ 5 (100% Reliability)</p>
+            </div>
+            <div class="card">
+                <h3>🔌 Availability Scenario</h3>
+                <p><strong>Source:</strong> Internal System</p>
+                <p><strong>Stimulus:</strong> Database Server ตัวหลักเสีย (Crash)</p>
+                <p><strong>Artifact:</strong> Database Cluster</p>
+                <p><strong>Response:</strong> สลับไปใช้ Server สำรอง (Failover)</p>
+                <p><strong>Measure:</strong> ระบบกลับมาใช้งานได้ภายใน 30 วินาที</p>
+            </div>
+        </div>
+    </div>
+
+
+    <div class="slide">
+        <div class="chapter-number">05</div>
+        <h2>5. Architectural Drivers</h2>
+        <h3>ปัจจัยที่บังคับให้เราออกแบบแบบนี้</h3>
+        <p>สถาปนิกไม่ได้ออกแบบตามใจชอบ แต่ต้องออกแบบตาม 4 ปัจจัยนี้</p>
+        
+        <div class="diagram-container" style="height: 600px; margin-top: 20px;">
+             
+
+[Image of Architectural Drivers Diagram]
+
+             <img src="diagram4_architectural_drivers.png" alt="Drivers Diagram" onerror="this.src='https://placehold.co/1200x600/1e293b/FFF?text=Insert:+Diagram+4+Drivers'">
+        </div>
+    </div>
+
+    <div class="slide">
+        <h2>5.1 Constraints & Assumptions Detail</h2>
+        <div class="grid-2">
+            <div class="card" style="border-top: 8px solid var(--danger);">
+                <h3>🚧 Constraints (ข้อจำกัด)</h3>
+                <p><em>"Must Do / Cannot Do"</em></p>
+                <ul>
+                    <li><strong>Technical:</strong> ทีมถนัดแค่ Node.js, บริษัทบังคับใช้ Azure</li>
+                    <li><strong>Business:</strong> งบ 50,000 บาท, ต้องเสร็จใน 3 เดือน</li>
+                    <li><strong>Legal:</strong> PDPA ต้องเก็บข้อมูลในไทยเท่านั้น</li>
+                </ul>
+            </div>
+            <div class="card" style="border-top: 8px solid var(--secondary);">
+                <h3>🤔 Assumptions (สมมติฐาน)</h3>
+                <p><em>"What we believe to be true (for now)"</em></p>
+                <ul>
+                    <li>"สมมติว่า User จะมี Internet 4G ตลอดเวลา"</li>
+                    <li>"สมมติว่าข้อมูลจะไม่เกิน 10GB ในปีแรก"</li>
+                    <li>"สมมติว่า Third-party API จะไม่ล่มเกิน 1 ชม."</li>
+                </ul>
+                <small style="color: var(--accent);">*ต้องบันทึกไว้ เพราะถ้าสมมติฐานผิด Architecture อาจพัง</small>
+            </div>
+        </div>
+    </div>
+    
+    <div class="slide">
+        <h2>5.2 Business Goals (เป้าหมายทางธุรกิจ)</h2>
+        <p>Driver สำคัญที่มักถูกลืม! Architect ต้องเข้าใจ "เป้าหมายธุรกิจ" ก่อนเขียนโค้ด</p>
+        <div class="grid-3">
+            <div class="card">
+                <h3>Time to Market</h3>
+                <p>รีบปล่อยของเพื่อชิงส่วนแบ่งตลาด</p>
+                <small>→ อาจยอมลด Quality บางอย่างเพื่อให้เสร็จเร็ว</small>
+            </div>
+            <div class="card">
+                <h3>Cost Reduction</h3>
+                <p>ต้องการลดต้นทุน IT</p>
+                <small>→ เลือกใช้ Serverless หรือ Open Source แทนของแพง</small>
+            </div>
+            <div class="card">
+                <h3>Market Expansion</h3>
+                <p>ต้องการขยายไปต่างประเทศ</p>
+                <small>→ ต้องออกแบบให้รองรับ Multi-language, Timezone</small>
+            </div>
+        </div>
+    </div>
+
+    <div class="slide">
+        <h2>5.3 กระบวนการระบุ Drivers</h2>
+        <div style="display: flex; justify-content: space-between; margin-top: 60px; text-align: center;">
+            <div style="flex: 1;">
+                <div class="tag" style="background: var(--primary); color: white; margin: 0;">STEP 1</div>
+                <h3 style="margin-top: 20px;">Gather Info</h3>
+                <p>คุยกับ Stakeholders<br>อ่านเอกสาร SRS</p>
+            </div>
+            <div style="font-size: 3rem; color: var(--text-muted); padding-top: 40px;">→</div>
+            <div style="flex: 1;">
+                <div class="tag" style="background: var(--secondary); color: white; margin: 0;">STEP 2</div>
+                <h3 style="margin-top: 20px;">Categorize</h3>
+                <p>แยก Functional,<br>QA, Constraints</p>
+            </div>
+            <div style="font-size: 3rem; color: var(--text-muted); padding-top: 40px;">→</div>
+            <div style="flex: 1;">
+                <div class="tag" style="background: var(--accent); color: white; margin: 0;">STEP 3</div>
+                <h3 style="margin-top: 20px;">Prioritize</h3>
+                <p>เลือก Top 3-5 QAs<br>ที่สำคัญที่สุด</p>
+            </div>
+            <div style="font-size: 3rem; color: var(--text-muted); padding-top: 40px;">→</div>
+            <div style="flex: 1;">
+                <div class="tag" style="background: var(--success); color: white; margin: 0;">STEP 4</div>
+                <h3 style="margin-top: 20px;">Scenario</h3>
+                <p>เขียน Scenario<br>ให้วัดผลได้</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="slide">
+        <div class="flex-center">
+            <span class="tag">ACTIVITY</span>
+            <h1>Workshop: Task Board System</h1>
+            <p style="font-size: 2rem;">ออกแบบ Drivers และ Scenarios</p>
+        </div>
+        <div class="grid-2" style="margin-top: 40px;">
+            <div class="card">
+                <h3>🎯 โจทย์</h3>
+                <p>สร้างระบบ <strong>"Cloud-based Kanban Board"</strong> สำหรับคณะ</p>
+                <p><strong>Goal:</strong> ระบุ Drivers และเขียน Scenario 3 ข้อ</p>
+            </div>
+            <div class="card">
+                <h3>📝 ขั้นตอน</h3>
+                <ol>
+                    <li>จับกลุ่ม 4-5 คน</li>
+                    <li>Brainstorm: Functional & Constraints</li>
+                    <li>เลือก Top 3 Quality Attributes</li>
+                    <li>เขียน Scenario (Source -> Stimulus -> ... -> Measure)</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+    
+    <div class="slide">
+        <h2>Step 1: Brainstorm Drivers (30 นาที)</h2>
+        <p>วิเคราะห์โจทย์และระดมสมอง:</p>
+        <div class="card" style="margin-top: 20px;">
+            <ul>
+                <li><strong>Functional:</strong> ต้องทำอะไรได้บ้าง? (สร้างการ์ด, ย้ายงาน, แนบไฟล์?)</li>
+                <li><strong>Users:</strong> ใครใช้บ้าง? (นศ., อาจารย์, เจ้าหน้าที่)</li>
+                <li><strong>Constraints:</strong> งบเท่าไหร่? ต้องใช้ Server มหาลัยไหม?</li>
+            </ul>
+        </div>
+        <div class="card" style="margin-top: 20px; background: var(--primary); color: white;">
+            <strong>Output ที่ต้องการ:</strong> รายการ Drivers และ Quality Attributes ที่เกี่ยวข้อง
+        </div>
+    </div>
+
+    <div class="slide">
+        <h2>Step 2: Write Scenarios (40 นาที)</h2>
+        <p>เลือก Top 5 QAs ที่สำคัญที่สุด แล้วเขียน Scenario ให้ครบ 6 ส่วน</p>
+        <div class="grid-2">
+            <div class="card">
+                <h3>Template</h3>
+                <p>1. Source: ______</p>
+                <p>2. Stimulus: ______</p>
+                <p>3. Artifact: ______</p>
+                <p>4. Environment: ______</p>
+                <p>5. Response: ______</p>
+                <p>6. Measure: ______</p>
+            </div>
+            <div>
+                <h3>💡 Tips</h3>
+                <p class="tag" style="background: var(--danger); color: white; border: none;">Don't</p>
+                <p>"ระบบต้องเร็ว", "โหลดไวๆ"</p>
+                
+                <p class="tag" style="background: var(--success); color: white; border: none; margin-top: 20px;">Do</p>
+                <p>"โหลดหน้า Dashboard ภายใน <strong>1.5 วินาที</strong>"</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="slide">
+        <h2>Step 3: Analyze Trade-offs (30 นาที)</h2>
+        <p>หาจุดขัดแย้ง (Conflict) และตัดสินใจ</p>
+        <div class="card" style="margin-top: 30px;">
+            <h3>ตัวอย่างการถกเถียงในกลุ่ม</h3>
+            <p><strong>A:</strong> "อยากให้ Real-time สุดๆ ขยับการ์ดปุ๊บ เพื่อนเห็นปั๊บ (ใช้ WebSocket)"</p>
+            <p><strong>B:</strong> "แต่ Server มหาลัยเราเก่านะ Connection เยอะๆ จะไหวเหรอ (Scalability Limit)?"</p>
+            <p style="margin-top: 20px; color: var(--accent); font-weight: bold;">Decision: "งั้นใช้ Polling ทุก 5 วินาทีแทน เพื่อประหยัด Resource Server"</p>
+        </div>
+    </div>
+
+    <div class="slide">
+        <h2>Step 4: Presentation (20 นาที)</h2>
+        <p>ส่งตัวแทนนำเสนอหน้าห้อง</p>
+        <div class="grid-2">
+            <div class="card">
+                <h3>สิ่งที่ต้องนำเสนอ</h3>
+                <ul>
+                    <li>Top 3 Scenarios ที่กลุ่มภูมิใจที่สุด</li>
+                    <li>Trade-off ที่ยากที่สุดที่เจอ และเหตุผลที่เลือกทางนั้น</li>
+                </ul>
+            </div>
+            <div class="card">
+                <h3>Peer Review Checklist</h3>
+                <ul>
+                    <li>Scenario มีตัวเลขวัดผลได้จริงไหม?</li>
+                    <li>Trade-off สมเหตุสมผลไหม?</li>
+                    <li>Drivers ครอบคลุมโจทย์ไหม?</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    
+    <div class="slide">
+        <h2>🏠 Lab Assignment (การบ้าน)</h2>
+        <p>สร้างเอกสาร <strong>"Architectural Drivers Document"</strong> สำหรับโปรเจกต์กลุ่ม</p>
+        <div class="grid-2">
+            <div>
+                <h3>เลือก Domain (เลือก 1 อย่าง):</h3>
+                <ul>
+                    <li>E-Learning Platform</li>
+                    <li>Food Delivery System</li>
+                    <li>Smart Home IoT</li>
+                    <li>Social Media Platform</li>
+                </ul>
+            </div>
+            <div class="card">
+                <h3>สิ่งที่ต้องส่ง (PDF):</h3>
+                <ol>
+                    <li>System Overview (ภาพรวมระบบ)</li>
+                    <li>Functional Requirements (15 ข้อ)</li>
+                    <li>Quality Attribute Scenarios (6 ข้อ - ครบ 6 ส่วน)</li>
+                    <li>Constraints & Assumptions</li>
+                    <li>Priority & Trade-offs Analysis</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+
+    <div class="slide">
+        <h2>สรุปบทเรียนวันนี้</h2>
+        <div class="grid-2">
+            <div>
+                <h3>✅ Takeaways วันนี้</h3>
+                <ul>
+                    <li><strong>Quality Attributes:</strong> คือพระเอกที่กำหนดรูปร่างสถาปัตยกรรม</li>
+                    <li><strong>Trade-offs:</strong> เลือกสิ่งที่ดีที่สุดในบริบทนั้นๆ (ไม่มี Perfect Arch)</li>
+                    <li><strong>Scenarios:</strong> เปลี่ยนความต้องการลอยๆ ให้วัดผลได้</li>
+                    <li><strong>Drivers:</strong> เข้าใจข้อจำกัดก่อนเริ่มออกแบบ</li>
+                </ul>
+            </div>
+            <div class="card" style="background: rgba(139, 92, 246, 0.1); border-color: var(--secondary);">
+                <h3>🔮 Next Week: Architectural Styles</h3>
+                <p>เมื่อรู้ "โจทย์" (QA) แล้ว สัปดาห์หน้าจะมาดู "คำตอบ" (Patterns)</p>
+                <ul>
+                    <li>Monolith vs Microservices</li>
+                    <li>Layered Architecture</li>
+                    <li>Event-Driven</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<div class="progress-bar" id="progressBar"></div>
+<div class="controls">
+    <button class="btn" onclick="prevSlide()" title="Previous">◀</button>
+    <span id="slideIndicator" style="color: white; font-weight: 600; min-width: 80px; text-align: center; font-size: 1.2rem;">1 / 27</span>
+    <button class="btn" onclick="nextSlide()" title="Next">▶</button>
+    <div style="width: 1px; height: 30px; background: #475569; margin: 0 15px;"></div>
+    <button class="btn" onclick="toggleFullscreen()" title="Fullscreen">⛶</button>
+</div>
+
+<script>
+    let currentSlide = 0;
+    const slides = document.querySelectorAll('.slide');
+    const progressBar = document.getElementById('progressBar');
+    const slideIndicator = document.getElementById('slideIndicator');
+    const scaler = document.getElementById('scaler');
+
+    // Scaling Logic for 1600x900 base
+    function updateScale() {
+        const baseWidth = 1600;
+        const baseHeight = 900;
+        const windowWidth = window.innerWidth;
+        const windowHeight = window.innerHeight;
+        const scale = Math.min(windowWidth / baseWidth, windowHeight / baseHeight);
+        scaler.style.transform = `scale(${scale})`;
+    }
+    window.addEventListener('resize', updateScale);
+    updateScale();
+
+    // Slide Navigation
+    function showSlide(index) {
+        if (index >= slides.length) index = 0;
+        if (index < 0) index = slides.length - 1;
+        
+        slides[currentSlide].classList.remove('active');
+        slides[index].classList.add('active');
+        currentSlide = index;
+
+        const progress = ((currentSlide + 1) / slides.length) * 100;
+        progressBar.style.width = `${progress}%`;
+        slideIndicator.textContent = `${currentSlide + 1} / ${slides.length}`;
+    }
+
+    function nextSlide() { showSlide(currentSlide + 1); }
+    function prevSlide() { showSlide(currentSlide - 1); }
+
+    // Interactive Trade-offs
+    function toggleTradeoff(element) {
+        const content = element.querySelector('.tradeoff-content');
+        if (content.style.display === "block") {
+            content.style.display = "none";
+            element.style.background = "rgba(0,0,0,0.3)";
+        } else {
+            content.style.display = "block";
+            element.style.background = "rgba(59, 130, 246, 0.2)";
+        }
+    }
+
+    // Fullscreen Logic (Improved)
+    function toggleFullscreen() {
+        if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen().catch((e) => {
+                console.log("Fullscreen failed:", e);
+            });
+        } else {
+            if (document.exitFullscreen) {
+                document.exitFullscreen();
+            }
+        }
+    }
+
+    // Keyboard Controls
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowRight' || e.key === ' ') nextSlide();
+        if (e.key === 'ArrowLeft') prevSlide();
+        if (e.key === 'f' || e.key === 'F') toggleFullscreen();
+    });
+
+    // Initialize
+    showSlide(0);
+</script>
+
+</body>
+</html>
