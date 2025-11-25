@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz 1: Cybersecurity Concepts | ENGSE214</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    
+    <style>
+        body { font-family: 'Prompt', sans-serif; background-color: #0f172a; color: #e2e8f0; }
+        .mono { font-family: 'Share Tech Mono', monospace; }
+        
+        /* Cyberpunk Grid Background */
+        .bg-grid {
+            background-image: linear-gradient(rgba(16, 185, 129, 0.05) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(16, 185, 129, 0.05) 1px, transparent 1px);
+            background-size: 30px 30px;
+        }
+        
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            box-shadow: 0 0 20px rgba(16, 185, 129, 0.1);
+        }
+
+        .option-btn {
+            transition: all 0.2s ease;
+        }
+        .option-btn:hover:not(:disabled) {
+            border-color: #10b981;
+            background: rgba(16, 185, 129, 0.1);
+            transform: translateX(5px);
+        }
+        .option-btn:disabled { cursor: not-allowed; opacity: 0.7; }
+
+        .correct-anim { animation: pulse-green 0.5s; }
+        .wrong-anim { animation: shake 0.4s; }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+        @keyframes pulse-green {
+            0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #1e293b; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+    </style>
+</head>
+<body class="bg-grid min-h-screen flex items-center justify-center p-4">
+
+    <div class="max-w-3xl w-full">
+        
+        <header class="flex justify-between items-end mb-6 border-b border-emerald-500/30 pb-4">
+            <div>
+                <h1 class="text-3xl font-bold text-emerald-400"><i class="fa-solid fa-shield-halved"></i> ENGSE214</h1>
+                <p class="text-slate-400 text-sm mt-1">Quiz 1: Cybersecurity Basics & Threat Landscape</p>
+            </div>
+            <div class="text-right hidden" id="quiz-stats">
+                <div class="text-sm text-slate-400">Question</div>
+                <div class="text-xl font-bold mono text-white"><span id="q-current">1</span> / <span id="q-total">20</span></div>
+            </div>
+        </header>
+
+        <div id="start-screen" class="glass-panel rounded-xl p-8 text-center relative overflow-hidden">
+            <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-500 to-cyan-500"></div>
+            
+            <div class="mb-6 inline-block p-6 rounded-full bg-emerald-500/10 border border-emerald-500/30">
+                <i class="fa-solid fa-user-secret text-5xl text-emerald-400"></i>
+            </div>
+            
+            <h2 class="text-2xl font-bold text-white mb-2">พร้อมเข้าสู่โลก Cyber Security หรือยัง?</h2>
+            <p class="text-slate-300 mb-6 leading-relaxed text-sm">
+                แบบทดสอบวัดความรู้พื้นฐาน 20 ข้อ (CIA, Threats, Risk) <br>
+                <span class="text-emerald-400"><i class="fa-solid fa-shuffle"></i> คำถามจะถูกสุ่มลำดับทุกครั้งที่ทำ</span>
+            </p>
+
+            <div class="max-w-sm mx-auto mb-8">
+                <label class="block text-left text-emerald-400 text-sm font-bold mb-2" for="student-id-input">
+                    <i class="fa-solid fa-id-card mr-1"></i> ข้อมูลผู้สอบ
+                </label>
+                <input class="w-full bg-slate-800 border border-slate-600 rounded-lg py-3 px-4 text-white leading-tight focus:outline-none focus:border-emerald-500 transition shadow-inner text-center placeholder-slate-500" 
+                       id="student-id-input" type="text" placeholder="ระบุ: ชื่อ-นามสกุล / รหัสนักศึกษา">
+                <p id="name-error" class="text-red-400 text-xs mt-1 hidden"><i class="fa-solid fa-circle-exclamation"></i> กรุณาระบุข้อมูลก่อนเริ่มทำแบบทดสอบ</p>
+            </div>
+
+            <div class="grid grid-cols-3 gap-2 max-w-md mx-auto mb-8 text-xs text-slate-400">
+                <div class="bg-slate-800/50 p-2 rounded border border-slate-700">
+                    <i class="fa-solid fa-list-ol text-emerald-400 mb-1 block text-lg"></i> 20 ข้อ
+                </div>
+                <div class="bg-slate-800/50 p-2 rounded border border-slate-700">
+                    <i class="fa-solid fa-stopwatch text-emerald-400 mb-1 block text-lg"></i> 45 วินาที/ข้อ
+                </div>
+                <div class="bg-slate-800/50 p-2 rounded border border-slate-700">
+                    <i class="fa-solid fa-shuffle text-emerald-400 mb-1 block text-lg"></i> Random
+                </div>
+            </div>
+
+            <button onclick="startQuiz()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 px-8 rounded-lg transition transform hover:scale-105 shadow-lg shadow-emerald-500/20 w-full max-w-xs">
+                <i class="fa-solid fa-play mr-2"></i> เริ่มทำแบบทดสอบ
+            </button>
+        </div>
+
+        <div id="quiz-screen" class="glass-panel rounded-xl p-6 hidden relative">
+            <div class="absolute top-0 left-0 h-1 bg-emerald-500 transition-all duration-1000 ease-linear" id="timer-bar" style="width: 100%"></div>
+
+            <div class="flex justify-between items-center mb-6">
+                <span class="bg-slate-800 text-xs font-bold px-3 py-1 rounded border border-slate-600 text-emerald-400">
+                    <i class="fa-regular fa-clock"></i> <span id="timer-text">45</span>s
+                </span>
+                <span class="text-xs text-slate-500 uppercase tracking-widest">Select the best answer</span>
+            </div>
+
+            <h3 id="question-text" class="text-xl font-semibold text-white mb-8 leading-relaxed min-h-[80px]">
+                Loading question...
+            </h3>
+
+            <div id="options-container" class="space-y-3">
+                </div>
+
+            <div class="mt-6 pt-4 border-t border-slate-700/50 flex justify-between items-center opacity-0 transition-opacity" id="feedback-area">
+                <div id="feedback-text" class="text-sm font-medium"></div>
+                <button onclick="nextQuestion()" id="next-btn" class="bg-blue-600 hover:bg-blue-500 text-white text-sm py-2 px-6 rounded transition">
+                    ถัดไป <i class="fa-solid fa-arrow-right ml-1"></i>
+                </button>
+            </div>
+        </div>
+
+        <div id="result-screen" class="hidden">
+            <div id="certificate-area" class="glass-panel rounded-xl p-8 text-center border-2 border-emerald-500/50 relative bg-slate-900">
+                
+                <div class="border-b border-slate-700 pb-4 mb-6">
+                    <div class="flex justify-center items-center gap-2 text-emerald-400 mb-2">
+                        <i class="fa-solid fa-shield-halved text-2xl"></i>
+                        <span class="font-bold text-xl tracking-wider">ENGSE214 : MISSION REPORT</span>
+                    </div>
+                    <p class="text-xs text-slate-500 mono">WEEK 1: CYBERSECURITY BASICS</p>
+                </div>
+
+                <div class="mb-6 relative inline-block">
+                    <svg class="w-32 h-32 transform -rotate-90">
+                        <circle cx="64" cy="64" r="60" stroke="#334155" stroke-width="8" fill="transparent" />
+                        <circle id="score-circle" cx="64" cy="64" r="60" stroke="#10b981" stroke-width="8" fill="transparent" stroke-dasharray="377" stroke-dashoffset="377" class="transition-all duration-1000 ease-out" />
+                    </svg>
+                    <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+                        <span id="final-score" class="text-3xl font-bold text-white">0</span>
+                        <span class="text-xs text-slate-400 block">/ 20</span>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <p class="text-slate-400 text-xs mb-2 uppercase tracking-widest">Operator Rank</p>
+                    <div id="rank-badge" class="inline-block px-6 py-2 rounded-full border-2 border-emerald-500 text-emerald-400 font-bold text-xl shadow-[0_0_15px_rgba(16,185,129,0.3)]">
+                        Security Analyst
+                    </div>
+                </div>
+
+                <div class="mt-6 bg-slate-800/50 py-3 px-4 rounded-lg border border-slate-700 inline-block min-w-[250px]">
+                    <p class="text-xs text-slate-500 mb-1 uppercase">Examinee</p>
+                    <h3 id="student-name-display" class="text-lg font-bold text-white font-mono">Student Name</h3>
+                </div>
+
+                <div class="mt-6 text-xs text-slate-600 mono">
+                    RMUTL Software Engineering | ID: <span id="timestamp-id"></span>
+                </div>
+            </div>
+
+            <div class="mt-6 flex flex-col md:flex-row justify-center gap-4">
+                <button onclick="captureResult()" class="bg-blue-600 hover:bg-blue-500 text-white py-3 px-6 rounded-lg transition shadow-lg shadow-blue-500/20 font-bold">
+                    <i class="fa-solid fa-camera mr-2"></i> บันทึกผลคะแนน (PNG)
+                </button>
+                <button onclick="toggleSolutions()" class="bg-slate-700 hover:bg-slate-600 text-white py-3 px-6 rounded-lg transition">
+                    <i class="fa-solid fa-list-check mr-2"></i> ดูเฉลยละเอียด
+                </button>
+                <button onclick="location.reload()" class="bg-slate-800 hover:bg-slate-700 text-white py-3 px-6 rounded-lg transition border border-slate-600">
+                    <i class="fa-solid fa-rotate-right mr-2"></i> ทำอีกครั้ง
+                </button>
+            </div>
+
+            <div id="solutions-container" class="hidden text-left space-y-4 mt-8 border-t border-emerald-500/30 pt-8 max-h-[500px] overflow-y-auto pr-2 glass-panel rounded-xl p-6">
+                <h3 class="text-xl font-bold text-white mb-4">เฉลยและคำอธิบาย</h3>
+                </div>
+        </div>
+
+    </div>
+
+    <script>
+        // --- Master Quiz Data ---
+        const masterQuizData = [
+            {
+                q: "ข้อใดคือคำนิยามของ Cybersecurity ที่ถูกต้องที่สุด?",
+                options: [
+                    "การติดตั้งโปรแกรมแอนตี้ไวรัสและไฟร์วอลล์",
+                    "กระบวนการปกป้องข้อมูลและระบบจากการโจมตีทางไซเบอร์",
+                    "การซ่อมแซมคอมพิวเตอร์ที่ถูกไวรัสทำลาย",
+                    "การป้องกันไม่ให้พนักงานใช้อินเทอร์เน็ตในเวลางาน"
+                ],
+                correct: 1,
+                explain: "Cybersecurity คือกระบวนการ เทคโนโลยี และคน ที่ทำงานร่วมกันเพื่อปกป้องข้อมูล (Data) และระบบ (System) จากการเข้าถึงโดยไม่ได้รับอนุญาต"
+            },
+            {
+                q: "องค์ประกอบใด **ไม่ใช่** ส่วนหนึ่งของ CIA Triad?",
+                options: [
+                    "Confidentiality (การรักษาความลับ)",
+                    "Authorization (การอนุญาตสิทธิ์)",
+                    "Integrity (ความถูกต้องครบถ้วน)",
+                    "Availability (ความพร้อมใช้งาน)"
+                ],
+                correct: 1,
+                explain: "CIA Triad ประกอบด้วย Confidentiality, Integrity และ Availability ส่วน Authorization เป็นกลไกที่ช่วยสนับสนุน"
+            },
+            {
+                q: "นักศึกษาสามารถดูเกรดของตัวเองได้ แต่ไม่สามารถดูเกรดของเพื่อนได้ เป็นการรักษาความปลอดภัยด้านใด?",
+                options: [
+                    "Confidentiality",
+                    "Integrity",
+                    "Availability",
+                    "Non-repudiation"
+                ],
+                correct: 0,
+                explain: "Confidentiality คือการจำกัดสิทธิ์การเข้าถึงข้อมูลให้เฉพาะผู้ที่มีสิทธิ์เท่านั้น"
+            },
+            {
+                q: "การที่ระบบลงทะเบียนเรียนล่มในช่วง Add/Drop แสดงว่าระบบขาดคุณสมบัติด้านใด?",
+                options: [
+                    "Confidentiality",
+                    "Integrity",
+                    "Availability",
+                    "Privacy"
+                ],
+                correct: 2,
+                explain: "Availability คือการที่ระบบต้องพร้อมใช้งานเมื่อผู้ใช้ต้องการ หากระบบล่มแสดงว่า Availability เสียหาย"
+            },
+            {
+                q: "ในบริบทของ Cybersecurity, 'Asset' หมายถึงอะไร?",
+                options: [
+                    "แฮกเกอร์ที่มีความสามารถสูง",
+                    "ช่องโหว่ของระบบ",
+                    "สิ่งที่มีคุณค่าที่องค์กรต้องการปกป้อง",
+                    "โปรแกรมไวรัสคอมพิวเตอร์"
+                ],
+                correct: 2,
+                explain: "Asset (ทรัพย์สิน) คือสิ่งที่มีค่า เช่น ข้อมูล, ระบบ, อุปกรณ์ หรือชื่อเสียง ที่เราต้องปกป้อง"
+            },
+            {
+                q: "ข้อใดคือตัวอย่างของ 'Vulnerability' (ช่องโหว่)?",
+                options: [
+                    "แฮกเกอร์พยายามเจาะระบบ",
+                    "การตั้งรหัสผ่านเป็น '123456'",
+                    "ไฟล์ข้อมูลลูกค้ารั่วไหล",
+                    "เซิร์ฟเวอร์ถูกน้ำท่วม"
+                ],
+                correct: 1,
+                explain: "Vulnerability คือจุดอ่อนของระบบที่เปิดโอกาสให้ถูกโจมตีได้ เช่น รหัสผ่านที่คาดเดาง่าย หรือซอฟต์แวร์ที่ไม่อัปเดต"
+            },
+            {
+                q: "สมการความเสี่ยง (Risk) ในทาง Cybersecurity มักพิจารณาจากปัจจัยใด?",
+                options: [
+                    "Asset + Threat",
+                    "Threat x Vulnerability",
+                    "Probability (โอกาสเกิด) + Impact (ผลกระทบ)",
+                    "Cost - Benefit"
+                ],
+                correct: 2,
+                explain: "Risk (ความเสี่ยง) ประเมินจาก 'โอกาสที่จะเกิดเหตุการณ์' รวมกับ 'ความรุนแรงของผลกระทบ'"
+            },
+            {
+                q: "Malware ชนิดใดที่มีพฤติกรรม 'เข้ารหัสข้อมูลแล้วเรียกค่าไถ่'?",
+                options: [
+                    "Spyware",
+                    "Ransomware",
+                    "Worm",
+                    "Adware"
+                ],
+                correct: 1,
+                explain: "Ransomware ทำการเข้ารหัสไฟล์ (Encrypt) ทำให้เจ้าของไฟล์เปิดไม่ได้ และเรียกค่าไถ่เพื่อแลกกับ Key"
+            },
+            {
+                q: "การส่งอีเมลปลอมโดยอ้างว่าเป็นธนาคาร เพื่อหลอกให้เหยื่อกดลิงก์และกรอกรหัสผ่าน เรียกว่าอะไร?",
+                options: [
+                    "DDoS",
+                    "Phishing",
+                    "SQL Injection",
+                    "Ransomware"
+                ],
+                correct: 1,
+                explain: "Phishing คือการตกเหยื่อ (Social Engineering) โดยใช้ข้อความปลอมเพื่อหลอกเอาข้อมูลสำคัญ"
+            },
+            {
+                q: "Social Engineering คือการโจมตีที่มุ่งเน้นไปที่จุดอ่อนใด?",
+                options: [
+                    "ซอฟต์แวร์ (Software)",
+                    "ฮาร์ดแวร์ (Hardware)",
+                    "คน (People)",
+                    "เครือข่าย (Network)"
+                ],
+                correct: 2,
+                explain: "Social Engineering ใช้หลักจิตวิทยาหลอกลวง 'คน' ซึ่งมักเป็นจุดอ่อนที่สุดในระบบความปลอดภัย"
+            },
+            {
+                q: "การโจมตีแบบ DDoS (Distributed Denial of Service) มีเป้าหมายเพื่อทำลายคุณสมบัติใดของ CIA Triad?",
+                options: [
+                    "Confidentiality",
+                    "Integrity",
+                    "Availability",
+                    "Authenticity"
+                ],
+                correct: 2,
+                explain: "DDoS มุ่งทำให้ระบบใช้งานไม่ได้ (ล่ม) ซึ่งกระทบต่อ Availability โดยตรง"
+            },
+            {
+                q: "ข้อใดคือมาตรการที่ช่วยรักษา Integrity (ความถูกต้อง) ของข้อมูล?",
+                options: [
+                    "การเข้ารหัสข้อมูล (Encryption)",
+                    "การใช้ Hashing / Checksum",
+                    "การทำ Backup",
+                    "การใช้ Firewall"
+                ],
+                correct: 1,
+                explain: "Hashing (เช่น SHA-256) ใช้ตรวจสอบว่าข้อมูลถูกเปลี่ยนแปลงหรือไม่ หากค่า Hash เปลี่ยน แสดงว่าข้อมูลไม่เหมือนเดิม"
+            },
+            {
+                q: "Double Extortion ในวงการ Ransomware หมายถึงอะไร?",
+                options: [
+                    "เรียกค่าไถ่ 2 ครั้ง",
+                    "เข้ารหัสข้อมูล และขโมยข้อมูลออกไปขู่เปิดเผย",
+                    "เข้ารหัสข้อมูลทั้งเครื่องหลักและเครื่องสำรอง",
+                    "โจมตีทั้งเครื่องคอมพิวเตอร์และมือถือ"
+                ],
+                correct: 1,
+                explain: "Double Extortion คือการที่แฮกเกอร์ทั้ง 'เข้ารหัสข้อมูล' (เรียกเงินค่าถอด) และ 'ขโมยข้อมูล' (เรียกเงินค่าปิดปาก)"
+            },
+            {
+                q: "Deepfake เป็นภัยคุกคามที่เกี่ยวข้องกับเทคโนโลยีใดมากที่สุด?",
+                options: [
+                    "Blockchain",
+                    "AI (Artificial Intelligence)",
+                    "Cloud Computing",
+                    "IoT"
+                ],
+                correct: 1,
+                explain: "Deepfake ใช้ AI ในการสร้างภาพหรือเสียงปลอมที่เหมือนจริงมาก เพื่อใช้ในการหลอกลวง"
+            },
+            {
+                q: "การใช้ 2FA (Two-Factor Authentication) ช่วยเสริมความปลอดภัยในด้านใด?",
+                options: [
+                    "ป้องกันไวรัสลงเครื่อง",
+                    "ป้องกันข้อมูลรั่วไหลหากรหัสผ่านถูกขโมย",
+                    "ทำให้เครื่องคอมพิวเตอร์ทำงานเร็วขึ้น",
+                    "ป้องกันไฟดับ"
+                ],
+                correct: 1,
+                explain: "2FA เป็นการยืนยันตัวตนชั้นที่ 2 ช่วยปกป้องบัญชีแม้ว่ารหัสผ่าน (ชั้นที่ 1) จะหลุดไปแล้วก็ตาม"
+            },
+            {
+                q: "เหตุการณ์ใดถือเป็นตัวอย่างการโจมตีระดับ 'โครงสร้างพื้นฐานสำคัญ' (Critical Infrastructure)?",
+                options: [
+                    "Facebook ล่ม 1 ชั่วโมง",
+                    "ระบบโรงพยาบาลถูกโจมตีจนห้องฉุกเฉินใช้งานไม่ได้",
+                    "นักศึกษาลืมรหัสผ่านอีเมล",
+                    "บัญชี Instagram ดาราถูกแฮก"
+                ],
+                correct: 1,
+                explain: "โครงสร้างพื้นฐานสำคัญคือระบบที่กระทบต่อชีวิตหรือความมั่นคงของคนจำนวนมาก เช่น โรงพยาบาล ไฟฟ้า ประปา"
+            },
+            {
+                q: "BEC (Business Email Compromise) คืออะไร?",
+                options: [
+                    "ไวรัสที่ติดมากับอีเมล",
+                    "การปลอมแปลงอีเมลผู้บริหารเพื่อหลอกให้โอนเงิน",
+                    "อีเมลขยะ (Spam)",
+                    "การลืมรหัสผ่านอีเมลบริษัท"
+                ],
+                correct: 1,
+                explain: "BEC คือการโจมตีที่ปลอมตัวเป็นผู้บริหารหรือคู่ค้า หลอกให้ฝ่ายการเงินโอนเงิน"
+            },
+            {
+                q: "ข้อใด **ไม่ใช่** แนวทางปฏิบัติที่ดีด้านความปลอดภัยส่วนบุคคล?",
+                options: [
+                    "ใช้ Password เดียวกันทุกเว็บไซต์เพื่อให้จำง่าย",
+                    "เปิดใช้งาน 2FA ทุกบัญชีที่ทำได้",
+                    "ไม่กดลิงก์จาก SMS ที่น่าสงสัย",
+                    "อัปเดตซอฟต์แวร์ให้เป็นปัจจุบันเสมอ"
+                ],
+                correct: 0,
+                explain: "การใช้ Password ซ้ำกันมีความเสี่ยงสูง หากเว็บหนึ่งโดนแฮก เว็บอื่นก็จะโดนด้วย"
+            },
+            {
+                q: "ทำไมเราจึงกล่าวว่า 'ไม่มีระบบใดปลอดภัย 100%'?",
+                options: [
+                    "เพราะโปรแกรมเมอร์ขี้เกียจ",
+                    "เพราะความปลอดภัยเป็นกระบวนการบริหารความเสี่ยง ไม่ใช่สถานะคงที่",
+                    "เพราะคอมพิวเตอร์ราคาถูกเกินไป",
+                    "เพราะอินเทอร์เน็ตไม่เสถียร"
+                ],
+                correct: 1,
+                explain: "Security คือการบริหารความเสี่ยง (Risk Management) ภัยคุกคามเปลี่ยนตลอดเวลา เราทำได้แค่ลดความเสี่ยงให้ยอมรับได้"
+            },
+            {
+                q: "ในกรณีศึกษา 'โรงพยาบาลโดน Ransomware' สิ่งแรกที่ทีม Security ควรทำคืออะไร?",
+                options: [
+                    "จ่ายเงินค่าไถ่ทันที",
+                    "ปิดข่าวเงียบ",
+                    "ตัดการเชื่อมต่อเครือข่ายเพื่อจำกัดความเสียหาย (Containment)",
+                    "ไล่ออกพนักงานที่กดลิงก์"
+                ],
+                correct: 2,
+                explain: "ในขั้นตอน Incident Response สิ่งแรกๆ คือการ Containment หรือจำกัดวงความเสียหายไม่ให้ลามไปยังเครื่องอื่น"
+            }
+        ];
+
+        // --- State Variables ---
+        let currentQuestions = []; // Array to hold shuffled questions
+        let currentQIndex = 0;
+        let score = 0;
+        let timeLeft = 45;
+        let timerInterval;
+        let userAnswers = []; // Store {qIndex, selectedOption, isCorrect}
+        let studentName = "";
+
+        // --- DOM Elements ---
+        const startScreen = document.getElementById('start-screen');
+        const quizScreen = document.getElementById('quiz-screen');
+        const resultScreen = document.getElementById('result-screen');
+        const studentInput = document.getElementById('student-id-input');
+        const nameError = document.getElementById('name-error');
+        
+        const quizStats = document.getElementById('quiz-stats');
+        const qCurrent = document.getElementById('q-current');
+        const qTotal = document.getElementById('q-total');
+        
+        const timerBar = document.getElementById('timer-bar');
+        const timerText = document.getElementById('timer-text');
+        
+        const questionText = document.getElementById('question-text');
+        const optionsContainer = document.getElementById('options-container');
+        
+        const feedbackArea = document.getElementById('feedback-area');
+        const feedbackText = document.getElementById('feedback-text');
+        const nextBtn = document.getElementById('next-btn');
+
+        const studentNameDisplay = document.getElementById('student-name-display');
+        const timestampId = document.getElementById('timestamp-id');
+
+        // --- Utility Functions ---
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        // --- Functions ---
+
+        function startQuiz() {
+            // Validate Input
+            const inputVal = studentInput.value.trim();
+            if (!inputVal) {
+                studentInput.classList.add('border-red-500');
+                nameError.classList.remove('hidden');
+                return;
+            }
+            studentName = inputVal;
+            
+            // Shuffle Questions
+            currentQuestions = shuffleArray([...masterQuizData]); // Clone and shuffle
+            
+            // UI Updates
+            startScreen.classList.add('hidden');
+            quizScreen.classList.remove('hidden');
+            quizStats.classList.remove('hidden');
+            qTotal.innerText = currentQuestions.length;
+            
+            loadQuestion();
+        }
+
+        function loadQuestion() {
+            const data = currentQuestions[currentQIndex];
+            
+            // Reset UI
+            qCurrent.innerText = currentQIndex + 1;
+            questionText.innerText = data.q;
+            optionsContainer.innerHTML = '';
+            feedbackArea.classList.add('opacity-0', 'pointer-events-none');
+            nextBtn.onclick = nextQuestion;
+            
+            // Create Options
+            data.options.forEach((opt, index) => {
+                const btn = document.createElement('button');
+                btn.className = `option-btn w-full text-left p-4 rounded-lg border border-slate-600 bg-slate-800/50 hover:bg-slate-700 text-slate-200 mb-2 flex items-center group`;
+                btn.innerHTML = `
+                    <span class="w-8 h-8 rounded-full border border-slate-500 flex items-center justify-center mr-4 text-xs text-slate-400 group-hover:border-emerald-400 group-hover:text-emerald-400 transition">${String.fromCharCode(65+index)}</span>
+                    <span>${opt}</span>
+                `;
+                btn.onclick = () => checkAnswer(index, btn);
+                optionsContainer.appendChild(btn);
+            });
+
+            // Start Timer
+            startTimer();
+        }
+
+        function startTimer() {
+            timeLeft = 45;
+            timerText.innerText = timeLeft;
+            timerBar.style.width = '100%';
+            timerBar.classList.remove('bg-red-500');
+            timerBar.classList.add('bg-emerald-500');
+
+            if (timerInterval) clearInterval(timerInterval);
+
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                timerText.innerText = timeLeft;
+                const percent = (timeLeft / 45) * 100;
+                timerBar.style.width = `${percent}%`;
+
+                if (timeLeft <= 10) {
+                    timerBar.classList.remove('bg-emerald-500');
+                    timerBar.classList.add('bg-red-500');
+                }
+
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    timeOut();
+                }
+            }, 1000);
+        }
+
+        function timeOut() {
+            // Auto select wrong answer
+            checkAnswer(-1, null); 
+        }
+
+        function checkAnswer(selectedIndex, btnElement) {
+            clearInterval(timerInterval);
+            
+            const data = currentQuestions[currentQIndex];
+            const buttons = optionsContainer.querySelectorAll('button');
+            
+            // Disable all buttons
+            buttons.forEach(btn => btn.disabled = true);
+
+            let isCorrect = false;
+
+            if (selectedIndex === data.correct) {
+                // Correct
+                score++;
+                isCorrect = true;
+                if(btnElement) {
+                    btnElement.classList.remove('bg-slate-800/50', 'border-slate-600');
+                    btnElement.classList.add('bg-emerald-900/50', 'border-emerald-500', 'text-emerald-100', 'correct-anim');
+                    btnElement.querySelector('span').classList.add('bg-emerald-500', 'text-white', 'border-emerald-500');
+                }
+                feedbackText.innerHTML = `<span class="text-emerald-400"><i class="fa-solid fa-check-circle"></i> ถูกต้อง!</span>`;
+            } else {
+                // Wrong
+                if(btnElement) {
+                    btnElement.classList.remove('bg-slate-800/50', 'border-slate-600');
+                    btnElement.classList.add('bg-red-900/50', 'border-red-500', 'text-red-100', 'wrong-anim');
+                    btnElement.querySelector('span').classList.add('bg-red-500', 'text-white', 'border-red-500');
+                }
+                
+                // Highlight Correct one
+                if (data.correct >= 0 && buttons[data.correct]) {
+                    buttons[data.correct].classList.remove('bg-slate-800/50', 'border-slate-600');
+                    buttons[data.correct].classList.add('bg-emerald-900/50', 'border-emerald-500', 'text-emerald-100');
+                }
+                
+                feedbackText.innerHTML = `<span class="text-red-400"><i class="fa-solid fa-times-circle"></i> ผิด! คำตอบที่ถูกคือข้อ ${String.fromCharCode(65+data.correct)}</span>`;
+            }
+
+            // Save user answer (Keep track of Question Object, not just index because of shuffle)
+            userAnswers.push({
+                questionObj: data,
+                userSelect: selectedIndex,
+                isCorrect: isCorrect
+            });
+
+            // Show Feedback
+            feedbackArea.classList.remove('opacity-0', 'pointer-events-none');
+        }
+
+        function nextQuestion() {
+            currentQIndex++;
+            if (currentQIndex < currentQuestions.length) {
+                loadQuestion();
+            } else {
+                showResult();
+            }
+        }
+
+        function showResult() {
+            quizScreen.classList.add('hidden');
+            quizStats.classList.add('hidden');
+            resultScreen.classList.remove('hidden');
+
+            // Set Student Info
+            studentNameDisplay.innerText = studentName;
+            const now = new Date();
+            timestampId.innerText = `LOG-${now.getHours()}${now.getMinutes()}-${Math.floor(Math.random()*1000)}`;
+
+            // Animate Score Circle
+            const finalScoreElem = document.getElementById('final-score');
+            const circle = document.getElementById('score-circle');
+            const percentage = (score / currentQuestions.length) * 100;
+            const dashOffset = 377 - (377 * percentage) / 100;
+            
+            setTimeout(() => {
+                circle.style.strokeDashoffset = dashOffset;
+                // Color based on score
+                if(percentage < 50) circle.style.stroke = '#ef4444'; // Red
+                else if(percentage < 80) circle.style.stroke = '#f59e0b'; // Yellow
+                
+                // Count up text
+                let current = 0;
+                const timer = setInterval(() => {
+                    current++;
+                    finalScoreElem.innerText = current;
+                    if(current >= score) clearInterval(timer);
+                }, 50);
+            }, 300);
+
+            // Set Rank
+            const rankBadge = document.getElementById('rank-badge');
+            if (percentage >= 90) {
+                rankBadge.innerText = "🏆 CISO (Chief Info Security Officer)";
+                rankBadge.className = "inline-block px-6 py-2 rounded-full border-2 border-emerald-400 text-emerald-400 font-bold text-xl shadow-[0_0_20px_rgba(52,211,153,0.5)]";
+            } else if (percentage >= 70) {
+                rankBadge.innerText = "🛡️ Security Analyst";
+                rankBadge.className = "inline-block px-6 py-2 rounded-full border-2 border-blue-400 text-blue-400 font-bold text-xl shadow-[0_0_20px_rgba(96,165,250,0.5)]";
+            } else if (percentage >= 50) {
+                rankBadge.innerText = "💻 Junior Pentester";
+                rankBadge.className = "inline-block px-6 py-2 rounded-full border-2 border-yellow-400 text-yellow-400 font-bold text-xl";
+            } else {
+                rankBadge.innerText = "👶 Script Kiddie";
+                rankBadge.className = "inline-block px-6 py-2 rounded-full border-2 border-red-400 text-red-400 font-bold text-xl";
+            }
+
+            generateSolutions();
+        }
+
+        function generateSolutions() {
+            const container = document.getElementById('solutions-container');
+            container.innerHTML = '';
+
+            userAnswers.forEach((ans, index) => {
+                const data = ans.questionObj;
+                const item = document.createElement('div');
+                item.className = "bg-slate-800/50 p-4 rounded-lg border border-slate-700";
+                
+                const isCorrect = ans.isCorrect;
+                const statusIcon = isCorrect ? '<i class="fa-solid fa-check text-emerald-400"></i>' : '<i class="fa-solid fa-xmark text-red-400"></i>';
+                
+                item.innerHTML = `
+                    <div class="flex gap-3">
+                        <div class="mt-1">${statusIcon}</div>
+                        <div class="w-full">
+                            <p class="font-semibold text-slate-200 mb-2"><span class="text-slate-500 text-sm mr-2">Q${index+1}.</span> ${data.q}</p>
+                            
+                            <div class="text-sm grid grid-cols-1 md:grid-cols-2 gap-2 mb-3">
+                                <div class="${isCorrect ? 'text-emerald-400' : 'text-red-400'}">
+                                    <span class="text-slate-500">ตอบ:</span> 
+                                    ${ans.userSelect === -1 ? 'หมดเวลา' : data.options[ans.userSelect]}
+                                </div>
+                                <div class="text-emerald-400">
+                                    <span class="text-slate-500">เฉลย:</span> ${data.options[data.correct]}
+                                </div>
+                            </div>
+
+                            <div class="text-xs bg-slate-900 p-3 rounded text-slate-400 border-l-2 border-blue-500">
+                                <i class="fa-solid fa-lightbulb text-yellow-500 mr-1"></i> ${data.explain}
+                            </div>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(item);
+            });
+        }
+
+        function toggleSolutions() {
+            const container = document.getElementById('solutions-container');
+            container.classList.toggle('hidden');
+        }
+
+        function captureResult() {
+            const captureArea = document.getElementById('certificate-area');
+            
+            html2canvas(captureArea, {
+                backgroundColor: "#0f172a", 
+                scale: 2,
+                logging: false,
+                useCORS: true
+            }).then(canvas => {
+                const link = document.createElement('a');
+                // Filename: Quiz1_StudentName.png
+                const cleanName = studentName.replace(/[^a-z0-9ก-๙]/gi, '_'); 
+                link.download = `Quiz1_${cleanName}.png`;
+                link.href = canvas.toDataURL();
+                link.click();
+            });
+        }
+
+    </script>
+</body>
+</html>
