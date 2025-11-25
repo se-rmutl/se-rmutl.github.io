@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lab 2: Architectural Drivers Assignment</title>
+    <style>
+        :root {
+            --primary: #4f46e5; /* Indigo */
+            --secondary: #1e293b; /* Slate Dark */
+            --accent: #f59e0b; /* Amber */
+            --success: #10b981; /* Emerald */
+            --bg: #f3f4f6;
+            --card-bg: #ffffff;
+            --text: #334155;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Sarabun', 'Segoe UI', sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Slide Layout */
+        .slide-container {
+            flex: 1;
+            position: relative;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+        }
+
+        .slide {
+            position: absolute;
+            width: 90%;
+            max-width: 1200px;
+            height: 85%;
+            background: var(--card-bg);
+            border-radius: 16px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            padding: 3rem;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.5s ease-in-out;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            border-top: 8px solid var(--primary);
+        }
+
+        .slide.active {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: all;
+            z-index: 10;
+        }
+
+        /* Typography */
+        h1 { font-size: 2.5rem; color: var(--secondary); margin-bottom: 0.5rem; }
+        h2 { font-size: 1.8rem; color: var(--primary); margin-bottom: 1.5rem; border-bottom: 2px solid #e2e8f0; padding-bottom: 0.5rem; }
+        h3 { font-size: 1.4rem; color: var(--secondary); margin-top: 1.5rem; margin-bottom: 0.8rem; }
+        p, li { font-size: 1.1rem; line-height: 1.7; margin-bottom: 0.8rem; color: #475569; }
+        strong { color: var(--secondary); font-weight: 700; }
+
+        /* Components */
+        .tag { display: inline-block; padding: 0.25rem 0.75rem; border-radius: 99px; font-size: 0.9rem; font-weight: bold; margin-right: 0.5rem; background: #e0e7ff; color: #3730a3; }
+        
+        .box {
+            background: #f8fafc;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin: 1rem 0;
+        }
+        .box-blue { border-left: 5px solid var(--primary); background: #eef2ff; }
+        .box-green { border-left: 5px solid var(--success); background: #ecfdf5; }
+        .box-yellow { border-left: 5px solid var(--accent); background: #fffbeb; }
+
+        table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+        th, td { padding: 12px; border: 1px solid #e2e8f0; text-align: left; }
+        th { background-color: var(--secondary); color: white; }
+
+        /* Grid for Domain Selection */
+        .domain-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+        .domain-card {
+            background: white;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 1.5rem;
+            text-align: center;
+            transition: transform 0.2s, border-color 0.2s;
+            cursor: default;
+        }
+        .domain-card:hover { transform: translateY(-5px); border-color: var(--primary); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
+        .domain-icon { font-size: 3rem; margin-bottom: 1rem; display: block; }
+
+        /* Infographic Steps */
+        .step-row { display: flex; gap: 1rem; align-items: stretch; margin-top: 2rem; }
+        .step-card { flex: 1; background: #f1f5f9; padding: 1rem; border-radius: 8px; text-align: center; position: relative; }
+        .step-num { width: 30px; height: 30px; background: var(--primary); color: white; border-radius: 50%; display: flex; justify-content: center; align-items: center; margin: 0 auto 0.5rem; font-weight: bold; }
+
+        /* Controls */
+        .controls {
+            height: 80px;
+            background: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 2rem;
+            box-shadow: 0 -4px 10px rgba(0,0,0,0.05);
+            z-index: 100;
+        }
+        .btn {
+            padding: 0.8rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            background: var(--primary);
+            color: white;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .btn:hover { background: #4338ca; }
+        .btn:disabled { background: #cbd5e1; cursor: not-allowed; }
+        .progress-bar { flex: 1; height: 6px; background: #e2e8f0; margin: 0 2rem; border-radius: 3px; overflow: hidden; }
+        .progress-fill { height: 100%; background: var(--success); width: 0%; transition: width 0.3s; }
+
+    </style>
+</head>
+<body>
+
+<div class="slide-container">
+
+    <div class="slide active">
+        <div style="text-align: center; margin-top: 10%;">
+            <span style="font-size: 4rem;">🏠</span>
+            <h1>Lab 2: Assignment</h1>
+            <h2 style="border:none; color: var(--text);">ระบุ Architectural Drivers สำหรับโปรเจกต์ของทีม</h2>
+            <p>วิชา Software Engineering | By ENGSE207</p>
+            <br>
+            <div class="box box-blue" style="display: inline-block; text-align: left; max-width: 700px;">
+                <strong>🎯 เป้าหมายของ Lab นี้:</strong>
+                <ul style="margin-top: 10px; margin-left: 20px;">
+                    <li>เลือก Domain ของโปรเจกต์</li>
+                    <li>วิเคราะห์ Requirements จริง (Functional & Non-Functional)</li>
+                    <li>สร้างเอกสาร <strong>"Architectural Drivers"</strong> เพื่อใช้เป็นพิมพ์เขียวในการออกแบบสัปดาห์หน้า</li>
+                </ul>
+            </div>
+            <p style="margin-top: 2rem; color: #64748b; font-size: 0.9rem;">Deadline: ส่งภายใน 1 สัปดาห์ | คะแนนเต็ม: 100 คะแนน</p>
+        </div>
+    </div>
+
+    <div class="slide">
+        <h2>1️⃣ Step 1: เลือกสมรภูมิของคุณ (Domain Selection)</h2>
+        <p>ให้แต่ละทีมเลือก 1 หัวข้อจากตัวเลือกด้านล่าง หรือเสนอหัวข้อใหม่ (ต้องให้อาจารย์อนุมัติ)</p>
+        
+        <div class="domain-grid">
+            <div class="domain-card">
+                <span class="domain-icon">🎓</span>
+                <h3>E-Learning</h3>
+                <p>Google Classroom, Coursera</p>
+            </div>
+            <div class="domain-card">
+                <span class="domain-icon">🛵</span>
+                <h3>Food Delivery</h3>
+                <p>GrabFood, LINE MAN</p>
+            </div>
+            <div class="domain-card">
+                <span class="domain-icon">🏠</span>
+                <h3>Smart Home IoT</h3>
+                <p>Home Automation Control</p>
+            </div>
+            <div class="domain-card">
+                <span class="domain-icon">📱</span>
+                <h3>Social Media</h3>
+                <p>Niche Social Network</p>
+            </div>
+            <div class="domain-card">
+                <span class="domain-icon">🏥</span>
+                <h3>Healthcare</h3>
+                <p>Clinic/Hospital Management</p>
+            </div>
+            <div class="domain-card">
+                <span class="domain-icon">🏨</span>
+                <h3>Hotel Booking</h3>
+                <p>Agoda, Booking.com</p>
+            </div>
+        </div>
+        <div style="margin-top: 1rem; text-align: center; color: var(--primary);">
+            <em>*Tips: เลือกระบบที่สมาชิกในทีมคุ้นเคยกับ Features จะทำงานง่ายขึ้น</em>
+        </div>
+    </div>
+
+    <div class="slide">
+        <h2>📄 สิ่งที่ต้องส่ง: Architectural Drivers Document</h2>
+        <p>นี่คือโครงสร้างของเอกสารที่คุณต้องส่ง (มี 6 ส่วนหลัก)</p>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+            <div class="box">
+                <h3>Part 1-3: Core Requirements</h3>
+                <ul>
+                    <li><strong>1. System Overview:</strong> ระบบคืออะไร? ใครใช้? (1 หน้า)</li>
+                    <li><strong>2. Functional Requirements:</strong> ฟีเจอร์ทำอะไรได้บ้าง? (15 ข้อ+)</li>
+                    <li><strong>3. Quality Attributes:</strong> ความเก่งของระบบ (6 Scenarios)</li>
+                </ul>
+            </div>
+            <div class="box">
+                <h3>Part 4-6: Constraints & Decisions</h3>
+                <ul>
+                    <li><strong>4. Constraints:</strong> ข้อจำกัด (งบ, เวลา, tech)</li>
+                    <li><strong>5. Assumptions:</strong> ข้อสมมติฐาน</li>
+                    <li><strong>6. Priority & Trade-offs:</strong> วิเคราะห์และฟันธงทางเลือก</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="box box-yellow">
+            <strong>💡 Why this document?</strong><br>
+            เอกสารนี้ไม่ใช่แค่การบ้าน แต่คือ "โจทย์" ที่คุณจะใช้จริงในการออกแบบ Class Diagram, Database และ Deployment Diagram ในสัปดาห์ถัดไป
+        </div>
+    </div>
+
+    <div class="slide">
+        <h2>📝 Guide Part 1 & 2: Overview & Functional Req.</h2>
+        <p><strong>ตัวอย่าง (สมมติทีมเลือก Food Delivery):</strong></p>
+
+        <div style="display: flex; gap: 2rem;">
+            <div style="flex: 1;">
+                <h3>Part 1: System Overview</h3>
+                <p>เขียนอธิบายให้คนนอกอ่านแล้วเข้าใจทันที</p>
+                <div class="box box-blue">
+                    <strong>Target Users:</strong>
+                    <ul>
+                        <li>Hungry User: สั่งอาหาร, จ่ายเงิน</li>
+                        <li>Rider: รับงาน, ส่งอาหาร, ดูแผนที่</li>
+                        <li>Restaurant Owner: จัดการเมนู, รับออเดอร์</li>
+                    </ul>
+                    <strong>Key Features:</strong> Search อาหาร, Real-time Tracking, Payment Gateway...
+                </div>
+            </div>
+            <div style="flex: 1;">
+                <h3>Part 2: Functional Requirements (15+)</h3>
+                <p>จัดกลุ่มให้ชัดเจน (Categorization)</p>
+                <div class="box">
+                    <strong>Category: Order Management</strong>
+                    <ul>
+                        <li>FR-01: ผู้ใช้สามารถค้นหาร้านอาหารตามระยะทางได้</li>
+                        <li>FR-02: ผู้ใช้สามารถ Customize เมนู (เช่น ไม่ใส่ผัก) ได้</li>
+                        <li>FR-03: ระบบต้องคำนวณค่าส่งตามระยะทางจริง</li>
+                    </ul>
+                    <em>...เขียนให้ครบอย่างน้อย 15 ข้อ</em>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="slide">
+        <h2>⚡ Guide Part 3: QA Scenarios (หัวใจสำคัญ 30 คะแนน)</h2>
+        <p>ต้องเขียน <strong>6 Scenarios</strong> (เลือก 6 ด้าน) ให้ครบโครงสร้าง 6 ส่วน</p>
+        
+        <p><strong>ตัวอย่าง: Availability Scenario (Food Delivery)</strong></p>
+        <table>
+            <tr><th style="width: 20%">ส่วนประกอบ</th><th>ตัวอย่างการเขียน</th></tr>
+            <tr><td><strong>Source</strong></td><td>Rider (System Component failed)</td></tr>
+            <tr><td><strong>Stimulus</strong></td><td>Rider เน็ตหลุดระหว่างนำส่งอาหาร</td></tr>
+            <tr><td><strong>Artifact</strong></td><td>Driver Mobile App & Backend Sync</td></tr>
+            <tr><td><strong>Environment</strong></td><td>Normal Operation, Unstable Network</td></tr>
+            <tr><td><strong>Response</strong></td><td>แอพต้องเก็บข้อมูล GPS แบบ Offline และ Sync ทันทีเมื่อต่อเน็ตได้</td></tr>
+            <tr><td><strong>Response Measure</strong></td><td><strong>Data Loss = 0%</strong> และ Sync ข้อมูลสำเร็จภายใน <strong>30 วินาที</strong> หลังต่อเน็ตได้</td></tr>
+        </table>
+
+        <div class="box box-yellow">
+            ⚠️ <strong>Common Mistake:</strong> Measure เขียนว่า "เร็ว" หรือ "ดี" (ผิด) <br>
+            ✅ <strong>Correct:</strong> ต้องระบุตัวเลข เช่น "< 2 วินาที", "99.9% Uptime", "Restore ได้ใน 1 ชม."
+        </div>
+    </div>
+
+    <div class="slide">
+        <h2>🚧 Guide Part 4 & 5: Constraints vs Assumptions</h2>
+        <p>นักศึกษามักสับสน 2 ข้อนี้ นี่คือวิธีแยกแยะ:</p>
+
+        <div style="display: flex; gap: 2rem; margin-top: 1rem;">
+            <div style="flex: 1;" class="box box-green">
+                <h3>Part 4: Constraints (ข้อจำกัด)</h3>
+                <p><em>"สิ่งที่บังคับให้เราทำ หรือห้ามทำ"</em> (เลี่ยงไม่ได้)</p>
+                <hr style="margin: 10px 0; border: 0; border-top: 1px solid #ccc;">
+                <ul>
+                    <li><strong>Technical:</strong> ต้องใช้ Cloud ของ AWS เท่านั้น (เพราะมี Credit ฟรี)</li>
+                    <li><strong>Time:</strong> ต้องส่งงานภายใน 1 สัปดาห์</li>
+                    <li><strong>Legal:</strong> ต้องปฏิบัติตาม PDPA (เก็บข้อมูลส่วนตัว)</li>
+                    <li><strong>Budget:</strong> งบ Server ไม่เกิน 500 บาท/เดือน</li>
+                </ul>
+            </div>
+            <div style="flex: 1;" class="box box-blue">
+                <h3>Part 5: Assumptions (ข้อสมมติ)</h3>
+                <p><em>"สิ่งที่เราทึกทักว่าเป็นจริง เพื่อให้โปรเจกต์เดินต่อได้"</em> (ควบคุมไม่ได้)</p>
+                <hr style="margin: 10px 0; border: 0; border-top: 1px solid #ccc;">
+                <ul>
+                    <li><strong>User Tech:</strong> ผู้ใช้ทุกคนมี Smartphone ที่มี Internet และ GPS</li>
+                    <li><strong>Partner:</strong> ร้านอาหารมี Tablet สำหรับรับออเดอร์อยู่แล้ว</li>
+                    <li><strong>Payment:</strong> Payment Gateway ภายนอก (เช่น Stripe) ทำงานได้ปกติ 99.9%</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="slide">
+        <h2>⚖️ Guide Part 6: Priority & Trade-offs</h2>
+        <p>ไม่มีระบบไหน Perfect คุณต้องเลือก!</p>
+
+        <h3>1. Priority Ranking</h3>
+        <p>เรียงลำดับ 1-6 เช่น Food Delivery อาจให้ <strong>Availability</strong> (อันดับ 1) > <strong>Performance</strong> (อันดับ 2)...</p>
+
+        <h3>2. Trade-offs Analysis (สำคัญมาก 15 คะแนน)</h3>
+        <p>ต้องวิเคราะห์จุดที่ขัดแย้งกัน (Conflict) และให้เหตุผลการตัดสินใจ</p>
+        
+        <div class="box">
+            <strong>ตัวอย่าง Trade-off: Accuracy vs Performance (GPS Tracking)</strong>
+            <ul>
+                <li><strong>Option A:</strong> อัปเดต GPS ทุก 1 วินาที (แม่นมาก แต่เปลืองแบต Server โหลดหนัก)</li>
+                <li><strong>Option B:</strong> อัปเดต GPS ทุก 10 วินาที (แม่นน้อยหน่อย แต่ประหยัดทรัพยากร)</li>
+                <li>👉 <strong>Decision:</strong> เลือก <strong>Option B (ทุก 10 วินาที)</strong> เพราะในบริบทส่งอาหาร การรู้ตำแหน่ง Real-time ระดับวินาทีไม่จำเป็น และช่วยประหยัด Cost Server ได้มหาศาล (Scalability ดีกว่า)</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="slide">
+        <h2>🚀 What's Next? ผลลัพธ์นี้ไปไหนต่อ?</h2>
+        
+        <div class="step-row">
+            <div class="step-card">
+                <div class="step-num">Now</div>
+                <strong>Lab 2: Arch Drivers</strong>
+                <p style="font-size:0.9rem;">ระบุ Spec ความต้องการ</p>
+            </div>
+            <div style="font-size: 2rem; color: #cbd5e1;">➜</div>
+            <div class="step-card" style="border: 2px dashed var(--primary);">
+                <div class="step-num">Wk3</div>
+                <strong>Logical View</strong>
+                <p style="font-size:0.9rem;">ออกแบบ Class / Components</p>
+            </div>
+            <div style="font-size: 2rem; color: #cbd5e1;">➜</div>
+            <div class="step-card">
+                <div class="step-num">Wk4</div>
+                <strong>Physical View</strong>
+                <p style="font-size:0.9rem;">ออกแบบ Deployment / DB</p>
+            </div>
+        </div>
+
+        <h3 style="margin-top: 2rem;">📊 Checklist ก่อนส่ง (100 คะแนน)</h3>
+        <table style="font-size: 0.9rem;">
+            <tr><td>✅ System Overview ชัดเจน</td><td>10 pts</td></tr>
+            <tr><td>✅ Functional Req ครบ 15 ข้อ+</td><td>20 pts</td></tr>
+            <tr><td>✅ QA Scenarios ครบ 6 ข้อ & วัดผลได้จริง</td><td>30 pts</td></tr>
+            <tr><td>✅ Constraints & Assumptions สมเหตุสมผล</td><td>15 pts</td></tr>
+            <tr><td>✅ Priority & Trade-offs วิเคราะห์ดี</td><td>15 pts</td></tr>
+            <tr><td>✅ Formatting สวยงาม อ่านง่าย</td><td>10 pts</td></tr>
+        </table>
+    </div>
+
+    <div class="slide">
+        <div style="text-align: center; margin-top: 15%;">
+            <h1>🏁 Ready?</h1>
+            <p>จับกลุ่ม -> เลือก Domain -> เริ่มร่าง Use Case</p>
+            <br>
+            <div class="box box-green" style="display: inline-block;">
+                <strong>Next Step:</strong> ส่งตัวแทนกลุ่มมาลงทะเบียนหัวข้อกับอาจารย์
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<div class="controls">
+    <button class="btn" id="prevBtn" onclick="changeSlide(-1)">Previous</button>
+    <div style="margin: 0 1rem; font-weight: bold; color: var(--secondary);" id="pageNum">1 / 9</div>
+    <div class="progress-bar">
+        <div class="progress-fill" id="progress"></div>
+    </div>
+    <button class="btn" id="nextBtn" onclick="changeSlide(1)">Next</button>
+</div>
+
+<script>
+    let currentSlide = 0;
+    const slides = document.querySelectorAll('.slide');
+    const progressFill = document.getElementById('progress');
+    const pageNum = document.getElementById('pageNum');
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+
+    function updateSlide() {
+        slides.forEach((slide, index) => {
+            slide.classList.remove('active');
+            if (index === currentSlide) {
+                slide.classList.add('active');
+            }
+        });
+
+        const progress = ((currentSlide + 1) / slides.length) * 100;
+        progressFill.style.width = `${progress}%`;
+        pageNum.textContent = `${currentSlide + 1} / ${slides.length}`;
+
+        prevBtn.disabled = currentSlide === 0;
+        nextBtn.disabled = currentSlide === slides.length - 1;
+    }
+
+    function changeSlide(direction) {
+        if (direction === 1 && currentSlide < slides.length - 1) {
+            currentSlide++;
+        } else if (direction === -1 && currentSlide > 0) {
+            currentSlide--;
+        }
+        updateSlide();
+    }
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowRight' || e.key === ' ') changeSlide(1);
+        else if (e.key === 'ArrowLeft') changeSlide(-1);
+    });
+
+    updateSlide();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,1725 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <title>ENGSE207 - Week 2: Quality Attributes & Architectural Drivers</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+
+  <style>
+    :root {
+      --bg-main: radial-gradient(circle at top left, #1d4ed8 0, #020617 55%, #000000 100%);
+      --bg-card: rgba(15,23,42,0.9);
+      --bg-card-soft: rgba(15,23,42,0.8);
+      --border-soft: rgba(148,163,184,0.5);
+      --accent: #38bdf8;
+      --accent-2: #a855f7;
+      --accent-danger: #fb7185;
+      --text-main: #e5e7eb;
+      --muted: #9ca3af;
+      --shadow-soft: 0 18px 45px rgba(15,23,42,0.9);
+      --radius-xl: 22px;
+      --base-font-size: 16px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      font-family: "Kanit", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--text-main);
+      background: #020617;
+      font-size: var(--base-font-size);
+      overflow: hidden;
+    }
+
+    body.fullscreen {
+      cursor: none; /* optional cinematic mode */
+    }
+
+    main {
+      height: 100vh;
+      width: 100vw;
+      background: var(--bg-main);
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Top course bar */
+    .top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.5rem 1.4rem;
+      backdrop-filter: blur(16px);
+      background: linear-gradient(to right, rgba(15,23,42,0.95), rgba(15,23,42,0.7));
+      border-bottom: 1px solid rgba(148,163,184,0.35);
+      z-index: 10;
+    }
+
+    .top-left {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .course-badge {
+      font-size: 0.75rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      padding: 0.1rem 0.6rem;
+      border-radius: 999px;
+      border: 1px solid rgba(148,163,184,0.6);
+      color: var(--muted);
+    }
+
+    .top-left-title {
+      font-weight: 600;
+      font-size: 1.05rem;
+    }
+
+    .top-center {
+      text-align: center;
+      max-width: 420px;
+    }
+
+    .top-center h1 {
+      margin: 0;
+      font-size: 1.05rem;
+      font-weight: 600;
+    }
+
+    .top-center p {
+      margin: 0;
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+
+    .top-right {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 0.15rem;
+      font-size: 0.75rem;
+    }
+
+    .slide-meta {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+    }
+
+    .slide-counter {
+      padding: 0.1rem 0.6rem;
+      border-radius: 999px;
+      border: 1px solid rgba(148,163,184,0.5);
+      background: rgba(15,23,42,0.8);
+      font-size: 0.75rem;
+    }
+
+    .slide-title-live {
+      max-width: 220px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      color: var(--muted);
+    }
+
+    .progress-track {
+      width: 140px;
+      height: 4px;
+      border-radius: 999px;
+      background: rgba(30,64,175,0.6);
+      overflow: hidden;
+    }
+
+    .progress-bar {
+      height: 100%;
+      width: 0;
+      background: linear-gradient(to right, #38bdf8, #a855f7);
+      transition: width 0.3s ease;
+    }
+
+    /* Slides container */
+    .slides-wrapper {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+      padding: 0.75rem;
+      display: flex;
+    }
+
+    .slides-inner {
+      width: 100%;
+      height: 100%;
+      position: relative;
+    }
+
+    .slide {
+      position: absolute;
+      inset: 0;
+      padding: 1.25rem 1.5rem 1.75rem;
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .slide.active {
+      display: flex;
+      animation: fadeIn 0.4s ease;
+    }
+
+    @keyframes fadeIn {
+      from {opacity: 0; transform: translateY(12px);}
+      to {opacity: 1; transform: translateY(0);}
+    }
+
+    .slide-card {
+      width: min(1160px, 100%);
+      max-height: 100%;
+      background: var(--bg-card);
+      border-radius: var(--radius-xl);
+      border: 1px solid var(--border-soft);
+      box-shadow: var(--shadow-soft);
+      padding: 1.75rem 2rem;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .slide-card::before {
+      content: "";
+      position: absolute;
+      inset: -60%;
+      background:
+        radial-gradient(circle at 10% 0%, rgba(56,189,248,0.11), transparent 60%),
+        radial-gradient(circle at 90% 100%, rgba(168,85,247,0.13), transparent 60%);
+      opacity: 0.9;
+      pointer-events: none;
+    }
+
+    .slide-main {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: minmax(0, 3fr);
+      gap: 1.5rem;
+      align-items: center;
+      max-height: 100%;
+      overflow: auto;
+      padding-right: 0.4rem;
+    }
+
+    .slide-main.two-cols {
+      grid-template-columns: minmax(0, 1.3fr) minmax(0, 1.1fr);
+    }
+
+    .slide-heading {
+      font-size: 1.8rem;
+      font-weight: 600;
+      margin: 0 0 0.25rem;
+    }
+
+    .slide-subtitle {
+      font-size: 0.95rem;
+      color: var(--muted);
+      margin-bottom: 1.2rem;
+    }
+
+    .pill-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      margin-bottom: 0.9rem;
+    }
+
+    .pill {
+      font-size: 0.7rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 0.18rem 0.7rem;
+      border-radius: 999px;
+      border: 1px solid rgba(148,163,184,0.5);
+      color: var(--muted);
+      background: rgba(15,23,42,0.85);
+    }
+
+    h2, h3, h4 {
+      margin-top: 0;
+    }
+
+    h2 {
+      font-size: 1.5rem;
+      margin-bottom: 0.4rem;
+    }
+
+    h3 {
+      font-size: 1.15rem;
+      margin-bottom: 0.25rem;
+    }
+
+    p {
+      margin: 0.3rem 0;
+      line-height: 1.6;
+    }
+
+    ul {
+      margin: 0.4rem 0 0.6rem;
+      padding-left: 1.15rem;
+    }
+
+    li {
+      margin: 0.2rem 0;
+    }
+
+    .tagline {
+      font-size: 0.95rem;
+      color: var(--muted);
+    }
+
+    .key-box {
+      border-radius: 16px;
+      border: 1px solid rgba(148,163,184,0.7);
+      background: rgba(15,23,42,0.9);
+      padding: 0.75rem 0.9rem;
+      font-size: 0.9rem;
+      margin-top: 0.6rem;
+    }
+
+    .key-box strong {
+      color: var(--accent);
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.9rem;
+    }
+
+    .stat-card {
+      border-radius: 16px;
+      padding: 0.8rem 0.9rem;
+      background: rgba(15,23,42,0.92);
+      border: 1px solid rgba(148,163,184,0.45);
+      font-size: 0.9rem;
+    }
+
+    .stat-label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      margin-bottom: 0.2rem;
+    }
+
+    .stat-value {
+      font-size: 1rem;
+      font-weight: 500;
+    }
+
+    .hint {
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-top: 0.3rem;
+    }
+
+    .diagram-wrapper {
+      border-radius: 18px;
+      border: 1px solid rgba(148,163,184,0.5);
+      background: rgba(15,23,42,0.9);
+      padding: 0.6rem;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      max-height: 60vh;
+      overflow: hidden;
+    }
+
+    .diagram-wrapper img {
+      max-width: 100%;
+      max-height: 56vh;
+      border-radius: 14px;
+      display: block;
+    }
+
+    .table-mini {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+      margin-top: 0.4rem;
+    }
+
+    .table-mini th,
+    .table-mini td {
+      border: 1px solid rgba(148,163,184,0.45);
+      padding: 0.3rem 0.45rem;
+      text-align: left;
+    }
+
+    .table-mini th {
+      background: rgba(15,23,42,0.95);
+      font-weight: 500;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      padding: 0.16rem 0.55rem;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      border: 1px solid rgba(148,163,184,0.5);
+      background: rgba(15,23,42,0.9);
+      margin-right: 0.3rem;
+    }
+
+    .badge i {
+      font-size: 0.75rem;
+    }
+
+    .badge-green {
+      border-color: rgba(74,222,128,0.8);
+      color: #bbf7d0;
+    }
+
+    .badge-red {
+      border-color: rgba(248,113,113,0.8);
+      color: #fecaca;
+    }
+
+    .badge-blue {
+      border-color: rgba(96,165,250,0.8);
+      color: #bfdbfe;
+    }
+
+    /* Bottom controls */
+    .bottom-bar {
+      padding: 0.4rem 0.8rem 0.65rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: linear-gradient(to top, rgba(15,23,42,0.96), rgba(15,23,42,0.75));
+      border-top: 1px solid rgba(148,163,184,0.35);
+      z-index: 12;
+    }
+
+    .control-group {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+
+    .btn {
+      border: 1px solid rgba(148,163,184,0.6);
+      background: rgba(15,23,42,0.9);
+      color: var(--text-main);
+      padding: 0.32rem 0.7rem;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      cursor: pointer;
+      transition: background 0.15s ease, transform 0.08s ease, border-color 0.15s ease, color 0.15s ease;
+    }
+
+    .btn span.icon {
+      font-size: 0.85rem;
+    }
+
+    .btn:hover {
+      background: rgba(15,23,42,1);
+      border-color: var(--accent);
+      transform: translateY(-1px);
+    }
+
+    .btn:active {
+      transform: translateY(0);
+      opacity: 0.85;
+    }
+
+    .btn-primary {
+      border-color: var(--accent);
+      background: linear-gradient(135deg, rgba(56,189,248,0.25), rgba(14,165,233,0.1));
+    }
+
+    .btn-disabled {
+      opacity: 0.4;
+      cursor: default;
+      pointer-events: none;
+    }
+
+    .font-size-indicator {
+      font-size: 0.75rem;
+      color: var(--muted);
+      padding: 0 0.3rem;
+    }
+
+    .shortcuts {
+      font-size: 0.72rem;
+      color: var(--muted);
+    }
+
+    .shortcuts span {
+      opacity: 0.85;
+    }
+
+    .kbd {
+      border-radius: 6px;
+      border: 1px solid rgba(148,163,184,0.7);
+      padding: 0.06rem 0.3rem;
+      font-size: 0.72rem;
+      background: rgba(15,23,42,0.9);
+      margin: 0 0.1rem;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 900px) {
+      .slide-main.two-cols {
+        grid-template-columns: minmax(0, 1fr);
+      }
+
+      .slide-card {
+        padding: 1.25rem 1.3rem;
+      }
+
+      .slide-heading {
+        font-size: 1.45rem;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .top-bar {
+        flex-wrap: wrap;
+        gap: 0.25rem;
+      }
+      .top-center {
+        order: 3;
+        width: 100%;
+        margin-top: 0.25rem;
+      }
+      .top-right {
+        align-items: flex-start;
+      }
+      .slides-wrapper {
+        padding: 0.4rem;
+      }
+      .slide-card {
+        padding: 1rem 1.1rem 1.2rem;
+      }
+    }
+  </style>
+</head>
+<body>
+<main id="deck">
+  <!-- TOP BAR -->
+  <header class="top-bar">
+    <div class="top-left">
+      <div class="course-badge">ENGSE207</div>
+      <div class="top-left-title">Software Architecture</div>
+    </div>
+    <div class="top-center">
+      <h1>Week 2 · Quality Attributes & Architectural Drivers</h1>
+      <p>Performance · Scalability · Availability · Security · Modifiability · Usability</p>
+    </div>
+    <div class="top-right">
+      <div class="slide-meta">
+        <div class="slide-counter" id="slideCounter">1 / 34</div>
+        <div class="slide-title-live" id="liveSlideTitle">Overview</div>
+      </div>
+      <div class="progress-track">
+        <div class="progress-bar" id="progressBar"></div>
+      </div>
+    </div>
+  </header>
+
+  <!-- SLIDES -->
+  <section class="slides-wrapper">
+    <div class="slides-inner">
+
+      <!-- Slide 1: Title -->
+      <section class="slide active" data-title="Welcome & Big Picture">
+        <div class="slide-card">
+          <div class="slide-main">
+            <div>
+              <div class="pill-row">
+                <span class="pill">Week 2</span>
+                <span class="pill">Lecture + Workshop + Lab</span>
+                <span class="pill">CLO2 · CLO3 · CLO5 · CLO7</span>
+              </div>
+              <h1 class="slide-heading">Quality Attributes & Architectural Drivers</h1>
+              <p class="slide-subtitle">
+                จาก "ระบบต้องทำอะไร" → สู่ "ระบบต้องมีคุณภาพแค่ไหน" และใช้สิ่งเหล่านี้นำทางการออกแบบสถาปัตยกรรม
+              </p>
+              <div class="grid-2">
+                <div class="stat-card">
+                  <div class="stat-label">Today's Journey</div>
+                  <div class="stat-value">
+                    1. รู้จัก Quality Attributes<br>
+                    2. เขียน Quality Attribute Scenarios<br>
+                    3. เข้าใจ Trade-offs<br>
+                    4. ระบุ Architectural Drivers
+                  </div>
+                </div>
+                <div class="stat-card">
+                  <div class="stat-label">Mode</div>
+                  <div class="stat-value">
+                    <span class="badge badge-blue"><i class="fa-solid fa-person-chalkboard"></i> Lecture</span>
+                    <span class="badge badge-green"><i class="fa-solid fa-people-group"></i> Workshop</span>
+                    <span class="badge badge-red"><i class="fa-regular fa-floppy-disk"></i> Lab Assignment</span>
+                  </div>
+                  <p class="hint">ใช้ slide ชุดเดียวสอน + ทำกิจกรรม + สรุปงานส่ง</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 2: Course context -->
+      <section class="slide" data-title="Session Overview">
+        <div class="slide-card">
+          <div class="slide-main two-cols">
+            <div>
+              <h2>ภาพรวมคาบเรียนวันนี้</h2>
+              <ul>
+                <li><b>ทบทวนสัปดาห์ที่แล้ว</b> – Architecture vs Design vs Implementation</li>
+                <li><b>ทำความรู้จัก Quality Attributes</b> และตัวอย่างจากระบบจริง</li>
+                <li><b>เขียน Quality Attribute Scenarios</b> แบบวัดผลได้</li>
+                <li><b>เข้าใจ Trade-offs</b> ระหว่างคุณภาพต่างๆ</li>
+                <li><b>ประกอบร่างเป็น Architectural Drivers</b> สำหรับใช้ในสัปดาห์ถัดไป</li>
+              </ul>
+              <div class="key-box">
+                <strong>Goal:</strong> นักศึกษาสามารถบอกได้ว่า 
+                “อะไรคือคุณภาพที่สำคัญของระบบเรา” และ “ต้องออกแบบสถาปัตยกรรมอย่างไรให้ตอบโจทย์”
+              </div>
+            </div>
+            <div>
+              <h3>เวลา & โครงสร้าง</h3>
+              <ul>
+                <li><b>Lecture</b> ~ 90 นาที</li>
+                <li><b>Workshop</b> ~ 120 นาที (ทำงานกลุ่ม)</li>
+                <li><b>Lab</b> – งานเดี่ยว/กลุ่มส่งภายใน 1 สัปดาห์</li>
+              </ul>
+              <p class="hint">
+                แนะนำให้นศ.จด <span class="badge badge-blue"><i class="fa-regular fa-note-sticky"></i>คำศัพท์สำคัญ</span> และ
+                <span class="badge badge-green"><i class="fa-solid fa-lightbulb"></i>ตัวอย่างจากระบบจริง</span> ไว้ใช้ใน Project ของตัวเอง
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 3: Recap Week1 big picture -->
+      <section class="slide" data-title="Recap Week 1">
+        <div class="slide-card">
+          <div class="slide-main two-cols">
+            <div>
+              <h2>ทบทวน Week 1: Software Architecture</h2>
+              <ul>
+                <li><b>Architecture</b> = โครงสร้างระดับสูงของระบบ + เหตุผลที่อยู่เบื้องหลัง</li>
+                <li><b>Architecture vs Design vs Code</b><br>
+                  Architecture = What & Why, Design = How (detail), Implementation = Code</li>
+                <li><b>Stakeholders</b> แต่ละกลุ่มมองสถาปัตยกรรมต่างกัน (Business, Dev, Ops, Users)</li>
+              </ul>
+              <div class="key-box">
+                <strong>คำถามสำคัญ:</strong> สถาปัตยกรรมที่ดีต้องตอบโจทย์ใคร? และดีอย่างไร?
+              </div>
+            </div>
+            <div>
+              <h3>เชื่อมสู่ Week 2</h3>
+              <p>วันนี้เราจะเปลี่ยนจากมุมมอง "โครงสร้าง" → มามอง "คุณภาพ" ของระบบ</p>
+              <ul>
+                <li>ทำไมระบบบางตัว <b>เร็วแต่ไม่ปลอดภัย</b> ?</li>
+                <li>ทำไมบางระบบ <b>แก้ไขยากแต่ทำงานไวมาก</b> ?</li>
+                <li>เราจะ <b>เลือกและบาลานซ์</b> สิ่งเหล่านี้อย่างไร?</li>
+              </ul>
+              <p class="hint">คำตอบอยู่ที่แนวคิด <b>Quality Attributes & Architectural Drivers</b></p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 4: Intro QA -->
+      <section class="slide" data-title="What are Quality Attributes?">
+        <div class="slide-card">
+          <div class="slide-main two-cols">
+            <div>
+              <h2>Quality Attributes คืออะไร?</h2>
+              <p><b>Quality Attributes</b> = คุณสมบัติที่ใช้วัด “คุณภาพ” ของระบบซอฟต์แวร์ นอกเหนือจากฟังก์ชัน</p>
+              <ul>
+                <li>มักถูกเรียกว่า <b>Non-Functional Requirements</b> หรือ “-ilities”</li>
+                <li>เช่น ความเร็ว, ความปลอดภัย, ความยืดหยุ่น, ความพร้อมใช้งาน</li>
+                <li>เป็นตัวกำหนดว่า “ผู้ใช้รู้สึกว่าระบบดีไหม” ไม่ใช่แค่ “ทำงานได้หรือเปล่า”</li>
+              </ul>
+              <div class="key-box">
+                <strong>คิดง่ายๆ:</strong> Functional = ระบบทำอะไรได้บ้าง<br>
+                Quality Attributes = ระบบทำ “ได้แค่ไหน” และ “ดีแค่ไหน”
+              </div>
+            </div>
+            <div>
+              <h3>ทำไมต้องสนใจ Quality Attributes?</h3>
+              <ul>
+                <li>เป็นตัว <b>กำหนดสถาปัตยกรรม</b> ที่เหมาะสม</li>
+                <li>ใช้เป็น <b>เกณฑ์ตัดสินใจ</b> ระหว่างทางเลือกต่างๆ</li>
+                <li>ช่วย <b>สื่อสารกับ Stakeholders</b> ให้เห็นภาพเดียวกัน</li>
+                <li>ใช้เป็น <b>เกณฑ์วัดความสำเร็จของระบบ</b></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 5: QA overview with diagram -->
+      <section class="slide" data-title="Six Core Quality Attributes">
+        <div class="slide-card">
+          <div class="slide-main two-cols">
+            <div>
+              <h2>6 Quality Attributes หลัก</h2>
+              <ul>
+                <li><b>Performance</b> – เร็ว / ตอบสนองทันเวลา</li>
+                <li><b>Scalability</b> – ขยายรองรับผู้ใช้/โหลดที่เพิ่มขึ้นได้</li>
+                <li><b>Availability</b> – พร้อมใช้งาน ไม่ล่มง่าย</li>
+                <li><b>Security</b> – ปลอดภัย ปกป้องข้อมูล</li>
+                <li><b>Modifiability</b> – แก้ไข/เพิ่มฟีเจอร์ง่าย</li>
+                <li><b>Usability</b> – ใช้งานง่าย ผู้ใช้เข้าใจ</li>
+              </ul>
+              <p class="tagline">
+                แต่ละตัวมีผลโดยตรงต่อการเลือกโครงสร้างระบบ เช่น Monolith, Microservices, Caching, Replication ฯลฯ
+              </p>
+            </div>
+            <div>
+              <div class="diagram-wrapper">
+                <img src="/mnt/data/diagram1_quality_attributes_overview.png"
+                     alt="Quality attributes surrounding a software system">
+              </div>
+              <p class="hint">ใช้ slide นี้เป็นภาพรวมอธิบายให้ นศ. เห็นว่า Quality Attributes ล้อมรอบ Software System</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 6: Performance -->
+      <section class="slide" data-title="Performance">
+        <div class="slide-card">
+          <div class="slide-main two-cols">
+            <div>
+              <h2>Performance (ประสิทธิภาพ)</h2>
+              <p>วัดความสามารถของระบบในการตอบสนองต่อคำขอภายในเวลาที่กำหนด</p>
+              <ul>
+                <li><b>Response Time</b> – เวลาตอบสนองต่อ 1 request</li>
+                <li><b>Throughput</b> – จำนวน requests/second ที่รองรับได้</li>
+                <li><b>Latency</b> – ความหน่วงของเครือข่าย</li>
+                <li><b>Resource Utilization</b> – การใช้ CPU, RAM, Disk, Network</li>
+              </ul>
+            </div>
+            <div>
+              <h3>ตัวอย่างจากระบบจริง</h3>
+              <ul>
+                <li><b>เกมออนไลน์ Battle Royale</b> – ต้องการ latency ต่ำ &lt; 50ms</li>
+                <li><b>Flash Sale E-Commerce</b> – รองรับ traffic หลักแสน request/วินาที</li>
+                <li><b>Video Streaming</b> – โหลดไว ไม่กระตุก Buffer time น้อย</li>
+              </ul>
+              <div class="key-box">
+                <strong>สถาปัตยกรรมที่ช่วย Performance:</strong><br>
+                Caching, Load Balancer, Database Indexing, Asynchronous Processing ฯลฯ
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 7: Scalability -->
+      <section class="slide" data-title="Scalability">
+        <div class="slide-card">
+          <div class="slide-main two-cols">
+            <div>
+              <h2>Scalability (ขยายได้)</h2>
+              <p>ความสามารถของระบบในการรองรับโหลดที่เพิ่มขึ้นโดยประสิทธิภาพไม่ตกมาก</p>
+              <ul>
+                <li><b>Vertical Scaling</b> – อัปเกรดเครื่องเดิม (เพิ่ม CPU / RAM)</li>
+                <li><b>Horizontal Scaling</b> – เพิ่มจำนวนเครื่อง/instances</li>
+                <li><b>Elasticity</b> – ขยาย/หดตามโหลดอัตโนมัติ (Auto-scaling)</li>
+              </ul>
+            </div>
+            <div>
+              <h3>ตัวอย่าง</h3>
+              <ul>
+                <li>Messaging app ที่รองรับผู้ใช้งานหลายสิบล้านคน</li>
+                <li>Music streaming ที่จำนวนผู้ใช้ active เพิ่มขึ้นทุกปี</li>
+                <li>ระบบสั่งอาหาร/เดลิเวอรีช่วงฝนตก – โหลดพุ่งกระทันหัน</li>
+              </ul>
+              <div class="key-box">
+                <strong>สถาปัตยกรรมที่ช่วย Scalability:</strong><br>
+                Stateless services, Microservices, Sharding, Kubernetes, Message Queue
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 8: Availability -->
+      <section class="slide" data-title="Availability">
+        <div class="slide-card">
+          <div class="slide-main two-cols">
+            <div>
+              <h2>Availability (พร้อมใช้งาน)</h2>
+              <p>สัดส่วนเวลาที่ระบบให้บริการได้ตามปกติ ไม่ล่ม</p>
+              <table class="table-mini">
+                <thead>
+                  <tr>
+                    <th>ระดับ</th>
+                    <th>Uptime</th>
+                    <th>Downtime/ปี</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td>Two Nines</td><td>99%</td><td>~3.65 วัน</td></tr>
+                  <tr><td>Three Nines</td><td>99.9%</td><td>~8.76 ชม.</td></tr>
+                  <tr><td>Four Nines</td><td>99.99%</td><td>~52 นาที</td></tr>
+                  <tr><td>Five Nines</td><td>99.999%</td><td>~5 นาที</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div>
+              <h3>ตัวอย่างระบบที่ต้องการ High Availability</h3>
+              <ul>
+                <li>Mobile Banking / Payment</li>
+                <li>Hospital Information System (HIS)</li>
+                <li>Email / Communication Platform</li>
+              </ul>
+              <div class="key-box">
+                <strong>เทคนิคด้านสถาปัตยกรรม:</strong><br>
+                Redundancy, Failover, Health checks, Multi-region deployment, Circuit Breaker
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 9: Security -->
+      <section class="slide" data-title="Security">
+        <div class="slide-card">
+          <div class="slide-main two-cols">
+            <div>
+              <h2>Security (ความปลอดภัย)</h2>
+              <p>ปกป้องระบบและข้อมูลจากการเข้าถึง/ใช้งานที่ไม่ได้รับอนุญาต</p>
+              <ul>
+                <li><b>Confidentiality</b> – ข้อมูลลับ ไม่รั่วไหล</li>
+                <li><b>Integrity</b> – ข้อมูลถูกต้อง ไม่ถูกแก้ไข</li>
+                <li><b>Availability</b> – ระบบพร้อมให้บริการแม้มีการโจมตี</li>
+              </ul>
+              <p>เกี่ยวข้องกับ Authentication, Authorization, Encryption, Auditing เป็นต้น</p>
+            </div>
+            <div>
+              <h3>ตัวอย่าง</h3>
+              <ul>
+                <li>Internet Banking – ต้องมี 2FA, logging ทุก transaction</li>
+                <li>ระบบภาครัฐ – ต้อง comply PDPA, เก็บ log ตามกฎหมาย</li>
+                <li>HR/Payroll – ต้องควบคุมการเข้าถึงด้วย Role-based access</li>
+              </ul>
+              <div class="key-box">
+                <strong>สถาปัตยกรรมที่ช่วย Security:</strong><br>
+                API Gateway, OAuth2/JWT, TLS, WAF, Zero-trust, Centralized logging & alerting
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 10: Modifiability & Usability -->
+      <section class="slide" data-title="Modifiability & Usability">
+        <div class="slide-card">
+          <div class="slide-main two-cols">
+            <div>
+              <h2>Modifiability (แก้ไขง่าย)</h2>
+              <p>ระบบสามารถเปลี่ยนแปลง/เพิ่มฟีเจอร์ได้เร็ว โดยไม่พังส่วนอื่น</p>
+              <ul>
+                <li>ต้องแก้โค้ดน้อยส่วนเมื่อมี requirement ใหม่</li>
+                <li>เวลาพัฒนา feature ใหม่สั้นลงเรื่อยๆ</li>
+                <li>แยกส่วนชัดเจน (Separation of Concerns, Loose Coupling)</li>
+              </ul>
+              <p class="hint">เชื่อมโยงกับแนวคิด Clean Architecture, Modular, Plugin-based</p>
+            </div>
+            <div>
+              <h2>Usability (ใช้งานง่าย)</h2>
+              <p>ทั้งฝั่งผู้ใช้, นักพัฒนา และ Ops ต้องใช้งานระบบได้อย่างไม่ปวดหัว</p>
+              <ul>
+                <li>UI/UX เข้าใจง่าย · มี feedback ชัดเจน</li>
+                <li>Developer มี API/Docs ที่ดี</li>
+                <li>Ops มี dashboard, monitoring, error message ที่เข้าใจได้</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 11: Trade-offs intro -->
+      <section class="slide" data-title="Trade-offs Overview">
+        <div class="slide-card">
+          <div class="slide-main two-cols">
+            <div>
+              <h2>Trade-offs: ไม่ได้ทุกอย่างพร้อมกัน</h2>
+              <p>การออกแบบสถาปัตยกรรม = ศิลปะการ “เลือก” ว่าจะเน้น Quality Attribute ตัวไหน</p>
+              <ul>
+                <li>เพิ่ม Security → Performance มักลดลง</li>
+                <li>เพิ่ม Availability → อาจต้องยอมรับ Eventual Consistency</li>
+                <li>เพิ่ม Flexibility/Modifiability → มี Overhead เพิ่ม, Performance ลด</li>
+                <li>Scale ใหญ่ขึ้น → ค่าใช้จ่ายสูงขึ้น</li>
+              </ul>
+              <div class="key-box">
+                <strong>Key Insight:</strong> เราต้องรู้ <b>Priority</b> ก่อนออกแบบ ไม่อย่างนั้นจะหลงทาง
+              </div>
+            </div>
+            <div>
+              <div class="diagram-wrapper">
+                <img src="/mnt/data/diagram3_tradeoffs2.png"
+                     alt="Trade-off diagrams between performance, security, cost, availability, modifiability">
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 12: Trade-off examples -->
+      <section class="slide" data-title="Trade-off Examples">
+        <div class="slide-card">
+          <div class="slide-main">
+            <div>
+              <h2>ตัวอย่าง Trade-offs ที่พบบ่อย</h2>
+              <div class="grid-2">
+                <div class="stat-card">
+                  <div class="stat-label">Trade-off #1</div>
+                  <div class="stat-value">Performance ↔ Security</div>
+                  <ul>
+                    <li>Validate token ทุก request → ปลอดภัยแต่ช้ากว่า</li>
+                    <li>ใช้ HTTPS แทน HTTP → มี TLS overhead แต่ปกป้องข้อมูล</li>
+                    <li>ระบบธนาคาร: <b>เลือก Security ก่อน</b></li>
+                  </ul>
+                </div>
+                <div class="stat-card">
+                  <div class="stat-label">Trade-off #2</div>
+                  <div class="stat-value">Consistency ↔ Availability</div>
+                  <ul>
+                    <li>CAP theorem ในระบบ distributed</li>
+                    <li>Banking: เลือก strong consistency</li>
+                    <li>Feed social: เลือก availability + eventual consistency</li>
+                  </ul>
+                </div>
+              </div>
+              <div class="grid-2">
+                <div class="stat-card">
+                  <div class="stat-label">Trade-off #3</div>
+                  <div class="stat-value">Scalability ↔ Cost</div>
+                  <ul>
+                    <li>Auto-scaling, multi-region = ต้นทุน infra สูง</li>
+                    <li>Startup มักเริ่ม simple แล้วค่อย scale</li>
+                  </ul>
+                </div>
+                <div class="stat-card">
+                  <div class="stat-label">Trade-off #4</div>
+                  <div class="stat-value">Modifiability ↔ Performance</div>
+                  <ul>
+                    <li>Microservices: ยืดหยุ่น แต่มี network overhead</li>
+                    <li>Monolith: เร็วกว่า แต่เปลี่ยนยาก</li>
+                  </ul>
+                </div>
+              </div>
+              <p class="hint">ใช้ slide นี้ชวน นศ. ถกกันว่าถ้าเป็น Product X จะเลือกอะไรเป็นอันดับแรก?</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 13: QA Scenario concept -->
+      <section class="slide" data-title="Quality Attribute Scenarios">
+        <div class="slide-card">
+          <div class="slide-main two-cols">
+            <div>
+              <h2>Quality Attribute Scenario คืออะไร?</h2>
+              <p>แทนที่จะบอกแค่ว่า “ระบบต้องเร็ว / ปลอดภัย” เราเขียนเป็น <b>สถานการณ์ที่วัดผลได้จริง</b></p>
+              <ul>
+                <li>ระบุว่า “ใครทำอะไร กับส่วนไหน ของระบบ ในสถานการณ์ใด”</li>
+                <li>ระบุการตอบสนองของระบบ</li>
+                <li>ระบุเกณฑ์วัดผล (ต้องมีตัวเลข!)</li>
+              </ul>
+              <div class="key-box">
+                <strong>Use case vs QA Scenario</strong><br>
+                Use case = ระบบทำ “อะไร”<br>
+                QA Scenario = ระบบมีคุณภาพ “แค่ไหน”
+              </div>
+            </div>
+            <div>
+              <h3>ประโยชน์</h3>
+              <ul>
+                <li>ทำให้ requirement ชัดเจนและทดสอบได้</li>
+                <li>ใช้เปรียบเทียบสถาปัตยกรรมหลายแบบ</li>
+                <li>ใช้เป็น checklist ตอนทำ Performance / Security test</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 14: Scenario structure -->
+      <section class="slide" data-title="Scenario Structure (6 parts)">
+        <div class="slide-card">
+          <div class="slide-main two-cols">
+            <div>
+              <h2>โครงสร้าง Scenario 6 ส่วน</h2>
+              <ul>
+                <li><b>1. Source</b> – ใคร/อะไรเป็นตัวกระตุ้น</li>
+                <li><b>2. Stimulus</b> – เหตุการณ์อะไรเกิดขึ้น</li>
+                <li><b>3. Artifact</b> – ส่วนไหนของระบบได้รับผลกระทบ</li>
+                <li><b>4. Environment</b> – สภาพแวดล้อม ณ ตอนนั้น</li>
+                <li><b>5. Response</b> – ระบบตอบสนองอย่างไร</li>
+                <li><b>6. Response Measure</b> – วัดผลความสำเร็จอย่างไร</li>
+              </ul>
+              <p class="hint">เป็น template กลาง ใช้ได้กับทุก Quality Attribute</p>
+            </div>
+            <div>
+              <div class="diagram-wrapper">
+                <img src="/mnt/data/diagram2_qa_scenario_structure.png"
+                     alt="Scenario template from source to response measure">
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 15: Example performance scenario -->
+      <section class="slide" data-title="Example: Performance Scenario">
+        <div class="slide-card">
+          <div class="slide-main">
+            <div>
+              <h2>ตัวอย่าง Scenario: Performance (Food Delivery)</h2>
+              <table class="table-mini">
+                <tr><th>Source</th><td>ผู้ใช้ Mobile App (Customer)</td></tr>
+                <tr><th>Stimulus</th><td>กดค้นหาร้านอาหารในพื้นที่และเปิดดูเมนู</td></tr>
+                <tr><th>Artifact</th><td>Restaurant Search Service + Menu API</td></tr>
+                <tr><th>Environment</th><td>Normal load, ~5,000 concurrent users</td></tr>
+                <tr><th>Response</th><td>ระบบค้นหาร้านและดึงเมนูพร้อมรูปภาพ</td></tr>
+                <tr><th>Response Measure</th><td>95% ของคำขอ ตอบกลับ &lt; 2 วินาที</td></tr>
+              </table>
+              <p class="key-box">
+                <strong>คำอธิบาย:</strong>
+                เมื่อผู้ใช้กดค้นหาร้านอาหาร ระบบต้องแสดงรายการร้าน + เมนูพร้อมรูปภายใน 2 วินาที
+                สำหรับอย่างน้อย 95% ของ requests ในสภาวะโหลดปกติ
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 16: Scenario with diagram -->
+      <section class="slide" data-title="Scenario Visualization">
+        <div class="slide-card">
+          <div class="slide-main two-cols">
+            <div>
+              <h2>จาก Scenario → สู่ Flow ในระบบ</h2>
+              <p>ใช้ diagram เพื่อช่วย visual ว่าระบบตอบสนอง stimulus อย่างไร</p>
+              <ul>
+                <li>แสดงเส้นทางของ request ผ่าน API / DB / Cache</li>
+                <li>เชื่อมโยงกับ components ที่เราจะออกแบบในสัปดาห์หน้า</li>
+              </ul>
+              <p class="hint">ดีสำหรับอธิบาย stakeholder ที่ไม่ technical มาก ให้เห็นว่าทำไมต้องลงทุนด้าน infra เพิ่ม</p>
+            </div>
+            <div>
+              <div class="diagram-wrapper">
+                <img src="/mnt/data/diagram5_scenario_example.png"
+                     alt="Example performance scenario for restaurant search">
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 17: Architectural Drivers intro -->
+      <section class="slide" data-title="Architectural Drivers">
+        <div class="slide-card">
+          <div class="slide-main two-cols">
+            <div>
+              <h2>Architectural Drivers คืออะไร?</h2>
+              <p>คือ <b>ชุด requirement สำคัญ</b> ที่ “ขับเคลื่อน” การออกแบบสถาปัตยกรรม</p>
+              <ul>
+                <li><b>Functional Requirements</b> – ระบบต้องทำอะไร</li>
+                <li><b>Quality Attributes</b> – ต้องดีแค่ไหน ในด้านต่างๆ</li>
+                <li><b>Constraints</b> – ข้อจำกัดที่เปลี่ยนไม่ได้ง่ายๆ</li>
+                <li><b>Assumptions</b> – สมมติฐานที่เราใช้วางแผน</li>
+              </ul>
+            </div>
+            <div>
+              <div class="diagram-wrapper">
+                <img src="/mnt/data/diagram4_architectural_drivers.png"
+                     alt="Diagram showing four kinds of drivers feeding software architecture">
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 18: Functional requirements -->
+      <section class="slide" data-title="Drivers: Functional Requirements">
+        <div class="slide-card">
+          <div class="slide-main two-cols">
+            <div>
+              <h2>1. Functional Requirements</h2>
+              <p>สิ่งที่ระบบต้องทำได้ · Features · Use cases</p>
+              <ul>
+                <li>สร้าง/แก้ไข/ลบ ข้อมูลสำคัญ</li>
+                <li>Workflow หลักของผู้ใช้แต่ละกลุ่ม</li>
+                <li>Integration กับระบบภายนอก</li>
+              </ul>
+            </div>
+            <div>
+              <h3>ตัวอย่าง: Task Board System</h3>
+              <ul>
+                <li>สร้าง/จัดการ Board & Column (To-Do, In-Progress, Done)</li>
+                <li>สร้าง/ลากวาง Task card + Assign ให้สมาชิกทีม</li>
+                <li>Real-time notification เมื่อมีการอัปเดต</li>
+                <li>Attach files, comment ในแต่ละ task</li>
+                <li>Export รายงานเป็น PDF หรือ Excel</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 19: QA drivers -->
+      <section class="slide" data-title="Drivers: Quality Attributes">
+        <div class="slide-card">
+          <div class="slide-main two-cols">
+            <div>
+              <h2>2. Quality Attributes (Drivers หลัก)</h2>
+              <p>กำหนด “คุณภาพ” ที่สถาปัตยกรรมต้องตอบให้ได้</p>
+              <ul>
+                <li>Performance – ต้องเร็วแค่ไหน?</li>
+                <li>Scalability – รองรับผู้ใช้/ข้อมูลเท่าไหร่?</li>
+                <li>Availability – ล่มได้กี่นาที/ปี?</li>
+                <li>Security – ต้องผ่านมาตรฐานอะไร?</li>
+                <li>Modifiability & Usability ฯลฯ</li>
+              </ul>
+            </div>
+            <div>
+              <h3>ตัวอย่าง Scenario สั้นๆ</h3>
+              <ul>
+                <li>โหลด board ที่มี 200 tasks ใน &lt; 1.5 วินาที (95th percentile)</li>
+                <li>รองรับทีมขนาด 1,000 users พร้อมกันโดยระบบไม่ล่ม</li>
+                <li>Audit log เก็บย้อนหลังอย่างน้อย 1 ปี</li>
+              </ul>
+              <p class="hint">นี่คือ input สำคัญของ Workshop & Lab วันนี้</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 20: Constraints & Assumptions -->
+      <section class="slide" data-title="Constraints & Assumptions">
+        <div class="slide-card">
+          <div class="slide-main two-cols">
+            <div>
+              <h2>3. Constraints (ข้อจำกัด)</h2>
+              <ul>
+                <li><b>Technical</b> – ต้องใช้ tech stack / cloud / DB ที่กำหนด</li>
+                <li><b>Time</b> – เส้นตาย Project, ช่วงเวลา release</li>
+                <li><b>Budget</b> – ต้นทุน infra / license</li>
+                <li><b>Legal/Policy</b> – PDPA, data residency, audit log</li>
+              </ul>
+            </div>
+            <div>
+              <h2>4. Assumptions (สมมติฐาน)</h2>
+              <ul>
+                <li>จำนวน peak users ไม่เกิน X</li>
+                <li>อินเทอร์เน็ตผู้ใช้ส่วนใหญ่เป็น 4G/Wi-Fi</li>
+                <li>Third-party API ที่เชื่อมมี uptime ~99%</li>
+                <li>ขนาดข้อมูลปีแรกไม่เกิน 10GB เป็นต้น</li>
+              </ul>
+              <p class="hint">ถ้า Assumption ผิด → สถาปัตยกรรมอาจไม่พอ ต้องปรับใหม่</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 21: Drivers example table -->
+      <section class="slide" data-title="Drivers Example: Task Board">
+        <div class="slide-card">
+          <div class="slide-main">
+            <div>
+              <h2>ตัวอย่าง Architectural Drivers · Task Board System</h2>
+              <div class="grid-2">
+                <div class="stat-card">
+                  <div class="stat-label">Functional</div>
+                  <ul>
+                    <li>Kanban board, drag-and-drop tasks</li>
+                    <li>Real-time notifications</li>
+                    <li>File attachment & comments</li>
+                    <li>Search / filter / report</li>
+                  </ul>
+                </div>
+                <div class="stat-card">
+                  <div class="stat-label">Quality Attributes</div>
+                  <ul>
+                    <li>Response time board view &lt; 1.5s</li>
+                    <li>Support 1,000 team users</li>
+                    <li>Uptime ≥ 99% ในเวลางาน</li>
+                    <li>Role-based access control</li>
+                  </ul>
+                </div>
+              </div>
+              <div class="grid-2">
+                <div class="stat-card">
+                  <div class="stat-label">Constraints</div>
+                  <ul>
+                    <li>ใช้ Node.js + React</li>
+                    <li>Deploy บน Cloud (เช่น AWS/GCP)</li>
+                    <li>Budget infra ไม่เกิน xx บาท/เดือน</li>
+                  </ul>
+                </div>
+                <div class="stat-card">
+                  <div class="stat-label">Assumptions</div>
+                  <ul>
+                    <li>Team size 10–100 คน</li>
+                    <li>Peak concurrent users ≤ 200 ใน Phase แรก</li>
+                    <li>Board ละ ≤ 1,000 tasks</li>
+                  </ul>
+                </div>
+              </div>
+              <p class="hint">Lab วันนี้จะให้แต่ละทีมสร้าง “Drivers Document” สำหรับ Project ของตัวเอง</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 22: Workshop intro -->
+      <section class="slide" data-title="Workshop Overview">
+        <div class="slide-card">
+          <div class="slide-main two-cols">
+            <div>
+              <h2>Workshop · Cloud-based Task Board System</h2>
+              <p><b>วัตถุประสงค์</b></p>
+              <ul>
+                <li>ฝึกเลือก Quality Attributes ที่สำคัญสำหรับระบบจริง</li>
+                <li>ฝึกเขียน Quality Attribute Scenarios ครบ 6 ส่วน</li>
+                <li>ฝึกวิเคราะห์ Trade-offs และจัดลำดับ Priority</li>
+              </ul>
+              <p class="key-box">
+                <strong>รูปแบบ:</strong> กลุ่มละ 4–5 คน · เวลา ~120 นาที · ปิดท้ายด้วยการ Present + Peer Review
+              </p>
+            </div>
+            <div>
+              <h3>ระบบเป้าหมาย: Task Board</h3>
+              <p>Kanban board บน Cloud สำหรับทีม 10–100 คน มีฟีเจอร์คล้าย Trello/Asana</p>
+              <ul>
+                <li>สร้าง board / column / task</li>
+                <li>Assign, tag, due date</li>
+                <li>Real-time notification</li>
+                <li>Search, filter, export</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 23: Workshop Activity 1 -->
+      <section class="slide" data-title="Workshop · Activity 1">
+        <div class="slide-card">
+          <div class="slide-main two-cols">
+            <div>
+              <h2>Activity 1 · ระบุ Quality Attributes</h2>
+              <p><b>เวลา:</b> ~30 นาที</p>
+              <ul>
+                <li>อ่านคำอธิบายระบบ & functional requirements</li>
+                <li>Brainstorm ว่าระบบนี้ควรมี Quality Attributes ใดบ้าง</li>
+                <li>ให้คะแนนระดับความสำคัญ 1–5</li>
+              </ul>
+              <p class="key-box">
+                <strong>Tip:</strong> ให้คิดจากมุมมองผู้ใช้จริง → อะไรคือ “ความเจ็บปวด” ถ้าระบบขาดคุณภาพตัวนั้น
+              </p>
+            </div>
+            <div>
+              <h3>Template ที่ให้ใช้</h3>
+              <table class="table-mini">
+                <thead>
+                  <tr><th>Quality Attribute</th><th>Score 1–5</th><th>เหตุผล</th></tr>
+                </thead>
+                <tbody>
+                  <tr><td>Performance</td><td>__</td><td>เพราะ…</td></tr>
+                  <tr><td>Scalability</td><td>__</td><td>เพราะ…</td></tr>
+                  <tr><td>Availability</td><td>__</td><td>เพราะ…</td></tr>
+                  <tr><td>Security</td><td>__</td><td>เพราะ…</td></tr>
+                  <tr><td>Modifiability</td><td>__</td><td>เพราะ…</td></tr>
+                  <tr><td>Usability</td><td>__</td><td>เพราะ…</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 24: Workshop Activity 2 -->
+      <section class="slide" data-title="Workshop · Activity 2">
+        <div class="slide-card">
+          <div class="slide-main two-cols">
+            <div>
+              <h2>Activity 2 · เขียน Quality Attribute Scenarios</h2>
+              <p><b>เวลา:</b> ~40 นาที</p>
+              <ul>
+                <li>เลือก Top 5 Quality Attributes จาก Activity 1</li>
+                <li>เขียน Scenario อย่างน้อย 1 อัน/Attribute</li>
+                <li>ใช้ template 6 ส่วน (Source…Response Measure)</li>
+              </ul>
+            </div>
+            <div>
+              <h3>Mini Template</h3>
+              <p><b>Scenario #x: [ชื่อ scenario]</b></p>
+              <table class="table-mini">
+                <tr><th>Source</th><td>[ใคร]</td></tr>
+                <tr><th>Stimulus</th><td>[ทำอะไร/เหตุการณ์อะไร]</td></tr>
+                <tr><th>Artifact</th><td>[ส่วนใดของระบบ]</td></tr>
+                <tr><th>Environment</th><td>[สภาวะแบบใด]</td></tr>
+                <tr><th>Response</th><td>[ระบบควรทำอะไร]</td></tr>
+                <tr><th>Response Measure</th><td>[ตัวเลขวัดผล]</td></tr>
+              </table>
+              <p class="hint">เน้น Response Measure ให้วัดได้ – เช่น &lt; 2 วินาที, 95% ของ requests ฯลฯ</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 25: Workshop Activity 3 -->
+      <section class="slide" data-title="Workshop · Activity 3">
+        <div class="slide-card">
+          <div class="slide-main two-cols">
+            <div>
+              <h2>Activity 3 · วิเคราะห์ Trade-offs</h2>
+              <p><b>เวลา:</b> ~30 นาที</p>
+              <ul>
+                <li>ดูว่า Quality Attributes ที่เลือกมามีคู่ไหนขัดแย้งกันบ้าง</li>
+                <li>เขียนอธิบาย Trade-off อย่างน้อย 1 คู่</li>
+                <li>ตัดสินใจว่าจะเน้นตัวไหนมากกว่าใน context ของ Task Board</li>
+              </ul>
+            </div>
+            <div>
+              <h3>ตัวอย่าง Pair ให้คิด</h3>
+              <ul>
+                <li>Performance vs Security</li>
+                <li>Scalability vs Cost</li>
+                <li>Modifiability vs Performance</li>
+              </ul>
+              <p class="key-box">
+                <strong>คำถาม:</strong> ถ้า requirement บอกว่า “ต้อง real-time มากๆ” แต่ budget น้อยมาก
+                คุณจะออกแบบสถาปัตยกรรมอย่างไร?
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 26: Workshop Activity 4 -->
+      <section class="slide" data-title="Workshop · Activity 4 & Peer Review">
+        <div class="slide-card">
+          <div class="slide-main two-cols">
+            <div>
+              <h2>Activity 4 · Presentation & Peer Review</h2>
+              <p><b>เวลา:</b> ~20 นาที</p>
+              <ul>
+                <li>แต่ละกลุ่มนำเสนอ Top 3 Scenarios + Trade-offs ที่สำคัญ</li>
+                <li>เพื่อนกลุ่มอื่นให้ feedback ตาม checklist</li>
+              </ul>
+              <div class="key-box">
+                <strong>เป้าหมาย:</strong> ฝึกอธิบายเหตุผลเชิงสถาปัตยกรรมให้ทีมอื่นเข้าใจ
+              </div>
+            </div>
+            <div>
+              <h3>Peer Review Checklist (ย่อ)</h3>
+              <ul>
+                <li>Scenario ครบ 6 ส่วนหรือไม่</li>
+                <li>Response Measure วัดได้จริง?</li>
+                <li>Trade-offs analysis มีเหตุผล?</li>
+                <li>Priority ของ Attributes สอดคล้องกับระบบไหม?</li>
+              </ul>
+              <p class="hint">ใช้คะแนน Peer Review เป็น input ปรับปรุงเอกสารก่อนทำ Lab</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 27: Lab intro -->
+      <section class="slide" data-title="Lab Assignment Overview">
+        <div class="slide-card">
+          <div class="slide-main two-cols">
+            <div>
+              <h2>Lab · Architectural Drivers Document</h2>
+              <p><b>งานใหญ่ของสัปดาห์นี้</b> – สร้างเอกสาร Architectural Drivers สำหรับโปรเจกต์ของทีม</p>
+              <ul>
+                <li>เลือก Domain ระบบที่สนใจ (E-Learning, Food delivery, IoT, Social, Healthcare, Hotel booking ฯลฯ)</li>
+                <li>เขียน System overview + Functional requirements</li>
+                <li>ระบุ Quality Attributes + Scenarios, Constraints, Assumptions</li>
+                <li>จัดลำดับความสำคัญและ Trade-offs</li>
+              </ul>
+            </div>
+            <div>
+              <h3>กำหนดส่ง & รูปแบบ</h3>
+              <ul>
+                <li>ส่งภายใน 1 สัปดาห์ (รูปแบบเอกสารตาม template)</li>
+                <li>ทำเป็นกลุ่มเดียวกับ Project หลักของวิชา (ถ้ามี)</li>
+                <li>ใช้ภาษาไทยหรืออังกฤษก็ได้ แต่ต้องชัดเจนและวัดผลได้</li>
+              </ul>
+              <p class="hint">เอกสารนี้จะถูกใช้ต่อในสัปดาห์ถัดไปตอนออกแบบสถาปัตยกรรม</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 28: Lab Structure 1-3 -->
+      <section class="slide" data-title="Lab · Document Structure (1/2)">
+        <div class="slide-card">
+          <div class="slide-main">
+            <div>
+              <h2>โครงสร้างเอกสาร Lab (ส่วนที่ 1–3)</h2>
+              <ol>
+                <li><b>System Overview</b> (1 หน้า)<br>
+                  อธิบายระบบ, ปัญหาที่แก้, Target users, Top 10 features</li>
+                <li><b>Functional Requirements</b> (1–2 หน้า)<br>
+                  ระบุ FR อย่างน้อย 15 ข้อ แบ่งตามหมวด (User Management, Core, Notification, Reporting ฯลฯ)</li>
+                <li><b>Quality Attributes & Scenarios</b> (2–3 หน้า)<br>
+                  เลือก 6 Attributes หลัก เขียน Scenario ละ 1 อัน พร้อมตาราง 6 ส่วน + คำอธิบาย</li>
+              </ol>
+              <p class="key-box">
+                <strong>Tip:</strong> เริ่มจาก Use cases สำคัญ → สร้าง FR → ค่อยหา Quality Attributes ที่สำคัญที่สุด
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 29: Lab Structure 4-6 -->
+      <section class="slide" data-title="Lab · Document Structure (2/2)">
+        <div class="slide-card">
+          <div class="slide-main">
+            <div>
+              <h2>โครงสร้างเอกสาร Lab (ส่วนที่ 4–6)</h2>
+              <ol start="4">
+                <li><b>Constraints</b> (1 หน้า)<br>
+                  แยกเป็น Technical, Time, Budget, Legal/Policy</li>
+                <li><b>Assumptions</b> (0.5 หน้า)<br>
+                  ระบุสมมติฐานสำคัญอย่างน้อย 5 ข้อ</li>
+                <li><b>Priority & Trade-offs</b> (1 หน้า)<br>
+                  <ul>
+                    <li>ตารางจัดอันดับ Quality Attributes 1–6 พร้อมเหตุผล</li>
+                    <li>วิเคราะห์ Trade-off อย่างน้อย 1 คู่ พร้อมการตัดสินใจ</li>
+                  </ul>
+                </li>
+              </ol>
+              <p class="hint">เอกสารควรอ่านง่าย มีหัวข้อชัดเจน ใช้ bullet / ตาราง ช่วยให้ Architecture team ทำงานต่อได้สะดวก</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 30: Lab Scoring -->
+      <section class="slide" data-title="Lab · Scoring Rubric">
+        <div class="slide-card">
+          <div class="slide-main two-cols">
+            <div>
+              <h2>เกณฑ์การให้คะแนน (100 คะแนน)</h2>
+              <table class="table-mini">
+                <tbody>
+                  <tr><th>System Overview</th><td>10</td></tr>
+                  <tr><th>Functional Requirements</th><td>20</td></tr>
+                  <tr><th>Quality Attribute Scenarios (6 ชุด)</th><td>30</td></tr>
+                  <tr><th>Constraints</th><td>10</td></tr>
+                  <tr><th>Assumptions</th><td>5</td></tr>
+                  <tr><th>Priority & Trade-offs</th><td>15</td></tr>
+                  <tr><th>รูปแบบเอกสาร/ความอ่านง่าย</th><td>10</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div>
+              <h3>คำแนะนำ</h3>
+              <ul>
+                <li>Response measure ต้องมีตัวเลข (ไม่ใช้คำว่า “เร็ว” เฉยๆ)</li>
+                <li>Trade-offs ต้องอธิบายเหตุผล ไม่ใช่แค่ list</li>
+                <li>พยายามอ้างอิงตัวอย่างจากระบบจริง/คู่แข่ง</li>
+                <li>เขียนให้เพื่อนทีมอื่นอ่านแล้วเข้าใจระบบของเราได้</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 31: CLO summary -->
+      <section class="slide" data-title="CLO Mapping">
+        <div class="slide-card">
+          <div class="slide-main">
+            <div>
+              <h2>เชื่อมกับ CLO ของรายวิชา</h2>
+              <div class="grid-2">
+                <div class="stat-card">
+                  <div class="stat-label">CLO3 (K)</div>
+                  <div class="stat-value">อธิบาย Quality Attributes ได้</div>
+                  <ul>
+                    <li>รู้จัก Performance, Scalability, Availability, Security, Modifiability, Usability</li>
+                    <li>เข้าใจ Scenario 6 ส่วน</li>
+                    <li>มองเห็น Trade-offs ที่สำคัญ</li>
+                  </ul>
+                </div>
+                <div class="stat-card">
+                  <div class="stat-label">CLO5 & CLO7 (C)</div>
+                  <div class="stat-value">วิเคราะห์ & ประเมินสถาปัตยกรรม</div>
+                  <ul>
+                    <li>ระบุ Architectural Drivers จาก requirements</li>
+                    <li>จัดลำดับความสำคัญของคุณภาพ</li>
+                    <li>เปรียบเทียบทางเลือก โดยมีเหตุผลรองรับ</li>
+                  </ul>
+                </div>
+              </div>
+              <p class="hint">Lab ของสัปดาห์นี้จะเป็นหลักฐานสำคัญสำหรับ CLO เหล่านี้ใน มคอ.3</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 32: Wrap-up -->
+      <section class="slide" data-title="Summary & Next Week">
+        <div class="slide-card">
+          <div class="slide-main two-cols">
+            <div>
+              <h2>สรุปวันนี้</h2>
+              <ul>
+                <li>รู้จัก 6 Quality Attributes หลัก + ตัวอย่างจากระบบจริง</li>
+                <li>เรียนรู้การเขียน Quality Attribute Scenarios แบบวัดผลได้</li>
+                <li>เข้าใจว่าทำไมต้องมี Trade-offs และวิธีคิดเวลาต้องเลือก</li>
+                <li>เห็นภาพของ Architectural Drivers ว่าเป็น “เข็มทิศ” ของการออกแบบ</li>
+              </ul>
+              <p class="key-box">
+                <strong>Key Takeaway:</strong>
+                ก่อนออกแบบสถาปัตยกรรมทุกครั้ง <b>ต้องตอบได้</b> ว่า
+                “Quality Attributes อะไรสำคัญที่สุด & เราพร้อมแลกอะไรบ้าง”
+              </p>
+            </div>
+            <div>
+              <h3>สัปดาห์หน้า: Architectural Styles & Patterns (Part 1)</h3>
+              <ul>
+                <li>Monolithic, Layered, Client-Server, N-Tier, Pipe-and-Filter</li>
+                <li>ดูว่าคุณภาพแต่ละแบบเหมาะกับ Style ไหน</li>
+                <li>เริ่ม map Architectural Drivers ของทีม → เลือก Style เบื้องต้น</li>
+              </ul>
+              <p class="hint">เตรียมตัว: เลือก Domain สำหรับ Lab ให้เรียบร้อย และลองคิดคร่าวๆ ว่าระบบของคุณควรเน้น Quality Attribute ใดเป็นอันดับ 1–3</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 33: Q&A -->
+      <section class="slide" data-title="Q & A">
+        <div class="slide-card">
+          <div class="slide-main">
+            <div>
+              <h2>Q & A · คุยกันก่อนจบคาบ</h2>
+              <ul>
+                <li>มี Quality Attribute ไหนที่ยังงงอยู่หรืออยากได้ตัวอย่างเพิ่ม?</li>
+                <li>ระบบที่ทุกคนใช้อยู่ประจำ (เกม/แอป/เว็บ) เน้นคุณภาพด้านไหน?</li>
+                <li>คิดว่า Project จบของตัวเองควรเน้น Attribute อะไร 3 อันดับแรก?</li>
+              </ul>
+              <p class="key-box">
+                <strong>Discussion Prompt:</strong>
+                ให้แต่ละคนลองแชร์ 1 ระบบที่ชอบมาก และระบุ 1 Quality Attribute ที่คิดว่าทำได้ดีสุด (เช่น “Netflix – Usability/UX ดีมาก”)
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 34: Thanks -->
+      <section class="slide" data-title="Thank you">
+        <div class="slide-card">
+          <div class="slide-main">
+            <div style="text-align:center">
+              <h2>ขอบคุณครับ 🙌</h2>
+              <p class="slide-subtitle">
+                Quality Attributes ที่ดี + การตัดสินใจ Trade-offs อย่างมีเหตุผล<br>
+                = พื้นฐานของสถาปัตยกรรมซอฟต์แวร์ที่แข็งแรง
+              </p>
+              <p class="tagline">
+                “Architecture is about <b>important stuff</b>… whatever that is.” – Martin Fowler
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </section>
+
+  <!-- BOTTOM CONTROLS -->
+  <footer class="bottom-bar">
+    <div class="control-group">
+      <button class="btn" id="btnPrev">
+        <span class="icon"><i class="fa-solid fa-arrow-left"></i></span>
+        ก่อนหน้า
+      </button>
+      <button class="btn btn-primary" id="btnNext">
+        ถัดไป
+        <span class="icon"><i class="fa-solid fa-arrow-right"></i></span>
+      </button>
+    </div>
+
+    <div class="control-group">
+      <button class="btn" id="btnFontDown" title="ลดขนาดตัวอักษร">
+        <span class="icon"><i class="fa-solid fa-minus"></i></span>A
+      </button>
+      <span class="font-size-indicator" id="fontSizeDisplay">16px</span>
+      <button class="btn" id="btnFontUp" title="เพิ่มขนาดตัวอักษร">
+        <span class="icon"><i class="fa-solid fa-plus"></i></span>A
+      </button>
+    </div>
+
+    <div class="control-group">
+      <button class="btn" id="btnFullscreen" title="Toggle Fullscreen">
+        <span class="icon"><i class="fa-solid fa-expand"></i></span>
+        Fullscreen
+      </button>
+      <div class="shortcuts">
+        <span><span class="kbd">←</span><span class="kbd">→</span> เลื่อน slide</span>
+        · <span><span class="kbd">F</span> Fullscreen</span>
+        · <span><span class="kbd">+</span>/<span class="kbd">-</span> ปรับฟอนต์</span>
+      </div>
+    </div>
+  </footer>
+</main>
+
+<script>
+  (function() {
+    const slides = Array.from(document.querySelectorAll('.slide'));
+    const counterEl = document.getElementById('slideCounter');
+    const progressBar = document.getElementById('progressBar');
+    const titleEl = document.getElementById('liveSlideTitle');
+    const btnPrev = document.getElementById('btnPrev');
+    const btnNext = document.getElementById('btnNext');
+    const btnFontUp = document.getElementById('btnFontUp');
+    const btnFontDown = document.getElementById('btnFontDown');
+    const btnFullscreen = document.getElementById('btnFullscreen');
+    const fontDisplay = document.getElementById('fontSizeDisplay');
+    const deck = document.getElementById('deck');
+
+    let current = 0;
+    let baseFont = 16;
+
+    function updateUI() {
+      slides.forEach((s, i) => {
+        s.classList.toggle('active', i === current);
+      });
+
+      const total = slides.length;
+      counterEl.textContent = (current + 1) + ' / ' + total;
+      const title = slides[current].getAttribute('data-title') || '';
+      titleEl.textContent = title;
+
+      const progress = ((current + 1) / total) * 100;
+      progressBar.style.width = progress + '%';
+
+      // disable buttons at edges
+      if (current === 0) {
+        btnPrev.classList.add('btn-disabled');
+      } else {
+        btnPrev.classList.remove('btn-disabled');
+      }
+      if (current === total - 1) {
+        btnNext.classList.add('btn-disabled');
+      } else {
+        btnNext.classList.remove('btn-disabled');
+      }
+    }
+
+    function goTo(index) {
+      if (index < 0 || index >= slides.length) return;
+      current = index;
+      updateUI();
+    }
+
+    function next() {
+      if (current < slides.length - 1) {
+        current++;
+        updateUI();
+      }
+    }
+
+    function prev() {
+      if (current > 0) {
+        current--;
+        updateUI();
+      }
+    }
+
+    function changeFont(delta) {
+      baseFont = Math.min(22, Math.max(12, baseFont + delta));
+      document.documentElement.style.setProperty('--base-font-size', baseFont + 'px');
+      fontDisplay.textContent = baseFont + 'px';
+    }
+
+    function toggleFullScreen() {
+      if (!document.fullscreenElement) {
+        if (deck.requestFullscreen) deck.requestFullscreen();
+      } else {
+        if (document.exitFullscreen) document.exitFullscreen();
+      }
+    }
+
+    // Button events
+    btnNext.addEventListener('click', next);
+    btnPrev.addEventListener('click', prev);
+    btnFontUp.addEventListener('click', () => changeFont(1));
+    btnFontDown.addEventListener('click', () => changeFont(-1));
+    btnFullscreen.addEventListener('click', toggleFullScreen);
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+      const tag = e.target.tagName.toLowerCase();
+      if (tag === 'input' || tag === 'textarea') return;
+
+      switch (e.key) {
+        case 'ArrowRight':
+        case 'PageDown':
+        case ' ':
+          e.preventDefault();
+          next();
+          break;
+        case 'ArrowLeft':
+        case 'PageUp':
+          e.preventDefault();
+          prev();
+          break;
+        case 'f':
+        case 'F':
+          e.preventDefault();
+          toggleFullScreen();
+          break;
+        case '+':
+        case '=':
+          e.preventDefault();
+          changeFont(1);
+          break;
+        case '-':
+        case '_':
+          e.preventDefault();
+          changeFont(-1);
+          break;
+      }
+    });
+
+    // Init
+    updateUI();
+    fontDisplay.textContent = baseFont + 'px';
+  })();
+</script>
+</body>
+</html>

@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ENGSE207: Week 2 - Quality Attributes & Architectural Drivers</title>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;800&family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --secondary-color: #1e40af;
+            --accent-color: #f59e0b;
+            --bg-color: #0f172a;
+            --text-color: #f8fafc;
+            --slide-bg: #1e293b;
+            --font-main: 'Sarabun', sans-serif;
+            --font-head: 'Roboto', sans-serif;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: var(--font-main);
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Slide Container */
+        #presentation-container {
+            width: 100%;
+            height: 100%;
+            max-width: 1280px; /* 16:9 Aspect Ratio Base */
+            max-height: 720px;
+            position: relative;
+            background-color: var(--slide-bg);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        /* Individual Slide */
+        .slide {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            padding: 40px 60px;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.4s ease-in-out, transform 0.4s ease;
+            transform: translateX(50px);
+        }
+
+        .slide.active {
+            display: flex;
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        /* Typography */
+        h1 { font-family: var(--font-head); font-size: 3.5rem; color: var(--primary-color); margin-bottom: 20px; line-height: 1.2; text-shadow: 2px 2px 4px rgba(0,0,0,0.3); }
+        h2 { font-family: var(--font-head); font-size: 2.5rem; color: #60a5fa; margin-bottom: 15px; border-bottom: 2px solid var(--accent-color); padding-bottom: 10px; display: inline-block;}
+        h3 { font-size: 1.8rem; color: #93c5fd; margin-top: 20px; margin-bottom: 10px; }
+        p, li { font-size: 1.4rem; line-height: 1.6; margin-bottom: 12px; color: #e2e8f0; }
+        ul { margin-left: 40px; }
+        strong { color: var(--accent-color); }
+
+        /* Helpers */
+        .highlight { color: var(--accent-color); font-weight: bold; }
+        .flex-row { display: flex; gap: 30px; align-items: center; justify-content: space-between; height: 100%; }
+        .flex-col { display: flex; flex-direction: column; gap: 15px; flex: 1; }
+        .half-width { flex: 1; }
+        
+        /* Images & Diagrams */
+        .diagram-container {
+            text-align: center;
+            background: rgba(255,255,255,0.05);
+            padding: 10px;
+            border-radius: 10px;
+            margin: 10px 0;
+        }
+        .diagram-img {
+            max-width: 100%;
+            max-height: 500px;
+            object-fit: contain;
+            border-radius: 5px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+
+        /* Code/Tags */
+        .tag { display: inline-block; background: var(--secondary-color); padding: 5px 10px; border-radius: 4px; font-size: 0.9em; margin-right: 5px; }
+        
+        /* Table Style */
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 1.1rem; }
+        th, td { border: 1px solid #475569; padding: 12px; text-align: left; }
+        th { background-color: var(--secondary-color); color: white; }
+        tr:nth-child(even) { background-color: rgba(255,255,255,0.05); }
+
+        /* Controls */
+        #controls {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            gap: 10px;
+            z-index: 100;
+            background: rgba(0,0,0,0.6);
+            padding: 10px;
+            border-radius: 30px;
+            backdrop-filter: blur(5px);
+        }
+
+        button {
+            background: var(--primary-color);
+            border: none;
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.2rem;
+            transition: transform 0.2s, background 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        button:hover { background: var(--accent-color); transform: scale(1.1); }
+        button:disabled { background: #64748b; cursor: not-allowed; }
+
+        /* Progress Bar */
+        #progress-bar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            height: 5px;
+            background: var(--accent-color);
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+        /* Slide Number */
+        #slide-number {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            font-size: 1rem;
+            color: #94a3b8;
+            background: rgba(0,0,0,0.4);
+            padding: 5px 10px;
+            border-radius: 15px;
+        }
+
+        /* Fullscreen adjustments */
+        :fullscreen #presentation-container {
+            max-width: 100%;
+            max-height: 100%;
+            border-radius: 0;
+        }
+
+        /* Font Size Toggle Classes */
+        .font-large h1 { font-size: 4.5rem; }
+        .font-large h2 { font-size: 3rem; }
+        .font-large p, .font-large li { font-size: 1.8rem; }
+    </style>
+</head>
+<body>
+
+<div id="presentation-container">
+    
+    <div class="slide active">
+        <div style="text-align: center; margin-top: 50px;">
+            <p style="color: var(--accent-color); font-size: 1.5rem; letter-spacing: 2px;">ENGSE207: SOFTWARE ARCHITECTURE</p>
+            <h1>Quality Attributes &<br>Architectural Drivers</h1>
+            <p style="font-size: 1.8rem; color: #cbd5e1;">Week 2: Defining "Good" Architecture</p>
+            <div style="margin-top: 50px;">
+                <p><strong>ผู้สอน:</strong> อ.ธนิต เกตุแก้ว</p>
+                <p>วิศวกรรมซอฟต์แวร์</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="slide">
+        <h2>🎯 วัตถุประสงค์การเรียนรู้ (Learning Objectives)</h2>
+        <ul style="margin-top: 40px;">
+            <li><strong>1. เข้าใจ Quality Attributes:</strong> แยกแยะและอธิบายคุณสมบัติทั้ง 6 ด้าน (Performance, Scalability, etc.)</li>
+            <li><strong>2. เขียน Scenarios ได้:</strong> สร้าง Quality Attribute Scenario ตามโครงสร้าง 6 ส่วนได้อย่างถูกต้อง</li>
+            <li><strong>3. วิเคราะห์ Trade-offs:</strong> เข้าใจการแลกเปลี่ยนและตัดสินใจเลือก Architecture ที่เหมาะสม</li>
+            <li><strong>4. ระบุ Architectural Drivers:</strong> วิเคราะห์ SRS เพื่อหา Drivers ที่ขับเคลื่อนการออกแบบ</li>
+        </ul>
+    </div>
+
+    <div class="slide">
+        <h2>🔄 Recap: สัปดาห์ที่ 1</h2>
+        <div class="flex-row">
+            <div class="half-width">
+                <h3>Architecture vs Design vs Implementation</h3>
+                <ul>
+                    <li><strong>Architecture:</strong> "What" & "Why" (Structure, High-level decisions)</li>
+                    <li><strong>Design:</strong> "How" (Details, Classes, Methods)</li>
+                    <li><strong>Implementation:</strong> Coding</li>
+                </ul>
+            </div>
+            <div class="half-width" style="background: rgba(255,255,255,0.05); padding: 20px; border-radius: 10px;">
+                <h3>💡 Key Insight</h3>
+                <p>สถาปัตยกรรมซอฟต์แวร์ไม่ใช่แค่เรื่องเทคนิค แต่คือการจัดการ <strong>Trade-offs</strong> เพื่อตอบสนองความต้องการของผู้มีส่วนได้ส่วนเสีย (Stakeholders)</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="slide">
+        <h2>1.1 Quality Attributes คืออะไร?</h2>
+        <p><strong>Definition:</strong> คุณสมบัติที่วัดว่าระบบซอฟต์แวร์มีคุณภาพดีเพียงใดในด้านต่างๆ นอกเหนือจากฟังก์ชันการทำงาน (Non-Functional Requirements)</p>
+        <div style="margin-top: 30px;">
+            <h3>ทำไมถึงสำคัญ?</h3>
+            <ul>
+                <li>🧭 <strong>Directs Design:</strong> กำหนดทิศทางการออกแบบสถาปัตยกรรม</li>
+                <li>⚖️ <strong>Decision Making:</strong> เป็นเกณฑ์ในการตัดสินใจเลือก Tech Stack</li>
+                <li>🗣️ <strong>Communication:</strong> สื่อสารความคาดหวังกับ Stakeholders</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="slide">
+        <h2>The 6 Key Quality Attributes</h2>
+        <div class="diagram-container">
+            <img src="diagram1_quality_attributes_overview.png" alt="Quality Attributes Overview" class="diagram-img">
+            <p style="font-size: 1rem; color: #94a3b8; margin-top: 10px;">ภาพรวม: Performance, Scalability, Availability, Security, Modifiability, Usability</p>
+        </div>
+    </div>
+
+    <div class="slide">
+        <h2>🚀 1. Performance (ประสิทธิภาพ)</h2>
+        <p>ความสามารถในการตอบสนองต่อ Events หรือ Requests ภายในเวลาที่กำหนด</p>
+        <div class="flex-row">
+            <div class="half-width">
+                <h3>ตัวชี้วัด (Metrics)</h3>
+                <ul>
+                    <li>Response Time (Latency)</li>
+                    <li>Throughput (Requests/sec)</li>
+                </ul>
+            </div>
+            <div class="half-width">
+                <h3>Real World Examples</h3>
+                <ul>
+                    <li>🎮 <strong>PUBG/FreeFire:</strong> < 50ms latency</li>
+                    <li>🛒 <strong>Shopee Flash Sale:</strong> High throughput</li>
+                </ul>
+            </div>
+        </div>
+        <p class="highlight" style="margin-top: 20px;">Architectural Tactics: Caching (Redis), Load Balancing, Async Processing</p>
+    </div>
+
+    <div class="slide">
+        <h2>📈 2. Scalability (การขยายตัว)</h2>
+        <p>ความสามารถในการรับมือกับ Load ที่เพิ่มขึ้นโดยประสิทธิภาพไม่ลดลง</p>
+        <div class="flex-row">
+            <div class="half-width">
+                <h3>Types</h3>
+                <ul>
+                    <li><strong>Horizontal (Scale Out):</strong> เพิ่มจำนวนเครื่อง (Server Farm)</li>
+                    <li><strong>Vertical (Scale Up):</strong> เพิ่ม RAM/CPU ให้เครื่องเดิม</li>
+                </ul>
+            </div>
+            <div class="half-width">
+                <h3>Example: LINE Messaging</h3>
+                <p>ช่วงปีใหม่ต้องรองรับ Message หลักล้านต่อวินาที ต้องใช้ Distributed Systems และ Message Queue</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="slide">
+        <h2>✅ 3. Availability (ความพร้อมใช้งาน)</h2>
+        <p>เปอร์เซ็นต์ของเวลาที่ระบบทำงานได้ปกติ (Uptime)</p>
+        <div style="background: rgba(37, 99, 235, 0.2); padding: 20px; border-radius: 10px; margin: 20px 0;">
+            <p style="text-align: center; font-size: 1.8rem;"><strong>99.99% (Four Nines)</strong> = Down ได้แค่ 52 นาที/ปี</p>
+        </div>
+        <h3>Architectural Tactics:</h3>
+        <ul>
+            <li>Redundancy (มี Server สำรอง)</li>
+            <li>Failover Mechanism (สลับไปตัวสำรองอัตโนมัติ)</li>
+            <li>Multi-region Deployment</li>
+        </ul>
+    </div>
+
+    <div class="slide">
+        <h2>🔒 4. Security (ความปลอดภัย)</h2>
+        <p>การป้องกันการเข้าถึงที่ไม่ได้รับอนุญาตและการรักษาความลับ (CIA Triad)</p>
+        <div class="flex-row">
+            <ul>
+                <li><strong>Confidentiality:</strong> ความลับ</li>
+                <li><strong>Integrity:</strong> ความถูกต้อง</li>
+                <li><strong>Availability:</strong> พร้อมใช้</li>
+            </ul>
+            <div class="half-width" style="border-left: 3px solid var(--accent-color); padding-left: 20px;">
+                <h3>Example: Banking App</h3>
+                <p>ต้องมี Encryption, 2FA (OTP), และ Audit Logs ที่เข้มงวด</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="slide">
+        <h2>🛠️ 5. Modifiability (การแก้ไขง่าย)</h2>
+        <p>ความง่ายในการเปลี่ยนแปลง เพิ่มเติม หรือลดฟีเจอร์ โดยมี Cost ต่ำ</p>
+        <div class="flex-row">
+            <div class="half-width">
+                <h3>เมื่อไหร่ที่ต้องการ?</h3>
+                <ul>
+                    <li>E-Commerce: เปลี่ยน Pro บ่อย</li>
+                    <li>Startups: Pivot product บ่อย</li>
+                </ul>
+            </div>
+            <div class="half-width">
+                <h3>Tactics:</h3>
+                <ul>
+                    <li>Low Coupling / High Cohesion</li>
+                    <li>Microservices</li>
+                    <li>Plugin Architecture</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="slide">
+        <h2>😊 6. Usability (การใช้งานง่าย)</h2>
+        <p>ไม่ใช่แค่สำหรับ End-user แต่รวมถึง Developer และ Operator ด้วย</p>
+        <ul>
+            <li><strong>User Usability:</strong> UI/UX, Learning curve ต่ำ (เช่น แอปเป๋าตัง/คนละครึ่ง)</li>
+            <li><strong>Developer Usability:</strong> Code อ่านง่าย, Doc ดี, API ชัดเจน</li>
+            <li><strong>Operator Usability:</strong> Deploy ง่าย, Monitor ง่าย, Log อ่านรู้เรื่อง</li>
+        </ul>
+    </div>
+
+    <div class="slide">
+        <h1 style="text-align: center; margin-bottom: 20px;">Trade-offs</h1>
+        <p style="text-align: center; font-size: 2rem;">"There is no such thing as a perfect architecture."</p>
+        <p style="text-align: center; margin-top: 30px;">เราไม่สามารถได้ทุกอย่างที่ดีพร้อมกัน... เราต้อง "แลกเปลี่ยน"</p>
+    </div>
+
+    <div class="slide">
+        <h2>Common Trade-offs in Software Architecture</h2>
+        <div class="diagram-container">
+             <img src="diagram3_tradeoffs.png" alt="Common Trade-offs" class="diagram-img">
+        </div>
+        <p style="text-align: center;">Key Insight: Performance vs Security | Scalability vs Cost | Consistency vs Availability</p>
+    </div>
+
+    <div class="slide">
+        <h2>⚖️ Analyzing Key Trade-offs</h2>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+            <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 8px;">
+                <h3>Performance vs Security</h3>
+                <p><strong>HTTPS:</strong> ปลอดภัยกว่า แต่ช้ากว่า HTTP เพราะต้อง Encrypt/Decrypt</p>
+                <p><strong>Decision:</strong> Banking เลือก Security, News Site เลือก Performance</p>
+            </div>
+            <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 8px;">
+                <h3>Consistency vs Availability (CAP)</h3>
+                <p><strong>Banking:</strong> ยอดเงินต้องตรง (Consistency) ยอมระบบล่มดีกว่าเงินผิด</p>
+                <p><strong>Social Media:</strong> ไลค์ไม่ตรงไม่เป็นไร (Availability) ขอให้เข้าแอปได้ก่อน</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="slide">
+        <h2>1.2 Quality Attribute Scenarios</h2>
+        <p>การพูดว่า <em>"ระบบต้องเร็ว"</em> หรือ <em>"ระบบต้องปลอดภัย"</em> นั้น <strong>ไม่เพียงพอ</strong></p>
+        <p style="margin-top: 20px;">เราต้องเปลี่ยนนามธรรม ให้เป็นรูปธรรมที่วัดผลได้ ด้วย <strong>"Scenario"</strong></p>
+        <div style="margin-top: 30px; text-align: center; padding: 20px; border: 2px dashed #60a5fa; border-radius: 10px;">
+            <h3>Bad: "The system should be fast."</h3>
+            <h3>Good: "The system responds to search requests within 2s under 5,000 users load."</h3>
+        </div>
+    </div>
+
+    <div class="slide">
+        <h2>โครงสร้าง 6 ส่วนของ Scenario</h2>
+        <div class="diagram-container">
+            <img src="diagram2_qa_scenario_structure.jpg" alt="Scenario Structure" class="diagram-img">
+        </div>
+        <ul style="display: flex; justify-content: space-around; list-style: none; font-size: 1rem; color: #94a3b8;">
+            <li>1.Source</li><li>2.Stimulus</li><li>3.Artifact</li><li>4.Environment</li><li>5.Response</li><li>6.Measure</li>
+        </ul>
+    </div>
+
+    <div class="slide">
+        <h2>ตัวอย่าง: Performance Scenario (Food Delivery)</h2>
+        <div class="diagram-container">
+            <img src="diagram5_scenario_example.jpg" alt="Example Scenario" class="diagram-img">
+        </div>
+    </div>
+
+    <div class="slide">
+        <h2>ตัวอย่าง: Availability Scenario (Failover)</h2>
+        <table>
+            <tr><th>Part</th><th>Detail</th></tr>
+            <tr><td><strong>Source</strong></td><td>Database Server</td></tr>
+            <tr><td><strong>Stimulus</strong></td><td>Hardware Failure (Crash)</td></tr>
+            <tr><td><strong>Artifact</strong></td><td>Database System</td></tr>
+            <tr><td><strong>Environment</strong></td><td>Normal Operation</td></tr>
+            <tr><td><strong>Response</strong></td><td>Detect failure & Switch to Standby Replica automatically</td></tr>
+            <tr><td><strong>Measure</strong></td><td><span class="highlight">Downtime < 30 seconds</span>, No data loss</td></tr>
+        </table>
+    </div>
+
+    <div class="slide">
+        <h2>1.3 Architectural Drivers</h2>
+        <p>ปัจจัยที่ "ขับเคลื่อน" ให้เราต้องออกแบบสถาปัตยกรรมในรูปแบบต่างๆ</p>
+        <div class="diagram-container">
+             <img src="diagram4_architectural_drivers.jpg" alt="Architectural Drivers" class="diagram-img">
+        </div>
+    </div>
+
+    <div class="slide">
+        <h2>1. Functional Requirements</h2>
+        <p><strong>"ระบบต้องทำอะไร?"</strong> (Features / Capabilities)</p>
+        <div class="flex-row">
+            <div class="half-width">
+                <h3>Example: Task Board</h3>
+                <ul>
+                    <li>Create/Edit Tasks</li>
+                    <li>Drag & Drop</li>
+                    <li>Assign Members</li>
+                    <li>Real-time Notifications</li>
+                </ul>
+            </div>
+            <div class="half-width">
+                <h3>Impact on Arch:</h3>
+                <p>Real-time notifications -> บังคับให้ใช้ <strong>WebSocket</strong> หรือ Message Queue</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="slide">
+        <h2>2. Quality Attributes</h2>
+        <p><strong>"ระบบต้องมีคุณภาพอย่างไร?"</strong></p>
+        <p>สิ่งที่เราเพิ่งเรียนไป (Performance, Security, etc.)</p>
+        <ul style="margin-top: 30px;">
+            <li>ถ้าต้องการ Scalability สูง -> Microservices</li>
+            <li>ถ้าต้องการ Time-to-market เร็ว -> Monolith / Serverless</li>
+        </ul>
+    </div>
+
+    <div class="slide">
+        <h2>3. Constraints (ข้อจำกัด)</h2>
+        <p>สิ่งที่เราเปลี่ยนแปลงไม่ได้ ต้องทำตามเท่านั้น</p>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px;">
+            <div style="background: #1e3a8a; padding: 15px; border-radius: 8px;">
+                <h3>Technical</h3>
+                <p>ต้องใช้ Node.js, ต้อง Deploy บน AWS ของลูกค้า</p>
+            </div>
+            <div style="background: #1e3a8a; padding: 15px; border-radius: 8px;">
+                <h3>Business/Budget</h3>
+                <p>Budget < 20,000 บาท/เดือน, ต้องเสร็จใน 3 เดือน</p>
+            </div>
+            <div style="background: #1e3a8a; padding: 15px; border-radius: 8px;">
+                <h3>Legal</h3>
+                <p>PDPA Compliance, ข้อมูลห้ามออกนอกประเทศ</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="slide">
+        <h2>4. Assumptions (สมมติฐาน)</h2>
+        <p>สิ่งที่เรา "คาดเดา" ว่าเป็นจริง เพื่อให้การออกแบบเดินหน้าต่อได้ (แต่ต้อง Verify ภายหลัง)</p>
+        <ul style="margin-top: 20px;">
+            <li>"User ส่วนใหญ่ใช้อินเทอร์เน็ตความเร็วสูง (4G+)"</li>
+            <li>"จำนวนผู้ใช้สูงสุดจะไม่เกิน 10,000 คนในปีแรก"</li>
+            <li>"Database จะโตไม่เกิน 10GB ต่อปี"</li>
+        </ul>
+        <p class="highlight" style="margin-top: 20px;">⚠️ ถ้า Assumption ผิด Architecture อาจพังได้</p>
+    </div>
+
+    <div class="slide">
+        <h2>Process: From Drivers to Architecture</h2>
+        <ol style="font-size: 1.6rem; line-height: 2; margin-left: 50px;">
+            <li>🗣️ <strong>Gather:</strong> คุยกับ Stakeholders / อ่าน SRS</li>
+            <li>📝 <strong>Identify:</strong> แยกแยะ Functional, QA, Constraints</li>
+            <li>✍️ <strong>Write Scenarios:</strong> ทำให้ QA วัดผลได้</li>
+            <li>🥇 <strong>Prioritize:</strong> จัดลำดับความสำคัญ (Trade-offs)</li>
+            <li>🏗️ <strong>Design:</strong> เลือก Pattern ที่ตอบโจทย์ Drivers</li>
+        </ol>
+    </div>
+
+    <div class="slide" style="background: linear-gradient(135deg, #1e40af 0%, #0f172a 100%);">
+        <h1 style="color: #fff;">🔥 Workshop Time!</h1>
+        <h2>Cloud-based Task Board System</h2>
+        <p>มาร่วมกันออกแบบ Drivers สำหรับระบบจัดการงาน (คล้าย Trello)</p>
+        <div class="flex-row" style="margin-top: 30px;">
+            <div style="text-align: center;">
+                <h3>4-5 คน/กลุ่ม</h3>
+            </div>
+            <div style="text-align: center;">
+                <h3>เวลา: 60 นาที</h3>
+            </div>
+            <div style="text-align: center;">
+                <h3>Present ท้ายคาบ</h3>
+            </div>
+        </div>
+    </div>
+
+    <div class="slide">
+        <h2>Activity 1: Brainstorm QAs & Priority</h2>
+        <p><strong>Goal:</strong> ระบุ Quality Attributes ที่สำคัญที่สุด 5 อันดับแรก</p>
+        <div style="background: rgba(255,255,255,0.1); padding: 20px; border-radius: 10px; margin-top: 20px;">
+            <h3>Target Users:</h3>
+            <p>Dev Teams, Marketing, Operations</p>
+            <h3>Questions to ask:</h3>
+            <ul>
+                <li>ระบบต้องเร็วแค่ไหน? (Performance)</li>
+                <li>ถ้าคนใช้เยอะๆ จะเป็นไรไหม? (Scalability)</li>
+                <li>ข้อมูลรั่วไหลได้ไหม? (Security)</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="slide">
+        <h2>Activity 2: Write Scenarios</h2>
+        <p>เลือก Top 5 QAs แล้วเขียน Scenario ให้ครบ 6 ส่วน</p>
+        <p><strong>Template:</strong></p>
+        <table style="font-size: 0.9rem;">
+            <tr><td>Source</td><td>...</td><td>Environment</td><td>...</td></tr>
+            <tr><td>Stimulus</td><td>...</td><td>Response</td><td>...</td></tr>
+            <tr><td>Artifact</td><td>...</td><td><strong>Measure</strong></td><td><span class="highlight">ต้องมีตัวเลข!</span></td></tr>
+        </table>
+        <p style="margin-top: 10px; font-style: italic;">"Response time < 1.5s for 95% of requests"</p>
+    </div>
+
+    <div class="slide">
+        <h2>Activity 3: Trade-offs Analysis</h2>
+        <p>วิเคราะห์ความขัดแย้งของ QAs ที่เลือกมา</p>
+        <div class="flex-row">
+            <div class="half-width">
+                <h3>Example Conflict</h3>
+                <p><strong>Security vs Performance</strong></p>
+                <p>ถ้าเราบังคับ Validate Token ทุก Request ระบบจะช้าลงไหม? เรายอมรับได้ไหม?</p>
+            </div>
+            <div class="half-width">
+                <h3>Task:</h3>
+                <p>ระบุ 1 Major Trade-off และเขียนเหตุผลการตัดสินใจ</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="slide">
+        <h2>Activity 4: Presentation & Peer Review</h2>
+        <ul>
+            <li>🎤 นำเสนอ Top 3 Scenarios</li>
+            <li>⚖️ อธิบาย Trade-offs หลัก</li>
+            <li>👀 เพื่อนต่างกลุ่มช่วย Review:</li>
+            <ul>
+                <li>Scenarios วัดผลได้จริงไหม?</li>
+                <li>เหตุผลสมเหตุสมผลไหม?</li>
+            </ul>
+        </ul>
+    </div>
+
+    <div class="slide">
+        <h2>🏠 Lab 2: Architectural Drivers Document</h2>
+        <p>งานกลุ่ม: เลือก 1 Domain ต่อไปนี้เพื่อทำโปรเจกต์</p>
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; font-size: 1rem; margin-top: 20px;">
+            <div class="tag">1. E-Learning Platform</div>
+            <div class="tag">2. Food Delivery</div>
+            <div class="tag">3. Smart Home IoT</div>
+            <div class="tag">4. Social Media</div>
+            <div class="tag">5. Clinic Management</div>
+            <div class="tag">6. Hotel Booking</div>
+        </div>
+        <p style="margin-top: 20px;">สร้างเอกสารระบุ Drivers สำหรับโปรเจกต์ของทีมตัวเอง</p>
+    </div>
+
+    <div class="slide">
+        <h2>สิ่งที่ต้องส่งใน Lab Document</h2>
+        <ol style="font-size: 1.2rem;">
+            <li><strong>System Overview:</strong> รายละเอียดระบบ, Target Users, Key Features</li>
+            <li><strong>Functional Requirements:</strong> อย่างน้อย 15 ข้อ</li>
+            <li><strong>Quality Attributes & Scenarios:</strong> 6 Scenarios (ครบ 6 ส่วน)</li>
+            <li><strong>Constraints:</strong> Tech, Time, Budget, Legal</li>
+            <li><strong>Assumptions:</strong> 5 ข้อ</li>
+            <li><strong>Priority & Trade-offs:</strong> วิเคราะห์และจัดอันดับ</li>
+        </ol>
+        <p class="highlight" style="margin-top: 20px; text-align: center;">ส่งภายใน 1 สัปดาห์</p>
+    </div>
+
+    <div class="slide">
+        <h2>🎯 สรุปบทเรียนวันนี้ (Summary)</h2>
+        <div class="flex-row">
+            <div class="half-width">
+                <h3>Key Takeaways</h3>
+                <ul>
+                    <li>✅ QA ต้องเป็นรูปธรรม (Scenario)</li>
+                    <li>✅ ทุกการตัดสินใจมี Trade-offs</li>
+                    <li>✅ Drivers คือจุดเริ่มต้นของ Architecture</li>
+                </ul>
+            </div>
+            <div class="half-width" style="text-align: center;">
+                <h1 style="font-size: 5rem;">Questions?</h1>
+            </div>
+        </div>
+    </div>
+
+    <div class="slide">
+        <h2>🔮 สัปดาห์หน้า: Architectural Styles</h2>
+        <p>เราจะนำ Drivers ที่ได้วันนี้ มาเลือก "รูปทรง" ของระบบ</p>
+        <div class="diagram-container" style="background: none; text-align: left; padding-left: 50px;">
+            <ul>
+                <li>📦 Monolithic Architecture</li>
+                <li>🍰 Layered Architecture</li>
+                <li>🕸️ Microservices</li>
+                <li>⚡ Event-driven Architecture</li>
+            </ul>
+        </div>
+        <p style="margin-top: 40px; text-align: center;">อย่าลืมทำ Lab และเตรียมตัวนำเสนอ!</p>
+    </div>
+
+    <div class="slide">
+        <h2>📚 แหล่งข้อมูลอ้างอิง</h2>
+        <ul>
+            <li>Software Architecture in Practice (Bass, Clements, Kazman)</li>
+            <li>Fundamentals of Software Architecture (Richards, Ford)</li>
+            <li>Diagrams used: Custom generated for ENGSE207</li>
+        </ul>
+        <div style="margin-top: 50px; text-align: center; color: #64748b;">
+            <p>ENGSE207 - Software Architecture</p>
+        </div>
+    </div>
+
+    <div id="controls">
+        <button onclick="toggleFontSize()" title="Toggle Font Size">Aa</button>
+        <button onclick="toggleFullscreen()" title="Fullscreen">⛶</button>
+        <button onclick="prevSlide()" title="Previous">❮</button>
+        <button onclick="nextSlide()" title="Next">❯</button>
+    </div>
+    
+    <div id="slide-number">1 / 34</div>
+    <div id="progress-bar"></div>
+
+</div>
+
+<script>
+    let currentSlide = 0;
+    const slides = document.querySelectorAll('.slide');
+    const totalSlides = slides.length;
+    const progressBar = document.getElementById('progress-bar');
+    const slideNumberDisplay = document.getElementById('slide-number');
+    const container = document.getElementById('presentation-container');
+
+    function showSlide(index) {
+        slides.forEach((slide, i) => {
+            slide.classList.remove('active');
+            if (i === index) {
+                slide.classList.add('active');
+            }
+        });
+        
+        // Update Progress
+        const progress = ((index + 1) / totalSlides) * 100;
+        progressBar.style.width = `${progress}%`;
+        
+        // Update Number
+        slideNumberDisplay.textContent = `${index + 1} / ${totalSlides}`;
+    }
+
+    function nextSlide() {
+        if (currentSlide < totalSlides - 1) {
+            currentSlide++;
+            showSlide(currentSlide);
+        }
+    }
+
+    function prevSlide() {
+        if (currentSlide > 0) {
+            currentSlide--;
+            showSlide(currentSlide);
+        }
+    }
+
+    function toggleFullscreen() {
+        if (!document.fullscreenElement) {
+            container.requestFullscreen().catch(err => {
+                alert(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
+            });
+        } else {
+            document.exitFullscreen();
+        }
+    }
+
+    function toggleFontSize() {
+        container.classList.toggle('font-large');
+    }
+
+    // Keyboard Navigation
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowRight' || e.key === 'Space') {
+            nextSlide();
+        } else if (e.key === 'ArrowLeft') {
+            prevSlide();
+        } else if (e.key === 'f') {
+            toggleFullscreen();
+        }
+    });
+
+    // Initialize
+    showSlide(currentSlide);
+
+</script>
+
+</body>
+</html>

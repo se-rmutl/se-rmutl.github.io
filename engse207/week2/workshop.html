@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QA Scenarios Workshop: Cloud Task Board (Physical Board Edition)</title>
+    <style>
+        :root {
+            --primary: #2563eb; /* Blue for headers */
+            --secondary: #1e293b; /* Dark text */
+            --accent: #f59e0b; /* Orange/Amber for highlights */
+            --text: #334155;
+            --bg: #f0f4f8;
+            --code-bg: #1e1e1e;
+            --postit-yellow: #fef08a;
+            --postit-blue: #bae6fd;
+            --postit-green: #bbf7d0;
+            --postit-pink: #fbcfe8;
+            --board-bg: #ffffff;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Segoe UI', 'Roboto', 'Sarabun', sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Slide Container */
+        .slide-container {
+            flex: 1;
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 1rem;
+            background-image: radial-gradient(#e2e8f0 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+
+        .slide {
+            position: absolute;
+            width: 95%;
+            max-width: 1300px;
+            height: 90%;
+            background: var(--board-bg);
+            border-radius: 12px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1), 0 5px 15px rgba(0,0,0,0.05);
+            padding: 2.5rem;
+            opacity: 0;
+            transform: translateY(30px) scale(0.98);
+            transition: all 0.6s cubic-bezier(0.25, 0.8, 0.25, 1);
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            border-top: 6px solid var(--primary);
+        }
+
+        .slide.active {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+            pointer-events: all;
+            z-index: 10;
+        }
+
+        /* Typography & Elements */
+        h1 { font-size: 2.8rem; color: var(--secondary); margin-bottom: 0.5rem; letter-spacing: -1px; }
+        h2 { font-size: 2rem; color: var(--primary); margin-bottom: 1.5rem; border-bottom: 3px solid #e2e8f0; padding-bottom: 0.5rem; display: flex; align-items: center; gap: 10px; }
+        h3 { font-size: 1.5rem; color: var(--secondary); margin-top: 1.5rem; margin-bottom: 0.8rem; }
+        p, li { font-size: 1.15rem; line-height: 1.7; color: var(--text); margin-bottom: 1rem; }
+        ul { margin-left: 2.5rem; }
+        strong { color: var(--primary); font-weight: 700; }
+
+        .tag { display: inline-block; padding: 0.3rem 0.8rem; border-radius: 99px; font-size: 0.95rem; font-weight: bold; margin-right: 0.5rem; background: #e0f2fe; color: #0369a1; box-shadow: 2px 2px 5px rgba(0,0,0,0.05); }
+        
+        .card {
+            background: #f8fafc;
+            border-left: 6px solid var(--primary);
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+        .card-tip { border-left-color: var(--accent); background-color: #fffbeb; }
+        .card-alert { border-left-color: #ef4444; background-color: #fef2f2; }
+
+        table { width: 100%; border-collapse: separate; border-spacing: 0; margin: 1rem 0; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        th, td { padding: 15px; border-bottom: 1px solid #e2e8f0; text-align: left; background: white; }
+        th { background-color: var(--secondary); color: white; font-weight: 600; }
+        tr:last-child td { border-bottom: none; }
+
+        /* Infographic Container */
+        .infographic-box {
+            background: white;
+            border: 2px dashed #cbd5e1;
+            border-radius: 12px;
+            padding: 2rem;
+            margin: 2rem 0;
+            text-align: center;
+            position: relative;
+        }
+        .infographic-box::before {
+            content: 'Whiteboard / Visual Area';
+            position: absolute;
+            top: -12px;
+            left: 20px;
+            background: white;
+            padding: 0 10px;
+            font-weight: bold;
+            color: #64748b;
+            font-size: 0.9rem;
+        }
+        svg { max-width: 100%; height: auto; }
+
+        /* Post-it Simulation Styles */
+        .post-it {
+            padding: 1rem;
+            font-family: 'Comic Sans MS', 'cursive', sans-serif; /* Fun font for post-its */
+            font-size: 1rem;
+            color: #333;
+            box-shadow: 3px 3px 7px rgba(0,0,0,0.2);
+            transform: rotate(-1deg);
+            transition: transform 0.2s;
+        }
+        .post-it:hover { transform: rotate(0deg) scale(1.02); z-index: 2; }
+        .pi-yellow { background-color: var(--postit-yellow); }
+        .pi-blue { background-color: var(--postit-blue); }
+        .pi-pink { background-color: var(--postit-pink); }
+
+
+        /* Controls */
+        .controls {
+            height: 80px;
+            background: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 2.5rem;
+            box-shadow: 0 -4px 20px rgba(0,0,0,0.08);
+            z-index: 100;
+        }
+        .btn { padding: 0.8rem 2rem; border: none; border-radius: 8px; background: var(--primary); color: white; font-size: 1.1rem; font-weight: bold; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 6px rgba(37, 99, 235, 0.2); }
+        .btn:hover { background: #1d4ed8; transform: translateY(-2px); box-shadow: 0 6px 10px rgba(37, 99, 235, 0.3); }
+        .btn:disabled { background: #cbd5e1; cursor: not-allowed; transform: none; box-shadow: none; }
+        .progress-container { flex: 1; margin: 0 3rem; display: flex; align-items: center; }
+        .progress-bar { flex: 1; height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden; }
+        .progress-fill { height: 100%; background: linear-gradient(90deg, var(--primary), var(--accent)); width: 0%; transition: width 0.4s ease-out; }
+        .page-number { font-weight: bold; color: var(--secondary); margin-left: 1.5rem; font-size: 1.2rem; min-width: 80px; text-align: right; }
+
+        @media (max-width: 1024px) {
+            .slide { padding: 2rem; width: 98%; height: 92%; }
+            h1 { font-size: 2.2rem; } h2 { font-size: 1.6rem; }
+            .infographic-box { padding: 1rem; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="slide-container">
+
+    <div class="slide active">
+        <div style="text-align: center; margin-top: 5%;">
+            <div style="font-size: 6rem; margin-bottom: 1rem; animation: bounce 2s infinite;">🎯</div>
+            <h1>Workshop: Quality Attribute Scenarios</h1>
+            <h2 style="border:none; justify-content: center; color: var(--text);">Case Study: Cloud-based Task Board System</h2>
+            <p style="font-size: 1.3rem; color: var(--primary);">Equipment: Whiteboard & Post-it Notes</p>
+            <br>
+            <div class="card" style="display: inline-block; text-align: left; max-width: 700px;">
+                <strong>ภารกิจของทีมคุณ:</strong>
+                <ul>
+                    <li>สวมบทบาท Software Architect ทีมละ 4-5 คน</li>
+                    <li>ใช้ Board และ Post-it ระดมสมองวิเคราะห์ Requirements</li>
+                    <li>เขียน Scenario เพื่อกำหนดเป้าหมายคุณภาพที่ "วัดผลได้"</li>
+                    <li>ตัดสินใจเลือก Trade-offs ที่ดีที่สุดสำหรับระบบ</li>
+                </ul>
+            </div>
+            <p style="margin-top: 3rem; color: #64748b; font-weight: bold;">กดปุ่ม "Next" เพื่อเริ่ม Workshop</p>
+        </div>
+    </div>
+
+    <div class="slide">
+        <h2>📋 Activity 1: เข้าใจระบบ (System Overview)</h2>
+        <p>โจทย์คือ <strong>Cloud-based Task Board</strong> (คล้าย Trello) สำหรับทีม 10-100 คน</p>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; align-items: start;">
+            <div>
+                <h3>Key Features (Functional)</h3>
+                <ul>
+                    <li><span class="tag">Board</span> สร้าง/แก้ไข Column (To Do, Doing, Done)</li>
+                    <li><span class="tag">Task</span> Drag & Drop card, Assign, Due Date</li>
+                    <li><span class="tag">Real-time</span> Notification เมื่อมีการแก้ไข Task</li>
+                    <li><span class="tag">File</span> Upload attachments ใน Task</li>
+                    <li><span class="tag">Search</span> Filter tasks ได้</li>
+                </ul>
+            </div>
+            <div class="card card-tip">
+                <h3>📌 Context & Constraints (สำคัญมาก!)</h3>
+                <ul>
+                    <li><strong>Users:</strong> หลากหลาย (Dev, Marketing, Students) -> UX ต้องง่าย</li>
+                    <li><strong>Platform:</strong> Web-based (Cloud) -> เน้น Availability</li>
+                    <li><strong>Load:</strong> ทีมขนาดกลาง, เน้น Real-time interaction</li>
+                </ul>
+                <div style="text-align: center; margin-top: 1rem; font-style: italic; color: #666;">
+                    (ลองจินตนาการหน้าจอ Kanban Board ในหัว)
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="slide">
+        <h2>🗺️ Roadmap: ภาพรวมกิจกรรมวันนี้</h2>
+        <p>เราจะใช้เวลา 120 นาที เปลี่ยน Requirement ให้เป็น Architectural Drivers บนบอร์ดของคุณ</p>
+
+        <div class="infographic-box">
+            <svg width="900" height="350" viewBox="0 0 900 350" xmlns="http://www.w3.org/2000/svg">
+                <style>
+                    .flow-text { font-family: sans-serif; font-size: 16px; font-weight: bold; text-anchor: middle; fill: var(--secondary); }
+                    .flow-subtext { font-family: sans-serif; font-size: 14px; text-anchor: middle; fill: #64748b; }
+                    .flow-step { fill: white; stroke: var(--primary); stroke-width: 3px; filter: drop-shadow(3px 3px 5px rgba(0,0,0,0.1)); }
+                    .flow-arrow { stroke: var(--accent); stroke-width: 3px; fill: none; marker-end: url(#arrowhead); }
+                </style>
+                <defs>
+                    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="0" refY="3.5" orient="auto">
+                        <polygon points="0 0, 10 3.5, 0 7" fill="var(--accent)" />
+                    </marker>
+                </defs>
+
+                <circle class="flow-step" cx="150" cy="150" r="80" />
+                <text x="150" y="140" class="flow-text">Activity 1</text>
+                <text x="150" y="165" class="flow-subtext">Brainstorm &</text>
+                <text x="150" y="185" class="flow-subtext">Prioritize QAs</text>
+                <text x="150" y="250" class="flow-text" style="fill: var(--primary);">30 Mins</text>
+
+                <path class="flow-arrow" d="M235 150 H345" />
+
+                <circle class="flow-step" cx="430" cy="150" r="80" />
+                <text x="430" y="140" class="flow-text">Activity 2</text>
+                <text x="430" y="165" class="flow-subtext">Write Scenarios</text>
+                <text x="430" y="185" class="flow-subtext">(on Post-its!)</text>
+                <text x="430" y="250" class="flow-text" style="fill: var(--primary);">40 Mins</text>
+
+                 <path class="flow-arrow" d="M515 150 H625" />
+
+                <circle class="flow-step" cx="710" cy="150" r="80" />
+                <text x="710" y="140" class="flow-text">Activity 3 & 4</text>
+                <text x="710" y="165" class="flow-subtext">Trade-offs &</text>
+                <text x="710" y="185" class="flow-subtext">Present</text>
+                <text x="710" y="250" class="flow-text" style="fill: var(--primary);">30+20 Mins</text>
+            </svg>
+        </div>
+        <p style="text-align: center;">เตรียมปากกาและ Post-it ให้พร้อม แล้วไปเริ่มขั้นตอนแรกกันเลย!</p>
+    </div>
+
+
+    <div class="slide">
+        <h2>🧠 Step 1: ระดมสมองหา QA (Brainstorming)</h2>
+        <p><strong>วิธีทำบนบอร์ด:</strong> ให้ทุกคนเขียน QA ที่คิดว่าสำคัญจาก ลง Post-it (ใบละ 1 คำ) แล้วนำไปแปะรวมกัน</p>
+
+        <div style="display: flex; gap: 3rem; align-items: flex-start;">
+            <div style="flex: 1;">
+                 <div class="card card-tip">
+                    <strong>💡 ตัวอย่างการเชื่อมโยง (Mapping) Keyword -> QA:</strong>
+                    <ul style="margin-top: 1rem;">
+                        <li>"Real-time", "ลาก-วาง" ➡️ <span class="post-it pi-yellow" style="padding: 2px 5px;">Performance</span> (ต้องลื่นไหล)</li>
+                        <li>"Cloud-based", "ใช้ทำงานหลัก" ➡️ <span class="post-it pi-blue" style="padding: 2px 5px;">Availability</span> (ห้ามล่ม)</li>
+                        <li>"Upload file attachments" ➡️ <span class="post-it pi-pink" style="padding: 2px 5px;">Security</span> (ไฟล์ห้ามหลุด)</li>
+                        <li>"อนาคตอาจเพิ่มคน" ➡️ <span class="post-it pi-yellow" style="padding: 2px 5px;">Scalability</span> (รองรับการขยาย)</li>
+                    </ul>
+                </div>
+            </div>
+            <div style="flex: 1;">
+                 <h3>🎯 Goal ของขั้นตอนนี้:</h3>
+                 <ol>
+                     <li>ได้ Post-it หัวข้อ QA จำนวนมากบนบอร์ด</li>
+                     <li>จัดกลุ่ม QA ที่คล้ายกัน</li>
+                     <li>ใช้เทคนิค <strong>Dot Voting</strong> (ให้แต่ละคนขีดคะแนนลงบน Post-it) เพื่อเลือก <strong>Top 5</strong></li>
+                 </ol>
+            </div>
+        </div>
+    </div>
+
+    <div class="slide">
+        <h2>✍️ Activity 2: เขียน Scenario ด้วย Post-it 6 ใบ</h2>
+        <p>Quality Attribute ที่ดีต้อง "วัดผลได้" เราจะไม่เขียนเป็นประโยคลอยๆ แต่จะใช้โครงสร้าง 6 ส่วน</p>
+        <p><strong>วิธีทำบนบอร์ด:</strong> สำหรับ 1 Scenario ให้ใช้ Post-it 6 ใบ 6 สี (ถ้ามี) มาเรียงต่อกันดังภาพ</p>
+
+        <div class="infographic-box" style="background: #f8fafc;">
+            <svg width="1000" height="400" viewBox="0 0 1000 400" xmlns="http://www.w3.org/2000/svg">
+                <style>
+                    .pi-box { filter: drop-shadow(4px 4px 8px rgba(0,0,0,0.15)); stroke: #cbd5e1; stroke-width: 1; }
+                    .pi-title { font-weight: bold; font-size: 16px; font-family: sans-serif; }
+                    .pi-desc { font-size: 14px; font-family: sans-serif; fill: #555; }
+                    .pi-arrow { stroke: #94a3b8; stroke-width: 3; fill: none; marker-end: url(#pi-arrowhead); stroke-dasharray: 8,4; }
+                </style>
+                <defs>
+                    <marker id="pi-arrowhead" markerWidth="10" markerHeight="7" refX="0" refY="3.5" orient="auto">
+                        <polygon points="0 0, 10 3.5, 0 7" fill="#94a3b8" />
+                    </marker>
+                </defs>
+
+                <rect x="50" y="50" width="140" height="140" class="pi-box" fill="var(--postit-yellow)" transform="rotate(-2, 120, 120)" />
+                <text x="70" y="90" class="pi-title">1. Source</text>
+                <text x="70" y="120" class="pi-desc">ใคร/อะไร กระตุ้น?</text>
+                <text x="70" y="140" class="pi-desc">(เช่น User, Hacker)</text>
+
+                <path class="pi-arrow" d="M200 120 H240" />
+
+                <rect x="250" y="50" width="140" height="140" class="pi-box" fill="var(--postit-blue)" transform="rotate(1, 320, 120)" />
+                <text x="270" y="90" class="pi-title">2. Stimulus</text>
+                <text x="270" y="120" class="pi-desc">เกิดเหตุการณ์อะไร?</text>
+                <text x="270" y="140" class="pi-desc">(เช่น คลิก, โหลดหนัก)</text>
+
+                 <path class="pi-arrow" d="M400 120 H440" />
+
+                <rect x="450" y="50" width="140" height="140" class="pi-box" fill="var(--postit-pink)" transform="rotate(-1, 520, 120)" />
+                <text x="470" y="90" class="pi-title">3. Artifact</text>
+                <text x="470" y="120" class="pi-desc">กระทบส่วนไหน?</text>
+                <text x="470" y="140" class="pi-desc">(เช่น API, DB, UI)</text>
+
+                 <path class="pi-arrow" d="M600 120 H640" />
+
+                <rect x="650" y="50" width="140" height="140" class="pi-box" fill="var(--postit-green)" transform="rotate(2, 720, 120)" />
+                <text x="670" y="90" class="pi-title">4. Environment</text>
+                <text x="670" y="120" class="pi-desc">สถานะตอนนั้น?</text>
+                <text x="670" y="140" class="pi-desc">(เช่น ปกติ, พีค, ล่ม)</text>
+
+                <path class="pi-arrow" d="M800 120 H880 V250 H840" />
+
+                <rect x="650" y="250" width="140" height="140" class="pi-box" fill="var(--postit-blue)" transform="rotate(-1, 720, 320)" />
+                <text x="670" y="290" class="pi-title">5. Response</text>
+                <text x="670" y="320" class="pi-desc">ระบบทำอย่างไร?</text>
+                <text x="670" y="340" class="pi-desc">(เช่น แสดงผล, แจ้งเตือน)</text>
+
+                <path class="pi-arrow" d="M640 320 H600" />
+
+                <rect x="450" y="250" width="140" height="140" class="pi-box" fill="var(--postit-yellow)" stroke="var(--accent)" stroke-width="3" transform="rotate(1, 520, 320)" />
+                <text x="470" y="290" class="pi-title" fill="var(--accent)">6. Measure ⭐</text>
+                <text x="470" y="320" class="pi-desc">วัดผลเป็นตัวเลข?</text>
+                <text x="470" y="340" class="pi-desc"><strong>(เช่น < 1s, 99.9%)</strong></text>
+            </svg>
+        </div>
+    </div>
+
+    <div class="slide">
+        <h2>🚀 ตัวอย่างที่ 1: Performance Scenario บนบอร์ด</h2>
+        <p><strong>Quality Attribute:</strong> Performance (Latency)</p>
+        <p>เมื่อทีมลองเขียนใส่ Post-it จริงๆ หน้าตาจะเป็นแบบนี้:</p>
+
+        <div class="infographic-box" style="text-align: left; display: flex; gap: 20px; justify-content: center; background: #f0f9ff;">
+            <div class="post-it pi-yellow">
+                <strong>1. Source</strong><br>User (Team Member)
+            </div>
+            👉
+            <div class="post-it pi-blue">
+                <strong>2. Stimulus</strong><br>เปิดหน้า Board ที่มี 200 Tasks
+            </div>
+            👉
+            <div class="post-it pi-pink">
+                <strong>3. Artifact</strong><br>Web App (Frontend + Backend API)
+            </div>
+            👉
+            <div class="post-it pi-green">
+                <strong>4. Environment</strong><br>ใช้งานปกติ, เน็ต 4G (10 Mbps)
+            </div>
+        </div>
+        <div class="infographic-box" style="text-align: left; display: flex; gap: 20px; justify-content: center; margin-top: -20px; background: #f0f9ff;">
+             <div class="post-it pi-blue" style="margin-left: 400px;">
+                <strong>5. Response</strong><br>โหลด Task list และแสดงผลบน Board view
+            </div>
+            👉
+            <div class="post-it pi-yellow" style="border: 2px solid var(--accent);">
+                <strong>6. Measure ⭐</strong><br>เวลา < 1.5 วินาที (ที่ 95th percentile)
+            </div>
+        </div>
+
+        <div class="card card-tip" style="margin-top: 2rem;">
+            <h3>👨‍💻 สิ่งนี้บอกอะไร Architect?</h3>
+            <p>Measure นี้บังคับให้เราต้องออกแบบ: <em>Pagination API</em>, <em>Virtual Scrolling ที่ Frontend</em>, หรืออาจต้องใช้ <em>Redis Caching</em> เพื่อให้ได้ความเร็วตามที่กำหนด</p>
+        </div>
+    </div>
+
+    <div class="slide">
+        <h2>🔒 ตัวอย่างที่ 2: Security Scenario</h2>
+        <p><strong>Quality Attribute:</strong> Security (Confidentiality)</p>
+
+         <div class="infographic-box" style="text-align: left; display: flex; gap: 15px; justify-content: center; background: #fff1f2; flex-wrap: wrap;">
+            <div class="post-it pi-yellow"><strong>1. Source</strong><br>ผู้ใช้ที่ไม่มีสิทธิ์ (Viewer)</div>
+            <div class="post-it pi-blue"><strong>2. Stimulus</strong><br>พยายามเข้าถึง URL ตรงเพื่อโหลดไฟล์แนบที่เป็นความลับ</div>
+            <div class="post-it pi-pink"><strong>3. Artifact</strong><br>File Storage Service & API</div>
+            <div class="post-it pi-green"><strong>4. Environment</strong><br>การใช้งานปกติ (Runtime)</div>
+            <div class="post-it pi-blue"><strong>5. Response</strong><br>ระบบปฏิเสธการเข้าถึง และบันทึก Log เหตุการณ์</div>
+            <div class="post-it pi-yellow" style="border: 2px solid var(--accent);"><strong>6. Measure ⭐</strong><br>100% ของ Requests ที่ไม่มี Valid Token ต้องถูกปฏิเสธ (HTTP 403)</div>
+        </div>
+
+        <p style="margin-top: 1.5rem;"><strong>Impact:</strong> บังคับให้เราต้องออกแบบระบบ <em>Signed URLs</em> สำหรับไฟล์ หรือมี <em>Middleware</em> ตรวจสอบสิทธิ์ที่เข้มงวดทุกครั้งก่อนปล่อยไฟล์</p>
+    </div>
+
+    <div class="slide">
+        <h2>⚖️ Activity 3: วิเคราะห์ Trade-offs บนบอร์ด</h2>
+        <p>ในโลกจริง เราได้ทุกอย่างไม่ได้ ต้องมีการ "แลกเปลี่ยน" ให้จับคู่ QA ที่ขัดแย้งกันมาวางชนกันบนบอร์ด</p>
+
+        <div class="infographic-box" style="background: #fff;">
+            <svg width="800" height="350" viewBox="0 0 800 350" xmlns="http://www.w3.org/2000/svg">
+                <style>
+                    .to-header { font-size: 24px; font-weight: bold; font-family: sans-serif; text-anchor: middle; fill: white; }
+                    .to-vs { font-size: 40px; font-weight: bold; font-family: sans-serif; text-anchor: middle; fill: #ef4444; }
+                    .to-decision { font-size: 18px; font-family: sans-serif; text-anchor: middle; fill: var(--secondary); }
+                </style>
+
+                <rect x="50" y="50" width="300" height="80" rx="10" fill="#ef4444" filter="drop-shadow(4px 4px 8px rgba(239,68,68,0.3))"/>
+                <text x="200" y="100" class="to-header">🛡️ SECURITY สูงสุด</text>
+                <rect x="70" y="140" width="260" height="60" fill="var(--postit-pink)" class="pi-box"/>
+                <text x="200" y="175" text-anchor="middle" font-family="sans-serif">"ต้องตรวจ Token กับ DB ทุกครั้ง"</text>
+
+                <text x="400" y="150" class="to-vs">VS</text>
+
+                <rect x="450" y="50" width="300" height="80" rx="10" fill="#22c55e" filter="drop-shadow(4px 4px 8px rgba(34,197,94,0.3))"/>
+                <text x="600" y="100" class="to-header">⚡ PERFORMANCE สูงสุด</text>
+                 <rect x="470" y="140" width="260" height="60" fill="var(--postit-yellow)" class="pi-box"/>
+                 <text x="600" y="175" text-anchor="middle" font-family="sans-serif">"Cache สิทธิ์ไว้ที่ Client/Mem"</text>
+
+                <rect x="200" y="240" width="400" height="90" rx="10" fill="#f1f5f9" stroke="var(--primary)" stroke-width="3" stroke-dasharray="10,5"/>
+                <text x="400" y="270" class="to-decision" font-weight="bold">✅ The Decision (ข้อยุติของทีม):</text>
+                <text x="400" y="300" class="to-decision">"ใช้ JWT + Short-lived Redis Cache"</text>
+                 <text x="400" y="320" class="to-decision" font-size="14px" fill="#64748b">(ยอมเสี่ยงเล็กน้อย แลกกับความเร็วที่ได้มาก)</text>
+            </svg>
+        </div>
+    </div>
+
+    <div class="slide">
+        <h2>🚀 What's Next? จากบอร์ดสู่สถาปัตยกรรม</h2>
+        <p>เมื่อจบ Workshop คุณจะได้บอร์ดที่เต็มไปด้วย Post-it Scenarios สิ่งเหล่านี้คือ <strong>"Architectural Drivers"</strong></p>
+
+        <div class="infographic-box" style="background: linear-gradient(to right, #f8fafc, #eef2ff);">
+             <svg width="900" height="300" viewBox="0 0 900 300" xmlns="http://www.w3.org/2000/svg">
+                <rect x="50" y="50" width="250" height="200" fill="white" stroke="#cbd5e1" stroke-width="4" />
+                <text x="175" y="270" text-anchor="middle" font-family="sans-serif" font-weight="bold" fill="#64748b">Your Workshop Board</text>
+                <rect x="70" y="70" width="50" height="50" fill="var(--postit-yellow)" transform="rotate(-5)" opacity="0.8"/>
+                <rect x="130" y="80" width="50" height="50" fill="var(--postit-blue)" transform="rotate(3)" opacity="0.8"/>
+                <rect x="200" y="60" width="50" height="50" fill="var(--postit-pink)" transform="rotate(-2)" opacity="0.8"/>
+                <rect x="90" y="150" width="50" height="50" fill="var(--postit-green)" transform="rotate(4)" opacity="0.8"/>
+                <rect x="180" y="140" width="50" height="50" fill="var(--postit-yellow)" transform="rotate(-1)" opacity="0.8"/>
+
+                <path d="M330 150 H550" stroke="var(--primary)" stroke-width="5" fill="none" marker-end="url(#big-arrow)" />
+                 <defs>
+                    <marker id="big-arrow" markerWidth="15" markerHeight="10" refX="0" refY="5" orient="auto">
+                        <polygon points="0 0, 15 5, 0 10" fill="var(--primary)" />
+                    </marker>
+                </defs>
+                <text x="440" y="130" text-anchor="middle" font-family="sans-serif" font-weight="bold" fill="var(--primary)" font-size="18px">Translate to</text>
+
+                <g transform="translate(600, 50)">
+                    <circle cx="50" cy="50" r="40" fill="#61DAFB" /> <text x="50" y="55" text-anchor="middle" font-family="sans-serif" font-weight="bold" fill="white">FE</text>
+                    <circle cx="150" cy="50" r="40" fill="#68A063" /> <text x="150" y="55" text-anchor="middle" font-family="sans-serif" font-weight="bold" fill="white">BE</text>
+                    <circle cx="100" cy="130" r="40" fill="#D8342F" /> <text x="100" y="135" text-anchor="middle" font-family="sans-serif" font-weight="bold" fill="white">Cache</text>
+
+                    <rect x="20" y="180" width="60" height="40" fill="white" stroke="#333" stroke-width="2"/>
+                    <rect x="120" y="180" width="60" height="40" fill="white" stroke="#333" stroke-width="2"/>
+                    <path d="M80 200 H120" stroke="#333" stroke-width="2" marker-end="url(#small-arrow)"/>
+
+                    <text x="100" y="250" text-anchor="middle" font-family="sans-serif" font-weight="bold" fill="var(--secondary)">Architecture & Stack Decisions</text>
+                </g>
+             </svg>
+        </div>
+    </div>
+
+    <div class="slide">
+        <h2>🏁 สรุปภารกิจ (Ready to Start!)</h2>
+        <p>จับกลุ่ม 4-5 คน ประจำที่บอร์ด แล้วทำตามขั้นตอนนี้:</p>
+        
+        <div style="background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.05);">
+            <ol style="line-height: 2.2; font-size: 1.3rem; margin-left: 2rem;">
+                <li><strong>Act 1: Brainstorm & Vote</strong> หา Top 5 QAs แปะบนบอร์ด (30 นาที)</li>
+                <li><strong>Act 2: Write Scenarios</strong> ใช้ Post-it 6 สี เขียน 5 Scenarios (40 นาที)</li>
+                <li><strong>Act 3: Trade-offs</strong> จับคู่ QA ที่ชนกัน แล้วเขียนข้อสรุปลงบอร์ด (30 นาที)</li>
+                <li><strong>Act 4: Present</strong> นำเสนอผลงานหน้าบอร์ดของตัวเอง (20 นาที)</li>
+            </ol>
+        </div>
+
+        <div style="margin-top: 3rem; text-align: center;">
+            <p style="font-size: 1.5rem; font-weight: bold; color: var(--primary);">⏰ เวลารวม: 120 นาที</p>
+            <button class="btn" style="font-size: 1.2rem; padding: 1rem 3rem; margin-top: 1rem; background: var(--accent);" onclick="alert('เริ่มจับเวลา! ขอให้สนุกกับการแปะ Post-it ครับ!')">⏱️ เริ่มจับเวลา!</button>
+        </div>
+    </div>
+
+</div>
+
+<div class="controls">
+    <button class="btn" id="prevBtn" onclick="changeSlide(-1)">Previous</button>
+    <div class="progress-container">
+        <div class="page-number" id="pageNum">1 / 10</div>
+        <div class="progress-bar">
+            <div class="progress-fill" id="progress"></div>
+        </div>
+    </div>
+    <button class="btn" id="nextBtn" onclick="changeSlide(1)">Next</button>
+</div>
+
+<script>
+    let currentSlide = 0;
+    const slides = document.querySelectorAll('.slide');
+    const progressFill = document.getElementById('progress');
+    const pageNum = document.getElementById('pageNum');
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+
+    function updateSlide() {
+        slides.forEach((slide, index) => {
+            slide.classList.remove('active');
+            if (index === currentSlide) {
+                slide.classList.add('active');
+            }
+        });
+
+        // Update Progress
+        const progress = ((currentSlide + 1) / slides.length) * 100;
+        progressFill.style.width = `${progress}%`;
+        pageNum.textContent = `${currentSlide + 1} / ${slides.length}`;
+
+        // Button States
+        prevBtn.disabled = currentSlide === 0;
+        nextBtn.disabled = currentSlide === slides.length - 1;
+    }
+
+    function changeSlide(direction) {
+        if (direction === 1 && currentSlide < slides.length - 1) {
+            currentSlide++;
+        } else if (direction === -1 && currentSlide > 0) {
+            currentSlide--;
+        }
+        updateSlide();
+    }
+
+    // Keyboard Navigation
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowRight' || e.key === ' ') {
+            changeSlide(1);
+        } else if (e.key === 'ArrowLeft') {
+            changeSlide(-1);
+        }
+    });
+
+    // Initial render
+    updateSlide();
+</script>
+
+</body>
+</html>
