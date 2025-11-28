@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ENGSE214: Week 2 - Cyber Threats (Complete Edition)</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&family=Rajdhani:wght@500;700&family=Fira+Code:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            /* Cyberpunk Theme Variables */
+            --bg-dark: #050505;
+            --bg-panel: rgba(16, 20, 24, 0.85);
+            --neon-blue: #00f3ff;
+            --neon-pink: #ff00ff;
+            --neon-green: #0aff60;
+            --neon-red: #ff0055;
+            --neon-yellow: #ffee00;
+            --text-main: #ffffff;
+            --text-muted: #a0a0a0;
+            --glass-border: 1px solid rgba(0, 243, 255, 0.2);
+            --font-head: 'Rajdhani', sans-serif;
+            --font-body: 'Kanit', sans-serif;
+        }
+
+        [data-theme="light"] {
+            /* Clean Corporate Theme */
+            --bg-dark: #f8f9fa;
+            --bg-panel: #ffffff;
+            --neon-blue: #0056b3;
+            --neon-pink: #6f42c1;
+            --neon-green: #198754;
+            --neon-red: #dc3545;
+            --neon-yellow: #fd7e14;
+            --text-main: #212529;
+            --text-muted: #6c757d;
+            --glass-border: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        * { box-sizing: border-box; transition: all 0.3s ease; }
+        
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-dark);
+            /* Cyber grid background */
+            background-image: 
+                linear-gradient(rgba(0, 243, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 243, 255, 0.03) 1px, transparent 1px);
+            background-size: 30px 30px;
+            color: var(--text-main);
+            font-family: var(--font-body);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* --- HUD Toolbar --- */
+        .toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 20px;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--neon-blue);
+            z-index: 1000;
+        }
+
+        .brand {
+            font-family: var(--font-head);
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--neon-blue);
+            text-shadow: 0 0 5px var(--neon-blue);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .controls button {
+            background: rgba(0, 243, 255, 0.1);
+            border: 1px solid var(--neon-blue);
+            color: var(--neon-blue);
+            padding: 5px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-left: 8px;
+        }
+        .controls button:hover {
+            background: var(--neon-blue);
+            color: #000;
+        }
+
+        /* --- Slide Viewport --- */
+        #viewport {
+            flex: 1;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            perspective: 1000px;
+        }
+
+        .slide {
+            width: 95%;
+            max-width: 1500px;
+            height: 90vh;
+            background: var(--bg-panel);
+            border: var(--glass-border);
+            border-radius: 10px;
+            padding: 40px 50px;
+            position: absolute;
+            opacity: 0;
+            transform: scale(0.95) translateY(20px);
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            overflow-y: auto;
+        }
+
+        .slide.active {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+            pointer-events: all;
+            z-index: 10;
+        }
+
+        /* --- Typography --- */
+        h1 {
+            font-family: var(--font-head);
+            font-size: 2.8rem;
+            margin: 0 0 20px 0;
+            color: var(--neon-blue);
+            text-transform: uppercase;
+            border-bottom: 2px solid var(--neon-pink);
+            display: inline-block;
+            padding-bottom: 5px;
+        }
+        h2 { font-size: 1.8rem; color: var(--text-main); margin-bottom: 15px; }
+        h3 { font-size: 1.4rem; color: var(--neon-green); margin-top: 20px; }
+        p, li { font-size: 1.2rem; line-height: 1.6; font-weight: 300; color: var(--text-main); }
+        
+        /* --- Components --- */
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
+        .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+        
+        .card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 8px;
+            transition: 0.3s;
+        }
+        .card:hover {
+            border-color: var(--neon-blue);
+            box-shadow: 0 0 15px rgba(0, 243, 255, 0.2);
+            transform: translateY(-5px);
+        }
+
+        /* Terminal */
+        .terminal {
+            background: #0a0a0a;
+            border: 1px solid #333;
+            border-radius: 5px;
+            font-family: 'Fira Code', monospace;
+            padding: 15px;
+            color: var(--neon-green);
+            overflow-x: auto;
+            position: relative;
+        }
+        .terminal::before {
+            content: "● ● ●";
+            position: absolute;
+            top: 5px; left: 10px;
+            color: #555;
+            font-size: 10px;
+        }
+
+        /* Infographic Elements */
+        .stat-box {
+            text-align: center;
+            border: 1px solid var(--neon-pink);
+            padding: 15px;
+            border-radius: 10px;
+        }
+        .stat-number { font-size: 3rem; font-weight: bold; color: var(--neon-pink); }
+        .stat-label { font-size: 1rem; color: var(--text-muted); }
+
+        /* Navigation */
+        .nav-btn {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(0,0,0,0.8);
+            color: var(--neon-blue);
+            border: 1px solid var(--neon-blue);
+            width: 50px; height: 50px;
+            border-radius: 50%;
+            font-size: 1.5rem;
+            cursor: pointer;
+            z-index: 100;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .nav-btn:hover { background: var(--neon-blue); color: #000; }
+        .prev { left: 20px; } .next { right: 20px; }
+
+        /* Progress Bar */
+        .progress-container {
+            position: fixed; bottom: 0; left: 0; width: 100%; height: 5px; background: #333; z-index: 2000;
+        }
+        .progress-bar { height: 100%; background: var(--neon-blue); width: 0%; transition: width 0.3s; }
+
+        /* Special Elements */
+        .highlight-red { color: var(--neon-red); font-weight: bold; }
+        .highlight-green { color: var(--neon-green); font-weight: bold; }
+        
+        .chat-bubble {
+            background: #fff; color: #000;
+            padding: 10px 15px; border-radius: 15px;
+            margin-bottom: 10px; max-width: 80%;
+            position: relative;
+        }
+        .chat-left { border-bottom-left-radius: 2px; align-self: flex-start; margin-right: auto; }
+        .chat-right { background: var(--neon-green); border-bottom-right-radius: 2px; align-self: flex-end; margin-left: auto; }
+
+        /* Table Styles */
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { border: 1px solid rgba(255,255,255,0.2); padding: 10px; text-align: left; }
+        th { background: rgba(0, 243, 255, 0.1); color: var(--neon-blue); }
+
+        /* Ransomware Screen */
+        .ransom-overlay {
+            background: #8b0000;
+            color: white;
+            padding: 30px;
+            text-align: center;
+            border: 5px solid white;
+            font-family: 'Courier New', monospace;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(255, 0, 0, 0.7); } 70% { box-shadow: 0 0 0 20px rgba(255, 0, 0, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 0, 0, 0); } }
+
+        /* Flip Card */
+        .flip-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; }
+        .flip-card { background: transparent; height: 280px; perspective: 1000px; cursor: pointer; }
+        .flip-inner { position: relative; width: 100%; height: 100%; text-align: center; transition: transform 0.6s; transform-style: preserve-3d; }
+        .flip-card:hover .flip-inner { transform: rotateY(180deg); }
+        .flip-front, .flip-back { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; border-radius: 10px; border: 1px solid var(--neon-blue); display: flex; flex-direction: column; justify-content: center; align-items: center; }
+        .flip-front { background: rgba(0,0,0,0.6); }
+        .flip-back { background: var(--neon-blue); color: #000; transform: rotateY(180deg); padding: 20px; }
+
+        /* Chain Step */
+        .kill-chain { display: flex; justify-content: space-between; position: relative; margin-top: 30px; }
+        .kill-chain::before { content: ''; position: absolute; top: 20px; left: 0; width: 100%; height: 3px; background: #333; z-index: 0; }
+        .chain-step { width: 40px; height: 40px; background: var(--bg-dark); border: 2px solid var(--neon-pink); border-radius: 50%; display: flex; align-items: center; justify-content: center; position: relative; z-index: 1; cursor: pointer; transition: 0.3s; }
+        .chain-step:hover { transform: scale(1.3); background: var(--neon-pink); color: white; }
+        .chain-label { position: absolute; top: 50px; font-size: 0.8rem; width: 80px; text-align: center; left: -20px; }
+
+        /* Phishing Email */
+        .email-window { background: #fff; color: #333; padding: 20px; border-radius: 5px; font-family: Arial, sans-serif; border: 2px solid var(--neon-red); }
+        .suspicious { border: 2px dashed transparent; padding: 2px; cursor: pointer; }
+        .suspicious.found { background: rgba(255,0,0,0.2); border-color: red; position: relative; }
+        .suspicious.found::after { content: '❌ ' attr(data-msg); position: absolute; bottom: 100%; left: 0; background: red; color: white; font-size: 0.8rem; padding: 3px; border-radius: 3px; white-space: nowrap; }
+
+    </style>
+</head>
+<body>
+
+    <div class="progress-container"><div class="progress-bar" id="progressBar"></div></div>
+
+    <div class="toolbar">
+        <div class="brand"><i class="fas fa-shield-virus"></i> ENGSE214: WEEK 2</div>
+        <div class="controls">
+            <span id="slideNum">1 / 20</span>
+            <button onclick="toggleTheme()"><i class="fas fa-adjust"></i> Theme</button>
+            <button onclick="toggleFullScreen()"><i class="fas fa-expand"></i> Full</button>
+        </div>
+    </div>
+
+    <div class="nav-btn prev" onclick="moveSlide(-1)"><i class="fas fa-chevron-left"></i></div>
+    <div class="nav-btn next" onclick="moveSlide(1)"><i class="fas fa-chevron-right"></i></div>
+
+    <div id="viewport">
+
+        <div class="slide active" style="text-align: center; justify-content: center;">
+            <h1 style="font-size: 4rem; text-shadow: 0 0 20px var(--neon-blue);">WEEK 2</h1>
+            <h2 style="font-size: 3rem; color: var(--text-main);">Cyber Threat Types & Malware</h2>
+            <div style="margin-top: 30px;">
+                <i class="fas fa-biohazard" style="font-size: 5rem; color: var(--neon-red); animation: spin 10s linear infinite;"></i>
+            </div>
+            <p style="margin-top: 30px; font-size: 1.5rem;">"รู้ทันภัยคุกคาม: จากไวรัสคอมพิวเตอร์ สู่แก๊งคอลเซ็นเตอร์"</p>
+            <style>@keyframes spin { 100% { transform: rotate(360deg); } }</style>
+        </div>
+
+        <div class="slide">
+            <h1><i class="fas fa-tasks"></i> วัตถุประสงค์การเรียนรู้</h1>
+            <div class="grid-2">
+                <div>
+                    <ul class="fa-ul" style="font-size: 1.4rem;">
+                        <li><span class="fa-li"><i class="fas fa-check-square" style="color:var(--neon-green)"></i></span>จำแนกประเภทภัยคุกคาม (Threats) และมัลแวร์ (Malware)</li>
+                        <li><span class="fa-li"><i class="fas fa-check-square" style="color:var(--neon-green)"></i></span>วิเคราะห์เทคนิค Social Engineering และ Phishing</li>
+                        <li><span class="fa-li"><i class="fas fa-check-square" style="color:var(--neon-green)"></i></span>เข้าใจแนวคิด APT และกรณีศึกษา SolarWinds</li>
+                        <li><span class="fa-li"><i class="fas fa-check-square" style="color:var(--neon-green)"></i></span><strong>วิเคราะห์กรณีศึกษาในไทย:</strong> ATM Hacking, 9near, Call Center</li>
+                    </ul>
+                </div>
+                <div style="display: flex; align-items: center; justify-content: center;">
+                    <i class="fas fa-crosshairs" style="font-size: 10rem; color: var(--neon-blue); opacity: 0.5;"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h1><i class="fas fa-brain"></i> ชวนคิด (Critical Thinking)</h1>
+            <div class="card" style="text-align: center; border-color: var(--neon-yellow);">
+                <h2 style="color: var(--neon-yellow);">"ทำไมเทคโนโลยีทันสมัยขึ้น แต่คนถูกหลอกง่ายขึ้น?"</h2>
+                <p>ปี 2023 คนไทยเสียหายจากภัยไซเบอร์กว่า 3 หมื่นล้านบาท!</p>
+                <div class="grid-2" style="margin-top: 30px;">
+                    <div>
+                        <h3><i class="fas fa-lock"></i> Technical Security</h3>
+                        <p>Firewall แข็งแกร่ง, Encryption ซับซ้อน</p>
+                    </div>
+                    <div>
+                        <h3><i class="fas fa-user-injured"></i> Human Security</h3>
+                        <p>ความโลภ, ความกลัว, ความรู้เท่าไม่ถึงการณ์</p>
+                    </div>
+                </div>
+                <p class="highlight-red" style="margin-top: 20px;">"The weakest link is usually between the chair and the keyboard."</p>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h1><i class="fas fa-map"></i> แผนที่ภัยคุกคาม (Threat Landscape)</h1>
+            <p>ภัยคุกคามไม่ได้มีแค่ไวรัส แต่แบ่งตามเป้าหมายและวิธีการ</p>
+            <div class="grid-3">
+                <div class="card">
+                    <i class="fas fa-bug" style="color: var(--neon-red);"></i>
+                    <h3>Malware</h3>
+                    <p>Virus, Worm, Trojan, Ransomware</p>
+                </div>
+                <div class="card">
+                    <i class="fas fa-user-secret" style="color: var(--neon-pink);"></i>
+                    <h3>Social Engineering</h3>
+                    <p>Phishing, Vishing (Call Center), Romance Scam</p>
+                </div>
+                <div class="card">
+                    <i class="fas fa-server" style="color: var(--neon-blue);"></i>
+                    <h3>Network & Web</h3>
+                    <p>DDoS, SQL Injection, XSS</p>
+                </div>
+                <div class="card">
+                    <i class="fas fa-mobile-alt" style="color: var(--neon-green);"></i>
+                    <h3>Mobile Threats</h3>
+                    <p>Fake Apps, Permission Abuse, SMS Scam</p>
+                </div>
+                <div class="card">
+                    <i class="fas fa-university" style="color: var(--neon-yellow);"></i>
+                    <h3>Physical Attack</h3>
+                    <p>ATM Skimming, Jackpotting</p>
+                </div>
+                <div class="card">
+                    <i class="fas fa-chess-king" style="color: #fff;"></i>
+                    <h3>APT</h3>
+                    <p>State-Sponsored Attack (ระดับชาติ)</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h1><i class="fas fa-biohazard"></i> เจาะลึก Malware</h1>
+            <p>Malware = Malicious + Software</p>
+            <table style="font-size: 1.2rem;">
+                <thead>
+                    <tr>
+                        <th>ประเภท</th>
+                        <th>พฤติกรรมหลัก</th>
+                        <th>ต้องการคนช่วย?</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="highlight-blue">Virus</td>
+                        <td>เกาะไฟล์อื่น (.exe), แพร่เมื่อเปิดไฟล์</td>
+                        <td>✅ ใช่ (ต้องรันไฟล์)</td>
+                    </tr>
+                    <tr>
+                        <td class="highlight-blue">Worm</td>
+                        <td>แพร่กระจายเองผ่าน Network, ไม่ต้องเกาะใคร</td>
+                        <td>❌ ไม่ (ไปเองได้)</td>
+                    </tr>
+                    <tr>
+                        <td class="highlight-blue">Trojan</td>
+                        <td>ปลอมเป็นโปรแกรมดี, เปิดประตูหลัง (Backdoor)</td>
+                        <td>✅ ใช่ (ต้องติดตั้ง)</td>
+                    </tr>
+                    <tr>
+                        <td class="highlight-blue">Ransomware</td>
+                        <td>ล็อกไฟล์ เรียกค่าไถ่</td>
+                        <td>✅ ใช่ (ผ่าน Phishing/Exploit)</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="slide">
+            <h1><i class="fas fa-skull"></i> Case Study: WannaCry (2017)</h1>
+            <div class="grid-2">
+                <div>
+                    <h3>ลักษณะการโจมตี</h3>
+                    <ul>
+                        <li><strong>Type:</strong> Ransomware + Worm (ลูกผสม)</li>
+                        <li><strong>Exploit:</strong> EternalBlue (ช่องโหว่ SMBv1 ของ Windows)</li>
+                        <li><strong>Impact:</strong> 200,000+ เครื่อง ใน 150 ประเทศ</li>
+                        <li><strong>Thai Impact:</strong> โรงพยาบาล, ป้ายโฆษณาดิจิทัล</li>
+                    </ul>
+                    <div class="card" style="margin-top: 20px; border-color: var(--neon-red);">
+                        <h4 style="color: var(--neon-red);">บทเรียนสำคัญ</h4>
+                        <p>การไม่อัปเดต Patch Windows (MS17-010) คือสาเหตุหลักที่ทำให้เสียหายวงกว้าง</p>
+                    </div>
+                </div>
+                <div class="ransom-overlay">
+                    <i class="fas fa-lock" style="font-size: 4rem;"></i>
+                    <h2>Ooops, your files have been encrypted!</h2>
+                    <p>Send $300 worth of Bitcoin to this address:</p>
+                    <code style="background:black; padding:5px;">12t9YDPgwueZ9NyMgw519p7AA8...</code>
+                    <br><br>
+                    <p style="color: yellow;">Time Left: 23:59:59</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h1><i class="fas fa-mobile"></i> Mobile Malware: ภัยใกล้ตัว</h1>
+            <p>โทรศัพท์มือถือคือเป้าหมายใหม่ ขโมย OTP และแอปธนาคาร</p>
+            <div class="grid-2">
+                <div class="card">
+                    <h3><i class="fas fa-download"></i> Fake Apps</h3>
+                    <p>แอปปลอมที่ไม่ได้อยู่ใน Store (Sideloading)</p>
+                    <p>เช่น "แอปหาคู่", "แอปเงินกู้ด่วน", "แอปดูบอลฟรี"</p>
+                </div>
+                <div class="card">
+                    <h3><i class="fas fa-user-shield"></i> Permission Abuse</h3>
+                    <p>แอปไฟฉาย ขอสิทธิ์เข้าถึง <strong>SMS, Contact, GPS</strong></p>
+                    <p class="highlight-red">"ทำไมแอปแต่งรูป ต้องขอสิทธิ์อ่าน SMS OTP?"</p>
+                </div>
+            </div>
+            <div class="terminal" style="margin-top: 20px;">
+                <span style="color: var(--neon-yellow);">Warning:</span> Application "EasyLoan" requests:
+                <br>- Read SMS (เสี่ยงโดนขโมย OTP)
+                <br>- Read Contacts (เสี่ยงโดนโทรทวงหนี้เพื่อน)
+                <br>- Camera/Microphone (เสี่ยงโดนแอบถ่าย)
+            </div>
+        </div>
+
+        <div class="slide">
+            <h1><i class="fas fa-users"></i> Social Engineering (วิศวกรรมสังคม)</h1>
+            <p>"จุดอ่อนที่เจาะง่ายที่สุด คือ มนุษย์"</p>
+            
+            <div class="grid-3">
+                <div class="stat-box">
+                    <div class="stat-number">98%</div>
+                    <div class="stat-label">ของการโจมตีไซเบอร์ เริ่มต้นจาก Social Engineering</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-number"><i class="fas fa-envelope-open"></i></div>
+                    <div class="stat-label">Phishing Email คือช่องทางอันดับ 1</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-number"><i class="fas fa-phone"></i></div>
+                    <div class="stat-label">Vishing (Call Center) สร้างความเสียหายสูงสุดในไทย</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h1><i class="fas fa-search"></i> Interactive Lab: จับผิด Phishing</h1>
+            <p>คลิกจุดที่ผิดสังเกตในอีเมลด้านล่าง (มี 4 จุด)</p>
+            
+            <div style="background: white; color: black; padding: 20px; border-radius: 5px; max-width: 800px; margin: 0 auto; font-family: Arial;">
+                <div style="border-bottom: 1px solid #ccc; padding-bottom: 10px; margin-bottom: 10px;">
+                    <strong>From:</strong> <span class="suspicious" onclick="checkPhish(this)">support@kbank-security-update.com</span><br>
+                    <strong>Subject:</strong> <span class="suspicious" onclick="checkPhish(this)">ด่วนที่สุด! บัญชีของคุณถูกระงับชั่วคราว</span>
+                </div>
+                <p><span class="suspicious" onclick="checkPhish(this)">เรียน ลูกค้าผู้มีอุปการะคุณ,</span></p>
+                <p>ระบบตรวจพบการเข้าใช้งานที่ผิดปกติจากต่างประเทศ เพื่อความปลอดภัยของท่าน</p>
+                <p>กรุณายืนยันตัวตนภายใน <strong>24 ชั่วโมง</strong> มิฉะนั้นบัญชีจะถูกปิดถาวร</p>
+                <p>คลิกที่นี่เพื่อปลดล็อก:</p>
+                <p><a href="#" class="suspicious" onclick="checkPhish(this)" style="color: blue; text-decoration: underline;">http://bit.ly/kbank-verify-now</a></p>
+            </div>
+            <p id="phish-feedback" style="text-align: center; margin-top: 20px; font-weight: bold; color: var(--neon-green);"></p>
+        </div>
+
+        <div class="slide">
+            <h1><i class="fas fa-sms"></i> ภัยใกล้ตัว: SMS & Call Center</h1>
+            <p>กลลวงยอดฮิตในประเทศไทย</p>
+            
+            <div class="grid-2">
+                <div class="card">
+                    <h3><i class="fas fa-comment-dots"></i> Smishing (SMS Phishing)</h3>
+                    <div class="chat-bubble chat-left">
+                        "คุณได้รับเงินดิจิทัล 10,000 บาท คลิกรับสิทธิ์: http://bit.ly/..."
+                    </div>
+                    <div class="chat-bubble chat-left">
+                        "ไปรษณีย์ไทย: พัสดุของท่านตกค้าง กรุณาชำระภาษี..."
+                    </div>
+                    <p class="highlight-red">หลักการ: แนบ Link ให้กด -> โหลดแอปดูดเงิน</p>
+                </div>
+                <div class="card">
+                    <h3><i class="fas fa-headset"></i> Vishing (Voice Phishing)</h3>
+                    <ul>
+                        <li>"สวัสดีครับ ผมร้อยตำรวจโท... คุณมีส่วนพัวพันการฟอกเงิน"</li>
+                        <li>"พัสดุตกค้าง มีสิ่งผิดกฎหมาย"</li>
+                        <li><strong>Deepfake Voice:</strong> ปลอมเสียงลูกหลานโทรมาขอเงิน</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h1><i class="fas fa-university"></i> Case Study: GSB ATM Jackpotting</h1>
+            <p>การโจมตีทางกายภาพและตรรกะ (Physical & Logical)</p>
+            
+            <div class="grid-2">
+                <div>
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/6e/ATM_machine_pin_pad.jpg/640px-ATM_machine_pin_pad.jpg" alt="ATM" style="width: 100%; border-radius: 10px; opacity: 0.7;">
+                </div>
+                <div>
+                    <h3>เหตุการณ์ (2016)</h3>
+                    <p>ธนาคารออมสินต้องปิดตู้ ATM กว่า 3,000 ตู้ หลังถูกโจมตี</p>
+                    <ul class="fa-ul">
+                        <li><span class="fa-li"><i class="fas fa-caret-right"></i></span>คนร้ายปล่อย <strong>Malware</strong> เข้าสู่ตู้ ATM (ยี่ห้อ NCR)</li>
+                        <li><span class="fa-li"><i class="fas fa-caret-right"></i></span>ทำให้ตู้จ่ายเงินออกมาเองเหมือน "Jackpot" แตก</li>
+                        <li><span class="fa-li"><i class="fas fa-caret-right"></i></span>ความเสียหาย: เงินสดหายไปกว่า 12 ล้านบาท</li>
+                    </ul>
+                    <p class="highlight-green">Lesson: อุปกรณ์ IoT/Embedded ต้องอัปเดต Firmware เสมอ</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h1><i class="fas fa-database"></i> Case Study: 9near (Data Breach)</h1>
+            <p>เมื่อข้อมูลคนไทย 55 ล้านคนหลุดสู่ Dark Web</p>
+            
+            <div class="card" style="border: 1px solid var(--neon-red);">
+                <h3><i class="fas fa-user-slash"></i> ข้อมูลที่หลุด</h3>
+                <p>ชื่อ-นามสกุล, ที่อยู่, วันเกิด, เบอร์โทรศัพท์, เลขบัตรประชาชน (Hash)</p>
+                <hr style="border-color: #333;">
+                <h3><i class="fas fa-search"></i> สาเหตุ</h3>
+                <p>ช่องโหว่ในระบบของหน่วยงานรัฐ (คาดว่าเป็นระบบหมอพร้อม หรือระบบลงทะเบียนสิทธิ)</p>
+                <p><strong>ผลกระทบ:</strong> แก๊ง Call Center มีข้อมูลเหยื่อครบถ้วน ทำให้การหลอกลวงน่าเชื่อถือขึ้น</p>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h1><i class="fas fa-cloud-download-alt"></i> Case Study: TrueMove H (2018)</h1>
+            <p>ข้อมูลบัตรประชาชนหลุดเพราะตั้งค่า Cloud ผิดพลาด</p>
+            
+            <div class="terminal">
+                <div class="terminal-bar">AWS S3 Bucket Configuration</div>
+                <div class="terminal-content">
+> Bucket Name: true-move-h-images
+> Access Control List (ACL): Public-Read (WRONG!)
+> Contents:
+  - scan_id_card_001.jpg
+  - scan_driving_license.jpg
+  ... 46,000 files ...
+
+[!] ERROR: Sensitive data exposed to public internet without password.
+                </div>
+            </div>
+            <p><strong>สาเหตุ:</strong> Misconfiguration (ตั้งค่าผิด) ไม่ใช่การถูกแฮกด้วยเครื่องมือซับซ้อน</p>
+        </div>
+
+        <div class="slide">
+            <h1><i class="fas fa-link"></i> Supply Chain Attack: SolarWinds</h1>
+            <p>เมื่อ "ยาม" กลายเป็นคนเปิดประตูให้โจร</p>
+            
+            <div class="grid-3">
+                <div class="card">
+                    <h3>1. Infiltration</h3>
+                    <p>แฮกเกอร์ (APT29) เจาะระบบบริษัท SolarWinds (ผู้ผลิตซอฟต์แวร์บริหารเครือข่าย)</p>
+                </div>
+                <div class="card">
+                    <h3>2. Injection</h3>
+                    <p>ฝัง Backdoor ลงในไฟล์ Update ของโปรแกรม Orion</p>
+                </div>
+                <div class="card">
+                    <h3>3. Distribution</h3>
+                    <p>ลูกค้า 18,000 ราย (รวมถึงรัฐบาลสหรัฐฯ) ดาวน์โหลด Update ไปติดตั้งเอง</p>
+                </div>
+            </div>
+            <p class="highlight-red" style="text-align: center; margin-top: 20px;">"เราเชื่อใจ Software แต่ Software อาจถูกวางยา"</p>
+        </div>
+
+        <div class="slide">
+            <h1><i class="fas fa-key"></i> Cyber Hygiene: Password</h1>
+            <p>รหัสผ่านที่ดีต้องใช้เวลานานในการเจาะ (Brute Force)</p>
+            
+            <table>
+                <tr>
+                    <th>ความยาว/ชนิด</th>
+                    <th>ตัวเลขอย่างเดียว</th>
+                    <th>ตัวเลข + อักษรเล็ก/ใหญ่ + สัญลักษณ์</th>
+                </tr>
+                <tr>
+                    <td>8 ตัวอักษร</td>
+                    <td style="color: var(--neon-red);">ทันที</td>
+                    <td style="color: var(--neon-yellow);">5 ชั่วโมง</td>
+                </tr>
+                <tr>
+                    <td>10 ตัวอักษร</td>
+                    <td style="color: var(--neon-red);">ทันที</td>
+                    <td style="color: var(--neon-green);">5 วัน</td>
+                </tr>
+                <tr>
+                    <td>12 ตัวอักษร</td>
+                    <td style="color: var(--neon-yellow);">2 วินาที</td>
+                    <td style="color: var(--neon-blue);">200 ปี!</td>
+                </tr>
+            </table>
+            <div class="card" style="margin-top: 20px;">
+                <strong>กฎเหล็ก:</strong> ยาว 12+ ตัว, ไม่ใช้คำในพจนานุกรม, ไม่ใช้ซ้ำ, เปิด 2FA เสมอ
+            </div>
+        </div>
+
+        <div class="slide">
+            <h1><i class="fas fa-shield-alt"></i> 2FA: เกราะชั้นที่ 2</h1>
+            <p>ทำไมต้องเปิด 2FA (Two-Factor Authentication)?</p>
+            
+            <div style="display: flex; align-items: center; justify-content: center; gap: 20px;">
+                <div class="card" style="width: 300px;">
+                    <i class="fas fa-lock-open"></i>
+                    <h3>Password</h3>
+                    <p>สิ่งที่เรารู้ (หลุดง่าย)</p>
+                </div>
+                <div style="font-size: 3rem;">+</div>
+                <div class="card" style="width: 300px;">
+                    <i class="fas fa-mobile-alt"></i>
+                    <h3>OTP / App</h3>
+                    <p>สิ่งที่เรามี (มือถือ)</p>
+                </div>
+                <div style="font-size: 3rem;">=</div>
+                <div class="card" style="width: 300px; border-color: var(--neon-green);">
+                    <i class="fas fa-check-circle" style="color: var(--neon-green);"></i>
+                    <h3>Safe</h3>
+                    <p>แฮกเกอร์เข้าไม่ได้</p>
+                </div>
+            </div>
+            <p class="highlight-blue" style="text-align: center; margin-top: 20px;">"MFA ป้องกันการโจมตีอัตโนมัติได้ 99.9%" - Microsoft</p>
+        </div>
+
+        <div class="slide">
+            <h1><i class="fas fa-chess"></i> APT (Advanced Persistent Threat)</h1>
+            <p>ภัยคุกคามระดับ "จารชน" (Nation-State Actor)</p>
+            <div class="terminal">
+                <div class="terminal-content">
+// APT Characteristics:
+1. Targeted: มีเป้าหมายชัดเจน (รัฐบาล, คู่แข่งทางธุรกิจ)
+2. Persistent: ฝังตัวยาวนาน (Low and Slow) เพื่อขโมยข้อมูลเรื่อยๆ
+3. Advanced: ใช้เทคนิคซับซ้อน หรือ Zero-day exploit
+4. Stealthy: หลบหลีกการตรวจจับของ Antivirus
+                </div>
+            </div>
+            <p><strong>ตัวอย่าง:</strong> กลุ่ม Lazarus (เกาหลีเหนือ) ปล้นเงินคริปโต, กลุ่ม APT29 (รัสเซีย) จารกรรมข้อมูล</p>
+        </div>
+
+        <div class="slide">
+            <h1><i class="fas fa-balance-scale"></i> ความสะดวก vs ความปลอดภัย</h1>
+            <p>Trade-off ที่เราต้องเลือก</p>
+            
+            <div class="grid-2">
+                <div class="card">
+                    <h3><i class="fas fa-couch"></i> สะดวก (Convenience)</h3>
+                    <ul>
+                        <li>Auto-login ทุกเว็บ</li>
+                        <li>Password เดียวจำง่าย</li>
+                        <li>ไม่มี 2FA (ขี้เกียจกด)</li>
+                    </ul>
+                    <p class="highlight-red">Result: แฮกง่ายมาก</p>
+                </div>
+                <div class="card">
+                    <h3><i class="fas fa-shield-virus"></i> ปลอดภัย (Security)</h3>
+                    <ul>
+                        <li>Logout ทุกครั้ง</li>
+                        <li>Password ซับซ้อนและต่างกัน</li>
+                        <li>ต้องกด OTP/App ยืนยันตัวตน</li>
+                    </ul>
+                    <p class="highlight-green">Result: ปลอดภัยสูง</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h1><i class="fas fa-clipboard-check"></i> สิ่งที่ต้องทำ (Action Plan)</h1>
+            <div class="grid-3">
+                <div class="card">
+                    <h3>สำหรับทุกคน</h3>
+                    <ul style="text-align: left;">
+                        <li>✅ ตั้งสติก่อนคลิก (Stop-Look-Think)</li>
+                        <li>✅ เปิด 2FA ทุกบัญชี</li>
+                        <li>✅ อัปเดต OS/App เสมอ</li>
+                    </ul>
+                </div>
+                <div class="card" style="border-color: var(--neon-blue);">
+                    <h3>สำหรับ Developer</h3>
+                    <ul style="text-align: left;">
+                        <li>✅ Validate Input (กัน SQLi/XSS)</li>
+                        <li>✅ ไม่เก็บ Password เป็น Plain text</li>
+                        <li>✅ ใช้ HTTPS เสมอ</li>
+                    </ul>
+                </div>
+                <div class="card" style="border-color: var(--neon-pink);">
+                    <h3>สำหรับองค์กร</h3>
+                    <ul style="text-align: left;">
+                        <li>✅ อบรมพนักงาน (Security Awareness)</li>
+                        <li>✅ สำรองข้อมูล (Backup Strategy)</li>
+                        <li>✅ ซ้อมแผนรับมือ (Drill)</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h1><i class="fas fa-flag-checkered"></i> บทสรุป (Summary)</h1>
+            <ul class="fa-ul" style="margin-left: 30px; font-size: 1.3rem;">
+                <li><span class="fa-li"><i class="fas fa-check" style="color:var(--neon-green)"></i></span>ภัยคุกคามมีทั้งทางเทคนิค (Malware) และจิตวิทยา (Social Engineering)</li>
+                <li><span class="fa-li"><i class="fas fa-check" style="color:var(--neon-green)"></i></span>ในไทย <strong>Call Center</strong> และ <strong>Phishing SMS</strong> ระบาดหนักที่สุด</li>
+                <li><span class="fa-li"><i class="fas fa-check" style="color:var(--neon-green)"></i></span>ข้อมูลส่วนตัว (PII) มีค่ามาก ห้ามให้ใครง่ายๆ</li>
+                <li><span class="fa-li"><i class="fas fa-check" style="color:var(--neon-green)"></i></span>การป้องกันที่ดีที่สุดคือ <strong>สติ + 2FA + การอัปเดตระบบ</strong></li>
+            </ul>
+            <div style="text-align: center; margin-top: 40px;">
+                <h2 style="color: var(--neon-blue);">Next Week: Risk Assessment & Vulnerability</h2>
+                <button class="nav-btn" style="position: relative; top: auto; transform: none; width: auto; height: auto; border-radius: 5px; padding: 10px 20px; font-size: 1rem; opacity: 1;" onclick="location.reload()">
+                    <i class="fas fa-redo"></i> เริ่มใหม่
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slide');
+        const totalSlides = slides.length;
+        const slideNum = document.getElementById('slideNum');
+        const progressBar = document.getElementById('progressBar');
+
+        function updateUI() {
+            slides.forEach((s, i) => {
+                s.classList.remove('active');
+                if (i === currentSlide) s.classList.add('active');
+            });
+            slideNum.innerText = `${currentSlide + 1} / ${totalSlides}`;
+            progressBar.style.width = `${((currentSlide + 1) / totalSlides) * 100}%`;
+        }
+
+        function moveSlide(dir) {
+            if (dir === 1 && currentSlide < totalSlides - 1) currentSlide++;
+            else if (dir === -1 && currentSlide > 0) currentSlide--;
+            updateUI();
+        }
+
+        function toggleTheme() {
+            document.body.hasAttribute('data-theme') ? 
+                document.body.removeAttribute('data-theme') : 
+                document.body.setAttribute('data-theme', 'light');
+        }
+        
+        function toggleFullScreen() {
+            !document.fullscreenElement ? document.documentElement.requestFullscreen() : document.exitFullscreen();
+        }
+
+        // Phishing Lab Logic
+        function checkPhish(el) {
+            if (!el.classList.contains('found')) {
+                el.style.border = "2px solid red";
+                el.style.backgroundColor = "rgba(255,0,0,0.1)";
+                el.classList.add('found');
+                el.setAttribute('data-msg', 'จุดผิดสังเกต!');
+                
+                const foundCount = document.querySelectorAll('.suspicious.found').length;
+                const feedback = document.getElementById('phish-feedback');
+                feedback.innerText = `เจอแล้ว ${foundCount} / 4 จุด!`;
+                
+                if (foundCount === 4) {
+                    feedback.innerText = "ยอดเยี่ยม! คุณตาไวมาก (ครบ 4 จุดแล้ว)";
+                    feedback.style.color = "var(--neon-green)";
+                }
+            }
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if(e.key === 'ArrowRight') moveSlide(1);
+            if(e.key === 'ArrowLeft') moveSlide(-1);
+        });
+
+        updateUI();
+    </script>
+</body>
+</html>

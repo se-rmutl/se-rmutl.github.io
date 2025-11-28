@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <title>ENGSE214 Week 2 – Case Study: Hospital Ransomware</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-page: #0f172a;
+            --bg-card: #020617;
+            --accent: #38bdf8;
+            --accent-soft: #0ea5e9;
+            --danger: #fb7185;
+            --text-main: #e5e7eb;
+            --text-muted: #9ca3af;
+            --border-soft: rgba(148,163,184,0.6);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: "Kanit", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background: radial-gradient(circle at top, #1e293b 0%, #020617 55%);
+            color: var(--text-main);
+        }
+
+        .page {
+            max-width: 1080px;
+            margin: 0 auto;
+            padding: 24px 16px 40px;
+        }
+
+        header {
+            border-radius: 18px;
+            padding: 20px 22px;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, #0f172a, #1d2535);
+            border: 1px solid var(--border-soft);
+            box-shadow: 0 18px 40px rgba(15,23,42,0.7);
+        }
+
+        .course-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 4px 10px;
+            border-radius: 999px;
+            border: 1px solid var(--accent-soft);
+            font-size: 0.9rem;
+            color: var(--accent);
+            margin-bottom: 8px;
+        }
+
+        .course-badge span {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        h1 {
+            margin: 4px 0 6px 0;
+            font-size: 1.8rem;
+            color: #f9fafb;
+        }
+
+        h2 {
+            margin: 18px 0 8px 0;
+            font-size: 1.4rem;
+            color: var(--accent);
+        }
+
+        h3 {
+            margin: 16px 0 6px 0;
+            font-size: 1.2rem;
+        }
+
+        .subtitle {
+            font-size: 1rem;
+            color: var(--text-muted);
+        }
+
+        .meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            margin-top: 10px;
+            font-size: 0.95rem;
+            color: var(--text-muted);
+        }
+
+        .meta-item {
+            padding: 4px 10px;
+            border-radius: 999px;
+            background: rgba(15,23,42,0.9);
+            border: 1px solid rgba(148,163,184,0.5);
+        }
+
+        .card {
+            background: var(--bg-card);
+            border-radius: 16px;
+            border: 1px solid var(--border-soft);
+            padding: 18px 18px 20px;
+            margin-bottom: 18px;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            gap: 12px;
+            margin-bottom: 8px;
+        }
+
+        .card-header h2,
+        .card-header h3 {
+            margin: 0;
+        }
+
+        .tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 3px 10px;
+            border-radius: 999px;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            border: 1px solid rgba(148,163,184,0.6);
+            color: var(--text-muted);
+        }
+
+        p {
+            font-size: 0.98rem;
+            line-height: 1.6;
+            margin: 4px 0 8px 0;
+        }
+
+        ul {
+            margin: 4px 0 8px 20px;
+            padding-left: 18px;
+        }
+
+        ul li {
+            margin-bottom: 4px;
+        }
+
+        .info-box {
+            border-radius: 12px;
+            padding: 10px 12px;
+            font-size: 0.9rem;
+            background: rgba(15,23,42,0.9);
+            border: 1px dashed rgba(148,163,184,0.7);
+            color: var(--text-muted);
+            margin: 8px 0;
+        }
+
+        .info-box strong {
+            color: #e5e7eb;
+        }
+
+        .warning-box {
+            border-radius: 12px;
+            padding: 10px 12px;
+            font-size: 0.9rem;
+            background: rgba(127,29,29,0.9);
+            border: 1px solid rgba(248,113,113,0.9);
+            color: #fee2e2;
+            margin: 8px 0;
+        }
+
+        .section-title {
+            font-size: 1.15rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--accent);
+        }
+
+        .small {
+            font-size: 0.9rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 8px 0 4px;
+            font-size: 0.92rem;
+            background: rgba(15,23,42,0.9);
+        }
+
+        th,
+        td {
+            border: 1px solid rgba(148,163,184,0.8);
+            padding: 6px 8px;
+            text-align: left;
+        }
+
+        th {
+            background: #020617;
+            font-weight: 500;
+        }
+
+        .answer-box,
+        textarea {
+            width: 100%;
+            min-height: 60px;
+            margin-top: 4px;
+            margin-bottom: 4px;
+            border-radius: 10px;
+            border: 1px solid rgba(148,163,184,0.9);
+            background: rgba(15,23,42,0.95);
+            color: #f9fafb;
+            padding: 6px 8px;
+            font-family: "Kanit", system-ui, sans-serif;
+            font-size: 0.95rem;
+            resize: vertical;
+        }
+
+        .answer-box.small {
+            min-height: 40px;
+        }
+
+        .section-number {
+            font-weight: 600;
+            color: var(--accent-soft);
+        }
+
+        a {
+            color: var(--accent-soft);
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        .resource-list li {
+            margin-bottom: 6px;
+        }
+
+        @media print {
+            body {
+                background: #ffffff;
+                color: #111827;
+            }
+            .page {
+                padding: 0;
+            }
+            header,
+            .card {
+                box-shadow: none;
+                border-radius: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="page">
+
+    <header>
+        <div class="course-badge">
+            <span>ENGSE214</span> • Introduction to Cyber Security
+        </div>
+        <h1>Week 2 – Group Case Study: Hospital Ransomware</h1>
+        <div class="subtitle">
+            Ransomware + Worm + Hospital / Critical Infrastructure
+        </div>
+        <div class="meta">
+            <div class="meta-item">ประเภท: Case Study / Worksheet</div>
+            <div class="meta-item">ระยะเวลาแนะนำ: 45–60 นาที (ทำกลุ่ม) + 20–30 นาที (นำเสนอ)</div>
+        </div>
+    </header>
+
+    <!-- ข้อมูลกลุ่ม -->
+    <section class="card">
+        <div class="section-title">1. ข้อมูลทั่วไปของกลุ่ม</div>
+        <p class="small">
+            ชื่อวิชา: <strong>ENGSE214 – Introduction to Cyber Security</strong><br>
+            สัปดาห์ที่: <strong>Week 2 – Cyber Threat Types &amp; Malware</strong>
+        </p>
+        <table>
+            <tr>
+                <th style="width: 25%;">ชื่อกลุ่ม</th>
+                <td><div class="answer-box small"></div></td>
+            </tr>
+            <tr>
+                <th>สมาชิกในกลุ่ม</th>
+                <td>
+                    1. <div class="answer-box small"></div>
+                    2. <div class="answer-box small"></div>
+                    3. <div class="answer-box small"></div>
+                    4. <div class="answer-box small"></div>
+                    5. <div class="answer-box small"></div>
+                </td>
+            </tr>
+        </table>
+    </section>
+
+    <!-- LO -->
+    <section class="card">
+        <div class="section-title">2. วัตถุประสงค์การเรียนรู้ (Learning Objectives)</div>
+        <p>หลังจากทำ Case นี้ นักศึกษาควรจะสามารถ:</p>
+        <ul>
+            <li>ระบุ <strong>Asset / Target</strong> ที่สำคัญในระบบโรงพยาบาลได้</li>
+            <li>อธิบาย <strong>Attack Vector</strong> และประเภทภัยคุกคาม (Threat / Malware Type) ที่เกี่ยวข้องกับ Ransomware ได้</li>
+            <li>วิเคราะห์ผลกระทบต่อ <strong>CIA Triad</strong> (Confidentiality / Integrity / Availability) จากเหตุการณ์ Ransomware ในโรงพยาบาลได้</li>
+            <li>ผูกเหตุการณ์เข้ากับแนวคิด <strong>Cyber Kill Chain / APT Lifecycle</strong> ในระดับภาพรวมได้</li>
+            <li>เสนอแนวทาง <strong>ป้องกัน / รับมือ / ฟื้นฟู</strong> เมื่อโรงพยาบาลถูกโจมตีด้วย Ransomware</li>
+        </ul>
+    </section>
+
+    <!-- Scenario -->
+    <section class="card">
+        <div class="section-title">3. ฉากเหตุการณ์ (Scenario)</div>
+        <div class="info-box">
+            เหตุการณ์นี้ <strong>ดัดแปลงจากเคสจริง</strong> ที่มีการโจมตีโรงพยาบาลด้วย Ransomware ในหลายประเทศ  
+            เช่น กรณี <strong>WannaCry</strong> ที่กระทบโรงพยาบาลในสหราชอาณาจักร (NHS) และหน่วยงานด้านสุขภาพอื่น ๆ ทั่วโลก
+        </div>
+
+        <h3>3.1 โรงพยาบาล ENG Hospital</h3>
+        <p>
+            โรงพยาบาลขนาดกลางแห่งหนึ่งในประเทศไทย ชื่อว่า <strong>ENG Hospital</strong><br>
+            เป็นโรงพยาบาลระดับจังหวัด มีบริการห้องฉุกเฉิน ห้องผ่าตัด OPD, IPD, X-ray, Lab, การเงิน, เวชระเบียน ฯลฯ
+        </p>
+        <p>โรงพยาบาลใช้ระบบสารสนเทศหลัก ๆ เช่น:</p>
+        <ul>
+            <li><strong>HIS (Hospital Information System)</strong> – เวชระเบียน, นัดหมาย, Billing</li>
+            <li><strong>LIS (Lab Information System)</strong> – ระบบแลป</li>
+            <li><strong>PACS / RIS</strong> – ระบบภาพถ่ายทางรังสี</li>
+            <li><strong>Database Server</strong> – เก็บข้อมูลผู้ป่วย / ประวัติการรักษา</li>
+            <li><strong>File Server</strong> – เก็บไฟล์เอกสารภายในโรงพยาบาล</li>
+        </ul>
+
+        <h3>3.2 ภาพรวมโครงสร้างระบบ (อย่างง่าย)</h3>
+        <p>
+            - มีห้อง Data Center ขนาดเล็กภายในโรงพยาบาล<br>
+            - เครื่อง PC ในแต่ละแผนกเชื่อมต่อผ่าน LAN เดียวกัน ยังไม่มีการแบ่ง Network Segment ที่ชัดเจน<br>
+            - มีการเชื่อมต่อ Internet เพื่อใช้งาน Email / Web และเชื่อมต่อกับระบบภายนอกบางส่วน
+        </p>
+
+        <h3>3.3 เหตุการณ์ในวันโจมตี</h3>
+        <p><strong>วันศุกร์ เวลา 10:30 น.</strong></p>
+        <ul>
+            <li>เจ้าหน้าที่การเงินไม่สามารถเปิดไฟล์ Excel สรุปรายรับได้</li>
+            <li>ไฟล์หลายอันถูกเปลี่ยนชื่อและมีนามสกุลแปลก ๆ เช่น <code>.locked</code>, <code>.enc</code>, <code>.wncry</code></li>
+            <li>มีหน้าต่างเด้งขึ้นมาว่าไฟล์ถูกเข้ารหัส และขอค่าไถ่เป็น <strong>Cryptocurrency</strong></li>
+        </ul>
+
+        <p><strong>ภายใน 1–2 ชั่วโมง</strong></p>
+        <ul>
+            <li>เครื่อง PC ในแผนก ER, OPD, Lab, X-ray เริ่มมีอาการคล้ายกัน</li>
+            <li>ระบบ HIS ล่ม แพทย์เปิดดูประวัติคนไข้ผ่านระบบไม่ได้ ต้องกลับไปใช้กระดาษชั่วคราว</li>
+            <li>มีผู้ป่วยบางรายต้องเลื่อนการตรวจ / เลื่อนการผ่าตัด</li>
+        </ul>
+
+        <p><strong>ทีม IT ตรวจพบว่า</strong></p>
+        <ul>
+            <li>มีเครื่องจำนวนมากเปิดพอร์ต 445 (SMB) ไปยังเครื่องอื่นในเครือข่าย</li>
+            <li>Antivirus บางเครื่องเตือนพฤติกรรมคล้าย Ransomware / Worm</li>
+            <li>พบไฟล์ข้อความ <code>README_FOR_DECRYPT.txt</code> ถูกสร้างขึ้นหลายโฟลเดอร์</li>
+        </ul>
+
+        <div class="info-box">
+            <strong>คำถามในใจทีมผู้บริหาร:</strong><br>
+            - จะจ่ายค่าไถ่หรือไม่?<br>
+            - จะกู้ระบบกลับมาอย่างไร?<br>
+            - ถ้าข้อมูลผู้ป่วยรั่วไหลออกไป จะเกิดผลกระทบอะไรบ้าง?
+        </div>
+    </section>
+
+    <!-- Resources -->
+    <section class="card">
+        <div class="section-title">4. ลิงก์ข่าวและทรัพยากรสำหรับประกอบการสอน</div>
+
+        <h3>4.1 ตัวอย่าง Ransomware โจมตีโรงพยาบาล / หน่วยงานสุขภาพ</h3>
+        <ul class="resource-list">
+            <li>
+                <strong>WannaCry ransomware attack (ภาพรวม + กระทบ NHS อังกฤษ)</strong><br>
+                - Wikipedia (EN): 
+                <a href="https://en.wikipedia.org/wiki/WannaCry_ransomware_attack" target="_blank">
+                    https://en.wikipedia.org/wiki/WannaCry_ransomware_attack
+                </a><br>
+                - รายงาน National Audit Office (NHS อังกฤษ): 
+                <a href="https://www.nao.org.uk/wp-content/uploads/2017/10/Investigation-WannaCry-cyber-attack-and-the-NHS.pdf" target="_blank">
+                    Investigation: WannaCry cyber attack and the NHS (PDF)
+                </a>
+            </li>
+            <li>
+                <strong>บทความ/ข่าวจากหน่วยงานด้านความมั่นคงไซเบอร์ของไทย (ThaiCERT ฯลฯ)</strong><br>
+                - อาจารย์สามารถเพิ่มลิงก์ล่าสุดจาก ThaiCERT, ETDA, หรือหน่วยงานอื่น ๆ ที่เกี่ยวข้อง
+            </li>
+        </ul>
+
+        <h3>4.2 Live Cyber Threat Map (ใช้เปิด demo ในคลาส)</h3>
+        <ul class="resource-list">
+            <li>
+                <strong>Kaspersky Cyberthreat Real-Time Map:</strong><br>
+                <a href="https://cybermap.kaspersky.com/" target="_blank">
+                    https://cybermap.kaspersky.com/
+                </a>
+            </li>
+            <li>
+                ตัวอย่างวิดีโอแนะนำการใช้ Threat Map (YouTube):<br>
+                <a href="https://www.youtube.com/watch?v=vuOLiu3wFQ0" target="_blank">
+                    https://www.youtube.com/watch?v=vuOLiu3wFQ0
+                </a>
+            </li>
+        </ul>
+
+        <h3>4.3 ไฟล์ทดสอบ Antivirus (ไม่ใช่มัลแวร์จริง)</h3>
+        <ul class="resource-list">
+            <li>
+                <strong>EICAR Anti-Malware Testfile:</strong><br>
+                - ข้อมูลจาก EICAR: 
+                <a href="https://www.eicar.org/download-anti-malware-testfile/" target="_blank">
+                    https://www.eicar.org/download-anti-malware-testfile/
+                </a><br>
+                - คำอธิบายเพิ่มเติมจาก Kaspersky:
+                <a href="https://support.kaspersky.com/common/diagnostics/7399" target="_blank">
+                    https://support.kaspersky.com/common/diagnostics/7399
+                </a>
+            </li>
+        </ul>
+
+        <div class="warning-box">
+            ⚠️ <strong>คำเตือนสำหรับการสาธิตในคลาส:</strong><br>
+            - ห้ามดาวน์โหลดหรือใช้มัลแวร์จริงในเครื่องของมหาวิทยาลัย/โรงพยาบาล<br>
+            - ใช้ไฟล์ทดสอบมาตรฐาน (เช่น EICAR) และทำใน VM หรือเครื่องทดสอบเท่านั้น
+        </div>
+    </section>
+
+    <!-- Part A -->
+    <section class="card">
+        <div class="section-title">
+            5. Part A – ระบุ Target / Asset ที่สำคัญ
+        </div>
+        <p>
+            กลุ่มของคุณจะต้องระบุ <strong>Asset / Target</strong> ที่สำคัญในเหตุการณ์นี้  
+            อย่างน้อย <strong>3–5 รายการ</strong> ทั้งในมุมข้อมูล ระบบ คน หรือชื่อเสียงของโรงพยาบาล
+        </p>
+        <table>
+            <tr>
+                <th style="width: 8%;">ลำดับ</th>
+                <th style="width: 32%;">Asset / Target สำคัญ</th>
+                <th style="width: 25%;">ประเภท (ข้อมูล/ระบบ/คน/ชื่อเสียง)</th>
+                <th>เหตุผลว่าทำไมสำคัญ</th>
+            </tr>
+            <tr>
+                <td>1</td>
+                <td><div class="answer-box small"></div></td>
+                <td><div class="answer-box small"></div></td>
+                <td><div class="answer-box"></div></td>
+            </tr>
+            <tr>
+                <td>2</td>
+                <td><div class="answer-box small"></div></td>
+                <td><div class="answer-box small"></div></td>
+                <td><div class="answer-box"></div></td>
+            </tr>
+            <tr>
+                <td>3</td>
+                <td><div class="answer-box small"></div></td>
+                <td><div class="answer-box small"></div></td>
+                <td><div class="answer-box"></div></td>
+            </tr>
+            <tr>
+                <td>4</td>
+                <td><div class="answer-box small"></div></td>
+                <td><div class="answer-box small"></div></td>
+                <td><div class="answer-box"></div></td>
+            </tr>
+            <tr>
+                <td>5</td>
+                <td><div class="answer-box small"></div></td>
+                <td><div class="answer-box small"></div></td>
+                <td><div class="answer-box"></div></td>
+            </tr>
+        </table>
+    </section>
+
+    <!-- Part B -->
+    <section class="card">
+        <div class="section-title">
+            6. Part B – Attack Vector &amp; Threat Classification
+        </div>
+
+        <h3>6.1 วิเคราะห์ Attack Vector (ช่องทางโจมตีหลัก)</h3>
+        <p>
+            กลุ่มของคุณคิดว่า แฮกเกอร์เข้ามาในระบบโรงพยาบาลนี้ได้อย่างไร?<br>
+            (เช่น ช่องโหว่ SMB, Phishing Email, RDP, USB, ช่องโหว่ระบบเก่า ฯลฯ)
+        </p>
+        <textarea placeholder="เขียนสมมติฐานของกลุ่มที่นี่"></textarea>
+
+        <h3>6.2 จัดประเภทภัยคุกคาม (Threat / Malware Type)</h3>
+        <p>ให้ระบุประเภทภัยคุกคาม/มัลแวร์ที่เกี่ยวข้อง พร้อมเหตุผลสั้น ๆ</p>
+
+        <table>
+            <tr>
+                <th style="width: 30%;">หัวข้อ</th>
+                <th>คำอธิบายของกลุ่ม</th>
+            </tr>
+            <tr>
+                <td>ประเภท Malware หลัก</td>
+                <td><div class="answer-box"></div></td>
+            </tr>
+            <tr>
+                <td>มีพฤติกรรมคล้าย Worm หรือไม่? ทำไม?</td>
+                <td><div class="answer-box"></div></td>
+            </tr>
+            <tr>
+                <td>เกี่ยวข้องกับ Social Engineering หรือไม่?</td>
+                <td><div class="answer-box"></div></td>
+            </tr>
+        </table>
+    </section>
+
+    <!-- Part C -->
+    <section class="card">
+        <div class="section-title">
+            7. Part C – ผลกระทบต่อ CIA Triad
+        </div>
+        <p>
+            ให้กลุ่มของคุณวิเคราะห์ว่าเหตุการณ์นี้กระทบ <strong>C / I / A</strong> อย่างไรบ้าง
+        </p>
+
+        <table>
+            <tr>
+                <th style="width: 20%;">ด้าน</th>
+                <th style="width: 20%;">กระทบหรือไม่ (✓/✗)</th>
+                <th>ตัวอย่างผลกระทบที่เป็นไปได้</th>
+            </tr>
+            <tr>
+                <td>C – Confidentiality</td>
+                <td><div class="answer-box small"></div></td>
+                <td><div class="answer-box"></div></td>
+            </tr>
+            <tr>
+                <td>I – Integrity</td>
+                <td><div class="answer-box small"></div></td>
+                <td><div class="answer-box"></div></td>
+            </tr>
+            <tr>
+                <td>A – Availability</td>
+                <td><div class="answer-box small"></div></td>
+                <td><div class="answer-box"></div></td>
+            </tr>
+        </table>
+
+        <p class="small">อธิบายเพิ่มเติม (ถ้ามี):</p>
+        <textarea></textarea>
+    </section>
+
+    <!-- Part D -->
+    <section class="card">
+        <div class="section-title">
+            8. Part D – เชื่อมกับ Cyber Kill Chain / APT Lifecycle
+        </div>
+        <p>ลองจับคู่เหตุการณ์ใน Scenario กับขั้นตอนของ <strong>Cyber Kill Chain</strong> แบบง่าย ๆ</p>
+
+        <table>
+            <tr>
+                <th style="width: 20%;">ลำดับขั้น</th>
+                <th style="width: 40%;">เหตุการณ์ที่เกี่ยวข้องในเคสโรงพยาบาล</th>
+                <th>หมายเหตุ / สิ่งที่กลุ่มอยากเน้น</th>
+            </tr>
+            <tr>
+                <td>Reconnaissance</td>
+                <td><div class="answer-box"></div></td>
+                <td><div class="answer-box"></div></td>
+            </tr>
+            <tr>
+                <td>Delivery / Exploitation</td>
+                <td><div class="answer-box"></div></td>
+                <td><div class="answer-box"></div></td>
+            </tr>
+            <tr>
+                <td>Installation / C2</td>
+                <td><div class="answer-box"></div></td>
+                <td><div class="answer-box"></div></td>
+            </tr>
+            <tr>
+                <td>Actions on Objectives</td>
+                <td><div class="answer-box"></div></td>
+                <td><div class="answer-box"></div></td>
+            </tr>
+        </table>
+    </section>
+
+    <!-- Part E -->
+    <section class="card">
+        <div class="section-title">
+            9. Part E – แผนป้องกันและรับมือ (Defense &amp; Response Plan)
+        </div>
+        <p>
+            แบ่งความคิดเป็น 3 ช่วงเวลา: <strong>ก่อนเกิดเหตุ</strong>, <strong>ขณะเกิดเหตุ</strong>, <strong>หลังเกิดเหตุ</strong>  
+            พยายามคิดทั้งมุมเทคนิค (Technical Controls) และมุมกระบวนการ/บุคลากร
+        </p>
+
+        <table>
+            <tr>
+                <th style="width: 20%;">ช่วงเวลา</th>
+                <th>แนวทาง / มาตรการที่กลุ่มเสนอ (อย่างน้อย 2 ข้อ)</th>
+            </tr>
+            <tr>
+                <td>ก่อนเกิดเหตุ</td>
+                <td><div class="answer-box"></div></td>
+            </tr>
+            <tr>
+                <td>ขณะเกิดเหตุ</td>
+                <td><div class="answer-box"></div></td>
+            </tr>
+            <tr>
+                <td>หลังเกิดเหตุ</td>
+                <td><div class="answer-box"></div></td>
+            </tr>
+        </table>
+    </section>
+
+    <!-- Part F -->
+    <section class="card">
+        <div class="section-title">
+            10. Part F – สะท้อนคิด (Reflection)
+        </div>
+
+        <p><strong>1) ถ้าคุณเป็น CIO / ผู้บริหารโรงพยาบาล คุณจะใช้งบ Cyber Security กับอะไรเป็น 3 อันดับแรก? เพราะอะไร?</strong></p>
+        <textarea></textarea>
+
+        <p><strong>2) จากเหตุการณ์นี้ “จุดอ่อนที่แท้จริง” อยู่ที่เทคโนโลยี กระบวนการ หรือคน? อธิบายเหตุผล</strong></p>
+        <textarea></textarea>
+    </section>
+
+    <!-- Diagram -->
+    <section class="card">
+        <div class="section-title">
+            11. ผังระบบ / Infographic ของกลุ่ม
+        </div>
+        <p>
+            ให้กลุ่มของคุณลองวาด <strong>ภาพรวมระบบโรงพยาบาล + จุดที่ Ransomware แพร่กระจาย</strong>  
+            จะวาดลงกระดาษ, Tablet, หรือใช้เครื่องมืออย่าง draw.io / diagrams.net ก็ได้
+        </p>
+        <p class="small">
+            สามารถจดลิงก์ไปยังไฟล์หรือชื่อไฟล์รูปที่แนบกับรายงานที่นี่:
+        </p>
+        <div class="answer-box"></div>
+    </section>
+
+    <!-- Teacher note -->
+    <section class="card">
+        <div class="section-title">
+            12. หมายเหตุสำหรับผู้สอน (สามารถลบส่วนนี้ออกในเวอร์ชันแจกนักศึกษาได้)
+        </div>
+        <ul class="small">
+            <li>ใช้ worksheet นี้ในช่วงท้ายคาบ <strong>Week 2</strong> หลังสอน Threat Types, Malware, Social Engineering, APT แล้ว</li>
+            <li>ก่อนให้นักศึกษาทำงานกลุ่ม อาจเลือกเปิด:
+                <ul>
+                    <li>ข่าวสั้น/บทความเกี่ยวกับ WannaCry &amp; โรงพยาบาล</li>
+                    <li><strong>Kaspersky Cyberthreat Map</strong> (ให้เห็นภาพ real-time attacks)</li>
+                    <li>Demo การตรวจจับไฟล์ทดสอบ <strong>EICAR</strong> ใน VM</li>
+                </ul>
+            </li>
+            <li>สำหรับการเก็บคะแนน: สามารถใช้ rubric ง่าย ๆ เช่น
+                <ul>
+                    <li>ความถูกต้องในการใช้คำศัพท์ (Asset / Threat / CIA / Attack Vector ฯลฯ)</li>
+                    <li>ความสมเหตุสมผลของการวิเคราะห์ (CIA, Kill Chain, แผนรับมือ)</li>
+                    <li>การทำงานเป็นทีม + การนำเสนอ</li>
+                </ul>
+            </li>
+        </ul>
+    </section>
+
+</div>
+</body>
+</html>

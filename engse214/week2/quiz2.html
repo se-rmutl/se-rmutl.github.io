@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz 2: Cyber Threats & Malware | ENGSE214</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    
+    <style>
+        body { font-family: 'Prompt', sans-serif; background-color: #0f172a; color: #e2e8f0; }
+        .mono { font-family: 'Share Tech Mono', monospace; }
+        
+        /* Cyberpunk Grid Background (Red Accent for Threat Theme) */
+        .bg-grid {
+            background-image: linear-gradient(rgba(239, 68, 68, 0.05) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(239, 68, 68, 0.05) 1px, transparent 1px);
+            background-size: 30px 30px;
+        }
+        
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(239, 68, 68, 0.2); /* Red border */
+            box-shadow: 0 0 20px rgba(239, 68, 68, 0.1);
+        }
+
+        .option-btn {
+            transition: all 0.2s ease;
+        }
+        .option-btn:hover:not(:disabled) {
+            border-color: #ef4444;
+            background: rgba(239, 68, 68, 0.1);
+            transform: translateX(5px);
+        }
+        .option-btn:disabled { cursor: not-allowed; opacity: 0.7; }
+
+        .correct-anim { animation: pulse-green 0.5s; }
+        .wrong-anim { animation: shake 0.4s; }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+        @keyframes pulse-green {
+            0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #1e293b; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+    </style>
+</head>
+<body class="bg-grid min-h-screen flex items-center justify-center p-4">
+
+    <div class="max-w-3xl w-full">
+        
+        <header class="flex justify-between items-end mb-6 border-b border-red-500/30 pb-4">
+            <div>
+                <h1 class="text-3xl font-bold text-red-500"><i class="fa-solid fa-biohazard"></i> ENGSE214</h1>
+                <p class="text-slate-400 text-sm mt-1">Quiz 2: Cyber Threat Types & Malware</p>
+            </div>
+            <div class="text-right hidden" id="quiz-stats">
+                <div class="text-sm text-slate-400">Question</div>
+                <div class="text-xl font-bold mono text-white"><span id="q-current">1</span> / <span id="q-total">20</span></div>
+            </div>
+        </header>
+
+        <div id="start-screen" class="glass-panel rounded-xl p-8 text-center relative overflow-hidden">
+            <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-red-500 to-orange-500"></div>
+            
+            <div class="mb-6 inline-block p-6 rounded-full bg-red-500/10 border border-red-500/30">
+                <i class="fa-solid fa-skull-crossbones text-5xl text-red-500"></i>
+            </div>
+            
+            <h2 class="text-2xl font-bold text-white mb-2">พร้อมเผชิญหน้าภัยคุกคามหรือยัง?</h2>
+            <p class="text-slate-300 mb-6 leading-relaxed text-sm">
+                แบบทดสอบวัดความรู้ 20 ข้อ (Malware, Social Engineering, APT) <br>
+                <span class="text-red-400"><i class="fa-solid fa-shuffle"></i> คำถามจะถูกสุ่มลำดับทุกครั้งที่ทำ</span>
+            </p>
+
+            <div class="max-w-sm mx-auto mb-8">
+                <label class="block text-left text-red-400 text-sm font-bold mb-2" for="student-id-input">
+                    <i class="fa-solid fa-id-card mr-1"></i> ข้อมูลผู้สอบ
+                </label>
+                <input class="w-full bg-slate-800 border border-slate-600 rounded-lg py-3 px-4 text-white leading-tight focus:outline-none focus:border-red-500 transition shadow-inner text-center placeholder-slate-500" 
+                       id="student-id-input" type="text" placeholder="ระบุ: ชื่อ-นามสกุล / รหัสนักศึกษา">
+                <p id="name-error" class="text-red-400 text-xs mt-1 hidden"><i class="fa-solid fa-circle-exclamation"></i> กรุณาระบุข้อมูลก่อนเริ่มทำแบบทดสอบ</p>
+            </div>
+
+            <div class="grid grid-cols-3 gap-2 max-w-md mx-auto mb-8 text-xs text-slate-400">
+                <div class="bg-slate-800/50 p-2 rounded border border-slate-700">
+                    <i class="fa-solid fa-list-ol text-red-400 mb-1 block text-lg"></i> 20 ข้อ
+                </div>
+                <div class="bg-slate-800/50 p-2 rounded border border-slate-700">
+                    <i class="fa-solid fa-stopwatch text-red-400 mb-1 block text-lg"></i> 45 วินาที/ข้อ
+                </div>
+                <div class="bg-slate-800/50 p-2 rounded border border-slate-700">
+                    <i class="fa-solid fa-shuffle text-red-400 mb-1 block text-lg"></i> Random
+                </div>
+            </div>
+
+            <button onclick="startQuiz()" class="bg-red-600 hover:bg-red-500 text-white font-bold py-3 px-8 rounded-lg transition transform hover:scale-105 shadow-lg shadow-red-500/20 w-full max-w-xs">
+                <i class="fa-solid fa-play mr-2"></i> เริ่มทำแบบทดสอบ
+            </button>
+        </div>
+
+        <div id="quiz-screen" class="glass-panel rounded-xl p-6 hidden relative">
+            <div class="absolute top-0 left-0 h-1 bg-red-500 transition-all duration-1000 ease-linear" id="timer-bar" style="width: 100%"></div>
+
+            <div class="flex justify-between items-center mb-6">
+                <span class="bg-slate-800 text-xs font-bold px-3 py-1 rounded border border-slate-600 text-red-400">
+                    <i class="fa-regular fa-clock"></i> <span id="timer-text">45</span>s
+                </span>
+                <span class="text-xs text-slate-500 uppercase tracking-widest">Select the best answer</span>
+            </div>
+
+            <h3 id="question-text" class="text-xl font-semibold text-white mb-8 leading-relaxed min-h-[80px]">
+                Loading question...
+            </h3>
+
+            <div id="options-container" class="space-y-3">
+                </div>
+
+            <div class="mt-6 pt-4 border-t border-slate-700/50 flex justify-between items-center opacity-0 transition-opacity" id="feedback-area">
+                <div id="feedback-text" class="text-sm font-medium"></div>
+                <button onclick="nextQuestion()" id="next-btn" class="bg-blue-600 hover:bg-blue-500 text-white text-sm py-2 px-6 rounded transition">
+                    ถัดไป <i class="fa-solid fa-arrow-right ml-1"></i>
+                </button>
+            </div>
+        </div>
+
+        <div id="result-screen" class="hidden">
+            <div id="certificate-area" class="glass-panel rounded-xl p-8 text-center border-2 border-red-500/50 relative bg-slate-900">
+                
+                <div class="border-b border-slate-700 pb-4 mb-6">
+                    <div class="flex justify-center items-center gap-2 text-red-500 mb-2">
+                        <i class="fa-solid fa-shield-virus text-2xl"></i>
+                        <span class="font-bold text-xl tracking-wider">ENGSE214 : MISSION REPORT</span>
+                    </div>
+                    <p class="text-xs text-slate-500 mono">WEEK 2: THREATS & MALWARE ANALYSIS</p>
+                </div>
+
+                <div class="mb-6 relative inline-block">
+                    <svg class="w-32 h-32 transform -rotate-90">
+                        <circle cx="64" cy="64" r="60" stroke="#334155" stroke-width="8" fill="transparent" />
+                        <circle id="score-circle" cx="64" cy="64" r="60" stroke="#ef4444" stroke-width="8" fill="transparent" stroke-dasharray="377" stroke-dashoffset="377" class="transition-all duration-1000 ease-out" />
+                    </svg>
+                    <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+                        <span id="final-score" class="text-3xl font-bold text-white">0</span>
+                        <span class="text-xs text-slate-400 block">/ 20</span>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <p class="text-slate-400 text-xs mb-2 uppercase tracking-widest">Operator Rank</p>
+                    <div id="rank-badge" class="inline-block px-6 py-2 rounded-full border-2 border-red-500 text-red-400 font-bold text-xl shadow-[0_0_15px_rgba(239,68,68,0.3)]">
+                        Malware Hunter
+                    </div>
+                </div>
+
+                <div class="mt-6 bg-slate-800/50 py-3 px-4 rounded-lg border border-slate-700 inline-block min-w-[250px]">
+                    <p class="text-xs text-slate-500 mb-1 uppercase">Examinee</p>
+                    <h3 id="student-name-display" class="text-lg font-bold text-white font-mono">Student Name</h3>
+                </div>
+
+                <div class="mt-6 text-xs text-slate-600 mono">
+                    RMUTL Software Engineering | ID: <span id="timestamp-id"></span>
+                </div>
+            </div>
+
+            <div class="mt-6 flex flex-col md:flex-row justify-center gap-4">
+                <button onclick="captureResult()" class="bg-blue-600 hover:bg-blue-500 text-white py-3 px-6 rounded-lg transition shadow-lg shadow-blue-500/20 font-bold">
+                    <i class="fa-solid fa-camera mr-2"></i> บันทึกผลคะแนน (PNG)
+                </button>
+                <button onclick="toggleSolutions()" class="bg-slate-700 hover:bg-slate-600 text-white py-3 px-6 rounded-lg transition">
+                    <i class="fa-solid fa-list-check mr-2"></i> ดูเฉลยละเอียด
+                </button>
+                <button onclick="location.reload()" class="bg-slate-800 hover:bg-slate-700 text-white py-3 px-6 rounded-lg transition border border-slate-600">
+                    <i class="fa-solid fa-rotate-right mr-2"></i> ทำอีกครั้ง
+                </button>
+            </div>
+
+            <div id="solutions-container" class="hidden text-left space-y-4 mt-8 border-t border-red-500/30 pt-8 max-h-[500px] overflow-y-auto pr-2 glass-panel rounded-xl p-6">
+                <h3 class="text-xl font-bold text-white mb-4">เฉลยและคำอธิบาย</h3>
+                </div>
+        </div>
+
+    </div>
+
+    <script>
+        // --- Master Quiz Data (20 Questions) ---
+        const masterQuizData = [
+            {
+                q: "ข้อใดคือความแตกต่างหลักระหว่าง Virus และ Worm?",
+                options: [
+                    "Virus ทำลายฮาร์ดแวร์ แต่ Worm ทำลายซอฟต์แวร์",
+                    "Worm ต้องอาศัย Host file แต่ Virus ไม่ต้อง",
+                    "Virus ต้องอาศัยการกระทำของผู้ใช้ (เปิดไฟล์) แต่ Worm แพร่กระจายได้เองผ่านเครือข่าย",
+                    "Virus ไม่สามารถถูกตรวจจับได้ด้วย Antivirus"
+                ],
+                correct: 2,
+                explain: "Virus ต้องการ Host file และ User action ในขณะที่ Worm สามารถทำงานได้เอง (Standalone) และแพร่กระจายผ่าน Network โดยอัตโนมัติ"
+            },
+            {
+                q: "มัลแวร์ชนิดใดที่มีพฤติกรรม 'ปลอมตัวเป็นโปรแกรมที่ดี' เพื่อหลอกให้ผู้ใช้ติดตั้ง?",
+                options: [
+                    "Virus",
+                    "Trojan Horse",
+                    "Worm",
+                    "Spyware"
+                ],
+                correct: 1,
+                explain: "Trojan Horse (ม้าโทรจัน) ใช้หลักการ Social Engineering หลอกว่าเป็นโปรแกรมที่มีประโยชน์ แต่แอบฝังโค้ดร้ายไว้ข้างใน"
+            },
+            {
+                q: "Ransomware (มัลแวร์เรียกค่าไถ่) สร้างความเสียหายให้กับข้อมูลด้วยวิธีการใด?",
+                options: [
+                    "ลบไฟล์ทิ้งทั้งหมด",
+                    "ส่งข้อมูลออกสู่อินเทอร์เน็ต",
+                    "เข้ารหัสข้อมูล (Encryption) ทำให้เปิดอ่านไม่ได้",
+                    "ทำให้เครื่องคอมพิวเตอร์ร้อนจนระเบิด"
+                ],
+                correct: 2,
+                explain: "Ransomware ใช้การเข้ารหัส (Encryption) เพื่อล็อคไฟล์ และจะให้ Key ถอดรหัสเมื่อเหยื่อจ่ายเงินค่าไถ่"
+            },
+            {
+                q: "ข้อใดคือลักษณะเด่นของ 'Spear Phishing'?",
+                options: [
+                    "ส่งอีเมลหว่านแหไปหาคนจำนวนมาก",
+                    "เจาะจงเป้าหมายเฉพาะบุคคลหรือองค์กร โดยใช้ข้อมูลส่วนตัว",
+                    "ใช้โทรศัพท์หลอกลวงเหยื่อ",
+                    "ทิ้ง Flash Drive ไว้ให้เหยื่อเก็บไปเสียบ"
+                ],
+                correct: 1,
+                explain: "Spear Phishing คือการโจมตีแบบพุ่งเป้า (Targeted) ที่มีการทำการบ้านเกี่ยวกับเหยื่อมาก่อน ทำให้ดูน่าเชื่อถือกว่า Phishing ธรรมดา"
+            },
+            {
+                q: "APT (Advanced Persistent Threat) มักมีเป้าหมายเพื่ออะไร?",
+                options: [
+                    "ก่อกวนให้ระบบล่มชั่วคราว",
+                    "ขโมยข้อมูลบัตรเครดิตจากผู้ใช้ทั่วไป",
+                    "จารกรรมข้อมูลความลับหรือฝังตัวระยะยาวในองค์กรระดับสูง",
+                    "ทดสอบความสามารถของแฮกเกอร์มือใหม่"
+                ],
+                correct: 2,
+                explain: "APT คือการโจมตีขั้นสูงที่มักได้รับการสนับสนุนจากรัฐบาล เน้นการฝังตัวระยะยาว (Persistent) เพื่อขโมยข้อมูลสำคัญ"
+            },
+            {
+                q: "WannaCry (2017) จัดเป็นมัลแวร์ประเภทใด?",
+                options: [
+                    "Spyware",
+                    "Ransomware Worm (ลูกผสม)",
+                    "Trojan",
+                    "Adware"
+                ],
+                correct: 1,
+                explain: "WannaCry เป็น Ransomware ที่มีความสามารถของ Worm คือแพร่กระจายตัวเองผ่านเครือข่ายได้โดยใช้ช่องโหว่ EternalBlue"
+            },
+            {
+                q: "การโจมตีแบบ 'Whaling' มุ่งเป้าไปที่กลุ่มบุคคลใด?",
+                options: [
+                    "พนักงานต้อนรับ",
+                    "ผู้บริหารระดับสูง (C-Level Executives)",
+                    "นักเรียนนักศึกษา",
+                    "ลูกค้าทั่วไป"
+                ],
+                correct: 1,
+                explain: "Whaling คือ Phishing ที่เล็งเป้าไปที่ 'ปลาวาฬ' หรือผู้บริหารที่มีอำนาจตัดสินใจและเข้าถึงข้อมูลสำคัญ"
+            },
+            {
+                q: "ช่องโหว่ EternalBlue (MS17-010) เกี่ยวข้องกับโปรโตคอลใด?",
+                options: [
+                    "HTTP",
+                    "SMB (Server Message Block)",
+                    "FTP",
+                    "DNS"
+                ],
+                correct: 1,
+                explain: "EternalBlue ใช้โจมตีช่องโหว่ใน SMBv1 protocol ของ Windows ซึ่งใช้สำหรับการแชร์ไฟล์และเครื่องพิมพ์"
+            },
+            {
+                q: "มัลแวร์ชนิดใดทำหน้าที่ 'เปิดประตูหลัง' (Backdoor) ให้ผู้โจมตีควบคุมเครื่องจากระยะไกล?",
+                options: [
+                    "RAT (Remote Access Trojan)",
+                    "Keylogger",
+                    "Ransomware",
+                    "Adware"
+                ],
+                correct: 0,
+                explain: "RAT (Remote Access Trojan) คือมัลแวร์ที่อนุญาตให้แฮกเกอร์ควบคุมเครื่องเหยื่อได้เต็มรูปแบบจากระยะไกล"
+            },
+            {
+                q: "การหลอกลวงโดยการทิ้งอุปกรณ์ USB ที่ติดมัลแวร์ไว้ในที่สาธารณะ เรียกว่าอะไร?",
+                options: [
+                    "Pretexting",
+                    "Baiting",
+                    "Tailgating",
+                    "Vishing"
+                ],
+                correct: 1,
+                explain: "Baiting คือการใช้ 'เหยื่อล่อ' (เช่น USB ที่เขียนว่า 'Salary Info') เพื่อให้เหยื่อความอยากรู้อยากเห็นนำไปเสียบเครื่อง"
+            },
+            {
+                q: "Keylogger จัดเป็นมัลแวร์ประเภทใด?",
+                options: [
+                    "Ransomware",
+                    "Spyware",
+                    "Worm",
+                    "Botnet"
+                ],
+                correct: 1,
+                explain: "Keylogger ทำหน้าที่ดักจับการกดแป้นพิมพ์เพื่อขโมยรหัสผ่านหรือข้อมูลสำคัญ ซึ่งเป็นพฤติกรรมของ Spyware"
+            },
+            {
+                q: "ในกรณีศึกษา SolarWinds Attack, ผู้โจมตีใช้วิธีการใดในการแพร่กระจายมัลแวร์?",
+                options: [
+                    "ส่ง Phishing Email ให้พนักงาน",
+                    "Supply Chain Attack (ฝังมัลแวร์ในอัปเดตซอฟต์แวร์)",
+                    "เจาะผ่าน Wi-Fi ของบริษัท",
+                    "ใช้ USB Drive"
+                ],
+                correct: 1,
+                explain: "SolarWinds เป็นตัวอย่างคลาสสิกของ Supply Chain Attack โดยแฮกเกอร์ฝังโค้ดร้ายในซอฟต์แวร์ Orion ที่บริษัทลูกค้าดาวน์โหลดไปอัปเดต"
+            },
+            {
+                q: "ข้อใด **ไม่ใช่** สัญญาณเตือน (Red Flag) ของ Phishing Email?",
+                options: [
+                    "เร่งรัดให้รีบดำเนินการ (Urgency)",
+                    "ชื่อผู้ส่งสะกดผิดเล็กน้อย (Typosquatting)",
+                    "มีการใช้ชื่อจริงและนามสกุลจริงของผู้รับ",
+                    "ขอให้กรอกรหัสผ่านผ่านลิงก์"
+                ],
+                correct: 2,
+                explain: "การใช้ชื่อจริงของผู้รับอาจทำให้ดูน่าเชื่อถือขึ้น (Spear Phishing) แต่ไม่ใช่ Red Flag ที่ชัดเจนเท่ากับความเร่งด่วน หรือการขอรหัสผ่าน"
+            },
+            {
+                q: "การโจมตีแบบ 'Pretexting' คืออะไร?",
+                options: [
+                    "การสร้างสถานการณ์หรือเรื่องราวปลอมเพื่อหลอกถามข้อมูล",
+                    "การแอบมองหน้าจอคนอื่น",
+                    "การขุดค้นขยะหาข้อมูล",
+                    "การดักฟังโทรศัพท์"
+                ],
+                correct: 0,
+                explain: "Pretexting คือการสร้าง Scenario (เช่น ปลอมเป็น IT Support) เพื่อสร้างความไว้วางใจก่อนหลอกถามข้อมูล"
+            },
+            {
+                q: "Botnet คืออะไร?",
+                options: [
+                    "หุ่นยนต์รักษาความปลอดภัย",
+                    "เครือข่ายเครื่องคอมพิวเตอร์ที่ติดมัลแวร์และถูกควบคุมโดยแฮกเกอร์",
+                    "ระบบAI ที่ใช้เขียนโปรแกรม",
+                    "โปรแกรมแชทอัตโนมัติ"
+                ],
+                correct: 1,
+                explain: "Botnet คือกลุ่มเครื่องคอมพิวเตอร์ (Zombies) ที่ถูกแฮกและควบคุมจากระยะไกล มักใช้ในการโจมตี DDoS หรือส่ง Spam"
+            },
+            {
+                q: "วิธีการป้องกัน Ransomware ที่ดีที่สุดคืออะไร?",
+                options: [
+                    "จ่ายเงินค่าไถ่ทันที",
+                    "ถอดปลั๊กไฟเมื่อเห็นหน้าจอ",
+                    "สำรองข้อมูล (Backup) แบบ Offline อย่างสม่ำเสมอ",
+                    "ติดตั้งโปรแกรมเถื่อน"
+                ],
+                correct: 2,
+                explain: "การ Backup ข้อมูลแบบ Offline (ไม่ต่อเน็ต) เป็นวิธีเดียวที่รับประกันได้ว่าจะมีข้อมูลคืนมาหากเครื่องหลักถูกเข้ารหัส"
+            },
+            {
+                q: "Double Extortion ของ Ransomware คืออะไร?",
+                options: [
+                    "เข้ารหัสข้อมูล 2 รอบ",
+                    "เข้ารหัสข้อมูล + ขโมยข้อมูลออกไปขู่เปิดเผย",
+                    "เรียกค่าไถ่เป็น 2 เท่า",
+                    "โจมตีเครื่องเป้าหมาย 2 ครั้ง"
+                ],
+                correct: 1,
+                explain: "Double Extortion คือเทคนิคที่แฮกเกอร์ไม่เพียงแค่ล็อคไฟล์ แต่ยังขโมยข้อมูลออกไปขู่ว่าจะเผยแพร่หากไม่จ่ายเงิน"
+            },
+            {
+                q: "เทคนิคที่แฮกเกอร์ใช้ 'AI' มาช่วยในการหลอกลวงคืออะไร?",
+                options: [
+                    "SQL Injection",
+                    "Deepfake (ปลอมเสียง/หน้า)",
+                    "Buffer Overflow",
+                    "Cross-Site Scripting"
+                ],
+                correct: 1,
+                explain: "Deepfake ใช้ AI สร้างภาพหรือเสียงปลอมของบุคคล (เช่น CEO) เพื่อหลอกให้โอนเงินหรือทำธุรกรรม"
+            },
+            {
+                q: "Rootkit มีความอันตรายอย่างไร?",
+                options: [
+                    "ทำลายฮาร์ดดิสก์ทันที",
+                    "ซ่อนตัวอยู่ในระดับลึกของระบบปฏิบัติการ ยากต่อการตรวจจับ",
+                    "แสดงโฆษณารบกวนตลอดเวลา",
+                    "แพร่กระจายผ่าน Bluetooth เท่านั้น"
+                ],
+                correct: 1,
+                explain: "Rootkit ออกแบบมาเพื่อซ่อน processes หรือไฟล์ของมัลแวร์จากการตรวจจับของ OS และ Antivirus"
+            },
+            {
+                q: "หลักการ 'Defense in Depth' ในการป้องกัน Malware หมายถึงอะไร?",
+                options: [
+                    "การติดตั้ง Antivirus 5 ตัวในเครื่องเดียว",
+                    "การใช้มาตรการป้องกันหลายชั้น (Layered Security)",
+                    "การจ้างยามเฝ้าหน้าห้อง Server",
+                    "การขุดหลุมลึกเพื่อฝัง Server"
+                ],
+                correct: 1,
+                explain: "Defense in Depth คือการใช้การป้องกันหลายระดับ (เช่น Firewall, Antivirus, Patching, User Awareness) ร่วมกัน"
+            }
+        ];
+
+        // --- State Variables ---
+        let currentQuestions = [];
+        let currentQIndex = 0;
+        let score = 0;
+        let timeLeft = 45;
+        let timerInterval;
+        let userAnswers = [];
+        let studentName = "";
+
+        // --- DOM Elements ---
+        const startScreen = document.getElementById('start-screen');
+        const quizScreen = document.getElementById('quiz-screen');
+        const resultScreen = document.getElementById('result-screen');
+        const studentInput = document.getElementById('student-id-input');
+        const nameError = document.getElementById('name-error');
+        
+        const quizStats = document.getElementById('quiz-stats');
+        const qCurrent = document.getElementById('q-current');
+        const qTotal = document.getElementById('q-total');
+        
+        const timerBar = document.getElementById('timer-bar');
+        const timerText = document.getElementById('timer-text');
+        
+        const questionText = document.getElementById('question-text');
+        const optionsContainer = document.getElementById('options-container');
+        
+        const feedbackArea = document.getElementById('feedback-area');
+        const feedbackText = document.getElementById('feedback-text');
+        const nextBtn = document.getElementById('next-btn');
+
+        const studentNameDisplay = document.getElementById('student-name-display');
+        const timestampId = document.getElementById('timestamp-id');
+
+        // --- Utility Functions ---
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        // --- Functions ---
+
+        function startQuiz() {
+            // Validate Input
+            const inputVal = studentInput.value.trim();
+            if (!inputVal) {
+                studentInput.classList.add('border-red-500');
+                nameError.classList.remove('hidden');
+                return;
+            }
+            studentName = inputVal;
+            
+            // Shuffle Questions
+            currentQuestions = shuffleArray([...masterQuizData]);
+            
+            // UI Updates
+            startScreen.classList.add('hidden');
+            quizScreen.classList.remove('hidden');
+            quizStats.classList.remove('hidden');
+            qTotal.innerText = currentQuestions.length;
+            
+            loadQuestion();
+        }
+
+        function loadQuestion() {
+            const data = currentQuestions[currentQIndex];
+            
+            // Reset UI
+            qCurrent.innerText = currentQIndex + 1;
+            questionText.innerText = data.q;
+            optionsContainer.innerHTML = '';
+            feedbackArea.classList.add('opacity-0', 'pointer-events-none');
+            nextBtn.onclick = nextQuestion;
+            
+            // Create Options
+            data.options.forEach((opt, index) => {
+                const btn = document.createElement('button');
+                btn.className = `option-btn w-full text-left p-4 rounded-lg border border-slate-600 bg-slate-800/50 hover:bg-slate-700 text-slate-200 mb-2 flex items-center group`;
+                btn.innerHTML = `
+                    <span class="w-8 h-8 rounded-full border border-slate-500 flex items-center justify-center mr-4 text-xs text-slate-400 group-hover:border-red-400 group-hover:text-red-400 transition">${String.fromCharCode(65+index)}</span>
+                    <span>${opt}</span>
+                `;
+                btn.onclick = () => checkAnswer(index, btn);
+                optionsContainer.appendChild(btn);
+            });
+
+            // Start Timer
+            startTimer();
+        }
+
+        function startTimer() {
+            timeLeft = 45;
+            timerText.innerText = timeLeft;
+            timerBar.style.width = '100%';
+            timerBar.classList.remove('bg-red-500');
+            timerBar.classList.add('bg-green-500'); // Green start
+
+            if (timerInterval) clearInterval(timerInterval);
+
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                timerText.innerText = timeLeft;
+                const percent = (timeLeft / 45) * 100;
+                timerBar.style.width = `${percent}%`;
+
+                if (timeLeft <= 10) {
+                    timerBar.classList.remove('bg-green-500');
+                    timerBar.classList.add('bg-red-500');
+                }
+
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    timeOut();
+                }
+            }, 1000);
+        }
+
+        function timeOut() {
+            checkAnswer(-1, null); 
+        }
+
+        function checkAnswer(selectedIndex, btnElement) {
+            clearInterval(timerInterval);
+            
+            const data = currentQuestions[currentQIndex];
+            const buttons = optionsContainer.querySelectorAll('button');
+            
+            buttons.forEach(btn => btn.disabled = true);
+
+            let isCorrect = false;
+
+            if (selectedIndex === data.correct) {
+                // Correct
+                score++;
+                isCorrect = true;
+                if(btnElement) {
+                    btnElement.classList.remove('bg-slate-800/50', 'border-slate-600');
+                    btnElement.classList.add('bg-green-900/50', 'border-green-500', 'text-green-100', 'correct-anim');
+                    btnElement.querySelector('span').classList.add('bg-green-500', 'text-white', 'border-green-500');
+                }
+                feedbackText.innerHTML = `<span class="text-green-400"><i class="fa-solid fa-check-circle"></i> ถูกต้อง!</span>`;
+            } else {
+                // Wrong
+                if(btnElement) {
+                    btnElement.classList.remove('bg-slate-800/50', 'border-slate-600');
+                    btnElement.classList.add('bg-red-900/50', 'border-red-500', 'text-red-100', 'wrong-anim');
+                    btnElement.querySelector('span').classList.add('bg-red-500', 'text-white', 'border-red-500');
+                }
+                
+                // Highlight Correct one
+                if (data.correct >= 0 && buttons[data.correct]) {
+                    buttons[data.correct].classList.remove('bg-slate-800/50', 'border-slate-600');
+                    buttons[data.correct].classList.add('bg-green-900/50', 'border-green-500', 'text-green-100');
+                }
+                
+                feedbackText.innerHTML = `<span class="text-red-400"><i class="fa-solid fa-times-circle"></i> ผิด! คำตอบที่ถูกคือข้อ ${String.fromCharCode(65+data.correct)}</span>`;
+            }
+
+            userAnswers.push({
+                questionObj: data,
+                userSelect: selectedIndex,
+                isCorrect: isCorrect
+            });
+
+            feedbackArea.classList.remove('opacity-0', 'pointer-events-none');
+        }
+
+        function nextQuestion() {
+            currentQIndex++;
+            if (currentQIndex < currentQuestions.length) {
+                loadQuestion();
+            } else {
+                showResult();
+            }
+        }
+
+        function showResult() {
+            quizScreen.classList.add('hidden');
+            quizStats.classList.add('hidden');
+            resultScreen.classList.remove('hidden');
+
+            // Set Student Info
+            studentNameDisplay.innerText = studentName;
+            const now = new Date();
+            timestampId.innerText = `LOG-${now.getHours()}${now.getMinutes()}-${Math.floor(Math.random()*1000)}`;
+
+            // Animate Score Circle
+            const finalScoreElem = document.getElementById('final-score');
+            const circle = document.getElementById('score-circle');
+            const percentage = (score / currentQuestions.length) * 100;
+            const dashOffset = 377 - (377 * percentage) / 100;
+            
+            setTimeout(() => {
+                circle.style.strokeDashoffset = dashOffset;
+                if(percentage < 50) circle.style.stroke = '#ef4444'; // Red
+                else if(percentage < 80) circle.style.stroke = '#f59e0b'; // Yellow
+                else circle.style.stroke = '#10b981'; // Green
+                
+                let current = 0;
+                const timer = setInterval(() => {
+                    current++;
+                    finalScoreElem.innerText = current;
+                    if(current >= score) clearInterval(timer);
+                }, 50);
+            }, 300);
+
+            // Set Rank
+            const rankBadge = document.getElementById('rank-badge');
+            if (percentage >= 90) {
+                rankBadge.innerText = "🏆 Malware Hunter (Expert)";
+                rankBadge.className = "inline-block px-6 py-2 rounded-full border-2 border-green-400 text-green-400 font-bold text-xl shadow-[0_0_20px_rgba(52,211,153,0.5)]";
+            } else if (percentage >= 70) {
+                rankBadge.innerText = "🛡️ SOC Analyst";
+                rankBadge.className = "inline-block px-6 py-2 rounded-full border-2 border-blue-400 text-blue-400 font-bold text-xl shadow-[0_0_20px_rgba(96,165,250,0.5)]";
+            } else if (percentage >= 50) {
+                rankBadge.innerText = "💻 Script Kiddie";
+                rankBadge.className = "inline-block px-6 py-2 rounded-full border-2 border-yellow-400 text-yellow-400 font-bold text-xl";
+            } else {
+                rankBadge.innerText = "👶 Infected Victim";
+                rankBadge.className = "inline-block px-6 py-2 rounded-full border-2 border-red-400 text-red-400 font-bold text-xl";
+            }
+
+            generateSolutions();
+        }
+
+        function generateSolutions() {
+            const container = document.getElementById('solutions-container');
+            container.innerHTML = '';
+
+            userAnswers.forEach((ans, index) => {
+                const data = ans.questionObj;
+                const item = document.createElement('div');
+                item.className = "bg-slate-800/50 p-4 rounded-lg border border-slate-700";
+                
+                const isCorrect = ans.isCorrect;
+                const statusIcon = isCorrect ? '<i class="fa-solid fa-check text-green-400"></i>' : '<i class="fa-solid fa-xmark text-red-400"></i>';
+                
+                item.innerHTML = `
+                    <div class="flex gap-3">
+                        <div class="mt-1">${statusIcon}</div>
+                        <div class="w-full">
+                            <p class="font-semibold text-slate-200 mb-2"><span class="text-slate-500 text-sm mr-2">Q${index+1}.</span> ${data.q}</p>
+                            
+                            <div class="text-sm grid grid-cols-1 md:grid-cols-2 gap-2 mb-3">
+                                <div class="${isCorrect ? 'text-green-400' : 'text-red-400'}">
+                                    <span class="text-slate-500">ตอบ:</span> 
+                                    ${ans.userSelect === -1 ? 'หมดเวลา' : data.options[ans.userSelect]}
+                                </div>
+                                <div class="text-green-400">
+                                    <span class="text-slate-500">เฉลย:</span> ${data.options[data.correct]}
+                                </div>
+                            </div>
+
+                            <div class="text-xs bg-slate-900 p-3 rounded text-slate-400 border-l-2 border-blue-500">
+                                <i class="fa-solid fa-lightbulb text-yellow-500 mr-1"></i> ${data.explain}
+                            </div>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(item);
+            });
+        }
+
+        function toggleSolutions() {
+            const container = document.getElementById('solutions-container');
+            container.classList.toggle('hidden');
+        }
+
+        function captureResult() {
+            const captureArea = document.getElementById('certificate-area');
+            
+            html2canvas(captureArea, {
+                backgroundColor: "#0f172a", 
+                scale: 2,
+                logging: false,
+                useCORS: true
+            }).then(canvas => {
+                const link = document.createElement('a');
+                const cleanName = studentName.replace(/[^a-z0-9ก-๙]/gi, '_'); 
+                link.download = `Quiz2_${cleanName}.png`;
+                link.href = canvas.toDataURL();
+                link.click();
+            });
+        }
+
+    </script>
+</body>
+</html>
