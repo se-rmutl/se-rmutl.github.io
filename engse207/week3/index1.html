@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Week 3: Architectural Styles & Patterns (Part 1) | ENGSE207</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&family=Sarabun:wght@300;400;600&family=Fira+Code:wght@400;600&display=swap"
+        rel="stylesheet">
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/reset.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/reveal.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/theme/dracula.min.css"
+        id="theme">
+
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/atom-one-dark.min.css">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        :root {
+            --main-font: 'Sarabun', sans-serif;
+            --heading-font: 'Kanit', sans-serif;
+            --code-font: 'Fira Code', monospace;
+            --accent-color: #bd93f9;
+            /* Dracula Purple */
+            --bg-glass: rgba(40, 42, 54, 0.8);
+        }
+
+        body {
+            font-family: var(--main-font);
+        }
+
+        .reveal h1,
+        .reveal h2,
+        .reveal h3,
+        .reveal h4,
+        .reveal h5,
+        .reveal h6 {
+            font-family: var(--heading-font);
+            text-transform: none;
+            /* Keep Thai readable */
+        }
+
+        .reveal pre code {
+            font-family: var(--code-font);
+            font-size: 1.1em;
+            line-height: 1.4;
+            border-radius: 8px;
+        }
+
+        /* Custom Utility Classes */
+        .highlight-text {
+            color: var(--accent-color);
+            font-weight: bold;
+        }
+
+        .box-container {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 20px;
+            margin: 10px 0;
+            backdrop-filter: blur(5px);
+        }
+
+        .img-placeholder {
+            border: 2px dashed #6272a4;
+            background: rgba(98, 114, 164, 0.2);
+            color: #f8f8f2;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 400px;
+            width: 100%;
+            border-radius: 10px;
+            margin: 20px auto;
+            position: relative;
+        }
+
+        .img-placeholder::after {
+            content: "🖼️ Image Placeholder";
+            position: absolute;
+            font-family: var(--heading-font);
+            opacity: 0.5;
+        }
+
+        .img-label {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            font-size: 0.6em;
+            background: #44475a;
+            padding: 5px 10px;
+            border-radius: 4px;
+        }
+
+        /* Floating Controls */
+        #custom-controls {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            display: flex;
+            gap: 10px;
+        }
+
+        .control-btn {
+            background: var(--accent-color);
+            color: #282a36;
+            border: none;
+            border-radius: 50%;
+            width: 45px;
+            height: 45px;
+            cursor: pointer;
+            font-family: var(--heading-font);
+            font-weight: bold;
+            font-size: 1.2rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            transition: transform 0.2s, background 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .control-btn:hover {
+            transform: scale(1.1);
+            background: #ff79c6;
+            /* Dracula Pink */
+        }
+
+        /* Font Size Adjustment Classes */
+        .reveal.font-sm .slides {
+            font-size: 24px;
+        }
+
+        .reveal.font-md .slides {
+            font-size: 32px;
+        }
+
+        /* Default */
+        .reveal.font-lg .slides {
+            font-size: 40px;
+        }
+
+        ul li {
+            margin-bottom: 10px;
+        }
+
+        .reveal ul {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="custom-controls">
+        <button class="control-btn" onclick="adjustFontSize(-1)" title="ลดขนาดตัวอักษร">A-</button>
+        <button class="control-btn" onclick="adjustFontSize(1)" title="เพิ่มขนาดตัวอักษร">A+</button>
+        <button class="control-btn" onclick="toggleFullScreen()" title="เต็มจอ">⛶</button>
+    </div>
+
+    <div class="reveal font-md">
+        <div class="slides">
+
+            <section data-background-gradient="linear-gradient(to bottom right, #282a36, #44475a)">
+                <h3 class="text-pink-400">ENGSE207 Software Architecture</h3>
+                <h1>Architectural Styles & Patterns</h1>
+                <h4 class="text-purple-300">(Part 1: Fundamental Styles)</h4>
+                <hr class="w-1/2 mx-auto my-6 border-gray-500">
+                <p>สัปดาห์ที่ 3 | เอกสารประกอบการสอน</p>
+                <p class="text-sm mt-8 opacity-70">
+                    ผู้สอน: อ.ธนิต เกตุแก้ว<br>
+                    หลักสูตรวิศวกรรมซอฟต์แวร์ มทร.ล้านนา
+                </p>
+            </section>
+
+            <section>
+                <h3>🎯 วัตถุประสงค์การเรียนรู้ (CLOs)</h3>
+                <div class="grid grid-cols-2 gap-4 text-left text-sm">
+                    <div class="box-container fragment fade-up">
+                        <strong class="text-green-400">CLO2 (Knowledge)</strong>
+                        <p>อธิบายสถาปัตยกรรมซอฟต์แวร์รูปแบบหลัก (Monolithic, Layered, Client-Server) พร้อมตัวอย่างได้
+                        </p>
+                    </div>
+                    <div class="box-container fragment fade-up">
+                        <strong class="text-blue-400">CLO5 (Cognitive)</strong>
+                        <p>วิเคราะห์ Architectural Drivers และข้อจำกัด (Constraints) ของระบบได้</p>
+                    </div>
+                    <div class="box-container fragment fade-up">
+                        <strong class="text-purple-400">CLO6 (Cognitive)</strong>
+                        <p>ออกแบบสถาปัตยกรรมระดับสูงโดยเลือกใช้ Styles/Patterns ที่เหมาะสม</p>
+                    </div>
+                    <div class="box-container fragment fade-up">
+                        <strong class="text-pink-400">CLO7 (Cognitive)</strong>
+                        <p>ประเมินและเปรียบเทียบทางเลือกสถาปัตยกรรม (Trade-offs) ได้</p>
+                    </div>
+                </div>
+            </section>
+
+            <section>
+                <h3>📋 Agenda วันนี้</h3>
+                <ol class="text-xl space-y-4">
+                    <li class="fragment"><strong>1.1 ภาพรวม:</strong> Style vs Pattern และความสำคัญ</li>
+                    <li class="fragment"><strong>1.2 โครงสร้างพื้นฐาน:</strong> Monolithic & Layered Architecture</li>
+                    <li class="fragment"><strong>1.3 การกระจายตัวและประมวลผล:</strong> Client-Server, N-Tier,
+                        Pipe-and-Filter</li>
+                    <li class="fragment"><strong>1.4 Case Studies:</strong> ตัวอย่างจากระบบจริง (LINE, Shopee)</li>
+                </ol>
+            </section>
+
+            <section data-background-color="#21222c">
+                <h3>⏪ ทบทวนสัปดาห์ที่ 2</h3>
+                <div class="flex flex-col gap-4 text-left">
+                    <div class="fragment">
+                        <span class="text-yellow-300">Quality Attributes:</span> คือมาตรวัดคุณภาพ (Performance,
+                        Scalability, Security)
+                    </div>
+                    <div class="fragment">
+                        <span class="text-yellow-300">QA Scenarios:</span> 6 ส่วนประกอบ (Source, Stimulus, Artifact,
+                        Environment, Response, Measure)
+                    </div>
+                    <div class="fragment">
+                        <span class="text-yellow-300">Architectural Drivers:</span> ปัจจัยขับเคลื่อน (Functional, QA,
+                        Constraints)
+                    </div>
+                    <div class="box-container fragment mt-4 text-center">
+                        <h4 class="text-pink-400">The Big Question for Week 3:</h4>
+                        <p>"เมื่อเรารู้ว่าระบบต้องการ Quality อะไร...<br>เราจะเลือกโครงสร้าง (Style) ไหนมาใช้?"</p>
+                    </div>
+                </div>
+            </section>
+
+            <section>
+                <section>
+                    <h2>1.1 ภาพรวม Architectural Styles & Patterns</h2>
+                    <p class="text-gray-400">ความหมายและความสำคัญ</p>
+                </section>
+
+                <section>
+                    <h3>🏛️ Architectural Style คืออะไร?</h3>
+                    <ul class="text-left space-y-4">
+                        <li class="fragment">แนวทางหรือรูปแบบการจัดโครงสร้างระบบซอฟต์แวร์ที่เป็นที่ยอมรับ</li>
+                        <li class="fragment">กำหนดลักษณะของ <strong>Components</strong>, <strong>Connectors</strong>,
+                            และ <strong>Constraints</strong></li>
+                        <li class="fragment">เป็น "ภาษาร่วม" (Common Vocabulary) ที่สถาปนิกใช้สื่อสาร</li>
+                        <li class="fragment highlight-text">เปรียบเหมือน: สไตล์การสร้างบ้าน (ทรงไทย, โมเดิร์น, ลอฟท์)
+                        </li>
+                    </ul>
+                </section>
+
+                <section>
+                    <h3>🧩 Architectural Pattern คืออะไร?</h3>
+                    <ul class="text-left space-y-4">
+                        <li class="fragment">โซลูชันที่พิสูจน์แล้วว่าใช้ได้ผล (Proven Solution) สำหรับปัญหาเฉพาะ</li>
+                        <li class="fragment">มีโครงสร้างและแนวทางแก้ไขที่ชัดเจน</li>
+                        <li class="fragment highlight-text">เปรียบเหมือน: การออกแบบห้องครัว หรือห้องน้ำ ภายในบ้าน</li>
+                    </ul>
+                </section>
+
+                <section>
+                    <h3>⚖️ Style vs. Pattern</h3>
+                    <table class="text-sm w-full">
+                        <thead>
+                            <tr class="border-b border-gray-500">
+                                <th class="p-2 text-yellow-300">Architectural Style</th>
+                                <th class="p-2 text-green-300">Architectural Pattern</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="fragment">
+                                <td class="p-2">แนวทางการออกแบบระดับกว้าง (System Level)</td>
+                                <td class="p-2">โซลูชันเฉพาะสำหรับปัญหา (Component Level)</td>
+                            </tr>
+                            <tr class="fragment">
+                                <td class="p-2">เน้นโครงสร้างโดยรวม</td>
+                                <td class="p-2">เน้นการแก้ปัญหาเฉพาะจุด</td>
+                            </tr>
+                            <tr class="fragment">
+                                <td class="p-2">Ex: Layered, Client-Server</td>
+                                <td class="p-2">Ex: MVC, Repository Pattern</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </section>
+
+                <section>
+                    <h3>💡 ทำไมต้องใช้ Architectural Styles?</h3>
+                    <div class="grid grid-cols-2 gap-4 text-sm">
+                        <div class="box-container fragment">
+                            <h5 class="text-orange-400">1. ลดความซับซ้อน</h5>
+                            <p>ไม่ต้องเริ่มออกแบบจากศูนย์ ใช้แบบที่มีอยู่แล้ว</p>
+                        </div>
+                        <div class="box-container fragment">
+                            <h5 class="text-orange-400">2. ภาษากลาง</h5>
+                            <p>พูดว่า "Layered" ทีมเข้าใจตรงกันทันที</p>
+                        </div>
+                        <div class="box-container fragment">
+                            <h5 class="text-orange-400">3. ตัดสินใจเร็วขึ้น</h5>
+                            <p>ไม่ต้อง Reinvent the wheel</p>
+                        </div>
+                        <div class="box-container fragment">
+                            <h5 class="text-orange-400">4. คุณภาพที่คาดการณ์ได้</h5>
+                            <p>รู้อยู่แล้วว่า Style นี้ดีต่อ Modifiability แต่อาจช้าลง</p>
+                        </div>
+                    </div>
+                </section>
+            </section>
+
+            <section>
+                <section>
+                    <h2>1.2 Monolithic & Layered Architecture</h2>
+                    <p class="text-gray-400">จุดเริ่มต้นของทุกสิ่ง</p>
+                </section>
+
+                <section>
+                    <h3>🏢 Monolithic Architecture</h3>
+                    <div class="img-placeholder"
+                        style="height: 400px; background-image: url('placeholder-monolith.png'); background-size: contain; background-repeat: no-repeat; background-position: center;">
+                        <span class="text-2xl text-white"></span>
+                        <div class="img-label">Structure of Monolithic</div>
+                    </div>
+                </section>
+
+                <section>
+                    <h3>ลักษณะของ Monolithic</h3>
+                    <ul class="space-y-2">
+                        <li class="fragment"><strong>Single Codebase:</strong> โค้ดทั้งหมดอยู่ที่เดียวกัน</li>
+                        <li class="fragment"><strong>Tightly Coupled:</strong> เชื่อมโยงกันแน่น เรียกผ่าน Function Call
+                        </li>
+                        <li class="fragment"><strong>Single Deployment:</strong> Deploy ทีเดียวทั้งก้อน (JAR, EXE)</li>
+                        <li class="fragment"><strong>Shared Database:</strong> ทุกโมดูลใช้ DB ก้อนเดียวกัน</li>
+                    </ul>
+                    <div class="fragment box-container bg-red-900/30 mt-4">
+                        <p class="text-sm">🤔 <strong>Challenging Question:</strong> ทำไม Startup
+                            ส่วนใหญ่จึงควรเริ่มด้วย Monolith?</p>
+                    </div>
+                </section>
+
+                <section>
+                    <div class="grid grid-cols-2 gap-6">
+                        <div>
+                            <h4 class="text-green-400">✅ ข้อดี</h4>
+                            <ul class="text-sm">
+                                <li>เริ่มต้นง่าย (Easy Setup)</li>
+                                <li>Testing & Debugging ง่าย (ที่เดียวจบ)</li>
+                                <li>Performance ดี (In-process calls)</li>
+                                <li>Deploy ง่ายในช่วงแรก (Copy file เดียว)</li>
+                            </ul>
+                        </div>
+                        <div>
+                            <h4 class="text-red-400">❌ ข้อเสีย</h4>
+                            <ul class="text-sm">
+                                <li>Scalability จำกัด (ต้อง Scale ทั้งก้อน)</li>
+                                <li>แก้ไขจุดเดียว อาจพังทั้งระบบ</li>
+                                <li>Deploy ช้าเมื่อระบบใหญ่</li>
+                                <li>Technology Lock-in (เปลี่ยนยาก)</li>
+                            </ul>
+                        </div>
+                    </div>
+                </section>
+
+                <section>
+                    <h3>🏛️ Layered (N-Tier) Architecture</h3>
+                    <div class="img-placeholder">
+                        <span class="text-2xl text-white"></span>
+                        <div class="img-label">3-Tier & 4-Tier Layers</div>
+                    </div>
+                </section>
+
+                <section>
+                    <h3>หลักการ: Separation of Concerns</h3>
+                    <p class="text-left text-sm mb-4">แบ่งระบบเป็นชั้น แต่ละชั้นคุยกับชั้นที่ติดกันเท่านั้น</p>
+                    <div class="text-left space-y-4 text-sm">
+                        <div class="fragment">
+                            <strong class="text-pink-300">1. Presentation Layer (UI):</strong> รับ Input, แสดงผล (React,
+                            HTML)
+                        </div>
+                        <div class="fragment">
+                            <strong class="text-blue-300">2. Business Logic Layer:</strong> กฎทางธุรกิจ, คำนวณ (Service
+                            Classes)
+                        </div>
+                        <div class="fragment">
+                            <strong class="text-green-300">3. Data Access Layer (DAL):</strong> คุยกับ Database
+                            (Repositories, ORM)
+                        </div>
+                        <div class="fragment box-container">
+                            <small>Dependency Rule: Layer บนเรียก Layer ล่างได้ แต่ล่างห้ามเรียกดึงบน</small>
+                        </div>
+                    </div>
+                </section>
+
+                <section>
+                    <h3>💻 Code Example (Spring Boot)</h3>
+                    <pre><code class="java" data-trim data-line-numbers="1-5|7-15|17-20">
+// 1. Controller (Presentation)
+@RestController
+public class OrderController {
+    @Autowired private OrderService service; // Call Down
+}
+
+// 2. Service (Business Logic)
+@Service
+public class OrderService {
+    @Autowired private OrderRepository repo; // Call Down
+    public Order createOrder(OrderRequest req) {
+        if(!checkStock(req)) throw new Exception(); // Logic
+        return repo.save(req);
+    }
+}
+
+// 3. Repository (Data Access)
+@Repository
+public interface OrderRepository extends JpaRepository<Order, Long> {
+    // Talk to DB
+}
+                    </code></pre>
+                </section>
+
+                <section>
+                    <h3>Layered Architecture: Pros & Cons</h3>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="box-container">
+                            <h5 class="text-green-400">Pros</h5>
+                            <ul class="text-xs">
+                                <li>Maintainability สูง (แยกส่วนชัดเจน)</li>
+                                <li>Testability ดี (Mock layer อื่นได้)</li>
+                                <li>ทีมทำงานขนานกันได้ (Frontend/Backend)</li>
+                            </ul>
+                        </div>
+                        <div class="box-container">
+                            <h5 class="text-red-400">Cons</h5>
+                            <ul class="text-xs">
+                                <li>Performance Overhead (ผ่านหลายชั้น)</li>
+                                <li>Cascading Changes (แก้ DB อาจต้องแก้ทุกชั้น)</li>
+                                <li>อาจซับซ้อนเกินไปสำหรับงานง่ายๆ (CRUD)</li>
+                            </ul>
+                        </div>
+                    </div>
+                </section>
+            </section>
+
+            <section>
+                <section>
+                    <h2>1.3 Client-Server, N-Tier & Pipe-Filter</h2>
+                    <p class="text-gray-400">การกระจายตัวและการประมวลผล</p>
+                </section>
+
+                <section>
+                    <h3>🖥️ Client-Server Architecture</h3>
+                    <div class="img-placeholder">
+                        <span class="text-2xl text-white"></span>
+                        <div class="img-label">Request-Response Model</div>
+                    </div>
+                    <p class="text-sm mt-4">ผู้ขอใช้บริการ (Client) ↔ ผู้ให้บริการ (Server)</p>
+                </section>
+
+                <section>
+                    <h3>รูปแบบของ Client-Server</h3>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="fragment">
+                            <h4 class="text-purple-300">2-Tier</h4>
+                            <ul class="text-sm">
+                                <li>Client (Thick) + DB Server</li>
+                                <li>Logic อยู่ที่ Client</li>
+                                <li>Ex: Desktop Apps เก่าๆ</li>
+                            </ul>
+                        </div>
+                        <div class="fragment">
+                            <h4 class="text-purple-300">3-Tier (Web)</h4>
+                            <ul class="text-sm">
+                                <li>Client (Thin/Browser)</li>
+                                <li>App Server (Logic)</li>
+                                <li>DB Server (Data)</li>
+                                <li>Ex: Web Apps ปัจจุบัน</li>
+                            </ul>
+                        </div>
+                    </div>
+                </section>
+
+                <section>
+                    <h3>🏗️ N-Tier Architecture</h3>
+                    <div class="img-placeholder">
+                        <span class="text-2xl text-white"></span>
+                        <div class="img-label">Multi-tier Deployment</div>
+                    </div>
+                    <p class="text-sm text-yellow-300 mt-2">Note: Tier = Physical Separation (เครื่องคนละเครื่อง)</p>
+                </section>
+
+                <section>
+                    <h3>N-Tier: Pros & Cons</h3>
+                    <ul class="text-left space-y-4">
+                        <li class="fragment">✅ <strong>Scalability:</strong> ขยายเฉพาะ Tier ที่คอขวดได้ (เช่น เพิ่ม Web
+                            Server แต่ DB เท่าเดิม)</li>
+                        <li class="fragment">✅ <strong>Security:</strong> DB ซ่อนอยู่หลัง Firewall (Client
+                            เข้าไม่ถึงตรงๆ)</li>
+                        <li class="fragment">❌ <strong>Complexity:</strong> ดูแลรักษายากขึ้น</li>
+                        <li class="fragment">❌ <strong>Latency:</strong> Network hop เยอะ = ช้าลง</li>
+                    </ul>
+                </section>
+
+                <section>
+                    <h3>🔧 Pipe-and-Filter Architecture</h3>
+                    <div class="img-placeholder">
+                        <span class="text-2xl text-white"></span>
+                        <div class="img-label">Data Streaming Flow</div>
+                    </div>
+                </section>
+
+                <section>
+                    <h3>หลักการ Pipe & Filter</h3>
+                    <div class="flex items-center justify-center gap-2 text-xl my-6">
+                        <span class="box-container">Input</span>
+                        <span>→</span>
+                        <span class="box-container bg-blue-900">Filter 1</span>
+                        <span>→</span>
+                        <span class="box-container bg-blue-900">Filter 2</span>
+                        <span>→</span>
+                        <span class="box-container">Output</span>
+                    </div>
+                    <ul class="text-left text-sm">
+                        <li class="fragment"><strong>Filter:</strong> ตัวประมวลผล (อิสระต่อกัน, ไม่รู้จักกัน)</li>
+                        <li class="fragment"><strong>Pipe:</strong> ท่อส่งข้อมูล</li>
+                        <li class="fragment"><strong>Use Case:</strong> Video Processing, ETL, Unix Commands (`grep |
+                            sort`)</li>
+                    </ul>
+                </section>
+
+                <section>
+                    <h3>💻 Code Example (Node.js Streams)</h3>
+                    <pre><code class="javascript" data-trim>
+// Video Processing Pipeline Concept
+const fs = require('fs');
+
+fs.createReadStream('input-video.mp4')
+  .pipe(new Decoder())      // Filter 1
+  .pipe(new Resizer())      // Filter 2
+  .pipe(new Compressor())   // Filter 3
+  .pipe(fs.createWriteStream('output.mp4'));
+                    </code></pre>
+                    <p class="text-sm fragment text-green-400">Reusable & Composable!</p>
+                </section>
+            </section>
+
+            <section>
+                <section>
+                    <h2>การเปรียบเทียบและกรณีศึกษา</h2>
+                    <p class="text-gray-400">เลือกอย่างไรให้เหมาะสม?</p>
+                </section>
+
+                <section>
+                    <h3>📊 Comparison Summary</h3>
+                    <div class="img-placeholder" style="height: 500px;">
+                        <span class="text-2xl text-white"></span>
+                        <div class="img-label">Trade-off Matrix</div>
+                    </div>
+                </section>
+
+                <section>
+                    <h3>🤔 เลือก Style ไหนดี? (Decision Framework)</h3>
+                    <div class="text-left space-y-4 text-sm">
+                        <div class="fragment">
+                            1. <strong>ขนาดระบบ?</strong> <br>
+                            เล็ก → <span class="text-blue-300">Monolith</span> | กลาง → <span
+                                class="text-green-300">Layered</span> | ใหญ่ → <span
+                                class="text-purple-300">N-Tier/Microservices</span>
+                        </div>
+                        <div class="fragment">
+                            2. <strong>จำนวนผู้ใช้?</strong> <br>
+                            น้อย → <span class="text-blue-300">Monolith</span> | เยอะ → <span
+                                class="text-purple-300">N-Tier (Scale ได้)</span>
+                        </div>
+                        <div class="fragment">
+                            3. <strong>ประเภทงาน?</strong> <br>
+                            ประมวลผลข้อมูล → <span class="text-orange-300">Pipe-and-Filter</span> | Interactive → <span
+                                class="text-green-300">Client-Server</span>
+                        </div>
+                        <div class="fragment">
+                            4. <strong>Time to Market?</strong> <br>
+                            รีบมาก → <span class="text-blue-300">Monolith</span>
+                        </div>
+                    </div>
+                </section>
+
+                <section>
+                    <h3>📱 Case Study: LINE Messaging</h3>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="text-left text-sm">
+                            <p><strong>Architecture:</strong> Client-Server + Microservices</p>
+                            <ul class="list-disc ml-4 mt-2">
+                                <li>Client: Mobile App (Android/iOS)</li>
+                                <li>Protocol: HTTP/2, WebSocket (Real-time)</li>
+                                <li>Backend: แยก Service ตามหน้าที่ (User, Sticker, Message)</li>
+                            </ul>
+                        </div>
+                        <div class="box-container text-xs">
+                            <strong>Key Drivers:</strong>
+                            <br>⚡ Performance (ต้องเร็ว)
+                            <br>📈 Scalability (คนใช้ล้านคน)
+                        </div>
+                    </div>
+                </section>
+
+                <section>
+                    <h3>🛒 Case Study: Shopee / Lazada</h3>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="text-left text-sm">
+                            <p><strong>Architecture:</strong> N-Tier / Microservices</p>
+                            <ul class="list-disc ml-4 mt-2">
+                                <li>มี CDN เก็บรูปภาพสินค้า</li>
+                                <li>API Gateway จัดการ Request</li>
+                                <li>แยก Database ของ Order และ Product ออกจากกัน</li>
+                            </ul>
+                        </div>
+                        <div class="box-container text-xs">
+                            <strong>Key Drivers:</strong>
+                            <br>🔒 Reliability (เงินต้องตรง)
+                            <br>📈 Scalability (Flash Sale)
+                        </div>
+                    </div>
+                </section>
+            </section>
+
+            <section>
+                <section>
+                    <h2>สรุปและสิ่งที่ต้องจำ</h2>
+                </section>
+
+                <section>
+                    <h3>🔑 Key Takeaways</h3>
+                    <ol class="space-y-3 text-lg">
+                        <li class="fragment"><strong>Architectural Styles</strong> คือเครื่องมือ ไม่ใช่กฎตายตัว
+                            เลือกใช้ตาม Context</li>
+                        <li class="fragment"><strong>ไม่มี "Perfect Architecture"</strong> ทุกอย่างคือ Trade-offs
+                            (ได้อย่างเสียอย่าง)</li>
+                        <li class="fragment"><strong>Quality Attributes</strong> เป็นตัวกำหนด Style ที่ควรเลือก</li>
+                        <li class="fragment">เริ่มต้นจาก <strong>Simple (Monolith/Layered)</strong>
+                            แล้วค่อยขยายเมื่อจำเป็น</li>
+                    </ol>
+                </section>
+
+                <section>
+                    <h3>🔜 สัปดาห์หน้า (Part 2)</h3>
+                    <p class="text-pink-400">เราจะเข้าสู่ Modern Architecture:</p>
+                    <div class="grid grid-cols-2 gap-4 mt-6">
+                        <div class="box-container">Microservices Architecture</div>
+                        <div class="box-container">Event-Driven Architecture</div>
+                        <div class="box-container">Serverless</div>
+                        <div class="box-container">Service-Oriented (SOA)</div>
+                    </div>
+                    <p class="text-sm mt-4 text-gray-400">เตรียมตัว: ลองหาข้อมูล Netflix Architecture มาล่วงหน้า</p>
+                </section>
+
+                <section data-background-color="#44475a">
+                    <h2>Q & A</h2>
+                    <p>มีคำถามไหมครับ?</p>
+                    <hr class="w-1/3 mx-auto my-6">
+                    <p class="text-sm">
+                        "Good architecture is not about making decisions earlier,<br>but delaying them until you have
+                        more information."
+                        <br>- Robert C. Martin
+                    </p>
+                </section>
+            </section>
+
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/reveal.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/plugin/highlight/highlight.min.js"></script>
+
+    <script>
+        // Initialize Reveal.js
+        Reveal.initialize({
+            hash: true,
+            center: true,
+            slideNumber: true,
+            controls: true,
+            progress: true,
+            plugins: [RevealHighlight],
+            transition: 'slide', // none/fade/slide/convex/concave/zoom
+            backgroundTransition: 'fade'
+        });
+
+        // Custom Font Size Control
+        let currentSize = 1; // 0=sm, 1=md, 2=lg
+        const sizes = ['font-sm', 'font-md', 'font-lg'];
+        const revealEl = document.querySelector('.reveal');
+
+        function adjustFontSize(dir) {
+            // Remove current class
+            revealEl.classList.remove(sizes[currentSize]);
+
+            // Calculate new index
+            currentSize += dir;
+            if (currentSize < 0) currentSize = 0;
+            if (currentSize > 2) currentSize = 2;
+
+            // Add new class
+            revealEl.classList.add(sizes[currentSize]);
+        }
+
+        // Fullscreen Toggle
+        function toggleFullScreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+            }
+        }
+    </script>
+</body>
+
+</html>

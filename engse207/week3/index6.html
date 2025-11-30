@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Week 3: Architectural Styles & Patterns (Part 1) | ENGSE207</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600;700&family=Prompt:wght@300;400;600&family=Fira+Code:wght@400;600&display=swap"
+        rel="stylesheet">
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/reset.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/reveal.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/theme/dracula.min.css"
+        id="theme">
+
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/atom-one-dark.min.css">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        :root {
+            --heading-font: 'Kanit', sans-serif;
+            --body-font: 'Prompt', sans-serif;
+            --code-font: 'Fira Code', monospace;
+            --accent-color: #50fa7b;
+            --accent-pink: #ff79c6;
+            --accent-purple: #bd93f9;
+            --accent-yellow: #f1fa8c;
+            --bg-glass: rgba(255, 255, 255, 0.07);
+            --border-glass: rgba(255, 255, 255, 0.15);
+        }
+
+        body {
+            background: radial-gradient(circle at top, #282a36 0%, #15161a 100%);
+        }
+
+        .reveal {
+            font-family: var(--body-font);
+            color: #f8f8f2;
+        }
+
+        /* Typography Controls */
+        .reveal h1, .reveal h2, .reveal h3, .reveal h4, .reveal h5 {
+            font-family: var(--heading-font);
+            font-weight: 600;
+            text-transform: none;
+            margin-bottom: 0.6em;
+            line-height: 1.2;
+            letter-spacing: 0.5px;
+        }
+        
+        .reveal h1 { font-size: 2.5em; text-shadow: 0 4px 10px rgba(0,0,0,0.5); }
+        .reveal h2 { font-size: 2em; color: var(--accent-purple); }
+        .reveal h3 { font-size: 1.5em; color: var(--accent-pink); border-bottom: 1px dashed rgba(255,255,255,0.2); padding-bottom: 10px; display: inline-block;}
+        .reveal h4 { font-size: 1.2em; }
+
+        .reveal p, .reveal li {
+            line-height: 1.6;
+            margin-bottom: 0.5em;
+        }
+
+        .reveal ul, .reveal ol {
+            margin-left: 1.5em;
+            display: block;
+        }
+
+        .reveal code {
+            font-family: var(--code-font);
+            color: var(--accent-yellow);
+        }
+
+        /* Responsive Font Sizes Logic */
+        .reveal.font-sm .slides { font-size: 24px; }
+        .reveal.font-md .slides { font-size: 30px; } /* Default */
+        .reveal.font-lg .slides { font-size: 38px; }
+
+        /* Components */
+        .box-container {
+            background: var(--bg-glass);
+            border: 1px solid var(--border-glass);
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(8px);
+            transition: transform 0.3s ease, border-color 0.3s ease;
+            height: 100%; /* Equal height in grid */
+            display: flex;
+            flex-direction: column;
+            justify-content: start;
+        }
+
+        .box-container:hover {
+            transform: translateY(-5px);
+            border-color: var(--accent-color);
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .img-placeholder {
+            border: 2px dashed #6272a4;
+            background: rgba(98, 114, 164, 0.1);
+            color: #f8f8f2;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 350px;
+            width: 100%;
+            border-radius: 16px;
+            margin: 20px auto;
+            position: relative;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.2);
+        }
+        
+        .img-placeholder::after {
+            content: "🖼️ Image Space";
+            position: absolute;
+            font-family: var(--heading-font);
+            font-size: 1.5em;
+            opacity: 0.7;
+        }
+
+        .img-label {
+            position: absolute;
+            bottom: 15px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.7em;
+            color: var(--accent-color);
+        }
+
+        /* Quiz Buttons */
+        .quiz-option {
+            background: #44475a;
+            padding: 15px 20px;
+            margin: 12px 0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 2px solid transparent;
+            font-size: 0.9em;
+        }
+        .quiz-option:hover { background: #6272a4; }
+        .quiz-option.correct { background: #225633; border-color: #50fa7b; color: #fff; }
+        .quiz-option.incorrect { background: #5c2b2b; border-color: #ff5555; color: #fff; }
+
+        /* Floating Controls */
+        #custom-controls {
+            position: fixed;
+            bottom: 20px; /* ย้ายลงล่างขวา ไม่บังเนื้อหา */
+            right: 20px;
+            z-index: 9999;
+            display: flex;
+            gap: 8px;
+            background: rgba(0,0,0,0.5);
+            padding: 8px;
+            border-radius: 50px;
+            backdrop-filter: blur(5px);
+        }
+
+        .control-btn {
+            background: var(--accent-purple);
+            color: #fff;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            cursor: pointer;
+            font-family: var(--heading-font);
+            font-weight: 600;
+            font-size: 1rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            transition: transform 0.2s, background 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .control-btn:hover {
+            transform: scale(1.1);
+            background: var(--accent-pink);
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="custom-controls">
+        <button class="control-btn" onclick="adjustFontSize(-1)" title="ลดขนาดตัวอักษร">A-</button>
+        <button class="control-btn" onclick="adjustFontSize(1)" title="เพิ่มขนาดตัวอักษร">A+</button>
+        <button class="control-btn" onclick="toggleFullScreen()" title="เต็มจอ">⛶</button>
+    </div>
+
+    <div class="reveal font-md">
+        <div class="slides">
+
+            <section data-background-gradient="linear-gradient(to bottom right, #1b1c24, #2d3042)">
+                <div class="flex flex-col items-center justify-center h-full">
+                    <h3 class="text-pink-400 tracking-wider text-xl mb-4">ENGSE207 Software Architecture</h3>
+                    <h1 class="text-balance leading-tight mb-2">Architectural Styles & Patterns</h1>
+                    <h4 class="text-purple-300 font-light bg-white/5 py-2 px-6 rounded-full inline-block mt-2">Part 1: Fundamental Styles</h4>
+                    
+                    <div class="w-24 h-1 bg-green-400 rounded-full my-8"></div>
+                    
+                    <div class="grid grid-cols-2 gap-8 text-left w-full max-w-2xl bg-black/20 p-6 rounded-xl border border-white/10">
+                        <div>
+                            <p class="text-sm text-gray-400 uppercase tracking-widest mb-1">Topic</p>
+                            <p class="font-bold text-white">Fundamental Styles</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-sm text-gray-400 uppercase tracking-widest mb-1">Week</p>
+                            <p class="font-bold text-green-400 text-2xl">03</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section>
+                <h3>🗺️ Roadmap</h3>
+                <div class="flex flex-col gap-3 text-left mt-8 max-w-3xl mx-auto">
+                    <div class="flex items-center gap-4 opacity-40">
+                        <div class="w-8 h-8 rounded-full border-2 border-white flex items-center justify-center text-sm">1</div>
+                        <div class="box-container py-3 w-full">Introduction</div>
+                    </div>
+                    <div class="flex items-center gap-4 opacity-40">
+                        <div class="w-8 h-8 rounded-full border-2 border-white flex items-center justify-center text-sm">2</div>
+                        <div class="box-container py-3 w-full">Quality Attributes & Drivers</div>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <div class="w-8 h-8 rounded-full bg-green-500 text-black font-bold flex items-center justify-center text-sm shadow-[0_0_15px_rgba(80,250,123,0.5)]">3</div>
+                        <div class="box-container py-4 w-full border-green-400 bg-green-500/10">
+                            <strong>Fundamental Styles (Today)</strong>
+                            <p class="text-sm text-gray-300 mt-1">Monolithic, Layered, Client-Server, N-Tier, Pipe-Filter</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-4 opacity-40">
+                        <div class="w-8 h-8 rounded-full border-2 border-white flex items-center justify-center text-sm">4</div>
+                        <div class="box-container py-3 w-full">Modern Styles (Microservices)</div>
+                    </div>
+                </div>
+            </section>
+
+            <section>
+                <h3>🎯 Learning Outcomes (CLOs)</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6 text-left h-full">
+                    <div class="box-container fragment">
+                        <div class="flex items-center gap-2 mb-4">
+                            <span class="text-2xl">🧠</span>
+                            <h4 class="text-green-400 m-0">Knowledge</h4>
+                        </div>
+                        <ul class="list-disc ml-5 space-y-2 text-0.9em">
+                            <li>อธิบายความหมายของ Architectural Styles & Patterns</li>
+                            <li>เปรียบเทียบข้อดีข้อเสียของ 5 Styles หลัก</li>
+                            <li>เชื่อมโยง Quality Attributes กับการเลือกใช้ Style</li>
+                        </ul>
+                    </div>
+                    <div class="box-container fragment">
+                        <div class="flex items-center gap-2 mb-4">
+                            <span class="text-2xl">🛠️</span>
+                            <h4 class="text-yellow-300 m-0">Skills</h4>
+                        </div>
+                        <ul class="list-disc ml-5 space-y-2 text-0.9em">
+                            <li>วิเคราะห์ Architecture จาก Case Study (LINE, Shopee)</li>
+                            <li>ออกแบบ Structure ระดับ High-level</li>
+                            <li>เตรียมพื้นฐานสู่ Microservices</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <section data-background-color="#21222c">
+                <h3>⏪ Week 2 Recap</h3>
+                <div class="grid grid-cols-1 gap-4 text-left max-w-4xl mx-auto mt-6">
+                    <div class="box-container flex-row items-center gap-4 fragment">
+                        <div class="bg-purple-600 p-3 rounded-lg text-2xl">📊</div>
+                        <div>
+                            <h5 class="text-purple-300 m-0 text-lg">Quality Attributes</h5>
+                            <p class="text-sm m-0 opacity-80">Performance, Scalability, Security</p>
+                        </div>
+                    </div>
+                    <div class="box-container flex-row items-center gap-4 fragment">
+                        <div class="bg-pink-600 p-3 rounded-lg text-2xl">📝</div>
+                        <div>
+                            <h5 class="text-pink-300 m-0 text-lg">QA Scenario</h5>
+                            <p class="text-sm m-0 opacity-80">Source → Stimulus → Artifact → Environment → Response → Measure</p>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-8 text-center fragment">
+                        <p class="text-xl font-light">"เมื่อเรารู้ว่าระบบต้องการ <span class="text-yellow-300 font-bold">Quality</span> อะไร..."</p>
+                        <div class="text-4xl my-2">⬇️</div>
+                        <p class="text-xl font-light">"เราจะเลือก <span class="text-green-400 font-bold">Style (โครงสร้าง)</span> ไหนมาใช้?"</p>
+                    </div>
+                </div>
+            </section>
+
+            <section>
+                <section>
+                    <h1 class="text-green-400">1.1 Overview</h1>
+                    <h3 class="text-white opacity-70">Architectural Styles & Patterns</h3>
+                    <hr class="w-24 mx-auto my-6 border-2 border-purple-500">
+                    <p>ความหมายและความสำคัญ</p>
+                </section>
+
+                <section>
+                    <h3>Architectural Styles?</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                        <div class="box-container fragment">
+                            <h4 class="text-green-300 border-b border-white/20 pb-2 mb-4">Definition</h4>
+                            <p>
+                                โครงร่างแบบซ้ำได้ (Reusable) ของโครงสร้างระบบซอฟต์แวร์ในระดับสูง
+                            </p>
+                            <div class="mt-4 bg-black/20 p-3 rounded text-sm text-gray-300">
+                                Ex: Monolithic, Layered, Client-Server
+                            </div>
+                        </div>
+                        <div class="box-container fragment">
+                            <h4 class="text-blue-300 border-b border-white/20 pb-2 mb-4">Key Aspects</h4>
+                            <ul class="list-none space-y-3">
+                                <li class="flex gap-2">
+                                    <span>🏗️</span> <span>เน้น <strong>โครงสร้าง</strong> & <strong>ความสัมพันธ์</strong></span>
+                                </li>
+                                <li class="flex gap-2">
+                                    <span>🗣️</span> <span>เป็น <strong>"ภาษากลาง"</strong> ในทีม</span>
+                                </li>
+                                <li class="flex gap-2">
+                                    <span>🔗</span> <span>เชื่อมโยงกับ <strong>Quality Attributes</strong></span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </section>
+
+                <section>
+                    <h3>Style vs Pattern</h3>
+                    <div class="grid grid-cols-2 gap-8 mt-6 h-[400px]">
+                        <div class="box-container border-t-4 border-yellow-300 fragment">
+                            <h4 class="text-yellow-300 m-0">Architectural Style</h4>
+                            <span class="text-xs bg-yellow-500/20 text-yellow-200 px-2 py-1 rounded">System Level</span>
+                            <div class="flex-grow flex items-center justify-center my-4">
+                                <p class="text-lg italic text-gray-300">"จะสร้างบ้านทรงไทย หรือทรงโมเดิร์น?"</p>
+                            </div>
+                            <ul class="text-sm list-disc ml-4 opacity-80">
+                                <li>Client-Server</li>
+                                <li>Microservices</li>
+                            </ul>
+                        </div>
+                        <div class="box-container border-t-4 border-green-300 fragment">
+                            <h4 class="text-green-300 m-0">Architectural Pattern</h4>
+                            <span class="text-xs bg-green-500/20 text-green-200 px-2 py-1 rounded">Component Level</span>
+                            <div class="flex-grow flex items-center justify-center my-4">
+                                <p class="text-lg italic text-gray-300">"จะจัดห้องครัวอย่างไรให้สะดวก?"</p>
+                            </div>
+                            <ul class="text-sm list-disc ml-4 opacity-80">
+                                <li>MVC</li>
+                                <li>Repository</li>
+                            </ul>
+                        </div>
+                    </div>
+                </section>
+
+                <section>
+                    <h3>💡 Why use Styles?</h3>
+                    <div class="grid grid-cols-2 gap-4 mt-8">
+                        <div class="box-container fragment hover:bg-orange-500/10 transition">
+                            <h5 class="text-orange-400 m-0 flex items-center gap-2">⚡ 1. ลดความซับซ้อน</h5>
+                            <p class="text-sm mt-2 opacity-80">มีแม่แบบอยู่แล้ว ไม่ต้องเริ่มศูนย์</p>
+                        </div>
+                        <div class="box-container fragment hover:bg-blue-500/10 transition">
+                            <h5 class="text-blue-400 m-0 flex items-center gap-2">🗣️ 2. ภาษากลาง</h5>
+                            <p class="text-sm mt-2 opacity-80">พูดคำเดียว ทีมเข้าใจภาพเดียวกัน</p>
+                        </div>
+                        <div class="box-container fragment hover:bg-green-500/10 transition">
+                            <h5 class="text-green-400 m-0 flex items-center gap-2">🚀 3. ตัดสินใจเร็ว</h5>
+                            <p class="text-sm mt-2 opacity-80">Don't reinvent the wheel</p>
+                        </div>
+                        <div class="box-container fragment hover:bg-purple-500/10 transition">
+                            <h5 class="text-purple-400 m-0 flex items-center gap-2">🔮 4. คาดการณ์คุณภาพ</h5>
+                            <p class="text-sm mt-2 opacity-80">รู้อยู่แล้วว่า Style นี้ ดี/ด้อย เรื่องอะไร</p>
+                        </div>
+                    </div>
+                </section>
+            </section>
+
+            <section>
+                <section>
+                    <h1 class="text-yellow-300">1.2 Monolith & Layered</h1>
+                    <hr class="w-24 mx-auto my-6 border-2 border-white/30">
+                    <p class="text-gray-400">จุดเริ่มต้นของทุกสิ่ง</p>
+                </section>
+
+                <section>
+                    <h3>📦 Monolithic Architecture</h3>
+                    <div class="flex gap-6 mt-6">
+                        <div class="w-1/2 box-container fragment">
+                            <h4 class="text-green-300 mb-4 border-b border-green-500/30 pb-2">Concept</h4>
+                            <ul class="list-disc ml-4 space-y-3">
+                                <li><strong>Single Unit:</strong> Compile/Deploy เป็นก้อนเดียว</li>
+                                <li><strong>Unified:</strong> Codebase เดียว, Database เดียว</li>
+                                <li><strong>Target:</strong> ทีมเล็ก, Startup, MVP</li>
+                            </ul>
+                        </div>
+                        <div class="w-1/2 box-container fragment border-red-500/30">
+                            <h4 class="text-red-300 mb-4 border-b border-red-500/30 pb-2">Warning</h4>
+                            <ul class="list-disc ml-4 space-y-3">
+                                <li>Refactor ยากเมื่อระบบใหญ่</li>
+                                <li>Deploy 1 ครั้ง = เสี่ยงทั้งระบบ</li>
+                                <li>Scaling ต้องทำทั้งก้อน (เปลือง Resource)</li>
+                            </ul>
+                        </div>
+                    </div>
+                </section>
+
+                <section>
+                    <h3>Monolith: Pros & Cons</h3>
+                    <div class="grid grid-cols-2 gap-6 mt-6">
+                        <div class="box-container bg-green-500/5 border-green-500/20">
+                            <h4 class="text-green-400 text-center mb-4">✅ Pros</h4>
+                            <ul class="list-none space-y-2 text-sm">
+                                <li>🔹 เริ่มต้นง่ายที่สุด (Setup เร็ว)</li>
+                                <li>🔹 Debug ง่าย (Process เดียว)</li>
+                                <li>🔹 Performance ดี (In-memory calls)</li>
+                                <li>🔹 Transaction ง่าย (DB เดียว)</li>
+                            </ul>
+                        </div>
+                        <div class="box-container bg-red-500/5 border-red-500/20">
+                            <h4 class="text-red-400 text-center mb-4">⚠️ Cons</h4>
+                            <ul class="list-none space-y-2 text-sm">
+                                <li>🔸 Deploy ช้า & เสี่ยง</li>
+                                <li>🔸 Conflict เยอะ (ถ้าทีมใหญ่)</li>
+                                <li>🔸 Technology Lock-in</li>
+                                <li>🔸 Scale บางส่วนไม่ได้</li>
+                            </ul>
+                        </div>
+                    </div>
+                </section>
+
+                <section>
+                    <h3>🏛️ Layered (N-Tier) Architecture</h3>
+                    <div class="img-placeholder">
+                        <span class="text-4xl">📚</span>
+                        <div class="img-label">Presentation → Business → Data</div>
+                    </div>
+                    <p class="text-center mt-4 text-green-300 font-bold">Principle: "Separation of Concerns"</p>
+                </section>
+
+                <section>
+                    <h3>Layers Breakdown</h3>
+                    <div class="flex flex-col gap-3 mt-6 max-w-3xl mx-auto">
+                        <div class="fragment box-container py-3 border-l-8 border-pink-500 flex items-center justify-between">
+                            <strong>1. Presentation Layer (UI)</strong>
+                            <span class="text-xs bg-pink-500/20 px-2 py-1 rounded">React / HTML / Mobile</span>
+                        </div>
+                        <div class="text-center opacity-50 text-xl">⬇️</div>
+                        <div class="fragment box-container py-3 border-l-8 border-blue-500 flex items-center justify-between">
+                            <strong>2. Business Logic Layer</strong>
+                            <span class="text-xs bg-blue-500/20 px-2 py-1 rounded">Service Classes / Calculation</span>
+                        </div>
+                        <div class="text-center opacity-50 text-xl">⬇️</div>
+                        <div class="fragment box-container py-3 border-l-8 border-green-500 flex items-center justify-between">
+                            <strong>3. Data Access Layer (DAL)</strong>
+                            <span class="text-xs bg-green-500/20 px-2 py-1 rounded">Repositories / SQL</span>
+                        </div>
+                    </div>
+                    <div class="fragment mt-4 text-center text-sm text-yellow-300 bg-yellow-900/20 py-2 rounded">
+                        ⚠️ Rule: Layer บนเรียก Layer ล่างได้ แต่ล่างห้ามเรียกบน
+                    </div>
+                </section>
+
+                <section>
+                    <h3>💻 Code Example (Spring Boot)</h3>
+                    <pre class="shadow-2xl rounded-lg"><code class="java" data-trim data-line-numbers="1-7|9-17|19-23">
+// 1. Controller (Presentation) - รับ Request
+@RestController
+public class OrderController {
+    @Autowired private OrderService service; // Call Down 👇
+
+    @GetMapping("/orders/{id}")
+    public OrderDto getOrder(@PathVariable Long id) {
+        return service.getOrder(id);
+    }
+}
+
+// 2. Service (Business Logic) - ประมวลผล
+@Service
+public class OrderService {
+    @Autowired private OrderRepository repo; // Call Down 👇
+
+    public OrderDto getOrder(Long id) {
+        // Business Rule: Check logic, Calculate, etc.
+        var order = repo.findById(id).orElseThrow();
+        return new OrderDto(order);
+    }
+}
+
+// 3. Repository (Data Access) - คุยกับ DB
+@Repository
+public interface OrderRepository extends JpaRepository<Order, Long> {
+    // SQL / Query Methods
+}
+                    </code></pre>
+                </section>
+            </section>
+
+            <section>
+                <section>
+                    <h1 class="text-purple-400">1.3 Common Styles</h1>
+                    <h3 class="opacity-70">Client-Server, N-Tier & Pipe-Filter</h3>
+                    <hr class="w-24 mx-auto my-6 border-2 border-white/30">
+                </section>
+
+                <section>
+                    <h3>🖥️ Client-Server Architecture</h3>
+                    <div class="grid grid-cols-2 gap-8 mt-6 items-center">
+                        <div class="img-placeholder h-[250px]">
+                            <span class="text-4xl">📱 ↔️ ☁️</span>
+                            <div class="img-label">Request / Response</div>
+                        </div>
+                        <div class="text-left space-y-6">
+                            <div class="fragment box-container border-l-4 border-purple-500">
+                                <h5>2-Tier (Fat Client)</h5>
+                                <p class="text-sm opacity-70">Logic อยู่ที่ Client ต่อ DB โดยตรง (Desktop App เก่าๆ)</p>
+                            </div>
+                            <div class="fragment box-container border-l-4 border-green-500">
+                                <h5>3-Tier (Web App)</h5>
+                                <p class="text-sm opacity-70">Client (Browser) ↔ App Server ↔ DB</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section>
+                    <h3>Stateless vs Stateful</h3>
+                    <div class="grid grid-cols-2 gap-6 mt-6">
+                        <div class="box-container fragment text-center">
+                            <h1 class="text-4xl mb-4">👻</h1>
+                            <h4 class="text-blue-300">Stateless</h4>
+                            <p class="text-sm font-code bg-black/20 p-1 rounded inline-block mb-2">REST / HTTP</p>
+                            <p class="text-sm">Server ไม่จำ Client <br><em>"ทุก Request คือคนแปลกหน้า"</em></p>
+                        </div>
+                        <div class="box-container fragment text-center">
+                            <h1 class="text-4xl mb-4">💾</h1>
+                            <h4 class="text-green-300">Stateful</h4>
+                            <p class="text-sm font-code bg-black/20 p-1 rounded inline-block mb-2">WebSocket / FTP</p>
+                            <p class="text-sm">Server จำ Session ได้ <br><em>"คุยต่อเนื่อง ไม่ต้องแนะนำตัว"</em></p>
+                        </div>
+                    </div>
+                </section>
+
+                <section>
+                    <h3>🧪 Pipe-Filter Architecture</h3>
+                    <p class="mb-6 opacity-80">"Data Processing Pipeline"</p>
+                    
+                    <div class="flex items-center justify-center gap-2 mb-8 text-sm">
+                        <div class="bg-gray-700 px-4 py-2 rounded">Input</div>
+                        <div>➡️</div>
+                        <div class="bg-blue-600 px-4 py-2 rounded border border-blue-400">Filter 1</div>
+                        <div>➡️</div>
+                        <div class="bg-blue-600 px-4 py-2 rounded border border-blue-400">Filter 2</div>
+                        <div>➡️</div>
+                        <div class="bg-gray-700 px-4 py-2 rounded">Output</div>
+                    </div>
+
+                    <pre class="fragment"><code class="javascript" data-trim>
+// Node.js Stream Example
+fs.createReadStream('input.log')          // Source
+  .pipe(zlib.createGzip())                // Filter 1: Compress
+  .pipe(encryptStream())                  // Filter 2: Encrypt
+  .pipe(fs.createWriteStream('out.enc')); // Sink
+                    </code></pre>
+                    <p class="text-right text-green-400 text-sm mt-2">✨ Reusable & Composable!</p>
+                </section>
+            </section>
+
+            <section>
+                <section>
+                    <h1 class="text-orange-400">Decision Making</h1>
+                    <p class="text-gray-400">เลือกอย่างไรให้เหมาะสม?</p>
+                </section>
+
+                <section>
+                    <h3>🤔 Decision Framework</h3>
+                    <div class="grid grid-cols-2 gap-4 mt-6 text-sm">
+                        <div class="box-container fragment">
+                            <h5 class="text-gray-300 mb-2">1. System Size?</h5>
+                            <div class="flex justify-between items-center bg-black/20 p-2 rounded">
+                                <span>เล็ก</span> <span>→</span> <span class="text-blue-300 font-bold">Monolith</span>
+                            </div>
+                            <div class="flex justify-between items-center bg-black/20 p-2 rounded mt-2">
+                                <span>ใหญ่</span> <span>→</span> <span class="text-purple-300 font-bold">Microservices</span>
+                            </div>
+                        </div>
+                        <div class="box-container fragment">
+                            <h5 class="text-gray-300 mb-2">2. Users Load?</h5>
+                            <div class="flex justify-between items-center bg-black/20 p-2 rounded">
+                                <span>Low</span> <span>→</span> <span class="text-blue-300 font-bold">Single Server</span>
+                            </div>
+                            <div class="flex justify-between items-center bg-black/20 p-2 rounded mt-2">
+                                <span>High</span> <span>→</span> <span class="text-purple-300 font-bold">N-Tier (Scale)</span>
+                            </div>
+                        </div>
+                        <div class="box-container fragment">
+                            <h5 class="text-gray-300 mb-2">3. Nature of Work?</h5>
+                            <div class="flex justify-between items-center bg-black/20 p-2 rounded">
+                                <span>Process Data</span> <span>→</span> <span class="text-orange-300 font-bold">Pipe-Filter</span>
+                            </div>
+                            <div class="flex justify-between items-center bg-black/20 p-2 rounded mt-2">
+                                <span>User App</span> <span>→</span> <span class="text-green-300 font-bold">Client-Server</span>
+                            </div>
+                        </div>
+                        <div class="box-container fragment">
+                            <h5 class="text-gray-300 mb-2">4. Speed to Market?</h5>
+                            <div class="p-2 text-center">
+                                <span class="text-red-400 font-bold text-lg">Monolith</span>
+                                <p class="text-xs opacity-60">เร็วสุด ง่ายสุด สำหรับ MVP</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section>
+                    <h3>📱 Case Study: LINE</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6 items-center">
+                        <div class="box-container bg-green-500/10 border-green-500/30 h-full">
+                            <h4 class="text-green-400 mb-4">Architecture Mix</h4>
+                            <ul class="space-y-3 text-sm">
+                                <li class="flex items-start gap-2">
+                                    <span>📱</span> <strong>Client-Server:</strong> Mobile App คุยกับ Server
+                                </li>
+                                <li class="flex items-start gap-2">
+                                    <span>🧩</span> <strong>Microservices:</strong> Backend แยก Service (User, Sticker, Chat)
+                                </li>
+                                <li class="flex items-start gap-2">
+                                    <span>⚡</span> <strong>Protocols:</strong> HTTP/2 + WebSocket (Real-time)
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="text-center">
+                            <div class="box-container w-full mb-4 bg-yellow-500/10">
+                                <p class="text-xs uppercase tracking-widest text-yellow-500">Key Driver</p>
+                                <h2 class="text-white m-0">Performance</h2>
+                                <p class="text-sm opacity-70">ข้อความต้องเด้งทันที</p>
+                            </div>
+                            <div class="box-container w-full bg-blue-500/10">
+                                <p class="text-xs uppercase tracking-widest text-blue-500">Key Driver</p>
+                                <h2 class="text-white m-0">Scalability</h2>
+                                <p class="text-sm opacity-70">รองรับ 50M+ Users</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </section>
+
+            <section>
+                <section>
+                    <h2>🧠 Quick Quiz</h2>
+                    <p class="text-gray-400">Check Your Understanding</p>
+                </section>
+
+                <section>
+                    <h3>Q1: Startup ต้องการรีบปล่อยแอป (MVP) ทีมมี 3 คน ควรใช้ Style ใด?</h3>
+                    <div class="mt-6">
+                        <div class="quiz-option" onclick="markQuiz(this, false)">A. Microservices Architecture</div>
+                        <div class="quiz-option" onclick="markQuiz(this, false)">B. Pipe-and-Filter Architecture</div>
+                        <div class="quiz-option" onclick="markQuiz(this, true)">C. Monolithic Architecture</div>
+                    </div>
+                    <div class="fragment mt-4 p-4 bg-green-900/30 border border-green-500 rounded text-sm text-green-300">
+                        ✅ <strong>เฉลย: Monolithic</strong> <br>เริ่มต้นง่ายสุด Setup เร็ว ไม่ซับซ้อน เหมาะกับทีมเล็กและ MVP
+                    </div>
+                </section>
+
+                <section>
+                    <h3>Q2: ข้อใดคือความแตกต่างระหว่าง Layer และ Tier?</h3>
+                    <div class="mt-6">
+                        <div class="quiz-option" onclick="markQuiz(this, false)">A. Layer ใช้กับ Database, Tier ใช้กับ Code</div>
+                        <div class="quiz-option" onclick="markQuiz(this, true)">B. Layer คือ Logical (Code), Tier คือ Physical (Server)</div>
+                        <div class="quiz-option" onclick="markQuiz(this, false)">C. เหมือนกัน ใช้แทนกันได้เลย</div>
+                    </div>
+                    <div class="fragment mt-4 p-4 bg-green-900/30 border border-green-500 rounded text-sm text-green-300">
+                        ✅ <strong>เฉลย: Layer vs Tier</strong> <br>Layer แบ่งโครงสร้างในโค้ด (Logical) ส่วน Tier แบ่งตามการ Deploy บนเครื่อง (Physical)
+                    </div>
+                </section>
+            </section>
+
+            <section>
+                <section>
+                    <h1 class="text-white">Summary</h1>
+                    <div class="grid grid-cols-2 gap-4 mt-8">
+                        <div class="box-container bg-white/5">
+                            <h5 class="text-green-400 m-0">1. Context is King</h5>
+                            <p class="text-sm mt-2 opacity-70">เลือก Style ตามโจทย์ ไม่ใช่ตามกระแส</p>
+                        </div>
+                        <div class="box-container bg-white/5">
+                            <h5 class="text-red-400 m-0">2. Trade-offs</h5>
+                            <p class="text-sm mt-2 opacity-70">ได้อย่าง ก็ต้องเสียอย่างเสมอ</p>
+                        </div>
+                        <div class="box-container bg-white/5">
+                            <h5 class="text-blue-400 m-0">3. Start Simple</h5>
+                            <p class="text-sm mt-2 opacity-70">Monolith/Layered ก่อน ขยายทีหลัง</p>
+                        </div>
+                        <div class="box-container bg-white/5">
+                            <h5 class="text-yellow-400 m-0">4. QA Drivers</h5>
+                            <p class="text-sm mt-2 opacity-70">Performance/Security เป็นตัวกำหนดโครงสร้าง</p>
+                        </div>
+                    </div>
+                </section>
+
+                <section>
+                    <h3>🔜 Next Week (Part 2)</h3>
+                    <p class="text-purple-300 text-lg mb-6">Modern Architecture Styles</p>
+                    
+                    <div class="flex gap-4 justify-center">
+                        <div class="box-container w-48 text-center hover:scale-105 transition">
+                            <span class="text-3xl block mb-2">🧩</span>
+                            <span class="text-sm">Microservices</span>
+                        </div>
+                        <div class="box-container w-48 text-center hover:scale-105 transition">
+                            <span class="text-3xl block mb-2">⚡</span>
+                            <span class="text-sm">Event-Driven</span>
+                        </div>
+                        <div class="box-container w-48 text-center hover:scale-105 transition">
+                            <span class="text-3xl block mb-2">☁️</span>
+                            <span class="text-sm">Serverless</span>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-8 text-sm text-gray-400 italic border p-2 rounded inline-block">
+                        Homework: ลองไปหาข้อมูล "Netflix Architecture" มาล่วงหน้า
+                    </div>
+                </section>
+
+                <section data-background-gradient="linear-gradient(to top, #000000, #282a36)">
+                    <h1>Q & A</h1>
+                    <p class="opacity-70">Thank You</p>
+                    
+                    <div class="mt-12 p-6 bg-white/5 rounded-xl border border-white/10 max-w-2xl mx-auto">
+                        <p class="text-lg italic font-light font-serif">
+                            "Good architecture is not about making decisions early,<br>but delaying them until you have more information."
+                        </p>
+                        <p class="text-right text-sm text-green-400 mt-4">- Robert C. Martin</p>
+                    </div>
+                </section>
+            </section>
+
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/reveal.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/plugin/highlight/highlight.min.js"></script>
+
+    <script>
+        // Initialize Reveal.js
+        Reveal.initialize({
+            hash: true,
+            center: true,
+            slideNumber: true,
+            controls: false, // Hide default controls
+            progress: true,
+            plugins: [RevealHighlight],
+            transition: 'slide',
+            backgroundTransition: 'fade',
+            width: 1200,
+            height: 700,
+            margin: 0.1,
+        });
+
+        // Custom Font Size Control
+        let currentSize = 1; // 0=sm, 1=md, 2=lg
+        const sizes = ['font-sm', 'font-md', 'font-lg'];
+        const revealEl = document.querySelector('.reveal');
+
+        function adjustFontSize(dir) {
+            revealEl.classList.remove(sizes[currentSize]);
+            currentSize += dir;
+            if (currentSize < 0) currentSize = 0;
+            if (currentSize > 2) currentSize = 2;
+            revealEl.classList.add(sizes[currentSize]);
+        }
+
+        // Quiz Logic
+        function markQuiz(el, isCorrect) {
+            const container = el.parentElement;
+            const options = container.querySelectorAll('.quiz-option');
+            options.forEach(opt => {
+                opt.classList.remove('correct', 'incorrect');
+                opt.style.opacity = '0.5';
+            });
+            el.style.opacity = '1';
+            if (isCorrect) {
+                el.classList.add('correct');
+            } else {
+                el.classList.add('incorrect');
+            }
+        }
+
+        // Fullscreen Toggle
+        function toggleFullScreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+            }
+        }
+    </script>
+</body>
+</html>
