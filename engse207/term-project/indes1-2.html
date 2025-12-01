@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ENGSE207: Task Board Project Timeline (Complete)</title>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --text-color: #e2e8f0;
+            --primary: #3b82f6;
+            --secondary: #8b5cf6;
+            --accent: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --card-bg: rgba(30, 41, 59, 0.85);
+            --code-bg: #1e293b;
+            --glass-border: 1px solid rgba(255, 255, 255, 0.1);
+            --slide-padding: 40px;
+            --font-main: 'Sarabun', 'Inter', sans-serif;
+            --font-code: 'JetBrains Mono', monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: var(--font-main);
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+            font-size: 16px;
+            transition: font-size 0.2s ease;
+        }
+
+        /* Background Animation */
+        .bg-mesh {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background: radial-gradient(circle at 10% 20%, rgba(59, 130, 246, 0.15) 0%, transparent 40%),
+                        radial-gradient(circle at 90% 80%, rgba(139, 92, 246, 0.15) 0%, transparent 40%);
+            animation: pulseBg 10s infinite alternate;
+        }
+
+        @keyframes pulseBg {
+            0% { opacity: 0.5; transform: scale(1); }
+            100% { opacity: 0.8; transform: scale(1.1); }
+        }
+
+        /* Controls */
+        .controls {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1000;
+            display: flex;
+            gap: 10px;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 10px;
+            border-radius: 50px;
+            backdrop-filter: blur(10px);
+            border: var(--glass-border);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+
+        .btn-control {
+            background: transparent;
+            border: 1px solid rgba(255,255,255,0.2);
+            color: white;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+
+        .btn-control:hover {
+            background: var(--primary);
+            border-color: var(--primary);
+            transform: translateY(-2px);
+        }
+
+        .progress-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            height: 5px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            width: 0%;
+            transition: width 0.3s ease;
+            z-index: 1001;
+        }
+
+        /* Slide Structure */
+        .slides-container {
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+
+        .slide {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.5s ease-in-out;
+            transform: translateX(50px);
+            display: flex;
+            flex-direction: column;
+            padding: var(--slide-padding);
+            justify-content: center;
+        }
+
+        .slide.active {
+            opacity: 1;
+            visibility: visible;
+            transform: translateX(0);
+        }
+
+        /* Typography & Layouts */
+        h1 {
+            font-size: 3rem;
+            background: linear-gradient(135deg, #60a5fa, #c084fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+            line-height: 1.2;
+        }
+
+        h2 {
+            font-size: 2.2rem;
+            color: var(--primary);
+            margin-bottom: 1.2rem;
+            border-bottom: 2px solid rgba(255,255,255,0.1);
+            padding-bottom: 10px;
+            display: inline-block;
+        }
+
+        h3 {
+            font-size: 1.4rem;
+            color: var(--accent);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        p, li, td {
+            line-height: 1.6;
+            font-size: 1.1rem;
+            color: #cbd5e1;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            height: 85%;
+            overflow-y: hidden;
+        }
+        
+        .grid-3 {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 20px;
+            height: 80%;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border: var(--glass-border);
+            border-radius: 16px;
+            padding: 25px;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(5px);
+            height: 100%;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        /* Infographic Elements */
+        .timeline-path {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+            margin: 40px 0;
+            padding: 0 20px;
+        }
+
+        .timeline-line {
+            position: absolute;
+            top: 50%;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: #334155;
+            z-index: 0;
+        }
+
+        .timeline-node {
+            position: relative;
+            z-index: 1;
+            background: var(--bg-color);
+            border: 2px solid var(--primary);
+            color: var(--primary);
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 0 10px rgba(59, 130, 246, 0.3);
+        }
+
+        .timeline-node:hover {
+            background: var(--primary);
+            color: white;
+            transform: scale(1.1);
+        }
+
+        .timeline-node span {
+            position: absolute;
+            top: 70px;
+            width: 100px;
+            text-align: center;
+            font-size: 0.85rem;
+            color: var(--text-color);
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.5);
+            padding: 2px 5px;
+            border-radius: 4px;
+        }
+
+        /* Architecture Boxes */
+        .arch-diagram {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            padding: 20px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 12px;
+            margin-top: 10px;
+            border: 1px dashed rgba(255,255,255,0.1);
+        }
+
+        .box {
+            border: 2px solid;
+            border-radius: 8px;
+            padding: 10px;
+            text-align: center;
+            font-weight: bold;
+            background: rgba(15, 23, 42, 0.8);
+            font-size: 0.95rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+        }
+
+        .arrow-down::after { content: '↓'; font-size: 24px; color: #64748b; display: block; text-align: center; font-weight: bold; }
+
+        /* Tables */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            font-size: 0.95rem;
+        }
+        
+        th, td {
+            padding: 12px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            text-align: left;
+        }
+        
+        th { color: var(--accent); background: rgba(255,255,255,0.05); }
+        tr:hover td { background: rgba(255,255,255,0.05); }
+
+        /* Skill Chart */
+        .skill-bar-container { display: flex; align-items: center; gap: 15px; margin-bottom: 15px; }
+        .skill-label { width: 90px; font-weight: bold; font-family: var(--font-code); font-size: 0.9rem;}
+        .skill-track { flex-grow: 1; height: 18px; background: #334155; border-radius: 10px; overflow: hidden; box-shadow: inset 0 2px 4px rgba(0,0,0,0.3); }
+        .skill-fill { height: 100%; background: linear-gradient(90deg, var(--primary), var(--accent)); width: 0; transition: width 1.5s ease-out; }
+
+        /* Lists */
+        ul.custom-list { list-style: none; padding-left: 5px; }
+        ul.custom-list li { margin-bottom: 12px; display: flex; align-items: flex-start; gap: 12px; }
+        ul.custom-list li i { margin-top: 5px; font-size: 1rem; }
+        
+        .badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            margin-right: 5px;
+            font-family: var(--font-code);
+        }
+        .badge-lab { background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid #10b981; }
+        .badge-hw { background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid #f59e0b; }
+        
+        /* Tech Icons Grid */
+        .tech-grid {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        .tech-box {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: rgba(255,255,255,0.05);
+            padding: 15px;
+            border-radius: 10px;
+            width: 100px;
+            border: 1px solid rgba(255,255,255,0.05);
+            transition: transform 0.2s;
+        }
+        .tech-box:hover { transform: translateY(-5px); border-color: var(--primary); }
+
+    </style>
+</head>
+<body>
+
+    <div class="bg-mesh"></div>
+    <div class="progress-bar" id="progressBar"></div>
+
+    <div class="controls">
+        <button class="btn-control" onclick="adjustFont(-1)" title="ย่อตัวหนังสือ"><i class="fas fa-minus"></i></button>
+        <button class="btn-control" onclick="adjustFont(1)" title="ขยายตัวหนังสือ"><i class="fas fa-plus"></i></button>
+        <button class="btn-control" onclick="toggleFullscreen()" title="เต็มหน้าจอ"><i class="fas fa-expand"></i></button>
+        <button class="btn-control" onclick="prevSlide()" title="ก่อนหน้า"><i class="fas fa-chevron-left"></i></button>
+        <button class="btn-control" onclick="nextSlide()" title="ถัดไป"><i class="fas fa-chevron-right"></i></button>
+    </div>
+
+    <div class="slides-container">
+
+        <div class="slide active text-center">
+            <h3 style="justify-content: center; color: var(--accent); letter-spacing: 2px;"><i class="fas fa-university"></i> มหาวิทยาลัยเทคโนโลยีราชมงคลล้านนา</h3>
+            <h1 style="margin-top: 20px;">ENGSE207<br>Task Board Project Timeline</h1>
+            <p style="font-size: 1.6rem; margin-top: 20px; color: var(--primary);">Software Architecture: From Monolith to Microservices</p>
+            
+            <div class="tech-grid" style="margin-top: 50px;">
+                <div class="tech-box" style="border-color: #84cc16;"><i class="fab fa-node fa-2x" style="color: #84cc16;"></i><br><span style="margin-top:10px; font-size:0.8rem;">Node.js</span></div>
+                <div class="tech-box" style="border-color: #0ea5e9;"><i class="fab fa-docker fa-2x" style="color: #0ea5e9;"></i><br><span style="margin-top:10px; font-size:0.8rem;">Docker</span></div>
+                <div class="tech-box" style="border-color: #3b82f6;"><i class="fas fa-database fa-2x" style="color: #3b82f6;"></i><br><span style="margin-top:10px; font-size:0.8rem;">PostgreSQL</span></div>
+                <div class="tech-box" style="border-color: #f97316;"><i class="fas fa-project-diagram fa-2x" style="color: #f97316;"></i><br><span style="margin-top:10px; font-size:0.8rem;">Microservices</span></div>
+            </div>
+            
+            <p style="margin-top: 50px; color: #94a3b8; font-size: 1rem;">ผู้สอน: นายธนิต เกตุแก้ว | สาขาวิศวกรรมซอฟต์แวร์</p>
+        </div>
+
+        <div class="slide">
+            <h2><i class="fas fa-bullseye"></i> Project Overview</h2>
+            <div class="grid-2">
+                <div class="card">
+                    <h3>The Concept</h3>
+                    <p style="font-size: 1.2rem;">พัฒนาระบบ <strong>Task Board System</strong> (คล้าย Trello/Jira) เพียงระบบเดียวตลอดทั้งเทอม</p>
+                    <div style="background: rgba(59, 130, 246, 0.1); border-left: 4px solid var(--primary); padding: 15px; margin-top: 20px; border-radius: 0 8px 8px 0;">
+                        <p style="font-weight: bold; color: var(--primary); margin-bottom: 5px;">Key Strategy: Refactor & Evolve</p>
+                        <p style="font-size: 1rem;">เปลี่ยน Architectural Style ของระบบเดิมทุกสัปดาห์ เพื่อให้เห็นข้อดี-ข้อเสียจากการลงมือทำจริง (Learning by Doing)</p>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3>Learning Objectives</h3>
+                    <ul class="custom-list">
+                        <li><i class="fas fa-pencil-ruler text-accent"></i> <strong>Design:</strong> ออกแบบสถาปัตยกรรมสำหรับระบบขนาดกลาง</li>
+                        <li><i class="fas fa-code text-accent"></i> <strong>Implement:</strong> พัฒนา Monolith จนถึง Microservices</li>
+                        <li><i class="fas fa-tools text-accent"></i> <strong>Tools:</strong> ใช้ Git, Docker, CI/CD, Cloud Tools</li>
+                        <li><i class="fas fa-balance-scale text-accent"></i> <strong>Evaluate:</strong> วิเคราะห์ Trade-offs ของแต่ละแบบ</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2 class="text-center">🗺️ 13-Week Journey</h2>
+            <div style="height: 60px;"></div>
+            
+            <div class="timeline-path">
+                <div class="timeline-line"></div>
+                <div class="timeline-node">W3<span>Monolith</span></div>
+                <div class="timeline-node">W4<span>Layered</span></div>
+                <div class="timeline-node">W5<span>REST API</span></div>
+                <div class="timeline-node">W6<span>N-Tier</span></div>
+                <div class="timeline-node">W7<span>Events</span></div>
+                <div class="timeline-node" style="border-color: var(--secondary); color: var(--secondary); box-shadow: 0 0 15px rgba(139, 92, 246, 0.4);">W8-9<span>Microservices</span></div>
+                <div class="timeline-node" style="border-color: var(--accent); color: var(--accent); box-shadow: 0 0 15px rgba(16, 185, 129, 0.4);">W14<span>Final</span></div>
+            </div>
+            
+            <div class="grid-3" style="margin-top: 60px; height: auto;">
+                <div class="box" style="border-color: #60a5fa; height: 100px; display: flex; flex-direction: column; justify-content: center;">
+                    <div style="font-size: 1.3rem; margin-bottom: 5px; color: #60a5fa;">Phase 1</div>
+                    <div style="font-size: 1rem; color: #cbd5e1;">Foundation (W3-5)</div>
+                </div>
+                <div class="box" style="border-color: #f472b6; height: 100px; display: flex; flex-direction: column; justify-content: center;">
+                    <div style="font-size: 1.3rem; margin-bottom: 5px; color: #f472b6;">Phase 2</div>
+                    <div style="font-size: 1rem; color: #cbd5e1;">Modern Arch (W6-7)</div>
+                </div>
+                <div class="box" style="border-color: #a78bfa; height: 100px; display: flex; flex-direction: column; justify-content: center;">
+                    <div style="font-size: 1.3rem; margin-bottom: 5px; color: #a78bfa;">Phase 3</div>
+                    <div style="font-size: 1rem; color: #cbd5e1;">Microservices (W8-9)</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>📦 Week 3: Monolithic Architecture</h2>
+            <div class="grid-2">
+                <div class="card">
+                    <h3>Theme: "Everything in One Place"</h3>
+                    <p class="mb-2"><strong>Stack:</strong> Node.js, Express, SQLite, HTML/CSS</p>
+                    <div class="arch-diagram" style="padding: 15px; background: rgba(255,255,255,0.03);">
+                        <div class="box" style="border-color: #f59e0b; color: #f59e0b; width: 80%; padding: 20px;">
+                            <i class="fas fa-cube fa-2x"></i><br>
+                            Monolithic App (server.js)
+                            <hr style="border-color: rgba(255,255,255,0.1); margin: 10px 0;">
+                            <small>UI | Business Logic | Data Access</small>
+                        </div>
+                        <div class="arrow-down"></div>
+                        <div class="box" style="width: 50%; border-color: #94a3b8;">SQLite DB (File)</div>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3>Activities & Deliverables</h3>
+                    <ul class="custom-list">
+                        <li><span class="badge badge-lab">Lab (3h)</span> Setup WSL2/Ubuntu, Node.js, Git</li>
+                        <li><span class="badge badge-lab">Lab</span> Build Monolith: Simple CRUD Tasks</li>
+                        <li><span class="badge badge-hw">Homework</span> Feature: Task Priority & Due Date</li>
+                        <li><span class="badge badge-hw">Homework</span> ศึกษาข้อเสียของ Monolith</li>
+                    </ul>
+                    <hr style="margin: 15px 0; border-color: rgba(255,255,255,0.1);">
+                    <p><i class="fas fa-gift text-accent"></i> <strong>Deliverable:</strong> Working App + Git Repo</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>🏛️ Week 4: Layered Architecture</h2>
+            <div class="grid-2">
+                <div class="card">
+                    <h3>Theme: "Separation of Concerns"</h3>
+                    <p class="mb-2"><strong>Change:</strong> Refactor to 3 Layers, Migrate to PostgreSQL</p>
+                    <div class="arch-diagram" style="padding: 10px; background: rgba(255,255,255,0.03);">
+                        <div class="box" style="border-color: #3b82f6; width: 90%; margin-bottom: 2px;">Presentation (Routes/Controllers)</div>
+                        <div class="arrow-down" style="font-size: 14px; margin: 2px 0;"></div>
+                        <div class="box" style="border-color: #3b82f6; width: 90%; margin-bottom: 2px;">Business (Services/Models)</div>
+                        <div class="arrow-down" style="font-size: 14px; margin: 2px 0;"></div>
+                        <div class="box" style="border-color: #3b82f6; width: 90%;">Data (Repositories)</div>
+                        <div class="arrow-down" style="font-size: 14px; margin: 2px 0;"></div>
+                        <div class="box" style="border-color: #94a3b8; width: 50%;">PostgreSQL</div>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3>Activities & Deliverables</h3>
+                    <ul class="custom-list">
+                        <li><span class="badge badge-lab">Lab (3h)</span> Refactor Folder Structure</li>
+                        <li><span class="badge badge-lab">Lab</span> Implement Dependency Injection</li>
+                        <li><span class="badge badge-lab">Lab</span> Migrate SQLite -> PostgreSQL (Docker)</li>
+                        <li><span class="badge badge-hw">Homework</span> Add User Authentication</li>
+                        <li><span class="badge badge-hw">Homework</span> Unit Tests (Jest)</li>
+                    </ul>
+                    <hr style="margin: 15px 0; border-color: rgba(255,255,255,0.1);">
+                    <p><i class="fas fa-file-alt text-accent"></i> <strong>Deliverable:</strong> Refactored Code + Comparison Doc</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>🖥️ Week 5: Client-Server (REST API)</h2>
+            <div class="grid-2">
+                <div class="card">
+                    <h3>Theme: "Frontend vs Backend"</h3>
+                    <p><strong>Stack:</strong> Frontend (Fetch API), Backend (Express API)</p>
+                    <div class="arch-diagram" style="flex-direction: row; justify-content: space-around; padding: 20px;">
+                        <div class="box" style="border-color: #f472b6; width: 35%;">
+                            Frontend<br><small>HTML/JS</small>
+                        </div>
+                        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 20%;">
+                            <span style="font-size: 0.8rem; color: var(--accent);">JSON</span>
+                            <div style="width: 100%; height: 2px; background: #64748b; margin: 5px 0;"></div>
+                            <span style="font-size: 0.8rem; color: var(--accent);">HTTP</span>
+                        </div>
+                        <div class="box" style="border-color: #60a5fa; width: 35%;">
+                            Backend<br><small>REST API</small>
+                        </div>
+                    </div>
+                    <ul class="custom-list" style="margin-top: 10px;">
+                        <li><i class="fas fa-exchange-alt"></i> HTTP Methods (GET, POST, PUT, DELETE)</li>
+                        <li><i class="fas fa-book"></i> API Docs (Swagger/OpenAPI)</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h3>Activities & Deliverables</h3>
+                    <ul class="custom-list">
+                        <li><span class="badge badge-lab">Lab (3h)</span> Create RESTful API Endpoints</li>
+                        <li><span class="badge badge-lab">Lab</span> Separate Frontend Project</li>
+                        <li><span class="badge badge-lab">Lab</span> Integrate via Fetch API & CORS</li>
+                        <li><span class="badge badge-hw">Homework</span> Pagination & Search/Filter</li>
+                        <li><span class="badge badge-hw">Homework</span> JWT Auth Implementation</li>
+                    </ul>
+                    <hr style="margin: 15px 0; border-color: rgba(255,255,255,0.1);">
+                    <p><i class="fas fa-server text-accent"></i> <strong>Deliverable:</strong> Working API + Swagger Docs</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>🏗️ Week 6: N-Tier Architecture</h2>
+            <div class="grid-2">
+                <div class="card">
+                    <h3>Theme: "Physical Separation"</h3>
+                    <p class="mb-2"><strong>New Tech:</strong> Docker Compose, Nginx, Redis</p>
+                    <div class="arch-diagram" style="padding: 10px;">
+                        <div class="box" style="border-color: #10b981; width: 70%; margin-bottom: 10px;">Tier 1: Nginx (LB)</div>
+                        <div class="arrow-down"></div>
+                        <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                            <div class="box" style="font-size: 0.8rem;">App 1</div>
+                            <div class="box" style="font-size: 0.8rem;">App 2</div>
+                            <div class="box" style="font-size: 0.8rem;">App 3</div>
+                        </div>
+                        <div class="arrow-down"></div>
+                        <div style="display: flex; gap: 10px;">
+                            <div class="box" style="border-color: #ef4444; width: 45%;">Tier 3: Redis</div>
+                            <div class="box" style="border-color: #3b82f6; width: 45%;">Tier 3: DB</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3>Activities & Deliverables</h3>
+                    <ul class="custom-list">
+                        <li><span class="badge badge-lab">Lab (3h)</span> Docker Compose Setup</li>
+                        <li><span class="badge badge-lab">Lab</span> Configure Nginx Load Balancer</li>
+                        <li><span class="badge badge-lab">Lab</span> Implement Redis Caching</li>
+                        <li><span class="badge badge-hw">Homework</span> Add Monitoring (Prometheus)</li>
+                        <li><span class="badge badge-hw">Homework</span> DB Replication Study</li>
+                    </ul>
+                    <p class="mt-4 text-center" style="border: 1px dashed var(--primary); padding: 10px; border-radius: 8px;">
+                        <i class="fab fa-docker text-primary fa-lg"></i> <strong>Key Skill:</strong> Scale Horizontal with Docker
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>📡 Week 7: Event-Driven Architecture</h2>
+            <div class="grid-2">
+                <div class="card">
+                    <h3>Theme: "Async Communication"</h3>
+                    <p><strong>Stack:</strong> RabbitMQ, Pub/Sub Pattern</p>
+                    <div class="arch-diagram" style="padding: 15px;">
+                        <div style="display: flex; justify-content: space-between; width: 100%;">
+                            <div class="box" style="font-size:0.8rem; width: 30%;">Task Svc<br>(Publisher)</div>
+                            <div class="box" style="font-size:0.8rem; width: 30%;">Notif Svc<br>(Subscriber)</div>
+                            <div class="box" style="font-size:0.8rem; width: 30%;">Audit Svc<br>(Subscriber)</div>
+                        </div>
+                        <div class="arrow-down"></div>
+                        <div class="box" style="width:100%; background:#701a75; border:none;">
+                            <i class="fas fa-envelope"></i> Event Bus (RabbitMQ)
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3>Activities & Deliverables</h3>
+                    <ul class="custom-list">
+                        <li><span class="badge badge-lab">Lab (3h)</span> Setup RabbitMQ in Docker</li>
+                        <li><span class="badge badge-lab">Lab</span> Create Notification Service</li>
+                        <li><span class="badge badge-lab">Lab</span> Implement Event Publisher/Consumer</li>
+                        <li><span class="badge badge-hw">Homework</span> Dead Letter Queue</li>
+                    </ul>
+                    <hr style="margin: 15px 0; border-color: rgba(255,255,255,0.1);">
+                    <p><i class="fas fa-network-wired text-accent"></i> <strong>Deliverable:</strong> Async System Flow</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>🔧 Week 8-9: Microservices (2 Weeks)</h2>
+            <div class="grid-2">
+                <div class="card">
+                    <h3>Theme: "Independent Services"</h3>
+                    <p class="mb-2"><strong>Components:</strong></p>
+                    <ul class="custom-list">
+                        <li><i class="fas fa-door-open text-secondary"></i> <strong>API Gateway:</strong> Single Entry Point</li>
+                        <li><i class="fas fa-user-circle text-primary"></i> <strong>User Svc:</strong> Auth & Profile</li>
+                        <li><i class="fas fa-tasks text-accent"></i> <strong>Task Svc:</strong> Core Logic</li>
+                        <li><i class="fas fa-bell text-warning"></i> <strong>Notif Svc:</strong> Emails/Alerts</li>
+                    </ul>
+                    <div class="mt-4 box" style="background: rgba(0,0,0,0.3); text-align: left; font-size: 0.9rem;">
+                        <code style="color: #a5b4fc;">
+                        services/<br>
+                        ├── api-gateway<br>
+                        ├── user-service (DB1)<br>
+                        ├── task-service (DB2)<br>
+                        └── notification-service
+                        </code>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3>Activities Breakdown</h3>
+                    <div style="margin-bottom: 20px;">
+                        <h4 style="color: var(--primary); margin-bottom: 10px;">Week 8: Decompose</h4>
+                        <ul class="custom-list" style="font-size: 0.95rem;">
+                            <li>Identify Bounded Contexts</li>
+                            <li>Build Independent User Service (Auth)</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4 style="color: var(--secondary); margin-bottom: 10px;">Week 9: Integration</h4>
+                        <ul class="custom-list" style="font-size: 0.95rem;">
+                            <li>Setup API Gateway</li>
+                            <li>Service Discovery & Inter-service Comm.</li>
+                        </ul>
+                    </div>
+                    <hr style="margin: 15px 0; border-color: rgba(255,255,255,0.1);">
+                    <p><i class="fas fa-cogs text-accent"></i> <strong>Deliverable:</strong> Full Microservices Ecosystem</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>🚀 Final Project (Week 10-13)</h2>
+            <div class="grid-2">
+                <div class="card">
+                    <h3>Select Your Path</h3>
+                    <div style="display: flex; flex-direction: column; gap: 15px; margin-top: 10px;">
+                        <div class="box" style="text-align: left; border-left: 5px solid var(--primary);">
+                            <strong>1. Extend Task Board</strong><br>
+                            <span style="font-size: 0.9rem; font-weight: normal;">Add Real-time (WebSocket), File Upload, Teams</span>
+                        </div>
+                        <div class="box" style="text-align: left; border-left: 5px solid var(--accent);">
+                            <strong>2. New Project</strong><br>
+                            <span style="font-size: 0.9rem; font-weight: normal;">E-learning, Food Delivery, Smart Home IoT</span>
+                        </div>
+                        <div class="box" style="text-align: left; border-left: 5px solid var(--secondary);">
+                            <strong>3. Improve Existing</strong><br>
+                            <span style="font-size: 0.9rem; font-weight: normal;">Make Week 9 Production-ready (CI/CD, Monitoring)</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3>Requirements & Evaluation</h3>
+                    <ul class="custom-list">
+                        <li><i class="fas fa-file-invoice"></i> <strong>SAD Doc:</strong> C4 Diagrams, ADRs</li>
+                        <li><i class="fas fa-star"></i> <strong>Quality Attributes:</strong> 3 Key QAs Scenarios</li>
+                        <li><i class="fas fa-code-branch"></i> <strong>Implementation:</strong> Docker, CI/CD, Tests</li>
+                    </ul>
+                    <div style="margin-top: 20px; background: rgba(255,255,255,0.05); padding: 15px; border-radius: 8px;">
+                        <h4 style="margin-bottom: 10px;">Evaluation Criteria (40%)</h4>
+                        <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.1); padding: 5px 0;"><span>Design (SAD)</span> <span class="text-primary">10%</span></div>
+                        <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.1); padding: 5px 0;"><span>Code Implementation</span> <span class="text-primary">15%</span></div>
+                        <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.1); padding: 5px 0;"><span>Documentation</span> <span class="text-primary">5%</span></div>
+                        <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.1); padding: 5px 0;"><span>Presentation</span> <span class="text-primary">5%</span></div>
+                        <div style="display: flex; justify-content: space-between; padding: 5px 0;"><span>Teamwork</span> <span class="text-primary">5%</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>📊 W14-15: Presentation & Reflection</h2>
+            <div class="grid-2">
+                <div class="card">
+                    <h3>Week 14: Final Presentation</h3>
+                    <ul class="custom-list">
+                        <li><i class="fas fa-stopwatch text-warning"></i> <strong>Time:</strong> 15 นาที/ทีม</li>
+                        <li><i class="fas fa-desktop text-primary"></i> <strong>Demo:</strong> Live Application Demo</li>
+                        <li><i class="fas fa-chalkboard-teacher text-accent"></i> <strong>Focus:</strong>
+                            <ul style="margin-left: 20px; margin-top: 5px; font-size: 0.9rem; color: #94a3b8; list-style: disc;">
+                                <li>Architecture Decisions (Why?)</li>
+                                <li>Trade-offs encountered</li>
+                                <li>Quality Attributes achievements</li>
+                            </ul>
+                        </li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h3>Week 15: Reflection</h3>
+                    <ul class="custom-list">
+                        <li><i class="fas fa-sync-alt"></i> <strong>Retrospective:</strong> Lessons Learned</li>
+                        <li><i class="fas fa-question-circle"></i> <strong>Discussion:</strong> "What would you do differently?"</li>
+                        <li><i class="fas fa-comment-dots"></i> Course Feedback & Industry Best Practices</li>
+                    </ul>
+                    <div style="margin-top: 30px; text-align: center; font-style: italic; color: var(--accent); border: 1px solid var(--accent); padding: 15px; border-radius: 10px;">
+                        "Architecture is about the decisions you make, not just the code you write."
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>📈 Skill Progression</h2>
+            <div class="card">
+                <div class="skill-bar-container">
+                    <div class="skill-label">Week 3</div>
+                    <div class="skill-track"><div class="skill-fill" style="width: 10%;"></div></div>
+                    <span>10% (Basic Coding)</span>
+                </div>
+                <div class="skill-bar-container">
+                    <div class="skill-label">Week 5</div>
+                    <div class="skill-track"><div class="skill-fill" style="width: 50%;"></div></div>
+                    <span>50% (API Design)</span>
+                </div>
+                <div class="skill-bar-container">
+                    <div class="skill-label">Week 7</div>
+                    <div class="skill-track"><div class="skill-fill" style="width: 80%;"></div></div>
+                    <span>80% (Event-Driven)</span>
+                </div>
+                <div class="skill-bar-container">
+                    <div class="skill-label">Week 9</div>
+                    <div class="skill-track"><div class="skill-fill" style="width: 95%;"></div></div>
+                    <span>95% (Microservices)</span>
+                </div>
+                <div class="skill-bar-container">
+                    <div class="skill-label">Final</div>
+                    <div class="skill-track"><div class="skill-fill" style="width: 100%;"></div></div>
+                    <span>100% (Production Ready)</span>
+                </div>
+                <hr style="margin: 20px 0; border-color: rgba(255,255,255,0.1);">
+                <h4 style="margin-bottom: 15px;">Skills Acquired:</h4>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <span class="badge badge-lab">Git</span>
+                    <span class="badge badge-lab">Docker</span>
+                    <span class="badge badge-lab">SQL</span>
+                    <span class="badge badge-lab">REST API</span>
+                    <span class="badge badge-lab">CI/CD</span>
+                    <span class="badge badge-lab">Unit Test</span>
+                    <span class="badge badge-lab">DevOps</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>🛠️ Tools & Technologies Matrix</h2>
+            <div class="card" style="padding: 10px;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Phase</th>
+                            <th>Week</th>
+                            <th>New Tools Introduced</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Monolith</td>
+                            <td>W3</td>
+                            <td>VS Code, SQLite, Thunder Client</td>
+                        </tr>
+                        <tr>
+                            <td>Layered</td>
+                            <td>W4</td>
+                            <td>PostgreSQL, pg driver, dotenv, Jest</td>
+                        </tr>
+                        <tr>
+                            <td>Client-Server</td>
+                            <td>W5</td>
+                            <td>Postman, Swagger/OpenAPI, CORS</td>
+                        </tr>
+                        <tr>
+                            <td>N-Tier</td>
+                            <td>W6</td>
+                            <td>Docker, Docker Compose, Redis, Nginx</td>
+                        </tr>
+                        <tr>
+                            <td>Events</td>
+                            <td>W7</td>
+                            <td>RabbitMQ, Event Bus pattern</td>
+                        </tr>
+                        <tr>
+                            <td>Microservices</td>
+                            <td>W8-9</td>
+                            <td>API Gateway, Service Discovery, Zipkin</td>
+                        </tr>
+                        <tr>
+                            <td>Final</td>
+                            <td>W10+</td>
+                            <td>GitHub Actions, Cloud Deployment</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>📚 Resources & Support</h2>
+            <div class="grid-2">
+                <div class="card">
+                    <h3><i class="fas fa-book-reader"></i> Learning Resources</h3>
+                    <ul class="custom-list">
+                        <li><strong>LMS:</strong> Lecture Slides & Recordings</li>
+                        <li><strong>GitHub:</strong> Starter Code & Examples</li>
+                        <li><strong>Books:</strong> "Software Architecture in Practice", "Building Microservices"</li>
+                        <li><strong>Lab Guides:</strong> Step-by-step instructions (PDF)</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h3><i class="fas fa-headset"></i> Getting Help</h3>
+                    <ul class="custom-list">
+                        <li><strong>Discord:</strong> Q&A Channel (24/7)</li>
+                        <li><strong>Lab Time:</strong> Ask TA/Instructor directly</li>
+                        <li><strong>Office Hours:</strong> Tue/Thu 14:00-16:00</li>
+                        <li><strong>GitHub Issues:</strong> Report bugs in lab repo</li>
+                    </ul>
+                    <div style="margin-top: 20px; text-align: center; border: 1px solid var(--accent); padding: 15px; border-radius: 8px;">
+                        <p style="color: var(--accent); font-weight: bold;">อาจารย์: นายธนิต เกตุแก้ว</p>
+                        <p style="font-size: 0.9rem;">Room 405, Computer Eng. Building</p>
+                        <p style="font-size: 0.9rem;">Email: thanit@example.com</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>📅 Important Dates & CLO Mapping</h2>
+            <div class="grid-2">
+                <div class="card">
+                    <h3>Key Milestones</h3>
+                    <table>
+                        <tr><td>Week 3</td><td>Start Lab 1</td></tr>
+                        <tr><td>Week 8</td><td class="text-warning font-bold">Midterm Exam</td></tr>
+                        <tr><td>Week 10</td><td>Final Project Starts</td></tr>
+                        <tr><td>Week 13</td><td class="text-danger font-bold">Final Project Due</td></tr>
+                        <tr><td>Week 14</td><td>Presentations</td></tr>
+                        <tr><td>Week 16</td><td class="text-warning font-bold">Final Exam</td></tr>
+                    </table>
+                </div>
+                <div class="card">
+                    <h3>CLO Covered</h3>
+                    <ul class="custom-list" style="font-size: 0.9rem;">
+                        <li><strong>W3-5:</strong> CLO1, CLO2, CLO6 (Foundations)</li>
+                        <li><strong>W6-7:</strong> CLO4, CLO6 (Modern Arch)</li>
+                        <li><strong>W8-9:</strong> CLO2, CLO6, CLO7 (Complex Systems)</li>
+                        <li><strong>Project:</strong> CLO5-14 (Integrated Skills)</li>
+                        <li><strong>Pres:</strong> CLO11, CLO12 (Communication)</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>🎯 Tips for Success</h2>
+            <div class="grid-2">
+                <div class="card" style="border-left: 5px solid var(--accent);">
+                    <h3 class="text-accent">✅ Do's</h3>
+                    <ul class="custom-list">
+                        <li><strong>Start Early:</strong> Don't wait until deadline</li>
+                        <li><strong>Commit Often:</strong> Save progress (Git)</li>
+                        <li><strong>Test Code:</strong> Don't assume it works</li>
+                        <li><strong>Read Docs:</strong> Before asking for help</li>
+                        <li><strong>Collaborate:</strong> Learn from your team</li>
+                    </ul>
+                </div>
+                <div class="card" style="border-left: 5px solid var(--danger);">
+                    <h3 class="text-danger">❌ Don'ts</h3>
+                    <ul class="custom-list">
+                        <li><strong>Copy-Paste:</strong> Blindly without understanding</li>
+                        <li><strong>Skip Weeks:</strong> Each week builds on previous</li>
+                        <li><strong>Ignore Errors:</strong> Fix them immediately</li>
+                        <li><strong>Work Alone:</strong> Use your team resources</li>
+                        <li><strong>Procrastinate:</strong> Impossible to catch up later</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide text-center">
+            <h1>Let's Begin the Journey!</h1>
+            <div style="font-size: 5rem; margin: 30px 0; animation: bounce 2s infinite;">🚀</div>
+            <p style="font-size: 1.5rem; color: var(--primary);">"The best way to learn architecture is to build it."</p>
+            <div style="margin-top: 50px;">
+                <p><strong>Next Step:</strong> Prepare Laptop, Install Tools & Join Discord</p>
+                <p style="font-size: 1.2rem; margin-top: 10px;">See you in <strong>Week 3 Lab!</strong></p>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slide');
+        const progressBar = document.getElementById('progressBar');
+        const totalSlides = slides.length;
+        let baseFontSize = 16;
+
+        function showSlide(index) {
+            if (index < 0) index = 0;
+            if (index >= totalSlides) index = totalSlides - 1;
+            
+            slides[currentSlide].classList.remove('active');
+            slides[index].classList.add('active');
+            
+            currentSlide = index;
+            updateProgress();
+        }
+
+        function nextSlide() {
+            showSlide(currentSlide + 1);
+        }
+
+        function prevSlide() {
+            showSlide(currentSlide - 1);
+        }
+
+        function updateProgress() {
+            const progress = ((currentSlide + 1) / totalSlides) * 100;
+            progressBar.style.width = `${progress}%`;
+        }
+
+        function adjustFont(change) {
+            baseFontSize += change;
+            if (baseFontSize < 12) baseFontSize = 12;
+            if (baseFontSize > 24) baseFontSize = 24;
+            document.body.style.fontSize = baseFontSize + 'px';
+        }
+
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+            }
+        }
+
+        // Keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === 'Space') nextSlide();
+            if (e.key === 'ArrowLeft') prevSlide();
+        });
+
+        // Initialize
+        updateProgress();
+    </script>
+    <style>
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% {transform: translateY(0);}
+            40% {transform: translateY(-20px);}
+            60% {transform: translateY(-10px);}
+        }
+    </style>
+</body>
+</html>
