@@ -1,0 +1,1045 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ENGSE207 - Week 3 Lab: Monolithic Architecture</title>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --text-color: #e2e8f0;
+            --primary: #3b82f6;
+            --secondary: #8b5cf6;
+            --accent: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --card-bg: rgba(30, 41, 59, 0.8);
+            --code-bg: #1e293b;
+            --glass-border: 1px solid rgba(255, 255, 255, 0.1);
+            --slide-padding: 40px;
+            --font-main: 'Sarabun', 'Inter', sans-serif;
+            --font-code: 'JetBrains Mono', monospace;
+        }
+
+        /* base font สำหรับ rem ทั้งหน้า (ใหญ่สำหรับใช้ present) */
+        html {
+            font-size: 18px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: var(--font-main);
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+            font-size: 1rem;
+            transition: font-size 0.2s ease;
+        }
+
+        /* Background Animation */
+        .bg-mesh {
+            position: fixed;
+            inset: 0;
+            z-index: -1;
+            background:
+                radial-gradient(circle at 10% 20%, rgba(59, 130, 246, 0.18) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(139, 92, 246, 0.18) 0%, transparent 40%);
+            animation: pulseBg 10s infinite alternate;
+        }
+
+        @keyframes pulseBg {
+            0% { opacity: 0.5; transform: scale(1); }
+            100% { opacity: 0.9; transform: scale(1.08); }
+        }
+
+        /* Controls */
+        .controls {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1000;
+            display: flex;
+            gap: 10px;
+            background: rgba(15, 23, 42, 0.85);
+            padding: 10px 14px;
+            border-radius: 999px;
+            backdrop-filter: blur(10px);
+            border: var(--glass-border);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+        }
+
+        .btn-control {
+            background: transparent;
+            border: none;
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+
+        .btn-control:hover {
+            background: rgba(255, 255, 255, 0.18);
+            transform: translateY(-2px) scale(1.05);
+        }
+
+        .progress-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            height: 5px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            width: 0%;
+            transition: width 0.3s ease;
+            z-index: 1001;
+            box-shadow: 0 0 16px rgba(59, 130, 246, 0.9);
+        }
+
+        /* Slide Structure */
+        .slides-container {
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+
+        .slide {
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.5s ease-in-out;
+            transform: translateX(50px);
+            display: flex;
+            flex-direction: column;
+            padding: var(--slide-padding);
+            justify-content: center;
+        }
+
+        .slide.active {
+            opacity: 1;
+            visibility: visible;
+            transform: translateX(0);
+        }
+
+        /* Typography & Layouts */
+        h1 {
+            font-size: 3rem;
+            background: linear-gradient(135deg, #60a5fa, #c084fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+            line-height: 1.2;
+        }
+
+        h2 {
+            font-size: 2.2rem;
+            color: var(--primary);
+            margin-bottom: 1.2rem;
+            border-bottom: 2px solid rgba(255,255,255,0.1);
+            padding-bottom: 10px;
+            display: inline-block;
+        }
+
+        h3 {
+            font-size: 1.3rem;
+            color: var(--accent);
+            margin-bottom: 0.8rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        p, li, td {
+            line-height: 1.6;
+            font-size: 1.05rem;
+            color: #cbd5e1;
+        }
+
+        .text-center { text-align: center; }
+        .text-accent { color: var(--accent); }
+        .text-primary { color: var(--primary); }
+        .text-danger { color: var(--danger); }
+        .text-warning { color: var(--warning); }
+        .mt-2 { margin-top: 0.75rem; }
+        .mt-4 { margin-top: 1.5rem; }
+        .mb-2 { margin-bottom: 0.75rem; }
+        .mb-4 { margin-bottom: 1.5rem; }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            height: 80%;
+            overflow: hidden;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border: var(--glass-border);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 20px 45px rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(12px);
+            height: 100%;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        /* Infographic Bits */
+        .pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 12px;
+            border-radius: 999px;
+            font-size: 0.95rem;
+            background: rgba(15,23,42,0.9);
+            border: 1px solid rgba(148,163,184,0.7);
+            color: #e2e8f0;
+        }
+
+        .pill i { font-size: 0.9rem; }
+
+        .infobox {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-top: 18px;
+        }
+
+        .infocard {
+            flex: 1 1 180px;
+            background: linear-gradient(135deg, rgba(15,23,42,0.9), rgba(30,64,175,0.7));
+            border-radius: 14px;
+            padding: 12px 14px;
+            border: 1px solid rgba(148,163,184,0.7);
+            font-size: 0.95rem;
+            box-shadow: 0 10px 25px rgba(15,23,42,0.9);
+        }
+
+        .infocard strong { display: block; margin-bottom: 3px; }
+
+        .timeline-path {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+            margin: 40px 0;
+            padding: 0 20px;
+        }
+
+        .timeline-line {
+            position: absolute;
+            top: 50%;
+            left: 5%;
+            width: 90%;
+            height: 4px;
+            background: linear-gradient(90deg, rgba(59,130,246,0.5), rgba(139,92,246,0.5));
+            z-index: 0;
+            border-radius: 999px;
+            box-shadow: 0 0 25px rgba(59,130,246,0.8);
+        }
+
+        .timeline-node {
+            position: relative;
+            z-index: 1;
+            background: radial-gradient(circle at 30% 30%, rgba(30,64,175,0.95), rgba(15,23,42,1));
+            border: 2px solid var(--primary);
+            color: var(--primary);
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow:
+                0 0 0 4px rgba(15,23,42,1),
+                0 0 22px rgba(59,130,246,1);
+        }
+
+        .timeline-node:hover {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            transform: translateY(-4px) scale(1.08);
+        }
+
+        .timeline-node span {
+            position: absolute;
+            top: 80px;
+            width: 150px;
+            text-align: center;
+            font-size: 0.8rem;
+            color: var(--text-color);
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .arch-diagram {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            padding: 16px;
+            background: radial-gradient(circle at top, rgba(148,163,184,0.2), transparent 60%);
+            border-radius: 12px;
+            margin-top: 10px;
+            border: 1px dashed rgba(148,163,184,0.8);
+            box-shadow: inset 0 0 25px rgba(15,23,42,0.95);
+        }
+
+        .box {
+            border: 2px solid;
+            border-radius: 10px;
+            padding: 8px 10px;
+            text-align: center;
+            font-weight: bold;
+            background: linear-gradient(145deg, rgba(15,23,42,0.95), rgba(30,41,59,0.98));
+            font-size: 0.95rem;
+            box-shadow: 0 10px 25px rgba(15,23,42,0.9);
+        }
+
+        .arrow-down::after {
+            content: '↓';
+            font-size: 18px;
+            color: #64748b;
+            display: block;
+            text-align: center;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            font-size: 0.95rem;
+        }
+
+        th, td {
+            padding: 8px 10px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            text-align: left;
+        }
+
+        th { color: var(--accent); }
+
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            margin-right: 5px;
+        }
+
+        .badge-lab { background: rgba(16, 185, 129, 0.2); color: #10b981; border: 1px solid #10b981; }
+        .badge-hw { background: rgba(245, 158, 11, 0.2); color: #f59e0b; border: 1px solid #f59e0b; }
+
+        ul.custom-list {
+            list-style: none;
+            padding-left: 5px;
+        }
+
+        ul.custom-list li {
+            margin-bottom: 8px;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        ul.custom-list li i {
+            margin-top: 5px;
+            font-size: 0.9rem;
+        }
+
+        pre, code {
+            font-family: var(--font-code);
+            font-size: 0.9rem;
+        }
+
+        pre {
+            background: var(--code-bg);
+            border-radius: 10px;
+            padding: 10px 12px;
+            overflow-x: auto;
+            border: 1px solid rgba(148,163,184,0.5);
+            margin-top: 8px;
+        }
+
+        .code-label {
+            font-size: 0.8rem;
+            color: #9ca3af;
+            margin-bottom: 4px;
+            font-family: var(--font-code);
+        }
+
+        @keyframes bounce {
+            0%,20%,50%,80%,100% { transform: translateY(0); }
+            40% { transform: translateY(-20px); }
+            60% { transform: translateY(-10px); }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-mesh"></div>
+    <div class="progress-bar" id="progressBar"></div>
+
+    <!-- Controls -->
+    <div class="controls">
+        <button class="btn-control" onclick="adjustFont(-1)" title="ย่อตัวหนังสือ"><i class="fas fa-minus"></i></button>
+        <button class="btn-control" onclick="adjustFont(1)" title="ขยายตัวหนังสือ"><i class="fas fa-plus"></i></button>
+        <button class="btn-control" onclick="toggleFullscreen()" title="เต็มหน้าจอ"><i class="fas fa-expand"></i></button>
+        <button class="btn-control" onclick="prevSlide()" title="ก่อนหน้า"><i class="fas fa-chevron-left"></i></button>
+        <button class="btn-control" onclick="nextSlide()" title="ถัดไป"><i class="fas fa-chevron-right"></i></button>
+    </div>
+
+    <div class="slides-container">
+
+        <!-- Slide 1: Title -->
+        <div class="slide active text-center">
+            <h3 style="justify-content:center; color:var(--accent);"><i class="fas fa-university"></i> ENGSE207 - Software Architecture</h3>
+            <h1>Week 3 Lab<br>Monolithic Architecture</h1>
+            <p style="font-size:1.3rem; margin-top:10px; color:var(--primary);">
+                Task Board Application (Full-stack Monolith)
+            </p>
+
+            <div class="infobox" style="justify-content:center; margin-top:30px;">
+                <div class="infocard">
+                    <strong><i class="fas fa-hourglass-half"></i> เวลา Lab</strong>
+                    3 ชั่วโมง (180 นาที)<br>
+                    Part 1: Setup • Part 2: Build • Part 3: Docs
+                </div>
+                <div class="infocard">
+                    <strong><i class="fas fa-signal"></i> ระดับ</strong>
+                    ⭐⭐ Beginner – Intermediate<br>
+                    เหมาะสำหรับการทบทวน Web Dev + Arch
+                </div>
+                <div class="infocard">
+                    <strong><i class="fas fa-microchip"></i> Tech Stack</strong>
+                    Node.js + Express • SQLite • HTML/CSS/JS
+                </div>
+            </div>
+
+            <p style="margin-top:40px; color:#94a3b8; font-size:0.95rem;">
+                เป้าหมาย: เข้าใจ <strong>Monolithic Architecture</strong> ผ่านการลงมือสร้างระบบจริง
+            </p>
+        </div>
+
+        <!-- Slide 2: What You'll Build -->
+        <div class="slide">
+            <h2>📋 What You'll Build</h2>
+            <div class="grid-2">
+                <div class="card">
+                    <h3><i class="fas fa-clipboard-check"></i> Task Board Application</h3>
+                    <p>ระบบจัดการงาน (Task Board) แบบง่าย ที่รวมทุกอย่างอยู่ในแอปเดียว (Monolith)</p>
+                    <ul class="custom-list mt-2">
+                        <li><i class="fas fa-eye text-accent"></i> ดูงานทั้งหมดแบบ <strong>Kanban Board</strong></li>
+                        <li><i class="fas fa-plus-circle text-accent"></i> เพิ่มงานใหม่ (Title, Description, Priority)</li>
+                        <li><i class="fas fa-arrow-right-arrow-left text-accent"></i> เปลี่ยนสถานะ: TODO → IN_PROGRESS → DONE</li>
+                        <li><i class="fas fa-trash-alt text-accent"></i> ลบงานที่ไม่ต้องการแล้ว</li>
+                        <li><i class="fas fa-filter text-accent"></i> Filter ตามสถานะงาน</li>
+                    </ul>
+
+                    <div class="mt-4">
+                        <span class="pill"><i class="fas fa-terminal"></i> Backend: Express + SQLite</span>
+                        <span class="pill"><i class="fas fa-desktop"></i> Frontend: HTML + CSS + JS</span>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3><i class="fas fa-diagram-project"></i> Monolithic Architecture View</h3>
+                    <div class="arch-diagram">
+                        <div class="box" style="border-color:#f59e0b; width:90%;">
+                            Monolithic Application
+                            <hr style="border-color:rgba(255,255,255,0.15); margin:5px 0;">
+                            <small>Frontend UI + Backend API + DB Access อยู่ในโปรเจ็กต์เดียว</small>
+                        </div>
+                        <div class="arrow-down"></div>
+                        <div class="box" style="border-color:#3b82f6; width:60%;">
+                            HTTP: http://localhost:3000
+                        </div>
+                        <div class="arrow-down"></div>
+                        <div class="box" style="border-color:#10b981; width:50%;">
+                            SQLite Database (tasks.db)
+                        </div>
+                    </div>
+                    <p class="mt-2" style="font-size:0.95rem; color:#94a3b8;">
+                        ทั้งระบบ deploy เป็น <strong>แอปเดียว</strong> ทำให้เริ่มต้นง่าย แต่มีข้อจำกัดเรื่องการขยาย (scalability)
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 3: Lab Flow -->
+        <div class="slide">
+            <h2>🗺️ Lab Flow (3 ชั่วโมง)</h2>
+            <div class="timeline-path">
+                <div class="timeline-line"></div>
+                <div class="timeline-node">
+                    P1
+                    <span>Environment Setup<br>(~60 นาที)</span>
+                </div>
+                <div class="timeline-node">
+                    P2
+                    <span>Build App<br>(~90 นาที)</span>
+                </div>
+                <div class="timeline-node">
+                    P3
+                    <span>Docs & Git<br>(~30 นาที)</span>
+                </div>
+            </div>
+
+            <div class="grid-2" style="height:auto; margin-top:20px;">
+                <div class="card">
+                    <h3><i class="fas fa-plug"></i> Part 1: Environment Setup</h3>
+                    <ul class="custom-list">
+                        <li><i class="fas fa-check-circle text-accent"></i> ติดตั้ง WSL2 + Ubuntu / macOS / Linux</li>
+                        <li><i class="fas fa-check-circle text-accent"></i> ติดตั้ง Node.js 20+, npm, SQLite3</li>
+                        <li><i class="fas fa-check-circle text-accent"></i> ติดตั้ง Git + VS Code + Extensions</li>
+                        <li><i class="fas fa-check-circle text-accent"></i> ทดสอบคำสั่ง <code>node --version</code>, <code>sqlite3 --version</code></li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h3><i class="fas fa-code"></i> Part 2 & 3: Build + Documentation</h3>
+                    <ul class="custom-list">
+                        <li><i class="fas fa-layer-group text-accent"></i> สร้างโครงโปรเจ็กต์ + DB Schema</li>
+                        <li><i class="fas fa-sitemap text-accent"></i> เขียน Backend API + Frontend UI</li>
+                        <li><i class="fas fa-vial text-accent"></i> ทดสอบ CRUD + Board Interaction</li>
+                        <li><i class="fas fa-file-alt text-accent"></i> เขียน README.md / REFLECTION.md + ใช้ Git</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 4: Environment Checklist -->
+        <div class="slide">
+            <h2>🧰 Environment Checklist</h2>
+            <div class="grid-2">
+                <div class="card">
+                    <h3><i class="fas fa-laptop-code"></i> เครื่องมือที่ต้องมี</h3>
+                    <ul class="custom-list">
+                        <li><i class="fas fa-desktop"></i> Windows 10/11 (ใช้ WSL2 + Ubuntu 22.04) หรือ macOS / Linux</li>
+                        <li><i class="fas fa-microchip"></i> RAM ≥ 8GB, พื้นที่ว่าง ≥ 10GB</li>
+                        <li><i class="fas fa-network-wired"></i> อินเทอร์เน็ตสำหรับติดตั้งแพ็กเกจ</li>
+                        <li><i class="fas fa-code"></i> Node.js 20+, npm 10+</li>
+                        <li><i class="fas fa-database"></i> SQLite3</li>
+                        <li><i class="fab fa-git-alt"></i> Git</li>
+                        <li><i class="fas fa-keyboard"></i> VS Code</li>
+                    </ul>
+                    <p class="mt-4 text-accent" style="font-size:0.95rem;">
+                        ✅ ถ้าใช้ WSL2: ทำทุกอย่างใน Ubuntu Terminal + เปิดโฟลเดอร์ผ่าน VS Code (Remote - WSL)
+                    </p>
+                </div>
+
+                <div class="card">
+                    <h3><i class="fas fa-plug-circle-bolt"></i> VS Code Extensions แนะนำ</h3>
+                    <ul class="custom-list">
+                        <li><i class="fas fa-puzzle-piece"></i> Remote - WSL</li>
+                        <li><i class="fas fa-check-double"></i> ESLint</li>
+                        <li><i class="fas fa-brush"></i> Prettier</li>
+                        <li><i class="fas fa-table"></i> SQLite Viewer</li>
+                        <li><i class="fas fa-cloud"></i> Thunder Client / REST Client</li>
+                    </ul>
+                    <div class="mt-4">
+                        <span class="pill"><i class="fas fa-flag-checkered"></i> Checkpoint ก่อนเริ่มเขียนโค้ด</span>
+                        <p class="mt-2" style="font-size:0.95rem;">
+                            รันคำสั่ง <code>node --version</code>, <code>npm --version</code>, <code>sqlite3 --version</code>, <code>git --version</code><br>
+                            ถ้าทุกอย่างแสดงเวอร์ชัน แปลว่าพร้อมเริ่ม Lab 🎯
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 5: Project Structure -->
+        <div class="slide">
+            <h2>📂 Step 1: Project Structure</h2>
+            <div class="grid-2">
+                <div class="card">
+                    <h3><i class="fas fa-folder-tree"></i> สร้างโฟลเดอร์ & ไฟล์หลัก</h3>
+                    <div class="code-label">Shell Commands</div>
+                    <pre><code>mkdir -p ~/engse207-labs/week3-monolithic
+cd ~/engse207-labs/week3-monolithic
+
+npm init -y
+npm install express sqlite3
+npm install --save-dev nodemon
+
+mkdir public database
+touch server.js database/schema.sql
+touch public/index.html public/style.css public/app.js
+touch .gitignore README.md</code></pre>
+
+                    <div class="mt-4">
+                        <span class="pill"><i class="fas fa-file-signature"></i> package.json</span>
+                        <p class="mt-2" style="font-size:0.95rem;">
+                            เพิ่ม script:
+                        </p>
+                        <pre><code>"scripts": {
+  "start": "node server.js",
+  "dev": "nodemon server.js"
+}</code></pre>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3><i class="fas fa-diagram-project"></i> Final Structure</h3>
+                    <pre><code>week3-monolithic/
+├── server.js          # Backend (Express + SQLite)
+├── package.json
+├── database/
+│   ├── schema.sql    # DB schema + seed data
+│   └── tasks.db      # SQLite file (สร้างจาก schema)
+├── public/
+│   ├── index.html    # UI
+│   ├── style.css     # Styles
+│   └── app.js        # Frontend JS (Fetch API)
+├── .gitignore
+└── README.md</code></pre>
+                    <p class="mt-2" style="font-size:0.95rem; color:#94a3b8;">
+                        โครงสร้างนี้จะใช้ต่อใน Week 4–5 (Refactor เป็น Layered / Client-Server)
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 6: Database Schema -->
+        <div class="slide">
+            <h2>💾 Step 2: Database Schema (SQLite)</h2>
+            <div class="grid-2">
+                <div class="card">
+                    <h3><i class="fas fa-table-list"></i> ตาราง tasks</h3>
+                    <div class="code-label">database/schema.sql</div>
+                    <pre><code>DROP TABLE IF EXISTS tasks;
+
+CREATE TABLE tasks (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL,
+    description TEXT,
+    status TEXT DEFAULT 'TODO',
+    priority TEXT DEFAULT 'MEDIUM',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    CHECK (status IN ('TODO', 'IN_PROGRESS', 'DONE')),
+    CHECK (priority IN ('LOW', 'MEDIUM', 'HIGH'))
+);</code></pre>
+                    <p class="mt-2" style="font-size:0.9rem;">
+                        <strong>status:</strong> TODO | IN_PROGRESS | DONE<br>
+                        <strong>priority:</strong> LOW | MEDIUM | HIGH
+                    </p>
+                </div>
+
+                <div class="card">
+                    <h3><i class="fas fa-database"></i> Seed Data & Initialisation</h3>
+                    <div class="code-label">Seed ตัวอย่าง</div>
+                    <pre><code>INSERT INTO tasks (title, description, status, priority) VALUES
+('Setup Environment', 'Install tools', 'DONE', 'HIGH'),
+('Learn Architecture', 'Study patterns', 'IN_PROGRESS', 'HIGH'),
+('Build Application', 'Create Task Board', 'TODO', 'HIGH');</code></pre>
+
+                    <div class="code-label mt-2">สร้างฐานข้อมูล</div>
+                    <pre><code>cd database
+sqlite3 tasks.db &lt; schema.sql
+sqlite3 tasks.db "SELECT * FROM tasks;"
+cd ..</code></pre>
+
+                    <p class="mt-2" style="font-size:0.95rem; color:#94a3b8;">
+                        ✅ ถ้าเห็นข้อมูลตัวอย่างในตาราง แปลว่า DB พร้อมใช้งานกับ Express แล้ว
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 7: Backend API -->
+        <div class="slide">
+            <h2>🔌 Step 3: Backend API (Express + SQLite)</h2>
+            <div class="grid-2">
+                <div class="card">
+                    <h3><i class="fas fa-server"></i> server.js (โครงหลัก)</h3>
+                    <div class="code-label">โครงสร้างหลัก</div>
+                    <pre><code>const express = require('express');
+const sqlite3 = require('sqlite3').verbose();
+
+const app = express();
+const PORT = 3000;
+
+app.use(express.json());
+app.use(express.static('public'));
+
+const db = new sqlite3.Database('./database/tasks.db',
+    err =&gt; err ? console.error(err) : console.log('✅ DB connected')
+);</code></pre>
+                    <p class="mt-2" style="font-size:0.95rem;">
+                        จากนั้นเพิ่ม <strong>Route</strong> สำหรับ CRUD:
+                    </p>
+                    <ul class="custom-list">
+                        <li><i class="fas fa-arrow-down text-accent"></i> GET <code>/api/tasks</code></li>
+                        <li><i class="fas fa-plus-circle text-accent"></i> POST <code>/api/tasks</code></li>
+                        <li><i class="fas fa-pen text-accent"></i> PUT <code>/api/tasks/:id</code></li>
+                        <li><i class="fas fa-trash text-accent"></i> DELETE <code>/api/tasks/:id</code></li>
+                        <li><i class="fas fa-arrows-spin text-accent"></i> PATCH <code>/api/tasks/:id/status</code></li>
+                    </ul>
+                </div>
+
+                <div class="card">
+                    <h3><i class="fas fa-road"></i> API Endpoints Overview</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Method</th>
+                                <th>Endpoint</th>
+                                <th>ใช้ทำอะไร</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>GET</td>
+                                <td><code>/api/tasks</code></td>
+                                <td>ดึงงานทั้งหมด</td>
+                            </tr>
+                            <tr>
+                                <td>GET</td>
+                                <td><code>/api/tasks/:id</code></td>
+                                <td>ดูรายละเอียดงาน 1 รายการ</td>
+                            </tr>
+                            <tr>
+                                <td>POST</td>
+                                <td><code>/api/tasks</code></td>
+                                <td>สร้างงานใหม่</td>
+                            </tr>
+                            <tr>
+                                <td>PUT</td>
+                                <td><code>/api/tasks/:id</code></td>
+                                <td>แก้ไขข้อมูลงาน</td>
+                            </tr>
+                            <tr>
+                                <td>DELETE</td>
+                                <td><code>/api/tasks/:id</code></td>
+                                <td>ลบงาน</td>
+                            </tr>
+                            <tr>
+                                <td>PATCH</td>
+                                <td><code>/api/tasks/:id/status</code></td>
+                                <td>เปลี่ยนเฉพาะสถานะงาน</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <p class="mt-2" style="font-size:0.9rem; color:#94a3b8;">
+                        แนะนำให้ใช้ <strong>Thunder Client / Postman</strong> ทดสอบ API ทีละตัวก่อนเชื่อมกับ Frontend
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 8: Frontend Infographic -->
+        <div class="slide">
+            <h2>🎨 Step 4: Frontend – Task Board UI</h2>
+            <div class="grid-2">
+                <div class="card">
+                    <h3><i class="fas fa-columns"></i> Kanban Board Layout</h3>
+                    <div class="arch-diagram">
+                        <div class="box" style="border-color:#60a5fa; width:90%;">
+                            Header: "📋 Task Board"
+                        </div>
+                        <div class="arrow-down"></div>
+                        <div class="box" style="border-color:#a78bfa; width:95%;">
+                            Add Task Form<br>
+                            <small>Title • Description • Status • Priority</small>
+                        </div>
+                        <div class="arrow-down"></div>
+                        <div class="box" style="border-color:#10b981; width:100%; font-size:0.9rem;">
+                            3 Columns:
+                            <div style="display:flex; gap:6px; margin-top:6px; font-weight:normal;">
+                                <span class="pill">TODO</span>
+                                <span class="pill">IN_PROGRESS</span>
+                                <span class="pill">DONE</span>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="mt-2" style="font-size:0.95rem;">
+                        แต่ละ Card แสดง: <strong>Title</strong>, Description, Status, ปุ่ม Delete / Move
+                    </p>
+                </div>
+
+                <div class="card">
+                    <h3><i class="fas fa-link"></i> เชื่อม Frontend ↔ Backend</h3>
+                    <div class="code-label">public/app.js (ตัวอย่าง)</div>
+                    <pre><code>const API = '/api/tasks';
+
+async function fetchTasks() {
+  const res = await fetch(API);
+  const data = await res.json();
+  renderTasks(data.tasks || data.data);
+}
+
+async function createTask(task) {
+  await fetch(API, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(task)
+  });
+  fetchTasks();
+}
+
+document.addEventListener('DOMContentLoaded', () =&gt; {
+  fetchTasks();
+  // ผูก event กับ form / buttons ต่าง ๆ
+});</code></pre>
+                    <p class="mt-2" style="font-size:0.9rem; color:#94a3b8;">
+                        เป้าหมาย: เมื่อมีการเปลี่ยนแปลงข้อมูล (เพิ่ม / ลบ / แก้ไข) UI ต้องอัปเดตตามผลจาก API เสมอ
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 9: Testing Checklist -->
+        <div class="slide">
+            <h2>🧪 Testing Checklist</h2>
+            <div class="grid-2">
+                <div class="card">
+                    <h3><i class="fas fa-list-check"></i> ทดสอบจากมุมมองผู้ใช้</h3>
+                    <ul class="custom-list">
+                        <li><i class="fas fa-check-circle text-accent"></i> เปิด <code>http://localhost:3000</code> แล้วเห็น Task Board</li>
+                        <li><i class="fas fa-check-circle text-accent"></i> <strong>View:</strong> เห็น task ตัวอย่างจาก DB</li>
+                        <li><i class="fas fa-check-circle text-accent"></i> <strong>Create:</strong> เพิ่ม task ใหม่แล้วแสดงทันที</li>
+                        <li><i class="fas fa-check-circle text-accent"></i> <strong>Move:</strong> เปลี่ยนสถานะ TODO → DONE ได้</li>
+                        <li><i class="fas fa-check-circle text-accent"></i> <strong>Delete:</strong> ลบ task แล้วหายจากจอ</li>
+                        <li><i class="fas fa-check-circle text-accent"></i> <strong>Filter:</strong> เลือกดูเฉพาะสถานะที่ต้องการ (ถ้ามีทำ)</li>
+                    </ul>
+                </div>
+
+                <div class="card">
+                    <h3><i class="fas fa-bug"></i> Common Issues & Quick Fix</h3>
+                    <ul class="custom-list">
+                        <li>
+                            <i class="fas fa-exclamation-circle text-danger"></i>
+                            <div>
+                                <strong>Cannot find module 'express'</strong><br>
+                                รัน <code>npm install</code> ตรวจสอบว่ารันจากโฟลเดอร์โปรเจ็กต์
+                            </div>
+                        </li>
+                        <li>
+                            <i class="fas fa-exclamation-circle text-danger"></i>
+                            <div>
+                                <strong>Port 3000 already in use</strong><br>
+                                เปลี่ยน PORT ใน <code>server.js</code> หรือ kill process<br>
+                                <code>lsof -i :3000</code> → <code>kill -9 &lt;PID&gt;</code>
+                            </div>
+                        </li>
+                        <li>
+                            <i class="fas fa-exclamation-circle text-danger"></i>
+                            <div>
+                                <strong>SQLITE_BUSY / Database locked</strong><br>
+                                ปิด SQLite Viewer ใน VS Code แล้ว restart server
+                            </div>
+                        </li>
+                        <li>
+                            <i class="fas fa-exclamation-circle text-danger"></i>
+                            <div>
+                                <strong>Fetch failed / 404</strong><br>
+                                เช็คว่า route เริ่มต้นด้วย <code>/api/...</code> ตรงกับที่ frontend เรียก
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 10: Submission & Rubric -->
+        <div class="slide">
+            <h2>📤 Submission & Grading</h2>
+            <div class="grid-2">
+                <div class="card">
+                    <h3><i class="fas fa-upload"></i> สิ่งที่ต้องส่ง</h3>
+                    <ul class="custom-list">
+                        <li><i class="fas fa-file-code text-accent"></i> <strong>Source Code</strong>: server.js, public/*, database/schema.sql</li>
+                        <li><i class="fas fa-file-alt text-accent"></i> <strong>README.md</strong>: วิธีติดตั้ง, run, อธิบายสถาปัตยกรรม</li>
+                        <li><i class="fas fa-pen-to-square text-accent"></i> <strong>REFLECTION.md</strong>:
+                            <ul style="margin-left:20px; font-size:0.9rem; color:#94a3b8;">
+                                <li>เรียนรู้อะไรจาก Lab นี้?</li>
+                                <li>ข้อดีของ Monolithic ที่เห็นจากโปรเจ็กต์นี้?</li>
+                                <li>เจอปัญหาอะไร? แก้อย่างไร?</li>
+                                <li>ถ้าทำใหม่อีกครั้งจะปรับอะไร?</li>
+                            </ul>
+                        </li>
+                        <li><i class="fab fa-git-alt text-accent"></i> <strong>Git Repository</strong> (ถ้ามี): commit message มีความหมาย</li>
+                    </ul>
+                    <p class="mt-4" style="font-size:0.9rem;">
+                        ส่งเป็น: <strong>GitHub URL</strong> หรือ <strong>ZIP file</strong> (ไม่ใส่ <code>node_modules</code>, <code>*.db</code>)
+                    </p>
+                </div>
+
+                <div class="card">
+                    <h3><i class="fas fa-star-half-alt"></i> Grading Rubric (10 คะแนน)</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>หัวข้อ</th>
+                                <th>คะแนน</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Functionality (ฟีเจอร์ครบ, ไม่มี error)</td>
+                                <td>4</td>
+                            </tr>
+                            <tr>
+                                <td>Code Quality (อ่านง่าย, แยกส่วน, comment)</td>
+                                <td>2</td>
+                            </tr>
+                            <tr>
+                                <td>Documentation (README + Reflection)</td>
+                                <td>2</td>
+                            </tr>
+                            <tr>
+                                <td>Git Usage (commit สม่ำเสมอ)</td>
+                                <td>1</td>
+                            </tr>
+                            <tr>
+                                <td>Creativity (UI/UX หรือฟีเจอร์เพิ่ม)</td>
+                                <td>1</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <p class="mt-2 text-accent" style="font-size:0.9rem;">
+                        🎁 Bonus: +1 คะแนนสำหรับ Extra Challenge (เช่น Search, Tags, Dark Mode, Export/Import)
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 11: Architecture Reflection -->
+        <div class="slide">
+            <h2>🏛️ Architecture Reflection</h2>
+            <div class="grid-2">
+                <div class="card">
+                    <h3><i class="fas fa-thumbs-up"></i> Monolithic: Advantages</h3>
+                    <ul class="custom-list">
+                        <li><i class="fas fa-rocket text-accent"></i> <strong>Simple to Start:</strong> ทุกอย่างอยู่ในโปรเจ็กต์เดียว</li>
+                        <li><i class="fas fa-vial text-accent"></i> <strong>Easy Testing:</strong> รันแค่แอปเดียว ทดสอบ end-to-end ได้เลย</li>
+                        <li><i class="fas fa-box text-accent"></i> <strong>Single Deployment:</strong> deploy ครั้งเดียวทั้งระบบ</li>
+                        <li><i class="fas fa-wallet text-accent"></i> <strong>Low Cost:</strong> ใช้ทรัพยากรน้อย เหมาะกับโปรเจ็กต์เล็ก–กลาง</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h3><i class="fas fa-thumbs-down"></i> Monolithic: Disadvantages</h3>
+                    <ul class="custom-list">
+                        <li><i class="fas fa-chart-line text-danger"></i> <strong>Scaling:</strong> ขยายต้อง scale ทั้งแอป</li>
+                        <li><i class="fas fa-link text-danger"></i> <strong>Tight Coupling:</strong> ส่วนต่าง ๆ ผูกกันแน่น แก้ทีเดียวกระทบทั้งระบบ</li>
+                        <li><i class="fas fa-code-branch text-danger"></i> <strong>Big Codebase:</strong> โตขึ้นแล้วดูแลยาก</li>
+                        <li><i class="fas fa-lock text-danger"></i> <strong>Tech Lock-in:</strong> เปลี่ยนเทคโนโลยียาก</li>
+                    </ul>
+                    <p class="mt-4" style="font-size:0.95rem;">
+                        👉 คำถามชวนคิดสำหรับ Reflection:
+                        <br>ถ้าระบบ Task Board โตมากขึ้น มีผู้ใช้หลายพันคนต่อวัน <strong>ควรเริ่มคิดเรื่องอะไรต่อ?</strong>
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 12: Next Week & Closing -->
+        <div class="slide text-center">
+            <h2>🔜 Next Week: From Monolith to Layered</h2>
+            <div class="arch-diagram" style="max-width:600px; margin:20px auto;">
+                <div class="box" style="border-color:#f59e0b; width:90%;">
+                    Week 3: Monolithic
+                    <div style="font-weight:normal; font-size:0.9rem; margin-top:4px;">
+                        ทุกอย่างอยู่ใน <strong>server.js + public/*</strong>
+                    </div>
+                </div>
+                <div class="arrow-down"></div>
+                <div class="box" style="border-color:#3b82f6; width:95%;">
+                    Week 4: Layered Architecture
+                    <div style="font-weight:normal; font-size:0.9rem; margin-top:4px;">
+                        แยก <strong>Presentation • Business • Data</strong> ออกจากกัน
+                    </div>
+                </div>
+            </div>
+
+            <p class="mt-4" style="font-size:1.1rem;">
+                เก็บโค้ด Lab Week 3 ไว้ให้ดี<br>
+                เพราะจะเป็นฐานสำหรับ Refactor ในสัปดาห์ถัดไป 👀
+            </p>
+
+            <div style="font-size:4rem; margin:30px 0; animation:bounce 2s infinite;">🚀</div>
+
+            <p style="font-size:1.3rem; color:var(--primary);">
+                "The best way to understand architecture is to <strong>build</strong> it."
+            </p>
+        </div>
+
+    </div>
+
+    <script>
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slide');
+        const progressBar = document.getElementById('progressBar');
+        const totalSlides = slides.length;
+
+        let baseFontSize = 18; // px
+
+        function showSlide(index) {
+            if (index < 0) index = 0;
+            if (index >= totalSlides) index = totalSlides - 1;
+
+            slides[currentSlide].classList.remove('active');
+            slides[index].classList.add('active');
+
+            currentSlide = index;
+            updateProgress();
+        }
+
+        function nextSlide() {
+            showSlide(currentSlide + 1);
+        }
+
+        function prevSlide() {
+            showSlide(currentSlide - 1);
+        }
+
+        function updateProgress() {
+            const progress = ((currentSlide + 1) / totalSlides) * 100;
+            progressBar.style.width = progress + '%';
+        }
+
+        function adjustFont(step) {
+            baseFontSize += step * 2;
+            if (baseFontSize < 14) baseFontSize = 14;
+            if (baseFontSize > 26) baseFontSize = 26;
+            document.documentElement.style.fontSize = baseFontSize + 'px';
+        }
+
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+            } else if (document.exitFullscreen) {
+                document.exitFullscreen();
+            }
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === ' ') nextSlide();
+            if (e.key === 'ArrowLeft') prevSlide();
+        });
+
+        updateProgress();
+    </script>
+</body>
+</html>
