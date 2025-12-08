@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ENGSE207: Microservices Workshop</title>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600;800&family=Roboto+Mono:wght@500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent-blue: #3b82f6;
+            --accent-purple: #8b5cf6;
+            --accent-red: #ef4444;
+            --accent-green: #22c55e;
+            --accent-yellow: #eab308;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Kanit', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* --- HEADER & NAV --- */
+        header {
+            background: linear-gradient(90deg, #1e1b4b, #312e81);
+            padding: 1rem 2rem;
+            display: flex; justify-content: space-between; align-items: center;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5); z-index: 10;
+        }
+        .brand h1 { font-size: 1.5rem; font-weight: 800; color: var(--accent-blue); }
+        .brand span { color: var(--text-main); font-weight: 400; font-size: 1.2rem; }
+
+        nav {
+            display: flex; gap: 1rem; background: var(--card-bg);
+            padding: 0.5rem 2rem; border-bottom: 1px solid #334155;
+        }
+        .nav-btn {
+            background: transparent; border: none; color: var(--text-muted);
+            padding: 0.5rem 1.5rem; cursor: pointer;
+            font-family: 'Kanit', sans-serif; font-size: 1.1rem; font-weight: 600;
+            border-radius: 8px; transition: all 0.3s ease;
+        }
+        .nav-btn:hover { background: rgba(255, 255, 255, 0.05); color: var(--text-main); }
+        .nav-btn.active { background: var(--accent-blue); color: white; box-shadow: 0 0 15px rgba(59, 130, 246, 0.5); }
+
+        /* --- MAIN LAYOUT --- */
+        main { flex: 1; padding: 2rem; position: relative; overflow-y: auto; }
+        .slide-section { display: none; animation: fadeIn 0.5s ease; height: 100%; }
+        .slide-section.active { display: grid; grid-template-columns: 3fr 1fr; gap: 2rem; }
+        .slide-section.full-width { grid-template-columns: 1fr; }
+
+        /* --- CONTENT --- */
+        .content-area { display: flex; flex-direction: column; gap: 1.5rem; }
+        h2 { font-size: 2.5rem; margin-bottom: 1rem; background: -webkit-linear-gradient(45deg, var(--accent-blue), var(--accent-purple)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        
+        .card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; }
+        .info-card {
+            background: var(--card-bg); padding: 1.5rem; border-radius: 12px;
+            border: 1px solid #334155; transition: all 0.3s; cursor: pointer; position: relative;
+        }
+        .info-card:hover { transform: translateY(-5px); border-color: var(--accent-blue); box-shadow: 0 10px 20px rgba(0,0,0,0.3); }
+        .info-card::after {
+            content: '\f002'; font-family: 'Font Awesome 6 Free'; font-weight: 900;
+            position: absolute; top: 15px; right: 15px; color: var(--text-muted); opacity: 0.2; transition: opacity 0.3s;
+        }
+        .info-card:hover::after { opacity: 0.8; color: var(--accent-blue); }
+        .info-card i { font-size: 2rem; margin-bottom: 1rem; color: var(--accent-purple); }
+        .info-card h4 { font-size: 1.2rem; margin-bottom: 0.5rem; }
+        .info-card ul { list-style-position: inside; color: var(--text-muted); }
+
+        /* --- MODAL --- */
+        .modal-overlay {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(5px);
+            z-index: 1000; justify-content: center; align-items: center; animation: fadeIn 0.3s ease;
+        }
+        .modal-content {
+            background: var(--card-bg); width: 90%; max-width: 900px; border-radius: 16px;
+            border: 1px solid var(--accent-blue); padding: 2rem; position: relative;
+            box-shadow: 0 0 30px rgba(59, 130, 246, 0.3); max-height: 90vh; overflow-y: auto;
+        }
+        .modal-close {
+            position: absolute; top: 15px; right: 20px; background: none; border: none;
+            color: var(--text-muted); font-size: 1.5rem; cursor: pointer;
+        }
+        .modal-close:hover { color: var(--accent-red); }
+
+        /* --- CSS DIAGRAM STYLES (INFOGRAPHICS) --- */
+        .diag-container {
+            width: 100%; padding: 2rem; background: rgba(15, 23, 42, 0.6);
+            border-radius: 12px; border: 1px dashed #334155; margin: 1rem 0;
+            display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1.5rem;
+        }
+        .diag-row { display: flex; gap: 1rem; align-items: center; justify-content: center; flex-wrap: wrap; width: 100%; }
+        .diag-col { display: flex; flex-direction: column; gap: 1rem; align-items: center; }
+        
+        .d-box {
+            background: var(--card-bg); border: 2px solid var(--accent-blue);
+            padding: 1rem; border-radius: 8px; text-align: center; min-width: 120px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3); position: relative;
+        }
+        .d-box i { font-size: 1.5rem; margin-bottom: 0.5rem; display: block; }
+        .d-box small { display: block; font-size: 0.8rem; color: var(--text-muted); margin-top: 0.2rem; }
+        
+        .d-color-green { border-color: var(--accent-green); color: var(--accent-green); }
+        .d-color-red { border-color: var(--accent-red); color: var(--accent-red); }
+        .d-color-purple { border-color: var(--accent-purple); color: var(--accent-purple); }
+        .d-color-yellow { border-color: var(--accent-yellow); color: var(--accent-yellow); }
+
+        .d-arrow { font-size: 1.5rem; color: var(--text-muted); }
+        .d-arrow-down { transform: rotate(90deg); }
+
+        /* Specific Diagram Shapes */
+        .d-db { border-radius: 0 0 8px 8px; border-top: 4px solid var(--text-muted); height: 50px; display: flex; align-items: center; justify-content: center; }
+        
+        .d-monolith-box {
+            width: 250px; height: 180px; border: 4px solid var(--accent-red);
+            display: grid; grid-template-columns: 1fr 1fr; gap: 5px; padding: 10px;
+            background: rgba(239, 68, 68, 0.1);
+        }
+        .d-inner-block { background: var(--card-bg); border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; }
+        .d-inner-db { grid-column: span 2; background: #334155; color: white; }
+
+        .d-code-block {
+            font-family: 'Roboto Mono', monospace; background: #000; padding: 1rem; 
+            border-radius: 8px; text-align: left; width: 100%; max-width: 400px;
+            border-left: 4px solid var(--accent-yellow);
+        }
+        .key { color: var(--accent-blue); } .val { color: var(--accent-green); }
+
+        /* --- TIMER --- */
+        .timer-sidebar {
+            background: var(--card-bg); border-radius: 16px; padding: 2rem;
+            display: flex; flex-direction: column; align-items: center; border: 1px solid #334155; position: sticky; top: 0;
+        }
+        .timer-display { font-family: 'Roboto Mono', monospace; font-size: 5rem; font-weight: bold; color: var(--accent-green); }
+        .btn { padding: 0.8rem 1.5rem; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; margin: 0 5px; font-family: 'Kanit', sans-serif; }
+        .btn-start { background: var(--accent-green); color: black; }
+        .btn-pause { background: #fbbf24; color: black; }
+        .btn-reset { background: var(--accent-red); color: white; }
+
+        /* UTILS */
+        .vs-container { display: flex; gap: 2rem; margin-top: 2rem; position: relative; }
+        .vs-side { flex: 1; padding: 2rem; border-radius: 12px; text-align: center; cursor: pointer; transition: transform 0.3s;}
+        .vs-side:hover { transform: scale(1.02); }
+        .vs-left { background: rgba(239, 68, 68, 0.1); border: 2px solid var(--accent-red); }
+        .vs-right { background: rgba(59, 130, 246, 0.1); border: 2px solid var(--accent-blue); }
+        .vs-badge { background: #fff; color: #000; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); box-shadow: 0 0 10px white; }
+        
+        .summary-table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+        .summary-table th, .summary-table td { border: 1px solid #334155; padding: 1rem; }
+        .summary-table th { background: rgba(255, 255, 255, 0.05); color: var(--accent-blue); }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .full-width .timer-sidebar { display: none; }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <div class="brand"><h1>ENGSE207 <span>Software Architecture</span></h1></div>
+        <div style="text-align: right;">
+            <div style="font-size: 0.9rem; color: var(--text-muted);">Workshop Week 4</div>
+            <div style="font-weight: 600;">Microservices Design & Mini-Debate</div>
+        </div>
+    </header>
+
+    <nav>
+        <button class="nav-btn active" onclick="switchTab('intro')"><i class="fas fa-info-circle"></i> Intro</button>
+        <button class="nav-btn" onclick="switchTab('act1')"><i class="fas fa-sitemap"></i> Act 1: Design</button>
+        <button class="nav-btn" onclick="switchTab('act2')"><i class="fas fa-comments"></i> Act 2: Debate</button>
+        <button class="nav-btn" onclick="switchTab('act3')"><i class="fas fa-bolt"></i> Act 3: Event-Driven</button>
+        <button class="nav-btn" onclick="switchTab('summary')"><i class="fas fa-check-double"></i> Summary</button>
+    </nav>
+
+    <main>
+        <section id="intro" class="slide-section full-width active">
+            <div class="content-area" style="text-align: center; max-width: 800px; margin: 0 auto;">
+                <h2 style="margin-top: 2rem;">ยินดีต้อนรับสู่ Workshop</h2>
+                <p style="font-size: 1.5rem; color: var(--text-muted);">Microservices Design & Mini-Debate</p>
+                <p style="color: var(--accent-blue); margin-top: 10px;"><i class="fas fa-hand-pointer"></i> คลิกที่การ์ดในแต่ละกิจกรรมเพื่อดู Infographic และคำอธิบาย</p>
+
+                <div style="display: flex; justify-content: space-around; margin-top: 3rem; gap: 2rem;">
+                    <div class="info-card" style="flex: 1; cursor: default;">
+                        <i class="fas fa-clock"></i> <h4>ระยะเวลา</h4> <p>3 ชั่วโมง</p>
+                    </div>
+                    <div class="info-card" style="flex: 1; cursor: default;">
+                        <i class="fas fa-users"></i> <h4>รูปแบบ</h4> <p>กลุ่มละ 4-5 คน</p>
+                    </div>
+                    <div class="info-card" style="flex: 1; cursor: default;">
+                        <i class="fas fa-tools"></i> <h4>เครื่องมือ</h4> <p>Draw.io, Miro, กระดาษ</p>
+                    </div>
+                </div>
+
+                <div style="margin-top: 3rem; text-align: left; background: rgba(255,255,255,0.05); padding: 2rem; border-radius: 12px;">
+                    <h3 style="text-align: center; margin-bottom: 1.5rem;">📅 ตารางกิจกรรม</h3>
+                    <ul style="list-style: none; font-size: 1.2rem;">
+                        <li style="margin-bottom: 1rem;"><span style="color: var(--accent-blue); font-weight: bold;">0:00 - 0:15</span> : แนะนำ Workshop + แบ่งกลุ่ม</li>
+                        <li style="margin-bottom: 1rem;"><span style="color: var(--accent-green); font-weight: bold;">0:15 - 1:15</span> : Activity 1 (Design Task Board)</li>
+                        <li style="margin-bottom: 1rem;"><span style="color: var(--accent-red); font-weight: bold;">1:15 - 2:00</span> : Activity 2 (Debate Monolith vs Microservices)</li>
+                        <li style="margin-bottom: 1rem;"><span style="color: var(--accent-purple); font-weight: bold;">2:00 - 2:45</span> : Activity 3 (Event-Driven Design)</li>
+                        <li><span style="color: var(--text-muted); font-weight: bold;">2:45 - 3:00</span> : สรุปและ Q&A</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section id="act1" class="slide-section">
+            <div class="content-area">
+                <h2>Activity 1: Task Board Design</h2>
+                <p class="description">ออกแบบระบบจัดการงานด้วย Microservices (คลิกการ์ดเพื่อดูแนวทาง)</p>
+                <div class="card-grid">
+                    <div class="info-card" onclick="openModal('act1-step1')">
+                        <i class="fas fa-cubes"></i>
+                        <h4>Step 1: Services</h4>
+                        <ul><li>User, Board, Task, Notif</li></ul>
+                    </div>
+                    <div class="info-card" onclick="openModal('act1-step2')">
+                        <i class="fas fa-project-diagram"></i>
+                        <h4>Step 2: Architecture</h4>
+                        <ul><li>Gateway -> Service -> DB</li></ul>
+                    </div>
+                    <div class="info-card" onclick="openModal('act1-step3')">
+                        <i class="fas fa-exchange-alt"></i>
+                        <h4>Step 3: Communication</h4>
+                        <ul><li>Sync (REST) vs Async (Queue)</li></ul>
+                    </div>
+                </div>
+                <div style="background: rgba(59, 130, 246, 0.1); padding: 1.5rem; border-radius: 12px; border-left: 5px solid var(--accent-blue);">
+                    <h4>💡 คำแนะนำ</h4>
+                    <p>อย่าลืมแบ่ง Bounded Context ให้ชัดเจน และเลือก Database ให้เหมาะสมกับแต่ละ Service</p>
+                </div>
+            </div>
+            <div class="timer-sidebar">
+                <h3>Time Left</h3>
+                <div class="timer-display" id="timer1">60:00</div>
+                <div class="timer-controls">
+                    <button class="btn btn-start" onclick="startTimer(1, 60)"><i class="fas fa-play"></i></button>
+                    <button class="btn btn-pause" onclick="pauseTimer(1)"><i class="fas fa-pause"></i></button>
+                    <button class="btn btn-reset" onclick="resetTimer(1, 60)"><i class="fas fa-redo"></i></button>
+                </div>
+            </div>
+        </section>
+
+        <section id="act2" class="slide-section">
+            <div class="content-area">
+                <h2>Activity 2: Mini-Debate</h2>
+                <p>Monolith vs Microservices (Scenario: Startup MVP, 2M Budget)</p>
+                <div class="vs-container">
+                    <div class="vs-side vs-left" onclick="openModal('act2-mono')">
+                        <h3 style="color: var(--accent-red); border: none;">TEAM MONOLITH</h3>
+                        <i class="fas fa-layer-group" style="font-size: 3rem; color: var(--accent-red); margin: 1rem 0;"></i>
+                        <p>Simple, Fast, Cheap</p>
+                    </div>
+                    <div class="vs-badge">VS</div>
+                    <div class="vs-side vs-right" onclick="openModal('act2-micro')">
+                        <h3 style="color: var(--accent-blue); border: none;">TEAM MICROSERVICES</h3>
+                        <i class="fas fa-network-wired" style="font-size: 3rem; color: var(--accent-blue); margin: 1rem 0;"></i>
+                        <p>Scalable, Autonomous</p>
+                    </div>
+                </div>
+                <p style="text-align:center; color: var(--text-muted); margin-top: 1rem;"><i class="fas fa-hand-pointer"></i> คลิกที่แต่ละฝั่งเพื่อดู Diagram เปรียบเทียบโครงสร้าง</p>
+            </div>
+            <div class="timer-sidebar">
+                <h3>Time Left</h3>
+                <div class="timer-display" id="timer2">45:00</div>
+                <div class="timer-controls">
+                    <button class="btn btn-start" onclick="startTimer(2, 45)"><i class="fas fa-play"></i></button>
+                    <button class="btn btn-pause" onclick="pauseTimer(2)"><i class="fas fa-pause"></i></button>
+                    <button class="btn btn-reset" onclick="resetTimer(2, 45)"><i class="fas fa-redo"></i></button>
+                </div>
+            </div>
+        </section>
+
+        <section id="act3" class="slide-section">
+            <div class="content-area">
+                <h2>Activity 3: Event-Driven Design</h2>
+                <p class="description">Scenario: Task Assignment & Notification (คลิกการ์ดเพื่อดูตัวอย่าง)</p>
+                <div class="card-grid">
+                    <div class="info-card" onclick="openModal('act3-events')">
+                        <i class="fas fa-bolt"></i>
+                        <h4>1. Identify Events</h4>
+                        <p>Structure & Naming</p>
+                    </div>
+                    <div class="info-card" onclick="openModal('act3-flow')">
+                        <i class="fas fa-stream"></i>
+                        <h4>2. Event Flow</h4>
+                        <p>Pub/Sub Pattern</p>
+                    </div>
+                    <div class="info-card" onclick="openModal('act3-fail')">
+                        <i class="fas fa-shield-alt"></i>
+                        <h4>3. Failure Handling</h4>
+                        <p>Retry & DLQ Logic</p>
+                    </div>
+                </div>
+            </div>
+            <div class="timer-sidebar">
+                <h3>Time Left</h3>
+                <div class="timer-display" id="timer3">45:00</div>
+                <div class="timer-controls">
+                    <button class="btn btn-start" onclick="startTimer(3, 45)"><i class="fas fa-play"></i></button>
+                    <button class="btn btn-pause" onclick="pauseTimer(3)"><i class="fas fa-pause"></i></button>
+                    <button class="btn btn-reset" onclick="resetTimer(3, 45)"><i class="fas fa-redo"></i></button>
+                </div>
+            </div>
+        </section>
+
+        <section id="summary" class="slide-section full-width">
+            <div class="content-area" style="max-width: 900px; margin: 0 auto;">
+                <h2>สรุปผลกิจกรรม</h2>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+                    <div>
+                        <h3>Key Takeaways</h3>
+                        <ul style="line-height: 1.8; font-size: 1.1rem; margin-top: 1rem;">
+                            <li><i class="fas fa-check-circle" style="color: var(--accent-green);"></i> <strong>No Silver Bullet:</strong> ไม่มี Architecture ที่ดีที่สุด</li>
+                            <li><i class="fas fa-check-circle" style="color: var(--accent-green);"></i> <strong>Evolution:</strong> เริ่ม Monolith -> ขยายเป็น Microservices</li>
+                            <li><i class="fas fa-check-circle" style="color: var(--accent-green);"></i> <strong>Async Power:</strong> Event ช่วยลด Coupling</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h3>Deliverables (ส่งงาน)</h3>
+                        <table class="summary-table">
+                            <tr><td>1. Architecture Diagram</td><td>PDF/PNG</td></tr>
+                            <tr><td>2. Service Description</td><td>Excel/Sheet</td></tr>
+                            <tr><td>3. Event Flow Diagram</td><td>PDF/PNG</td></tr>
+                            <tr><td>4. Trade-offs Analysis</td><td>1-2 Pages</td></tr>
+                        </table>
+                    </div>
+                </div>
+                <div style="margin-top: 3rem; background: linear-gradient(90deg, #1e293b, #0f172a); padding: 2rem; border-radius: 12px; border: 1px solid var(--accent-blue); text-align: center;">
+                    <h3 style="border:none; color: var(--text-main);">📝 การบ้าน: Extend Task Board with "Team Chat"</h3>
+                    <p style="color: var(--text-muted); margin-bottom: 1rem;">ออกแบบ Chat Service, Real-time WebSocket, และ API Design</p>
+                    <a href="lab.md" target="_blank" class="btn btn-start" style="background: var(--accent-blue); color: white; text-decoration: none; display: inline-block;">
+                        <i class="fas fa-file-download"></i> Download Lab Sheet
+                    </a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <div id="modalOverlay" class="modal-overlay" onclick="closeModal(event)">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeModal(event, true)">&times;</button>
+            <h2 id="modalTitle" style="font-size: 2rem; margin-bottom: 1rem;">Modal Title</h2>
+            
+            <div id="modalDiagram" class="diag-container">
+                </div>
+
+            <div id="modalDesc" style="font-size: 1.1rem; line-height: 1.6; color: var(--text-muted); margin-top: 1.5rem;">
+                </div>
+        </div>
+    </div>
+
+    <script>
+        // --- DATA CONTENT FOR MODALS (HTML DIAGRAMS) ---
+        const modalData = {
+            'act1-step1': {
+                title: 'Step 1: Bounded Contexts',
+                desc: 'แบ่ง Service ตามหน้าที่ (Single Responsibility) โดยยึดหลัก Domain-Driven Design.',
+                diagram: `
+                    <div class="diag-row">
+                        <div class="d-box d-color-blue"><i class="fas fa-user-shield"></i>User Context<br><small>Auth, Profile</small></div>
+                        <div class="d-box d-color-purple"><i class="fas fa-columns"></i>Board Context<br><small>Projects, Members</small></div>
+                        <div class="d-box d-color-green"><i class="fas fa-check-square"></i>Task Context<br><small>Items, Status</small></div>
+                        <div class="d-box d-color-yellow"><i class="fas fa-bell"></i>Notif Context<br><small>Email, Push</small></div>
+                    </div>`
+            },
+            'act1-step2': {
+                title: 'Step 2: Architecture Overview',
+                desc: 'ภาพรวมระบบ: Client -> Gateway -> Service -> Database (แยกกัน)',
+                diagram: `
+                    <div class="diag-row">
+                        <div class="d-box"><i class="fas fa-mobile-alt"></i>Client</div>
+                        <div class="d-arrow"><i class="fas fa-long-arrow-alt-right"></i></div>
+                        <div class="d-box d-color-purple"><i class="fas fa-dungeon"></i>API Gateway<br><small>Kong/Nginx</small></div>
+                    </div>
+                    <div class="d-arrow d-arrow-down"><i class="fas fa-long-arrow-alt-right"></i></div>
+                    <div class="diag-row" style="gap: 2rem;">
+                        <div class="diag-col">
+                            <div class="d-box d-color-blue">User Svc</div>
+                            <div class="d-box d-db"><i class="fas fa-database"></i></div>
+                        </div>
+                        <div class="diag-col">
+                            <div class="d-box d-color-green">Task Svc</div>
+                            <div class="d-box d-db"><i class="fas fa-database"></i></div>
+                        </div>
+                        <div class="diag-col">
+                            <div class="d-box d-color-yellow">Notif Svc</div>
+                            <div class="d-box d-db"><i class="fas fa-database"></i></div>
+                        </div>
+                    </div>`
+            },
+            'act1-step3': {
+                title: 'Step 3: Sync vs Async',
+                desc: '<b>Sync:</b> ใช้เมื่อต้องการผลลัพธ์ทันที (เช่น Login)<br><b>Async:</b> ใช้เมื่อทำงานเบื้องหลัง (เช่น ส่งอีเมล)',
+                diagram: `
+                    <h4 style="color:var(--accent-blue)">Synchronous (REST)</h4>
+                    <div class="diag-row">
+                        <div class="d-box">User</div>
+                        <div class="d-arrow"><i class="fas fa-long-arrow-alt-right"></i></div>
+                        <div class="d-box d-color-blue">Service</div>
+                        <div class="d-arrow"><i class="fas fa-long-arrow-alt-left"></i></div>
+                        <div class="d-box">Wait...</div>
+                    </div>
+                    <hr style="width:100%; border:0.5px solid #334155; margin:1rem 0;">
+                    <h4 style="color:var(--accent-green)">Asynchronous (Event)</h4>
+                    <div class="diag-row">
+                        <div class="d-box">User</div>
+                        <div class="d-arrow"><i class="fas fa-long-arrow-alt-right"></i></div>
+                        <div class="d-box d-color-green">Service</div>
+                        <div class="d-arrow" style="color:var(--accent-yellow)"><i class="fas fa-paper-plane"></i></div>
+                        <div class="d-box d-color-yellow" style="border-radius:50%; width:60px;">Queue</div>
+                        <div class="d-arrow"><i class="fas fa-long-arrow-alt-right"></i></div>
+                        <div class="d-box d-color-purple">Worker</div>
+                    </div>`
+            },
+            'act2-mono': {
+                title: 'Structure: Monolithic',
+                desc: 'รวมทุก Modules (User, Task, Board) ไว้ใน Process เดียว ใช้ Database เดียว',
+                diagram: `
+                    <div class="d-monolith-box">
+                        <div class="d-inner-block">User UI</div>
+                        <div class="d-inner-block">Task UI</div>
+                        <div class="d-inner-block">User Logic</div>
+                        <div class="d-inner-block">Task Logic</div>
+                        <div class="d-inner-block d-inner-db"><i class="fas fa-database"></i> Shared DB</div>
+                    </div>`
+            },
+            'act2-micro': {
+                title: 'Structure: Microservices',
+                desc: 'แยก Modules เป็น Services อิสระ เชื่อมต่อผ่าน Network',
+                diagram: `
+                    <div class="diag-row" style="gap:2rem;">
+                        <div class="diag-col">
+                            <div class="d-box d-color-blue">User Svc</div>
+                            <div class="d-arrow d-arrow-down"><i class="fas fa-link"></i></div>
+                            <div class="d-box d-db">User DB</div>
+                        </div>
+                        <div class="d-arrow" style="margin-top:-50px;"><i class="fas fa-exchange-alt"></i></div>
+                        <div class="diag-col">
+                            <div class="d-box d-color-green">Task Svc</div>
+                            <div class="d-arrow d-arrow-down"><i class="fas fa-link"></i></div>
+                            <div class="d-box d-db">Task DB</div>
+                        </div>
+                    </div>`
+            },
+            'act3-events': {
+                title: '1. Event Payload',
+                desc: 'ตัวอย่างข้อมูล Event (JSON) ที่ส่งผ่าน Message Broker',
+                diagram: `
+                    <div class="d-code-block">
+                        <span class="key">"event":</span> <span class="val">"TaskAssigned"</span>,<br>
+                        <span class="key">"payload":</span> {<br>
+                        &nbsp;&nbsp;<span class="key">"taskId":</span> <span class="val">"T-101"</span>,<br>
+                        &nbsp;&nbsp;<span class="key">"assignee":</span> <span class="val">"U-55"</span>,<br>
+                        &nbsp;&nbsp;<span class="key">"by":</span> <span class="val">"Admin"</span>,<br>
+                        &nbsp;&nbsp;<span class="key">"timestamp":</span> <span class="val">"2025-01-01..."</span><br>
+                        }
+                    </div>`
+            },
+            'act3-flow': {
+                title: '2. Pub/Sub Flow',
+                desc: 'Task Service ประกาศ Event -> Broker กระจายให้ Email และ Push พร้อมกัน',
+                diagram: `
+                    <div class="diag-row">
+                        <div class="d-box d-color-green">Task Svc<br><small>(Publisher)</small></div>
+                        <div class="d-arrow"><i class="fas fa-long-arrow-alt-right"></i></div>
+                        <div class="d-box d-color-yellow" style="border-radius:50%; width:80px; height:80px; display:flex; align-items:center; justify-content:center;">Broker<br>(Kafka)</div>
+                        <div style="display:flex; flex-direction:column; gap:10px;">
+                            <div class="d-arrow" style="transform:rotate(-30deg)"><i class="fas fa-long-arrow-alt-right"></i></div>
+                            <div class="d-arrow" style="transform:rotate(30deg)"><i class="fas fa-long-arrow-alt-right"></i></div>
+                        </div>
+                        <div style="display:flex; flex-direction:column; gap:10px;">
+                            <div class="d-box d-color-blue">Email Svc</div>
+                            <div class="d-box d-color-purple">Push Svc</div>
+                        </div>
+                    </div>`
+            },
+            'act3-fail': {
+                title: '3. Failure Handling',
+                desc: 'เมื่อ Consumer ล้มเหลว -> Retry -> ถ้ายังไม่ได้ -> ส่งลง DLQ',
+                diagram: `
+                    <div class="diag-row">
+                        <div class="d-box d-color-red"><i class="fas fa-exclamation-triangle"></i> Fail</div>
+                        <div class="d-arrow"><i class="fas fa-redo"></i></div>
+                        <div class="d-box">Retry x3</div>
+                        <div class="d-arrow"><i class="fas fa-long-arrow-alt-right"></i></div>
+                        <div class="d-box d-color-purple"><i class="fas fa-trash-alt"></i> DLQ<br><small>(Dead Letter Queue)</small></div>
+                    </div>`
+            }
+        };
+
+        // --- FUNCTIONS ---
+        function openModal(id) {
+            const data = modalData[id];
+            if(!data) return;
+            document.getElementById('modalTitle').innerHTML = data.title;
+            document.getElementById('modalDesc').innerHTML = data.desc;
+            document.getElementById('modalDiagram').innerHTML = data.diagram;
+            document.getElementById('modalOverlay').style.display = 'flex';
+        }
+
+        function closeModal(e, force = false) {
+            if (force || e.target.classList.contains('modal-overlay')) {
+                document.getElementById('modalOverlay').style.display = 'none';
+            }
+        }
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+            document.querySelectorAll('.slide-section').forEach(section => section.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+        }
+
+        let timers = { 1: {t:3600, i:null}, 2: {t:2700, i:null}, 3: {t:2700, i:null} };
+        function format(s) { const m=Math.floor(s/60); const sec=s%60; return `${m<10?'0':''}${m}:${sec<10?'0':''}${sec}`; }
+        function update(id) { 
+            const d = document.getElementById(`timer${id}`);
+            d.innerText = format(timers[id].t);
+            d.style.color = timers[id].t < 300 ? 'var(--accent-red)' : 'var(--accent-green)';
+        }
+        function startTimer(id, m) { if(!timers[id].i) timers[id].i = setInterval(()=>{ timers[id].t--; update(id); if(timers[id].t<=0) clearInterval(timers[id].i); }, 1000); }
+        function pauseTimer(id) { clearInterval(timers[id].i); timers[id].i=null; }
+        function resetTimer(id, m) { pauseTimer(id); timers[id].t = m*60; update(id); }
+
+        update(1); update(2); update(3);
+    </script>
+</body>
+</html>

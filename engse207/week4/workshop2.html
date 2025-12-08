@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ENGSE207: Microservices Workshop</title>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600;800&family=Roboto+Mono:wght@500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent-blue: #3b82f6;
+            --accent-purple: #8b5cf6;
+            --accent-red: #ef4444;
+            --accent-green: #22c55e;
+            --timer-bg: #000000;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Kanit', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* HEADER */
+        header {
+            background: linear-gradient(90deg, #1e1b4b, #312e81);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
+            z-index: 10;
+        }
+        .brand h1 { font-size: 1.5rem; font-weight: 800; color: var(--accent-blue); }
+        .brand span { color: var(--text-main); font-weight: 400; font-size: 1.2rem; }
+
+        /* NAVIGATION */
+        nav {
+            display: flex;
+            gap: 1rem;
+            background: var(--card-bg);
+            padding: 0.5rem 2rem;
+            border-bottom: 1px solid #334155;
+        }
+        .nav-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            padding: 0.5rem 1.5rem;
+            cursor: pointer;
+            font-family: 'Kanit', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+        .nav-btn:hover { background: rgba(255, 255, 255, 0.05); color: var(--text-main); }
+        .nav-btn.active { background: var(--accent-blue); color: white; box-shadow: 0 0 15px rgba(59, 130, 246, 0.5); }
+
+        /* MAIN CONTENT AREA */
+        main { flex: 1; padding: 2rem; position: relative; overflow-y: auto; }
+
+        .slide-section { display: none; animation: fadeIn 0.5s ease; height: 100%; }
+        .slide-section.active { display: grid; grid-template-columns: 3fr 1fr; gap: 2rem; }
+        .slide-section.full-width { grid-template-columns: 1fr; }
+
+        /* CONTENT STYLING */
+        .content-area { display: flex; flex-direction: column; gap: 1.5rem; }
+
+        h2 {
+            font-size: 2.5rem; margin-bottom: 1rem;
+            background: -webkit-linear-gradient(45deg, var(--accent-blue), var(--accent-purple));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+
+        /* CARD STYLES UPDATED FOR INTERACTIVITY */
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .info-card {
+            background: var(--card-bg);
+            padding: 1.5rem;
+            border-radius: 12px;
+            border: 1px solid #334155;
+            transition: all 0.3s;
+            cursor: pointer; /* Change cursor to pointer */
+            position: relative;
+        }
+
+        .info-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--accent-blue);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+        }
+
+        /* Add icon to indicate clickable */
+        .info-card::after {
+            content: '\f002'; /* FontAwesome Search Icon */
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            color: var(--text-muted);
+            opacity: 0.2;
+            transition: opacity 0.3s;
+        }
+        .info-card:hover::after { opacity: 0.8; color: var(--accent-blue); }
+
+        .info-card i { font-size: 2rem; margin-bottom: 1rem; color: var(--accent-purple); }
+        .info-card h4 { font-size: 1.2rem; margin-bottom: 0.5rem; }
+        .info-card ul { list-style-position: inside; color: var(--text-muted); }
+
+        /* MODAL STYLES */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(5px);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            animation: fadeIn 0.3s ease;
+        }
+        .modal-content {
+            background: var(--card-bg);
+            width: 90%;
+            max-width: 900px;
+            border-radius: 16px;
+            border: 1px solid var(--accent-blue);
+            padding: 2rem;
+            position: relative;
+            box-shadow: 0 0 30px rgba(59, 130, 246, 0.3);
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        .modal-close {
+            position: absolute;
+            top: 15px; right: 20px;
+            background: none; border: none;
+            color: var(--text-muted); font-size: 1.5rem; cursor: pointer;
+        }
+        .modal-close:hover { color: var(--accent-red); }
+        
+        .modal-img-placeholder {
+            width: 100%;
+            height: 350px;
+            background: #0f172a;
+            border: 2px dashed #334155;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 1.5rem 0;
+            color: var(--text-muted);
+            flex-direction: column;
+        }
+        .modal-img-placeholder img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+
+        /* TIMER & UTILS */
+        .timer-sidebar {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #334155;
+            position: sticky; top: 0;
+        }
+        .timer-display {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 5rem;
+            font-weight: bold;
+            color: var(--accent-green);
+        }
+        .btn {
+            padding: 0.8rem 1.5rem;
+            border: none; border-radius: 8px;
+            font-weight: bold; cursor: pointer; margin: 0 5px;
+            font-family: 'Kanit', sans-serif;
+        }
+        .btn-start { background: var(--accent-green); color: black; }
+        .btn-pause { background: #fbbf24; color: black; }
+        .btn-reset { background: var(--accent-red); color: white; }
+
+        /* Specific Layouts */
+        .vs-container { display: flex; gap: 2rem; margin-top: 2rem; position: relative; }
+        .vs-side { flex: 1; padding: 2rem; border-radius: 12px; text-align: center; cursor: pointer; transition: transform 0.3s;}
+        .vs-side:hover { transform: scale(1.02); }
+        .vs-left { background: rgba(239, 68, 68, 0.1); border: 2px solid var(--accent-red); }
+        .vs-right { background: rgba(59, 130, 246, 0.1); border: 2px solid var(--accent-blue); }
+        .vs-badge {
+            background: #fff; color: #000; width: 50px; height: 50px;
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            font-weight: 900; position: absolute; left: 50%; top: 50%;
+            transform: translate(-50%, -50%); box-shadow: 0 0 10px white;
+        }
+        
+        /* Flow Diagram visual only */
+        .flow-diagram { display: flex; align-items: center; justify-content: center; gap: 1rem; margin: 2rem 0; padding: 2rem; background: rgba(255,255,255,0.03); border-radius: 12px; }
+        .flow-box { background: var(--card-bg); border: 2px solid var(--accent-purple); padding: 1rem; border-radius: 8px; width: 150px; text-align: center; }
+        .flow-arrow { font-size: 1.5rem; color: var(--text-muted); }
+
+        .summary-table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+        .summary-table th, .summary-table td { border: 1px solid #334155; padding: 1rem; }
+        .summary-table th { background: rgba(255,255,255,0.05); color: var(--accent-blue); }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .full-width .timer-sidebar { display: none; }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <div class="brand">
+            <h1>ENGSE207 <span>Software Architecture</span></h1>
+        </div>
+        <div style="text-align: right;">
+            <div style="font-size: 0.9rem; color: var(--text-muted);">Workshop Week 4</div>
+            <div style="font-weight: 600;">Microservices Design & Mini-Debate</div>
+        </div>
+    </header>
+
+    <nav>
+        <button class="nav-btn active" onclick="switchTab('intro')"><i class="fas fa-info-circle"></i> Intro</button>
+        <button class="nav-btn" onclick="switchTab('act1')"><i class="fas fa-sitemap"></i> Act 1: Design</button>
+        <button class="nav-btn" onclick="switchTab('act2')"><i class="fas fa-comments"></i> Act 2: Debate</button>
+        <button class="nav-btn" onclick="switchTab('act3')"><i class="fas fa-bolt"></i> Act 3: Event-Driven</button>
+        <button class="nav-btn" onclick="switchTab('summary')"><i class="fas fa-check-double"></i> Summary</button>
+    </nav>
+
+    <main>
+        <section id="intro" class="slide-section full-width active">
+            <div class="content-area" style="text-align: center; max-width: 800px; margin: 0 auto;">
+                <h2 style="margin-top: 2rem;">ยินดีต้อนรับสู่ Workshop</h2>
+                <p style="font-size: 1.5rem; color: var(--text-muted);">Microservices Design & Mini-Debate</p>
+                <p style="color: var(--accent-blue); margin-top: 10px;"><i class="fas fa-hand-pointer"></i> คลิกที่การ์ดในแต่ละกิจกรรมเพื่อดูรูปประกอบและคำอธิบาย</p>
+
+                <div style="display: flex; justify-content: space-around; margin-top: 3rem; gap: 2rem;">
+                    <div class="info-card" style="flex: 1; cursor: default;">
+                        <i class="fas fa-clock"></i>
+                        <h4>ระยะเวลา</h4>
+                        <p>3 ชั่วโมง</p>
+                    </div>
+                    <div class="info-card" style="flex: 1; cursor: default;">
+                        <i class="fas fa-users"></i>
+                        <h4>รูปแบบ</h4>
+                        <p>กลุ่มละ 4-5 คน</p>
+                    </div>
+                    <div class="info-card" style="flex: 1; cursor: default;">
+                        <i class="fas fa-tools"></i>
+                        <h4>เครื่องมือ</h4>
+                        <p>Draw.io, Miro, กระดาษ</p>
+                    </div>
+                </div>
+
+                <div style="margin-top: 3rem; text-align: left; background: rgba(255,255,255,0.05); padding: 2rem; border-radius: 12px;">
+                    <h3 style="text-align: center; margin-bottom: 1.5rem;">📅 ตารางกิจกรรม</h3>
+                    <ul style="list-style: none; font-size: 1.2rem;">
+                        <li style="margin-bottom: 1rem;"><span style="color: var(--accent-blue); font-weight: bold;">0:00 - 0:15</span> : แนะนำ Workshop + แบ่งกลุ่ม</li>
+                        <li style="margin-bottom: 1rem;"><span style="color: var(--accent-green); font-weight: bold;">0:15 - 1:15</span> : Activity 1 (Design Task Board)</li>
+                        <li style="margin-bottom: 1rem;"><span style="color: var(--accent-red); font-weight: bold;">1:15 - 2:00</span> : Activity 2 (Debate Monolith vs Microservices)</li>
+                        <li style="margin-bottom: 1rem;"><span style="color: var(--accent-purple); font-weight: bold;">2:00 - 2:45</span> : Activity 3 (Event-Driven Design)</li>
+                        <li><span style="color: var(--text-muted); font-weight: bold;">2:45 - 3:00</span> : สรุปและ Q&A</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section id="act1" class="slide-section">
+            <div class="content-area">
+                <h2>Activity 1: Task Board Design</h2>
+                <p class="description">ออกแบบระบบจัดการงาน (Kanban) ด้วย Microservices Architecture (คลิกที่การ์ดเพื่อดูรายละเอียด)</p>
+
+                <div class="card-grid">
+                    <div class="info-card" onclick="openModal('act1-step1')">
+                        <i class="fas fa-cubes"></i>
+                        <h4>Step 1: Services</h4>
+                        <ul>
+                            <li>User Service (Auth)</li>
+                            <li>Board Service</li>
+                            <li>Task Service</li>
+                            <li>Notification Service</li>
+                        </ul>
+                    </div>
+                    <div class="info-card" onclick="openModal('act1-step2')">
+                        <i class="fas fa-project-diagram"></i>
+                        <h4>Step 2: Diagram</h4>
+                        <ul>
+                            <li>Client Apps</li>
+                            <li>API Gateway (Kong/Nginx)</li>
+                            <li>DB per Service</li>
+                        </ul>
+                    </div>
+                    <div class="info-card" onclick="openModal('act1-step3')">
+                        <i class="fas fa-exchange-alt"></i>
+                        <h4>Step 3: Communication</h4>
+                        <ul>
+                            <li>Sync: REST API (User Actions)</li>
+                            <li>Async: Message Queue (Background)</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div style="background: rgba(59, 130, 246, 0.1); padding: 1.5rem; border-radius: 12px; border-left: 5px solid var(--accent-blue);">
+                    <h4>💡 คำแนะนำ</h4>
+                    <p>อย่าลืมแบ่ง Bounded Context ให้ชัดเจน และเลือก Database ให้เหมาะสมกับแต่ละ Service (เช่น Redis สำหรับ Notif, Postgres สำหรับ Data หลัก)</p>
+                </div>
+            </div>
+
+            <div class="timer-sidebar">
+                <h3><i class="fas fa-hourglass-half"></i> เวลาที่เหลือ</h3>
+                <div class="timer-display" id="timer1">60:00</div>
+                <div class="timer-controls">
+                    <button class="btn btn-start" onclick="startTimer(1, 60)"><i class="fas fa-play"></i></button>
+                    <button class="btn btn-pause" onclick="pauseTimer(1)"><i class="fas fa-pause"></i></button>
+                    <button class="btn btn-reset" onclick="resetTimer(1, 60)"><i class="fas fa-redo"></i></button>
+                </div>
+            </div>
+        </section>
+
+        <section id="act2" class="slide-section">
+            <div class="content-area">
+                <h2>Activity 2: Mini-Debate</h2>
+                <p class="description">หัวข้อ: "Monolith ที่ดี vs Microservices ที่ไม่พร้อม"</p>
+
+                <div style="background: #1e293b; padding: 1rem; border-radius: 8px; text-align: center;">
+                    <strong>Scenario:</strong> Startup ทำ E-Commerce MVP | งบ 2 ล้าน | ทีม 5 คน | เวลา 3 เดือน
+                </div>
+
+                <div class="vs-container">
+                    <div class="vs-side vs-left" onclick="openModal('act2-mono')">
+                        <h3 style="color: var(--accent-red); border: none;">TEAM MONOLITH</h3>
+                        <i class="fas fa-layer-group" style="font-size: 3rem; color: var(--accent-red); margin: 1rem 0;"></i>
+                        <ul style="text-align: left; list-style: none;">
+                            <li>✅ เร็วกว่า (Speed to Market)</li>
+                            <li>✅ ต้นทุนต่ำ (Simple Infra)</li>
+                            <li>✅ Dev ง่าย (Single Codebase)</li>
+                            <li>✅ เหมาะกับ MVP</li>
+                        </ul>
+                    </div>
+
+                    <div class="vs-badge">VS</div>
+
+                    <div class="vs-side vs-right" onclick="openModal('act2-micro')">
+                        <h3 style="color: var(--accent-blue); border: none;">TEAM MICROSERVICES</h3>
+                        <i class="fas fa-network-wired" style="font-size: 3rem; color: var(--accent-blue); margin: 1rem 0;"></i>
+                        <ul style="text-align: left; list-style: none;">
+                            <li>✅ Scale ง่าย (Future Proof)</li>
+                            <li>✅ Team Autonomy</li>
+                            <li>✅ Fault Isolation (ระบบไม่ล่มทั้งหมด)</li>
+                            <li>✅ Tech Freedom</li>
+                        </ul>
+                    </div>
+                </div>
+                <p style="text-align:center; color: var(--text-muted); margin-top: 1rem;"><i class="fas fa-hand-pointer"></i> คลิกที่แต่ละฝั่งเพื่อดู Diagram เปรียบเทียบ</p>
+            </div>
+
+            <div class="timer-sidebar">
+                <h3><i class="fas fa-hourglass-half"></i> เวลาที่เหลือ</h3>
+                <div class="timer-display" id="timer2">45:00</div>
+                <div class="timer-controls">
+                    <button class="btn btn-start" onclick="startTimer(2, 45)"><i class="fas fa-play"></i></button>
+                    <button class="btn btn-pause" onclick="pauseTimer(2)"><i class="fas fa-pause"></i></button>
+                    <button class="btn btn-reset" onclick="resetTimer(2, 45)"><i class="fas fa-redo"></i></button>
+                </div>
+            </div>
+        </section>
+
+        <section id="act3" class="slide-section">
+            <div class="content-area">
+                <h2>Activity 3: Event-Driven Design</h2>
+                <p class="description">Scenario: Task Assignment & Notification (คลิกการ์ดด้านล่างเพื่อดูตัวอย่าง)</p>
+
+                <div class="flow-diagram">
+                    <div class="flow-box">
+                        <i class="fas fa-user-edit" style="color: var(--accent-blue);"></i><br>
+                        <strong>Task Service</strong><br>
+                        <small>Publish Event</small>
+                    </div>
+                    <div class="flow-arrow"><i class="fas fa-long-arrow-alt-right"></i></div>
+                    <div class="flow-box" style="border-color: var(--accent-green);">
+                        <i class="fas fa-envelope-open-text" style="color: var(--accent-green);"></i><br>
+                        <strong>Message Broker</strong><br>
+                        <small>(Kafka/RabbitMQ)</small>
+                    </div>
+                    <div class="flow-arrow"><i class="fas fa-long-arrow-alt-right"></i></div>
+                    <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                        <div class="flow-box" style="border-color: var(--accent-purple); width: 120px;">Email Svc</div>
+                        <div class="flow-box" style="border-color: var(--accent-purple); width: 120px;">Push Notif</div>
+                    </div>
+                </div>
+
+                <div class="card-grid">
+                    <div class="info-card" onclick="openModal('act3-events')">
+                        <i class="fas fa-bolt"></i>
+                        <h4>1. Identify Events</h4>
+                        <p><code>TaskCreated</code>, <code>TaskAssigned</code></p>
+                    </div>
+                    <div class="info-card" onclick="openModal('act3-flow')">
+                        <i class="fas fa-stream"></i>
+                        <h4>2. Event Flow</h4>
+                        <p>Producer -> Broker -> Consumer</p>
+                    </div>
+                    <div class="info-card" onclick="openModal('act3-fail')">
+                        <i class="fas fa-shield-alt"></i>
+                        <h4>3. Failure Handling</h4>
+                        <p>Retry & Dead Letter Queue</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="timer-sidebar">
+                <h3><i class="fas fa-hourglass-half"></i> เวลาที่เหลือ</h3>
+                <div class="timer-display" id="timer3">45:00</div>
+                <div class="timer-controls">
+                    <button class="btn btn-start" onclick="startTimer(3, 45)"><i class="fas fa-play"></i></button>
+                    <button class="btn btn-pause" onclick="pauseTimer(3)"><i class="fas fa-pause"></i></button>
+                    <button class="btn btn-reset" onclick="resetTimer(3, 45)"><i class="fas fa-redo"></i></button>
+                </div>
+            </div>
+        </section>
+
+        <section id="summary" class="slide-section full-width">
+            <div class="content-area" style="max-width: 900px; margin: 0 auto;">
+                <h2>สรุปผลกิจกรรม</h2>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+                    <div>
+                        <h3>Key Takeaways</h3>
+                        <ul style="line-height: 1.8; font-size: 1.1rem; margin-top: 1rem;">
+                            <li><i class="fas fa-check-circle" style="color: var(--accent-green);"></i> <strong>No Silver Bullet:</strong> ไม่มี Architecture ที่ดีที่สุด มีแต่ที่เหมาะสมที่สุด</li>
+                            <li><i class="fas fa-check-circle" style="color: var(--accent-green);"></i> <strong>Evolution:</strong> เริ่มจาก Monolith แล้วค่อย Evolve ไป Microservices ได้</li>
+                            <li><i class="fas fa-check-circle" style="color: var(--accent-green);"></i> <strong>Async is Powerful:</strong> การใช้ Event ช่วยลด Coupling และเพิ่ม Scalability</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h3>สิ่งที่ต้องส่ง (Deliverables)</h3>
+                        <table class="summary-table">
+                            <tr><td>1. Architecture Diagram</td><td>PDF/PNG</td></tr>
+                            <tr><td>2. Service Description</td><td>Excel/Sheet</td></tr>
+                            <tr><td>3. Event Flow Diagram</td><td>PDF/PNG</td></tr>
+                            <tr><td>4. Trade-offs Analysis</td><td>1-2 Pages</td></tr>
+                        </table>
+                    </div>
+                </div>
+                <div style="margin-top: 3rem; background: linear-gradient(90deg, #1e293b, #0f172a); padding: 2rem; border-radius: 12px; border: 1px solid var(--accent-blue); text-align: center;">
+                    <h3 style="border:none; color: var(--text-main);">📝 การบ้าน: Extend Task Board with "Team Chat"</h3>
+                    <p style="color: var(--text-muted); margin-bottom: 1rem;">ออกแบบ Chat Service, Real-time WebSocket, และ API Design</p>
+
+                    <a href="lab.md" target="_blank" class="btn btn-start" style="background: var(--accent-blue); color: white; text-decoration: none; display: inline-block;">
+                        <i class="fas fa-file-download"></i> Download Lab Sheet
+                    </a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <div id="modalOverlay" class="modal-overlay" onclick="closeModal(event)">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeModal(event, true)">&times;</button>
+            <h2 id="modalTitle" style="font-size: 2rem; margin-bottom: 1rem;">Modal Title</h2>
+            
+            <div class="modal-img-placeholder" id="modalImgContainer">
+                <i class="fas fa-image" style="font-size: 3rem; margin-bottom: 1rem; color: var(--accent-blue);"></i>
+                <p id="modalImgText" style="font-weight:bold;">Diagram Title</p>
+                <p style="font-size:0.8rem; opacity: 0.6;">(Insert Draw.io Image Here)</p>
+            </div>
+
+            <div id="modalDesc" style="font-size: 1.1rem; line-height: 1.6; color: var(--text-muted); margin-top: 1.5rem;">
+                </div>
+        </div>
+    </div>
+
+    <script>
+        // --- DATA CONTENT FOR MODALS ---
+        const modalData = {
+            'act1-step1': {
+                title: 'Step 1: Services & Bounded Context',
+                desc: `การแบ่ง Service ตามหน้าที่ (Single Responsibility) โดยยึดหลัก Bounded Context ของ Domain-Driven Design:<br><br>
+                       <ul style="margin-left: 20px;">
+                        <li><b>User Service:</b> จัดการข้อมูลผู้ใช้, Authentication, Authorization</li>
+                        <li><b>Board Service:</b> จัดการ Project Board, สมาชิกทีม</li>
+                        <li><b>Task Service:</b> จัดการงาน, สถานะ (Todo/Doing/Done), Due Date</li>
+                        <li><b>Notification Service:</b> จัดการการส่งแจ้งเตือน (Email, Push)</li>
+                       </ul>`,
+                imgText: 'Diagram: Bounded Contexts'
+            },
+            'act1-step2': {
+                title: 'Step 2: Architecture Overview',
+                desc: `ภาพรวมของระบบที่แสดงการเชื่อมต่อตั้งแต่ Client ไปจนถึง Database:<br><br>
+                       <ul style="margin-left: 20px;">
+                        <li><b>API Gateway:</b> จุดเข้าเดียว (Single Entry Point) จัดการ Routing และ Rate Limiting</li>
+                        <li><b>Database per Service:</b> แต่ละ Service มีฐานข้อมูลของตัวเอง ห้ามข้ามไปใช้ของคนอื่น</li>
+                        <li><b>Message Bus:</b> สำหรับการสื่อสารแบบ Asynchronous</li>
+                       </ul>`,
+                imgText: 'Diagram: High-Level Architecture'
+            },
+            'act1-step3': {
+                title: 'Step 3: Sync vs Async Communication',
+                desc: `การเลือกรูปแบบการสื่อสารให้เหมาะสม:<br><br>
+                       <b>1. Synchronous (REST API):</b><br>
+                       ใช้เมื่อต้องการผลลัพธ์ทันที เช่น Login, โหลดหน้า Board<br><br>
+                       <b>2. Asynchronous (Message Queue):</b><br>
+                       ใช้เมื่อไม่ต้องรอผลลัพธ์ทันที หรือต้องการทำงานเบื้องหลัง เช่น ส่งอีเมล, สร้าง Report, อัปเดต Analytics`,
+                imgText: 'Diagram: Sync vs Async Flow'
+            },
+            'act2-mono': {
+                title: 'Team Monolith (The Case for Monolith)',
+                desc: `ทำไม Monolith ถึงดีกว่าสำหรับ Startup?<br><br>
+                       <b>1. Simplicity:</b> โค้ดอยู่ที่เดียว Deploy ง่าย Test ง่าย<br>
+                       <b>2. No Network Latency:</b> การเรียกฟังก์ชันภายในเร็วกว่าการยิง API ข้าม Service<br>
+                       <b>3. Cost Effective:</b> ไม่ต้องเสียค่า Server หลายตัว ไม่ต้องจ้าง DevOps<br>
+                       <b>4. Transaction Safety:</b> จัดการ ACID Transaction ได้ง่ายใน Database เดียว`,
+                imgText: 'Diagram: Monolith Architecture'
+            },
+            'act2-micro': {
+                title: 'Team Microservices (The Case for Scale)',
+                desc: `ทำไมต้อง Microservices?<br><br>
+                       <b>1. Scalability:</b> เลือก Scale เฉพาะ Service ที่ทำงานหนักได้ (เช่น Scale Task Service แต่ไม่ Scale User Service)<br>
+                       <b>2. Fault Isolation:</b> ถ้า Service หนึ่งพัง ระบบอื่นยังทำงานต่อได้<br>
+                       <b>3. Technology Freedom:</b> เลือกภาษาที่เหมาะกับงาน (เช่น Python สำหรับ Analytics, Go สำหรับ High Performance)<br>
+                       <b>4. Team Autonomy:</b> แบ่งทีมดูแลแยก Service ได้ชัดเจน`,
+                imgText: 'Diagram: Microservices Architecture'
+            },
+            'act3-events': {
+                title: '1. Identify Domain Events',
+                desc: `Event คือ "สิ่งที่เกิดขึ้นแล้ว" (Fact) ในระบบ ตั้งชื่อเป็นอดีตเสมอ:<br><br>
+                       <b>TaskCreated:</b> { taskId: '1', title: 'Fix Bug', createdBy: 'user1' }<br>
+                       <b>TaskAssigned:</b> { taskId: '1', assignedTo: 'user2', timestamp: '...' }<br><br>
+                       Event เหล่านี้จะถูกส่งไปที่ Message Broker เพื่อให้ Service อื่นๆ (เช่น Notification) นำไปใช้`,
+                imgText: 'Diagram: Event Payload Structure'
+            },
+            'act3-flow': {
+                title: '2. Event Flow (Pub/Sub)',
+                desc: `กระบวนการไหลของข้อมูลแบบ Publisher/Subscriber:<br><br>
+                       1. <b>Task Service (Publisher)</b> สร้าง Event เมื่อมีการเปลี่ยนแปลง<br>
+                       2. ส่ง Event ไปยัง <b>Message Broker (Kafka/RabbitMQ)</b><br>
+                       3. <b>Email Service & Notification Service (Subscribers)</b> รอรับ Event แล้วทำงานของตัวเอง<br>
+                       *ข้อดี: Task Service ไม่ต้องรู้จัก Email Service (Decoupled)*`,
+                imgText: 'Diagram: Pub/Sub Flow'
+            },
+            'act3-fail': {
+                title: '3. Failure Handling',
+                desc: `จะทำอย่างไรถ้า Consumer ทำงานล้มเหลว?<br><br>
+                       <b>Retry Mechanism:</b> ลองทำซ้ำ 3 ครั้ง (Exponential Backoff)<br>
+                       <b>Dead Letter Queue (DLQ):</b> ถ้าทำซ้ำแล้วยังไม่ได้ ให้ย้าย Message ไปเก็บไว้ในคิวพิเศษเพื่อรอคนมาตรวจสอบ<br>
+                       <b>Idempotency:</b> ออกแบบให้รับ Event เดิมซ้ำได้โดยไม่เกิดผลเสีย`,
+                imgText: 'Diagram: Retry & DLQ Logic'
+            }
+        };
+
+        // --- MODAL FUNCTIONS ---
+        function openModal(id) {
+            const data = modalData[id];
+            if(!data) return;
+
+            document.getElementById('modalTitle').innerHTML = data.title;
+            document.getElementById('modalDesc').innerHTML = data.desc;
+            document.getElementById('modalImgText').innerText = data.imgText;
+            
+            // In production, you would check if an image exists and set the src
+            // document.getElementById('modalImg').src = `images/${id}.png`;
+
+            document.getElementById('modalOverlay').style.display = 'flex';
+        }
+
+        function closeModal(e, force = false) {
+            if (force || e.target.classList.contains('modal-overlay')) {
+                document.getElementById('modalOverlay').style.display = 'none';
+            }
+        }
+
+        // --- TAB & TIMER FUNCTIONS ---
+        function switchTab(tabId) {
+            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+            document.querySelectorAll('.slide-section').forEach(section => section.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+        }
+
+        let timers = {
+            1: { time: 60 * 60, interval: null },
+            2: { time: 45 * 60, interval: null },
+            3: { time: 45 * 60, interval: null }
+        };
+
+        function formatTime(seconds) {
+            const m = Math.floor(seconds / 60);
+            const s = seconds % 60;
+            return `${m < 10 ? '0' : ''}${m}:${s < 10 ? '0' : ''}${s}`;
+        }
+
+        function updateDisplay(id) {
+            const display = document.getElementById(`timer${id}`);
+            const time = timers[id].time;
+            display.textContent = formatTime(time);
+            display.style.color = time < 300 ? 'var(--accent-red)' : 'var(--accent-green)';
+        }
+
+        function startTimer(id, minutes) {
+            if (timers[id].interval) return;
+            timers[id].interval = setInterval(() => {
+                if (timers[id].time > 0) {
+                    timers[id].time--;
+                    updateDisplay(id);
+                } else {
+                    clearInterval(timers[id].interval);
+                    timers[id].interval = null;
+                    alert(`หมดเวลา Activity ${id} แล้ว!`);
+                }
+            }, 1000);
+        }
+
+        function pauseTimer(id) {
+            clearInterval(timers[id].interval);
+            timers[id].interval = null;
+        }
+
+        function resetTimer(id, minutes) {
+            pauseTimer(id);
+            timers[id].time = minutes * 60;
+            updateDisplay(id);
+        }
+
+        updateDisplay(1);
+        updateDisplay(2);
+        updateDisplay(3);
+    </script>
+</body>
+</html>

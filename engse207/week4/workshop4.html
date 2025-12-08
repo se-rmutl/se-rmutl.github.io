@@ -1,0 +1,1472 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <title>ENGSE207 Workshop – Microservices Design & Mini-Debate</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;600;700&family=Prompt:wght@300;400;600&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg: radial-gradient(circle at top left, #1e293b 0%, #020617 55%, #000000 100%);
+            --card-bg: rgba(15, 23, 42, 0.92);
+            --card-soft: rgba(15, 23, 42, 0.8);
+            --accent: #38bdf8;
+            --accent-soft: rgba(56, 189, 248, 0.16);
+            --accent-2: #f97316;
+            --text-main: #e5e7eb;
+            --text-muted: #9ca3af;
+            --danger: #f97373;
+            --success: #4ade80;
+            --warning: #facc15;
+            --border-subtle: rgba(148, 163, 184, 0.4);
+            --shadow-strong: 0 22px 60px rgba(15, 23, 42, 0.9);
+            --radius-lg: 20px;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: "Prompt", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            color: var(--text-main);
+            background: var(--bg);
+            display: flex;
+            align-items: stretch;
+            justify-content: center;
+            padding: 16px;
+        }
+
+        .app {
+            width: 100%;
+            max-width: 1280px;
+            background: linear-gradient(135deg, rgba(15,23,42,0.98), rgba(15,23,42,0.96));
+            border-radius: 24px;
+            box-shadow: var(--shadow-strong);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            border: 1px solid rgba(148, 163, 184, 0.35);
+            position: relative;
+        }
+
+        /* top header */
+        .app-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 22px 10px;
+            border-bottom: 1px solid rgba(148,163,184,0.3);
+            background: radial-gradient(circle at top left, rgba(56,189,248,0.24), transparent 55%);
+        }
+
+        .course-info {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .course-code {
+            font-family: "Chakra Petch", monospace;
+            font-size: 13px;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+            color: var(--accent);
+        }
+
+        .course-title {
+            font-family: "Chakra Petch", sans-serif;
+            font-size: 18px;
+            font-weight: 700;
+        }
+
+        .course-subtitle {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .pill {
+            padding: 4px 10px;
+            border-radius: 999px;
+            font-size: 11px;
+            border: 1px solid rgba(148,163,184,0.5);
+            color: var(--text-muted);
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: radial-gradient(circle at top left, rgba(15,23,42,0.2), rgba(15,23,42,0.9));
+        }
+
+        .pill span.icon {
+            font-size: 13px;
+        }
+
+        .slide-counter {
+            font-family: "Chakra Petch", monospace;
+            font-size: 12px;
+            padding: 4px 9px;
+            border-radius: 999px;
+            background: rgba(30,64,175,0.7);
+            border: 1px solid rgba(129,140,248,0.7);
+        }
+
+        /* layout: content + timer / nav */
+        .app-main {
+            display: grid;
+            grid-template-columns: 2.4fr 1.1fr;
+            gap: 12px;
+            padding: 16px 20px 12px;
+        }
+
+        @media (max-width: 900px) {
+            .app-main {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .slides-panel {
+            background: radial-gradient(circle at top left, rgba(15,23,42,0.9), rgba(15,23,42,0.95));
+            border-radius: var(--radius-lg);
+            border: 1px solid rgba(75,85,99,0.6);
+            padding: 14px 16px 12px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .slides-viewport {
+            position: relative;
+            min-height: 340px;
+        }
+
+        .slide {
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            pointer-events: none;
+            transform: translateX(20px);
+            transition: opacity 0.25s ease, transform 0.25s ease;
+            padding-right: 4px;
+            overflow-y: auto;
+        }
+
+        .slide.active {
+            opacity: 1;
+            pointer-events: auto;
+            transform: translateX(0);
+        }
+
+        .slide-title-row {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: baseline;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+
+        .slide-kicker {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: .14em;
+            color: var(--accent);
+            font-family: "Chakra Petch", monospace;
+        }
+
+        .slide-title {
+            font-family: "Chakra Petch", sans-serif;
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        .time-chip {
+            padding: 3px 10px;
+            border-radius: 999px;
+            font-size: 11px;
+            background: rgba(250,204,21,0.12);
+            border: 1px solid rgba(250,204,21,0.7);
+            color: #facc15;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .slide-lead {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-bottom: 10px;
+        }
+
+        .infographic-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0,1fr));
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+
+        @media (max-width: 720px) {
+            .infographic-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .info-card {
+            background: linear-gradient(135deg, rgba(15,23,42,0.96), rgba(15,23,42,0.88));
+            border-radius: 14px;
+            border: 1px solid rgba(55,65,81,0.7);
+            padding: 10px 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .info-card::before {
+            content: "";
+            position: absolute;
+            inset: -60%;
+            background: radial-gradient(circle at top left, rgba(56,189,248,0.06), transparent 60%);
+            opacity: 0.9;
+            pointer-events: none;
+        }
+
+        .info-card-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            z-index: 1;
+        }
+
+        .info-icon {
+            width: 26px;
+            height: 26px;
+            border-radius: 999px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 15px;
+            background: rgba(15,23,42,0.96);
+            border: 1px solid rgba(148,163,184,0.7);
+        }
+
+        .info-title {
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .info-body {
+            font-size: 12px;
+            color: var(--text-muted);
+            z-index: 1;
+        }
+
+        .info-list {
+            margin: 4px 0 0;
+            padding-left: 18px;
+            font-size: 12px;
+        }
+
+        .info-list li {
+            margin-bottom: 2px;
+        }
+
+        .tag-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 4px;
+        }
+
+        .tag {
+            font-size: 10px;
+            padding: 2px 7px;
+            border-radius: 999px;
+            border: 1px solid rgba(148,163,184,0.6);
+            color: var(--text-muted);
+        }
+
+        .highlight {
+            color: var(--accent);
+            font-weight: 500;
+        }
+
+        .slide-footer-note {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 6px;
+            border-top: 1px dashed rgba(75,85,99,0.8);
+            padding-top: 6px;
+        }
+
+        /* timer + nav panel */
+        .side-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .timer-card {
+            background: radial-gradient(circle at top left, rgba(56,189,248,0.22), rgba(15,23,42,0.98));
+            border-radius: var(--radius-lg);
+            border: 1px solid rgba(56,189,248,0.5);
+            padding: 12px 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .timer-label {
+            font-size: 11px;
+            letter-spacing: .14em;
+            text-transform: uppercase;
+            color: #bae6fd;
+            font-family: "Chakra Petch", monospace;
+        }
+
+        .timer-activity {
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .timer-display {
+            font-family: "Chakra Petch", monospace;
+            font-size: 32px;
+            font-weight: 700;
+            letter-spacing: 0.12em;
+            margin-top: 4px;
+        }
+
+        .timer-display.done {
+            color: var(--danger);
+        }
+
+        .timer-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        .timer-meta span {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .timer-buttons {
+            display: flex;
+            gap: 6px;
+            margin-top: 6px;
+        }
+
+        .btn {
+            flex: 1;
+            border-radius: 999px;
+            border: none;
+            font-size: 12px;
+            padding: 6px 8px;
+            cursor: pointer;
+            font-family: inherit;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            transition: transform 0.08s ease, box-shadow 0.12s ease, background 0.12s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #22c55e, #16a34a);
+            color: #ecfdf5;
+            box-shadow: 0 0 0 1px rgba(22,163,74,0.6), 0 10px 18px rgba(22,163,74,0.45);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 12px 20px rgba(22,163,74,0.55);
+        }
+
+        .btn-ghost {
+            background: rgba(15,23,42,0.9);
+            color: var(--text-main);
+            border: 1px solid rgba(148,163,184,0.7);
+        }
+
+        .btn-ghost:hover {
+            background: rgba(31,41,55,0.9);
+        }
+
+        .btn-small {
+            font-size: 11px;
+            padding: 4px 7px;
+        }
+
+        /* nav bar */
+        .nav-card {
+            background: var(--card-soft);
+            border-radius: var(--radius-lg);
+            border: 1px solid rgba(55,65,81,0.9);
+            padding: 8px 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .nav-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .nav-row-main {
+            justify-content: space-between;
+        }
+
+        .dots {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+        }
+
+        .dot {
+            width: 14px;
+            height: 14px;
+            border-radius: 999px;
+            border: 1px solid rgba(148,163,184,0.7);
+            background: transparent;
+            cursor: pointer;
+            padding: 0;
+        }
+
+        .dot.active {
+            background: var(--accent);
+            border-color: #e0f2fe;
+            box-shadow: 0 0 0 2px rgba(56,189,248,0.4);
+        }
+
+        .nav-btn {
+            min-width: 72px;
+        }
+
+        .shortcut-hint {
+            font-size: 10px;
+            color: var(--text-muted);
+        }
+
+        .legend-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .legend-item {
+            font-size: 10px;
+            color: var(--text-muted);
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .legend-badge {
+            width: 10px;
+            height: 10px;
+            border-radius: 999px;
+        }
+
+        .legend-badge.intro { background: #38bdf8; }
+        .legend-badge.a1 { background: #22c55e; }
+        .legend-badge.a2 { background: #f97316; }
+        .legend-badge.a3 { background: #eab308; }
+        .legend-badge.wrap { background: #a855f7; }
+
+        /* scrollbars */
+        .slide::-webkit-scrollbar {
+            width: 6px;
+        }
+        .slide::-webkit-scrollbar-thumb {
+            background: rgba(75,85,99,0.9);
+            border-radius: 999px;
+        }
+    </style>
+</head>
+
+<body>
+<div class="app">
+    <header class="app-header">
+        <div class="course-info">
+            <div class="course-code">ENGSE207 · SOFTWARE ARCHITECTURE</div>
+            <div class="course-title">Workshop Week 4: Microservices Design & Mini-Debate</div>
+            <div class="course-subtitle">Task Board System · Monolith vs Microservices · Event-Driven Design</div>
+        </div>
+        <div class="header-right">
+            <div class="pill">
+                <span class="icon">⏱</span><span>รวมเวลา Workshop 3 ชั่วโมง</span>
+            </div>
+            <div class="slide-counter" id="slideCounter">Slide 1 / 15</div>
+        </div>
+    </header>
+
+    <main class="app-main">
+        <!-- Slides -->
+        <section class="slides-panel">
+            <div class="slides-viewport">
+
+                <!-- Slide 0: Intro -->
+                <section class="slide active"
+                         data-index="0"
+                         data-title="Intro & แบ่งกลุ่ม"
+                         data-duration="900"
+                         data-track="intro">
+                    <div class="slide-title-row">
+                        <div class="slide-kicker">START</div>
+                        <div class="slide-title">ภาพรวม Workshop & การแบ่งกลุ่ม</div>
+                        <span class="time-chip">⏱ 15 นาทีแรกของคลาส</span>
+                    </div>
+                    <p class="slide-lead">
+                        วันนี้เราจะลอง <span class="highlight">“เล่นบทสถาปนิกซอฟต์แวร์”</span>
+                        ออกแบบระบบ Task Board แบบ Microservices + Debate + Event-Driven Design.
+                    </p>
+
+                    <div class="infographic-grid">
+                        <article class="info-card">
+                            <div class="info-card-header">
+                                <div class="info-icon">🎯</div>
+                                <div class="info-title">เป้าหมายหลักของ Workshop</div>
+                            </div>
+                            <div class="info-body">
+                                <ul class="info-list">
+                                    <li>ออกแบบระบบด้วย <span class="highlight">Microservices Architecture</span> ระดับ overview</li>
+                                    <li>เข้าใจ <span class="highlight">Bounded Context & Service</span> ที่เหมาะสม</li>
+                                    <li>ฝึกออกแบบการสื่อสาร <span class="highlight">Sync / Async / Event-Driven</span></li>
+                                    <li>ฝึก <span class="highlight">Mini-Debate</span> วิเคราะห์ Monolith vs Microservices</li>
+                                </ul>
+                            </div>
+                        </article>
+
+                        <article class="info-card">
+                            <div class="info-card-header">
+                                <div class="info-icon">👥</div>
+                                <div class="info-title">สิ่งที่ทำใน 15 นาทีนี้</div>
+                            </div>
+                            <div class="info-body">
+                                <ul class="info-list">
+                                    <li>อาจารย์อธิบายภาพรวม Workshop & กติกา</li>
+                                    <li>แบ่งกลุ่มละ 4–5 คน (ผสมความถนัดให้หลากหลาย)</li>
+                                    <li>เลือก <span class="highlight">“หัวหน้าสถาปนิก”</span> สำหรับกลุ่มละ 1 คน</li>
+                                    <li>เช็คเครื่องมือ: กระดาษ/ปากกา หรือ Draw.io / FigJam พร้อมใช้งาน</li>
+                                </ul>
+                                <div class="tag-row">
+                                    <span class="tag">Ice-breaking</span>
+                                    <span class="tag">ตั้งทีม</span>
+                                    <span class="tag">เตรียม mindset</span>
+                                </div>
+                            </div>
+                        </article>
+                    </div>
+
+                    <p class="slide-footer-note">
+                        TIP: ให้แต่ละกลุ่มคิดชื่อทีมของตัวเอง (เท่ ๆ หน่อย) แล้วเขียนไว้มุมกระดาษหรือบอร์ด
+                    </p>
+                </section>
+
+                <!-- Slide 1: Activity 1 Step 1 -->
+                <section class="slide"
+                         data-index="1"
+                         data-title="Activity 1 – Step 1: Bounded Context"
+                         data-duration="900"
+                         data-track="a1">
+                    <div class="slide-title-row">
+                        <div class="slide-kicker">ACTIVITY 1 · STEP 1</div>
+                        <div class="slide-title">Identify Bounded Contexts & Candidate Services</div>
+                        <span class="time-chip">⏱ 15 นาที</span>
+                    </div>
+                    <p class="slide-lead">
+                        โฟกัสเรื่องการแบ่งระบบ Task Board ออกเป็นบริการย่อย ๆ ที่ชัดเจน
+                        <span class="highlight">“Service นี้รับผิดชอบ business อะไร?”</span>
+                    </p>
+
+                    <div class="infographic-grid">
+                        <article class="info-card">
+                            <div class="info-card-header">
+                                <div class="info-icon">🧩</div>
+                                <div class="info-title">โจทย์ Task Board System</div>
+                            </div>
+                            <div class="info-body">
+                                <ul class="info-list">
+                                    <li>User Management – สมัคร/ล็อกอิน, โปรไฟล์, สิทธิ์</li>
+                                    <li>Board Management – สร้างบอร์ด, เชิญสมาชิก, Permission</li>
+                                    <li>Task Management – Task, Status, Due Date, Priority, Comment</li>
+                                    <li>Notification – แจ้งเตือน Assign, Mention, ใกล้ deadline</li>
+                                    <li>Analytics – Dashboard, Progress, Time Tracking</li>
+                                </ul>
+                            </div>
+                        </article>
+
+                        <article class="info-card">
+                            <div class="info-card-header">
+                                <div class="info-icon">🧠</div>
+                                <div class="info-title">สิ่งที่กลุ่มต้องทำ</div>
+                            </div>
+                            <div class="info-body">
+                                <ol class="info-list">
+                                    <li>อ่านโจทย์อย่างรวดเร็วร่วมกันในกลุ่ม</li>
+                                    <li>เสนอชื่อ Candidate Services อย่างน้อย 5 ตัว เช่น User, Board, Task, Comment, Notification, Analytics</li>
+                                    <li>สำหรับแต่ละ Service ให้เขียน
+                                        <span class="highlight">“Responsibility หนึ่งบรรทัด”</span>
+                                    </li>
+                                </ol>
+                                <div class="tag-row">
+                                    <span class="tag">Domain-Driven</span>
+                                    <span class="tag">Single Responsibility</span>
+                                </div>
+                            </div>
+                        </article>
+                    </div>
+
+                    <p class="slide-footer-note">
+                        เป้าหมายของ Step นี้: ได้รายการ Service ที่คิดว่าจำเป็น โดยยังไม่ลงลึกเทคโนโลยี
+                    </p>
+                </section>
+
+                <!-- Slide 2: Activity 1 Step 2 -->
+                <section class="slide"
+                         data-index="2"
+                         data-title="Activity 1 – Step 2: Architecture Diagram"
+                         data-duration="1500"
+                         data-track="a1">
+                    <div class="slide-title-row">
+                        <div class="slide-kicker">ACTIVITY 1 · STEP 2</div>
+                        <div class="slide-title">วาด High-Level Microservices Architecture</div>
+                        <span class="time-chip">⏱ 25 นาที</span>
+                    </div>
+                    <p class="slide-lead">
+                        เปลี่ยนจากลิสต์ Service ให้กลายเป็น <span class="highlight">ภาพรวมสถาปัตยกรรม</span>
+                        ที่เห็น Client, API Gateway, Services, DB และ Message Bus ชัดเจน
+                    </p>
+
+                    <div class="infographic-grid">
+                        <article class="info-card">
+                            <div class="info-card-header">
+                                <div class="info-icon">📐</div>
+                                <div class="info-title">องค์ประกอบที่ต้องมีในแผนภาพ</div>
+                            </div>
+                            <div class="info-body">
+                                <ul class="info-list">
+                                    <li>Web / Mobile Client</li>
+                                    <li>API Gateway (Single entry point)</li>
+                                    <li>Services แต่ละตัว พร้อม DB ของตัวเอง</li>
+                                    <li>Message Bus / Event Stream (เช่น Kafka / RabbitMQ)</li>
+                                    <li>External Services เช่น Email, Push Notification</li>
+                                </ul>
+                            </div>
+                        </article>
+
+                        <article class="info-card">
+                            <div class="info-card-header">
+                                <div class="info-icon">✏️</div>
+                                <div class="info-title">Checklist การวาด Diagram</div>
+                            </div>
+                            <div class="info-body">
+                                <ol class="info-list">
+                                    <li>ร่างกรอบใหญ่: Client → Gateway → Services → DB</li>
+                                    <li>วาง Service แต่ละตัวให้กลุ่มกันตาม Domain</li>
+                                    <li>วาด Message Bus และ Connect ไปยัง Service ที่ต้องใช้ Async</li>
+                                    <li>แปะ Legend เล็ก ๆ: REST = เส้นทึบ, Event = เส้นประ</li>
+                                </ol>
+                                <div class="tag-row">
+                                    <span class="tag">Draw.io / FigJam</span>
+                                    <span class="tag">Big Picture</span>
+                                </div>
+                            </div>
+                        </article>
+                    </div>
+
+                    <p class="slide-footer-note">
+                        อาจารย์สามารถเดินดูแต่ละกลุ่มและถามคำถามชวนคิด เช่น
+                        “Service ตัวนี้ล่มแล้วกระทบใครบ้าง?”
+                    </p>
+                </section>
+
+                <!-- Slide 3: Activity 1 Step 3 -->
+                <section class="slide"
+                         data-index="3"
+                         data-title="Activity 1 – Step 3: Communication Design"
+                         data-duration="900"
+                         data-track="a1">
+                    <div class="slide-title-row">
+                        <div class="slide-kicker">ACTIVITY 1 · STEP 3</div>
+                        <div class="slide-title">ออกแบบการสื่อสาร Sync vs Async</div>
+                        <span class="time-chip">⏱ 15 นาที</span>
+                    </div>
+                    <p class="slide-lead">
+                        เลือกให้ถูกว่ากรณีไหนต้องการตอบกลับทันที (Sync) และกรณีไหนใช้ Event (Async)
+                        เพื่อให้ระบบทั้งเร็วและยืดหยุ่น
+                    </p>
+
+                    <div class="infographic-grid">
+                        <article class="info-card">
+                            <div class="info-card-header">
+                                <div class="info-icon">⚡</div>
+                                <div class="info-title">เหมาะกับ Sync (REST)</div>
+                            </div>
+                            <div class="info-body">
+                                <ul class="info-list">
+                                    <li>Login / Authentication</li>
+                                    <li>ดึงข้อมูล Board / Task เพื่อแสดงหน้าจอ</li>
+                                    <li>สร้าง Task ใหม่ (ต้องรู้ว่า success หรือ fail)</li>
+                                </ul>
+                                <div class="tag-row">
+                                    <span class="tag">User-facing</span>
+                                    <span class="tag">ต้องการ response ทันที</span>
+                                </div>
+                            </div>
+                        </article>
+
+                        <article class="info-card">
+                            <div class="info-card-header">
+                                <div class="info-icon">📨</div>
+                                <div class="info-title">เหมาะกับ Async (Event)</div>
+                            </div>
+                            <div class="info-body">
+                                <ul class="info-list">
+                                    <li>TaskCreated → ส่ง Notification</li>
+                                    <li>TaskCompleted → Update Analytics</li>
+                                    <li>CommentAdded → อัปเดต Timeline</li>
+                                </ul>
+                                <p class="info-body">
+                                    วาดตารางเล็ก ๆ ว่าแต่ละ Scenario ใช้ Sync หรือ Async และใช้ Protocol อะไร (REST / Event)
+                                </p>
+                            </div>
+                        </article>
+                    </div>
+
+                    <p class="slide-footer-note">
+                        เป้าหมาย: แต่ละกลุ่มมี Communication Matrix คร่าว ๆ ว่า Service ไหนคุยกับใคร และแบบไหน
+                    </p>
+                </section>
+
+                <!-- Slide 4: Activity 1 Step 4 -->
+                <section class="slide"
+                         data-index="4"
+                         data-title="Activity 1 – Step 4: DB per Service"
+                         data-duration="300"
+                         data-track="a1">
+                    <div class="slide-title-row">
+                        <div class="slide-kicker">ACTIVITY 1 · STEP 4</div>
+                        <div class="slide-title">Database per Service & Trade-offs</div>
+                        <span class="time-chip">⏱ 5 นาที</span>
+                    </div>
+                    <p class="slide-lead">
+                        ย้ำแนวคิด <span class="highlight">“แต่ละ Service เป็นเจ้าของข้อมูลของตัวเอง”</span>
+                        และคุยสั้น ๆ ว่ามีข้อดี/ข้อท้าทายอะไรบ้าง
+                    </p>
+
+                    <div class="infographic-grid">
+                        <article class="info-card">
+                            <div class="info-card-header">
+                                <div class="info-icon">💾</div>
+                                <div class="info-title">ตัวอย่างการเลือกฐานข้อมูล</div>
+                            </div>
+                            <div class="info-body">
+                                <ul class="info-list">
+                                    <li>User Service → PostgreSQL (ACID & Authentication)</li>
+                                    <li>Board / Task Service → PostgreSQL</li>
+                                    <li>Comment Service → MongoDB (Flexible Schema)</li>
+                                    <li>Notification → Redis / Cache</li>
+                                    <li>Analytics → Data Warehouse / BigQuery</li>
+                                </ul>
+                            </div>
+                        </article>
+
+                        <article class="info-card">
+                            <div class="info-card-header">
+                                <div class="info-icon">⚖️</div>
+                                <div class="info-title">Trade-offs ที่น่าคุยในกลุ่ม</div>
+                            </div>
+                            <div class="info-body">
+                                <ul class="info-list">
+                                    <li>Pros: เลือก DB ให้เหมาะกับงาน, scale แยก, เปลี่ยน schema ได้อิสระ</li>
+                                    <li>Cons: JOIN ข้าม Service ไม่ได้, Consistency กลายเป็น Eventual</li>
+                                </ul>
+                            </div>
+                        </article>
+                    </div>
+
+                    <p class="slide-footer-note">
+                        จบ Activity 1: ให้แต่ละกลุ่มเตรียม Diagram & ตารางสั้น ๆ ไว้ใช้ต่อใน Debate และการบ้าน
+                    </p>
+                </section>
+
+                <!-- Slide 5: Activity 2 Prep -->
+                <section class="slide"
+                         data-index="5"
+                         data-title="Activity 2 – เตรียม Debate"
+                         data-duration="600"
+                         data-track="a2">
+                    <div class="slide-title-row">
+                        <div class="slide-kicker">ACTIVITY 2 · PREP</div>
+                        <div class="slide-title">Mini-Debate Setup: Monolith vs Microservices</div>
+                        <span class="time-chip">⏱ 10 นาที</span>
+                    </div>
+                    <p class="slide-lead">
+                        เปลี่ยนอารมณ์จากการวาดแผนภาพ มาเป็น <span class="highlight">ดีเบตเชิงสถาปัตยกรรม</span>
+                        ว่าแบบไหนเหมาะกับ Startup E-Commerce MVP.
+                    </p>
+
+                    <div class="infographic-grid">
+                        <article class="info-card">
+                            <div class="info-card-header">
+                                <div class="info-icon">⚔️</div>
+                                <div class="info-title">แบ่งฝ่าย</div>
+                            </div>
+                            <div class="info-body">
+                                <ul class="info-list">
+                                    <li>ฝ่าย A: <strong>“Monolithic is Better!”</strong></li>
+                                    <li>ฝ่าย B: <strong>“Microservices is the Future!”</strong></li>
+                                    <li>แต่ละฝ่ายเลือกตัวแทนพูด 2–3 คน</li>
+                                </ul>
+                            </div>
+                        </article>
+
+                        <article class="info-card">
+                            <div class="info-card-header">
+                                <div class="info-icon">🧾</div>
+                                <div class="info-title">โจทย์สถานการณ์เดียวกัน</div>
+                            </div>
+                            <div class="info-body">
+                                <ul class="info-list">
+                                    <li>Budget ~ 2 ล้านบาท</li>
+                                    <li>ทีม Dev 5 คน</li>
+                                    <li>ต้อง Launch MVP ภายใน 3 เดือน</li>
+                                </ul>
+                                <p class="info-body">
+                                    ให้แต่ละฝ่ายเตรียม Argument หลักและตัวอย่างบริษัทจริงภายในเวลา 10 นาทีนี้
+                                </p>
+                            </div>
+                        </article>
+                    </div>
+                </section>
+
+                <!-- Slide 6: Activity 2 Opening -->
+                <section class="slide"
+                         data-index="6"
+                         data-title="Activity 2 – Opening Statements"
+                         data-duration="600"
+                         data-track="a2">
+                    <div class="slide-title-row">
+                        <div class="slide-kicker">ACTIVITY 2 · ROUND 1</div>
+                        <div class="slide-title">Opening Statement ทั้งสองฝ่าย</div>
+                        <span class="time-chip">⏱ 10 นาที (ฝ่ายละ 5 นาที)</span>
+                    </div>
+                    <p class="slide-lead">
+                        แต่ละฝ่ายนำเสนอภาพใหญ่ของตัวเองว่า
+                        <span class="highlight">“ทำไมสถาปัตยกรรมที่เราเลือกจึงเหมาะกับโจทย์นี้”</span>
+                    </p>
+
+                    <div class="infographic-grid">
+                        <article class="info-card">
+                            <div class="info-card-header">
+                                <div class="info-icon">🧱</div>
+                                <div class="info-title">ฝ่าย A – Monolithic ที่ดี</div>
+                            </div>
+                            <div class="info-body">
+                                <ul class="info-list">
+                                    <li>Time-to-Market เร็ว, Deploy ง่าย</li>
+                                    <li>ต้นทุน infra และ DevOps ต่ำ</li>
+                                    <li>เหมาะกับ MVP ที่ยังไม่รู้ feature ที่แท้จริง</li>
+                                </ul>
+                            </div>
+                        </article>
+
+                        <article class="info-card">
+                            <div class="info-card-header">
+                                <div class="info-icon">🧬</div>
+                                <div class="info-title">ฝ่าย B – Microservices ที่ยืดหยุ่น</div>
+                            </div>
+                            <div class="info-body">
+                                <ul class="info-list">
+                                    <li>เตรียมพร้อมสำหรับการ scale ในอนาคต</li>
+                                    <li>ทีมแยกรับผิดชอบ service ตัวเองได้อิสระ</li>
+                                    <li>Fault isolation & Technology freedom</li>
+                                </ul>
+                            </div>
+                        </article>
+                    </div>
+                    <p class="slide-footer-note">
+                        อาจารย์จับเวลาให้เคร่งครัด: ฝ่ายละ 5 นาที – จบแล้วเปลี่ยนทันที
+                    </p>
+                </section>
+
+                <!-- Slide 7: Activity 2 Rebuttal -->
+                <section class="slide"
+                         data-index="7"
+                         data-title="Activity 2 – Rebuttal"
+                         data-duration="600"
+                         data-track="a2">
+                    <div class="slide-title-row">
+                        <div class="slide-kicker">ACTIVITY 2 · ROUND 2</div>
+                        <div class="slide-title">Rebuttal – โต้แย้งมุมมองฝั่งตรงข้าม</div>
+                        <span class="time-chip">⏱ 10 นาที (ฝ่ายละ 5 นาที)</span>
+                    </div>
+                    <p class="slide-lead">
+                        โฟกัสที่การชี้ <span class="highlight">ข้อจำกัด</span> ของอีกฝ่าย
+                        ไม่ใช่การพูดย้ำเหตุผลของตัวเองซ้ำเฉย ๆ
+                    </p>
+
+                    <div class="infographic-grid">
+                        <article class="info-card">
+                            <div class="info-card-header">
+                                <div class="info-icon">🎯</div>
+                                <div class="info-title">Example คำถามสำหรับ Rebuttal</div>
+                            </div>
+                            <div class="info-body">
+                                <ul class="info-list">
+                                    <li>“ถ้า Codebase โตถึง 500K lines แล้วจะ refactor ยังไง?”</li>
+                                    <li>“ทีม 5 คนจะดูแล 10 services ไหวจริงไหม?”</li>
+                                    <li>“Budget 2 ล้านพอจ่ายค่า infra + DevOps ทีมไหม?”</li>
+                                </ul>
+                            </div>
+                        </article>
+                        <article class="info-card">
+                            <div class="info-card-header">
+                                <div class="info-icon">🧊</div>
+                                <div class="info-title">Rule สำคัญ</div>
+                            </div>
+                            <div class="info-body">
+                                <ul class="info-list">
+                                    <li>โต้แย้ง <strong>ไอเดีย</strong> ไม่ใช่ตัวบุคคล</li>
+                                    <li>พูดสั้น กระชับ มีโครงสร้าง</li>
+                                    <li>สามารถใช้ Diagram ที่ออกแบบใน Activity 1 เป็นหลักฐาน</li>
+                                </ul>
+                            </div>
+                        </article>
+                    </div>
+                </section>
+
+                <!-- Slide 8: Activity 2 Q&A -->
+                <section class="slide"
+                         data-index="8"
+                         data-title="Activity 2 – Audience Q&A"
+                         data-duration="600"
+                         data-track="a2">
+                    <div class="slide-title-row">
+                        <div class="slide-kicker">ACTIVITY 2 · ROUND 3</div>
+                        <div class="slide-title">Audience Question & Answer</div>
+                        <span class="time-chip">⏱ 10 นาที</span>
+                    </div>
+                    <p class="slide-lead">
+                        เปิดโอกาสให้เพื่อน ๆ ทั้งห้องถามคำถามยาก ๆ
+                        เพื่อดูว่าแต่ละสถาปัตยกรรมรับมือกับสถานการณ์จริงได้ดีแค่ไหน
+                    </p>
+
+                    <div class="infographic-grid">
+                        <article class="info-card">
+                            <div class="info-card-header">
+                                <div class="info-icon">❓</div>
+                                <div class="info-title">ตัวอย่างคำถามจากผู้ฟัง</div>
+                            </div>
+                            <div class="info-body">
+                                <ul class="info-list">
+                                    <li>“ถ้าระบบต้องรองรับ Flash Sale 11.11 คุณจะออกแบบยังไง?”</li>
+                                    <li>“ถ้า requirement เปลี่ยนทุกสัปดาห์ แบบไหนเปลี่ยนตามง่ายกว่า?”</li>
+                                    <li>“ระบบต้องเชื่อมกับ Payment Gateway หลายเจ้า ทำยังไงให้ไม่ยุ่ง?”</li>
+                                </ul>
+                            </div>
+                        </article>
+                        <article class="info-card">
+                            <div class="info-card-header">
+                                <div class="info-icon">📝</div>
+                                <div class="info-title">บทบาทของผู้ฟัง</div>
+                            </div>
+                            <div class="info-body">
+                                <ul class="info-list">
+                                    <li>ตั้งคำถามที่ใช้ <span class="highlight">concept</span> ที่เรียนในคลาสจริง ๆ</li>
+                                    <li>จดไอเดียที่ชอบเพื่อนำไปใช้ใน project ตัวเอง</li>
+                                </ul>
+                            </div>
+                        </article>
+                    </div>
+                </section>
+
+                <!-- Slide 9: Activity 2 Closing -->
+                <section class="slide"
+                         data-index="9"
+                         data-title="Activity 2 – Closing & Summary"
+                         data-duration="300"
+                         data-track="a2">
+                    <div class="slide-title-row">
+                        <div class="slide-kicker">ACTIVITY 2 · ROUND 4</div>
+                        <div class="slide-title">Closing Statement & สรุปบทเรียน</div>
+                        <span class="time-chip">⏱ 5 นาที</span>
+                    </div>
+                    <p class="slide-lead">
+                        ให้แต่ละฝ่ายสรุปมุมมองของตนเองสั้น ๆ แล้วอาจารย์รวบรวมเป็นภาพใหญ่
+                        ว่า <span class="highlight">“ไม่มีสถาปัตยกรรมไหนชนะทุกสถานการณ์”</span>
+                    </p>
+
+                    <div class="infographic-grid">
+                        <article class="info-card">
+                            <div class="info-card-header">
+                                <div class="info-icon">🏁</div>
+                                <div class="info-title">Key Takeaways</div>
+                            </div>
+                            <div class="info-body">
+                                <ul class="info-list">
+                                    <li>Monolith: ดีสำหรับ MVP, ทีมเล็ก, งบจำกัด</li>
+                                    <li>Microservices: ดีสำหรับ Domain ซับซ้อน, ทีมใหญ่, ระยะยาว</li>
+                                    <li>แนวคิดยอดฮิต: <span class="highlight">“Start with Monolith, evolve to Microservices”</span></li>
+                                </ul>
+                            </div>
+                        </article>
+                    </div>
+                </section>
+
+                <!-- Slide 10: Activity 3 Step 1 -->
+                <section class="slide"
+                         data-index="10"
+                         data-title="Activity 3 – Step 1: Identify Events"
+                         data-duration="600"
+                         data-track="a3">
+                    <div class="slide-title-row">
+                        <div class="slide-kicker">ACTIVITY 3 · STEP 1</div>
+                        <div class="slide-title">ระบุ Event สำคัญใน Task Assignment</div>
+                        <span class="time-chip">⏱ 10 นาที</span>
+                    </div>
+                    <p class="slide-lead">
+                        เราจะออกแบบ Flow แบบ Event-Driven จาก Scenario:
+                        <span class="highlight">“User A สร้าง Task แล้ว Assign ให้ User B”</span>
+                    </p>
+
+                    <div class="infographic-grid">
+                        <article class="info-card">
+                            <div class="info-card-header">
+                                <div class="info-icon">📦</div>
+                                <div class="info-title">Events ที่คาดว่าจะเกิด</div>
+                            </div>
+                            <div class="info-body">
+                                <ul class="info-list">
+                                    <li><strong>TaskCreated</strong> – ข้อมูล task ใหม่</li>
+                                    <li><strong>TaskAssigned</strong> – ใคร assign ให้ใคร</li>
+                                    <li>อาจรวมเป็น Event เดียว หรือแยก 2 Events</li>
+                                </ul>
+                            </div>
+                        </article>
+                        <article class="info-card">
+                            <div class="info-card-header">
+                                <div class="info-icon">🧪</div>
+                                <div class="info-title">สิ่งที่กลุ่มต้องตัดสินใจ</div>
+                            </div>
+                            <div class="info-body">
+                                <ul class="info-list">
+                                    <li>ควรมี Event อะไรบ้าง และ Payload ใส่อะไร</li>
+                                    <li>แต่ละ Event ส่งผลกระทบกับ Service ไหนบ้าง</li>
+                                </ul>
+                            </div>
+                        </article>
+                    </div>
+                </section>
+
+                <!-- Slide 11: Activity 3 Step 2 -->
+                <section class="slide"
+                         data-index="11"
+                         data-title="Activity 3 – Step 2: Event Flow Diagram"
+                         data-duration="1200"
+                         data-track="a3">
+                    <div class="slide-title-row">
+                        <div class="slide-kicker">ACTIVITY 3 · STEP 2</div>
+                        <div class="slide-title">วาด Event Flow Diagram</div>
+                        <span class="time-chip">⏱ 20 นาที</span>
+                    </div>
+                    <p class="slide-lead">
+                        เปลี่ยน Event ที่ระบุไว้ ให้กลายเป็นแผนภาพ Event Flow:
+                        จาก Task Service → Message Broker → Services อื่น ๆ
+                    </p>
+
+                    <div class="infographic-grid">
+                        <article class="info-card">
+                            <div class="info-card-header">
+                                <div class="info-icon">🔁</div>
+                                <div class="info-title">องค์ประกอบใน Event Flow</div>
+                            </div>
+                            <div class="info-body">
+                                <ul class="info-list">
+                                    <li>Producer: Task Service</li>
+                                    <li>Message Broker / Topic: <code>task-events</code></li>
+                                    <li>Consumers: Notification, Analytics, Timeline, Webhook</li>
+                                </ul>
+                            </div>
+                        </article>
+                        <article class="info-card">
+                            <div class="info-card-header">
+                                <div class="info-icon">🧩</div>
+                                <div class="info-title">รูปแบบแผนภาพ (แนะนำ)</div>
+                            </div>
+                            <div class="info-body">
+                                <ul class="info-list">
+                                    <li>เขียน User A → API Gateway → Task Service</li>
+                                    <li>Task Service บันทึก DB แล้ว publish Event</li>
+                                    <li>วาดลูกศรจาก Broker ไปยัง Services ที่ subscribe</li>
+                                </ul>
+                            </div>
+                        </article>
+                    </div>
+                </section>
+
+                <!-- Slide 12: Activity 3 Step 3 -->
+                <section class="slide"
+                         data-index="12"
+                         data-title="Activity 3 – Step 3: Failure Scenarios"
+                         data-duration="600"
+                         data-track="a3">
+                    <div class="slide-title-row">
+                        <div class="slide-kicker">ACTIVITY 3 · STEP 3</div>
+                        <div class="slide-title">ออกแบบการรับมือเมื่อเกิดปัญหา (Failure)</div>
+                        <span class="time-chip">⏱ 10 นาที</span>
+                    </div>
+                    <p class="slide-lead">
+                        Event-Driven สวยงาม แต่ซับซ้อนเรื่องความผิดพลาด
+                        ให้แต่ละกลุ่มคิดว่า <span class="highlight">“ถ้า Service นี้ล่มจะทำอย่างไร?”</span>
+                    </p>
+
+                    <div class="infographic-grid">
+                        <article class="info-card">
+                            <div class="info-card-header">
+                                <div class="info-icon">📵</div>
+                                <div class="info-title">Case 1: Email Service ล่ม</div>
+                            </div>
+                            <div class="info-body">
+                                <ul class="info-list">
+                                    <li>ใช้ Retry + Exponential Backoff</li>
+                                    <li>ใช้ Dead Letter Queue (DLQ) สำหรับ Event ที่ fail หลายครั้ง</li>
+                                </ul>
+                            </div>
+                        </article>
+
+                        <article class="info-card">
+                            <div class="info-card-header">
+                                <div class="info-icon">🧨</div>
+                                <div class="info-title">Case 2: Message Broker / Duplicate Event</div>
+                            </div>
+                            <div class="info-body">
+                                <ul class="info-list">
+                                    <li>Broker ควรมี Replication & Persistence</li>
+                                    <li>Consumer ต้องเป็น <span class="highlight">Idempotent</span> (กัน Event ซ้ำ)</li>
+                                </ul>
+                            </div>
+                        </article>
+                    </div>
+                </section>
+
+                <!-- Slide 13: Activity 3 Step 4 -->
+                <section class="slide"
+                         data-index="13"
+                         data-title="Activity 3 – Step 4: Compare Patterns"
+                         data-duration="300"
+                         data-track="a3">
+                    <div class="slide-title-row">
+                        <div class="slide-kicker">ACTIVITY 3 · STEP 4</div>
+                        <div class="slide-title">เปรียบเทียบ Request-Response vs Event-Driven</div>
+                        <span class="time-chip">⏱ 5 นาที</span>
+                    </div>
+                    <p class="slide-lead">
+                        ปิด Activity 3 ด้วยการสรุปความต่างของสองแนวทาง
+                        เพื่อใช้เป็น Guideline เวลาออกแบบระบบจริง
+                    </p>
+
+                    <div class="infographic-grid">
+                        <article class="info-card">
+                            <div class="info-card-header">
+                                <div class="info-icon">🔗</div>
+                                <div class="info-title">Request-Response</div>
+                            </div>
+                            <div class="info-body">
+                                <ul class="info-list">
+                                    <li>Response Time ช้าลงถ้าต้องต่อหลาย Service</li>
+                                    <li>Tight Coupling, Debug ง่ายกว่า</li>
+                                    <li>เหมาะกับ use case ที่ต้องตอบทันที</li>
+                                </ul>
+                            </div>
+                        </article>
+
+                        <article class="info-card">
+                            <div class="info-card-header">
+                                <div class="info-icon">📡</div>
+                                <div class="info-title">Event-Driven</div>
+                            </div>
+                            <div class="info-body">
+                                <ul class="info-list">
+                                    <li>Response เร็ว (ไม่รอ process ทุกอย่าง)</li>
+                                    <li>Loose Coupling, scale ได้ดี</li>
+                                    <li>ซับซ้อนเรื่อง Consistency & Monitoring</li>
+                                </ul>
+                            </div>
+                        </article>
+                    </div>
+                </section>
+
+                <!-- Slide 14: Wrap up -->
+                <section class="slide"
+                         data-index="14"
+                         data-title="Wrap-up & Deliverables"
+                         data-duration="900"
+                         data-track="wrap">
+                    <div class="slide-title-row">
+                        <div class="slide-kicker">WRAP-UP</div>
+                        <div class="slide-title">สรุป Workshop & งานที่ต้องส่ง</div>
+                        <span class="time-chip">⏱ 15 นาทีสุดท้าย</span>
+                    </div>
+                    <p class="slide-lead">
+                        ทบทวนสิ่งที่เรียนรู้ และชี้แจง Deliverables ที่แต่ละกลุ่มต้องส่ง ทั้ง Diagram, ตาราง และการวิเคราะห์ Trade-offs
+                    </p>
+
+                    <div class="infographic-grid">
+                        <article class="info-card">
+                            <div class="info-card-header">
+                                <div class="info-icon">📊</div>
+                                <div class="info-title">สิ่งที่ควรได้จากวันนี้</div>
+                            </div>
+                            <div class="info-body">
+                                <ul class="info-list">
+                                    <li>Architecture Diagram ของ Task Board Microservices</li>
+                                    <li>Service Description & Communication Matrix</li>
+                                    <li>Event Flow Diagram สำหรับ Task Assignment</li>
+                                    <li>มุมมอง Monolith vs Microservices จากการ Debate</li>
+                                </ul>
+                            </div>
+                        </article>
+
+                        <article class="info-card">
+                            <div class="info-card-header">
+                                <div class="info-icon">📌</div>
+                                <div class="info-title">Assignment / Reflection (แนะนำ)</div>
+                            </div>
+                            <div class="info-body">
+                                <ul class="info-list">
+                                    <li>เขียนสั้น ๆ 1–2 หน้า: ทำไมทีมของเราเลือก Design แบบนี้?</li>
+                                    <li>ถ้ามีเวลาเพิ่ม 1 เดือน คุณอยาก refactor ส่วนไหนก่อน?</li>
+                                </ul>
+                                <div class="tag-row">
+                                    <span class="tag">CLO: วิเคราะห์สถาปัตยกรรม</span>
+                                    <span class="tag">Self-reflection</span>
+                                </div>
+                            </div>
+                        </article>
+                    </div>
+
+                    <p class="slide-footer-note">
+                        ปิดคลาสด้วย Q&A สั้น ๆ และเล่าสปอยหัวข้อสัปดาห์ถัดไป: 
+                        <span class="highlight">“จาก Design สู่ Implementation & Observability ใน Microservices”</span>
+                    </p>
+                </section>
+
+            </div>
+        </section>
+
+        <!-- Timer & Navigation -->
+        <aside class="side-panel">
+            <section class="timer-card">
+                <div class="timer-label">WORKSHOP TIMER</div>
+                <div class="timer-activity" id="timerActivityTitle">Intro & แบ่งกลุ่ม</div>
+                <div class="timer-display" id="timerDisplay">15:00</div>
+                <div class="timer-meta">
+                    <span id="timerPlanned">แนะนำ: 15 นาที</span>
+                    <span id="timerStatus">สถานะ: หยุด</span>
+                </div>
+                <div class="timer-buttons">
+                    <button class="btn btn-primary" id="btnStart">
+                        ▶ เริ่ม / ต่อ
+                    </button>
+                    <button class="btn btn-ghost" id="btnPause">
+                        ⏸ พัก
+                    </button>
+                    <button class="btn btn-ghost" id="btnReset">
+                        🔁 รีเซ็ต
+                    </button>
+                </div>
+            </section>
+
+            <section class="nav-card">
+                <div class="nav-row nav-row-main">
+                    <button class="btn btn-ghost btn-small nav-btn" id="btnPrev">◀ ก่อนหน้า</button>
+                    <div class="dots" id="dotsContainer"></div>
+                    <button class="btn btn-ghost btn-small nav-btn" id="btnNext">ถัดไป ▶</button>
+                </div>
+                <div class="nav-row">
+                    <div class="legend-row">
+                        <span class="legend-item"><span class="legend-badge intro"></span> Intro</span>
+                        <span class="legend-item"><span class="legend-badge a1"></span> Activity 1</span>
+                        <span class="legend-item"><span class="legend-badge a2"></span> Activity 2</span>
+                        <span class="legend-item"><span class="legend-badge a3"></span> Activity 3</span>
+                        <span class="legend-item"><span class="legend-badge wrap"></span> Wrap-up</span>
+                    </div>
+                </div>
+                <div class="shortcut-hint">
+                    คีย์ลัด: ← / → เปลี่ยนสไลด์ · Spacebar เริ่ม/พักตัวจับเวลา
+                </div>
+            </section>
+        </aside>
+    </main>
+</div>
+
+<script>
+(function () {
+    const slides = Array.from(document.querySelectorAll('.slide'));
+    const timerDisplay = document.getElementById('timerDisplay');
+    const timerActivityTitle = document.getElementById('timerActivityTitle');
+    const timerPlanned = document.getElementById('timerPlanned');
+    const timerStatus = document.getElementById('timerStatus');
+    const slideCounter = document.getElementById('slideCounter');
+
+    const btnStart = document.getElementById('btnStart');
+    const btnPause = document.getElementById('btnPause');
+    const btnReset = document.getElementById('btnReset');
+    const btnPrev = document.getElementById('btnPrev');
+    const btnNext = document.getElementById('btnNext');
+    const dotsContainer = document.getElementById('dotsContainer');
+
+    let currentIndex = 0;
+    let timerSeconds = 0;
+    let timerInitialSeconds = 0;
+    let timerId = null;
+
+    function formatTime(sec) {
+        const m = Math.floor(sec / 60);
+        const s = sec % 60;
+        return String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+    }
+
+    function updateTimerDisplay() {
+        timerDisplay.textContent = formatTime(timerSeconds);
+    }
+
+    function setTimerState(isRunning) {
+        if (isRunning) {
+            timerStatus.textContent = 'สถานะ: กำลังนับถอยหลัง';
+        } else {
+            timerStatus.textContent = 'สถานะ: หยุด';
+        }
+    }
+
+    function resetTimer(keepRunning = false) {
+        if (!keepRunning) {
+            clearInterval(timerId);
+            timerId = null;
+            setTimerState(false);
+        }
+        timerSeconds = timerInitialSeconds;
+        timerDisplay.classList.remove('done');
+        updateTimerDisplay();
+    }
+
+    function startTimer() {
+        if (timerId !== null) return;
+        setTimerState(true);
+        timerId = setInterval(() => {
+            if (timerSeconds > 0) {
+                timerSeconds--;
+                updateTimerDisplay();
+            } else {
+                clearInterval(timerId);
+                timerId = null;
+                timerDisplay.classList.add('done');
+                timerStatus.textContent = 'สถานะ: หมดเวลา ✅';
+            }
+        }, 1000);
+    }
+
+    function pauseTimer() {
+        if (timerId !== null) {
+            clearInterval(timerId);
+            timerId = null;
+            setTimerState(false);
+        }
+    }
+
+    function getMinutes(sec) {
+        return Math.round(sec / 60);
+    }
+
+    function loadSlide(index) {
+        if (index < 0) index = slides.length - 1;
+        if (index >= slides.length) index = 0;
+
+        slides[currentIndex].classList.remove('active');
+        currentIndex = index;
+        const slide = slides[currentIndex];
+        slide.classList.add('active');
+
+        const duration = parseInt(slide.dataset.duration, 10) || 600;
+        timerInitialSeconds = duration;
+        timerSeconds = duration;
+        updateTimerDisplay();
+        timerDisplay.classList.remove('done');
+        setTimerState(false);
+        clearInterval(timerId);
+        timerId = null;
+
+        const title = slide.dataset.title || 'Activity';
+        timerActivityTitle.textContent = title;
+        timerPlanned.textContent = 'แนะนำ: ' + getMinutes(duration) + ' นาที';
+
+        slideCounter.textContent = 'Slide ' + (currentIndex + 1) + ' / ' + slides.length;
+        updateDots();
+    }
+
+    // Dots
+    const dots = slides.map((slide, idx) => {
+        const btn = document.createElement('button');
+        btn.className = 'dot';
+        btn.title = slide.dataset.title || ('Slide ' + (idx + 1));
+        btn.addEventListener('click', () => loadSlide(idx));
+        const track = slide.dataset.track;
+        if (track) {
+            btn.dataset.track = track;
+        }
+        dotsContainer.appendChild(btn);
+        return btn;
+    });
+
+    function updateDots() {
+        dots.forEach((d, idx) => {
+            d.classList.toggle('active', idx === currentIndex);
+        });
+    }
+
+    // Button events
+    btnStart.addEventListener('click', startTimer);
+    btnPause.addEventListener('click', pauseTimer);
+    btnReset.addEventListener('click', () => resetTimer(false));
+
+    btnPrev.addEventListener('click', () => loadSlide(currentIndex - 1));
+    btnNext.addEventListener('click', () => loadSlide(currentIndex + 1));
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+        if (e.key === 'ArrowRight') {
+            loadSlide(currentIndex + 1);
+        } else if (e.key === 'ArrowLeft') {
+            loadSlide(currentIndex - 1);
+        } else if (e.key === ' ') {
+            e.preventDefault();
+            if (timerId === null) startTimer(); else pauseTimer();
+        }
+    });
+
+    // Initial
+    loadSlide(0);
+})();
+</script>
+</body>
+</html>

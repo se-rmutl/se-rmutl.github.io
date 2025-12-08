@@ -1,0 +1,2482 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <title>ENGSE207 - Week 4: Microservices, Event-Driven, SOA, Serverless</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Fonts & Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600;700&family=Chakra+Petch:wght@500;600;700&display=swap" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet"/>
+
+  <style>
+    :root {
+      --font-scale: 1;
+
+      /* dark theme */
+      --bg-page-dark: #020617;
+      --bg-toolbar-dark: #020617;
+      --bg-slide-dark: #020617;
+      --bg-slide-card-dark: #020617;
+      --text-main-dark: #e5e7eb;
+      --text-muted-dark: #9ca3af;
+      --accent-dark: #22d3ee;
+      --accent-soft-dark: rgba(34, 211, 238, 0.16);
+      --border-dark: rgba(148, 163, 184, 0.55);
+      --question-bg-dark: rgba(248, 250, 252, 0.04);
+
+      /* light theme */
+      --bg-page-light: #e5e7eb;
+      --bg-toolbar-light: #f9fafb;
+      --bg-slide-light: #e5e7eb;
+      --bg-slide-card-light: #f9fafb;
+      --text-main-light: #020617;
+      --text-muted-light: #4b5563;
+      --accent-light: #0ea5e9;
+      --accent-soft-light: rgba(14, 165, 233, 0.16);
+      --border-light: rgba(148, 163, 184, 0.6);
+      --question-bg-light: #e0f2fe;
+    }
+
+    html, body {
+      height: 100%;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Prompt", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: calc(16px * var(--font-scale));
+      background-color: var(--bg-page-dark);
+      background-image:
+        radial-gradient(circle at 0% 0%, rgba(59,130,246,0.12), transparent 55%),
+        radial-gradient(circle at 100% 100%, rgba(56,189,248,0.14), transparent 55%),
+        repeating-linear-gradient(
+          -45deg,
+          rgba(15,23,42,0.35),
+          rgba(15,23,42,0.35) 1px,
+          transparent 1px,
+          transparent 6px
+        );
+      color: var(--text-main-dark);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    body[data-theme="light"] {
+      background-color: var(--bg-page-light);
+      background-image:
+        radial-gradient(circle at 0% 0%, rgba(59,130,246,0.16), transparent 55%),
+        radial-gradient(circle at 100% 100%, rgba(45,212,191,0.16), transparent 55%),
+        repeating-linear-gradient(
+          -45deg,
+          rgba(148,163,184,0.18),
+          rgba(148,163,184,0.18) 1px,
+          transparent 1px,
+          transparent 6px
+        );
+      color: var(--text-main-light);
+    }
+
+    /* APP LAYOUT */
+    .app {
+      flex: 1 1 auto;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+
+    .toolbar {
+      flex: 0 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      padding: 0.4rem 1.1rem;
+      border-bottom: 1px solid rgba(15,23,42,0.4);
+      backdrop-filter: blur(12px);
+      background-color: rgba(2,6,23,0.9);
+    }
+
+    body[data-theme="light"] .toolbar {
+      background-color: rgba(249,250,251,0.95);
+      border-bottom-color: rgba(148,163,184,0.55);
+    }
+
+    .toolbar-left {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      min-width: 0;
+    }
+
+    .course-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.15rem 0.7rem;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      background: linear-gradient(90deg,#22c55e,#22d3ee,#3b82f6);
+      color: #020617;
+      font-weight: 600;
+    }
+
+    .course-tag i {
+      font-size: 0.85rem;
+    }
+
+    .toolbar-title {
+      display: flex;
+      flex-direction: column;
+      gap: 0.1rem;
+      font-family: "Chakra Petch","Prompt",system-ui;
+    }
+
+    .toolbar-title-main {
+      font-size: 0.95rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .toolbar-title-sub {
+      font-size: 0.75rem;
+      color: var(--text-muted-dark);
+    }
+
+    body[data-theme="light"] .toolbar-title-sub {
+      color: var(--text-muted-light);
+    }
+
+    .toolbar-center {
+      flex: 1 1 auto;
+      min-width: 0;
+      text-align: center;
+      font-family: "Chakra Petch","Prompt";
+      font-size: 0.9rem;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .toolbar-right {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      white-space: nowrap;
+    }
+
+    .divider {
+      width: 1px;
+      height: 1.5rem;
+      background: rgba(148,163,184,0.6);
+    }
+
+    .btn-icon {
+      border: 1px solid rgba(148,163,184,0.65);
+      border-radius: 999px;
+      padding: 0.25rem 0.6rem;
+      font-size: 0.78rem;
+      background: rgba(15,23,42,0.9);
+      color: #e5e7eb;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      cursor: pointer;
+      transition: transform 0.12s ease-out, box-shadow 0.12s ease-out, background 0.12s ease-out;
+    }
+
+    body[data-theme="light"] .btn-icon {
+      background: #f9fafb;
+      color: #020617;
+    }
+
+    .btn-icon.round {
+      padding: 0.25rem;
+      width: 2rem;
+      height: 2rem;
+      justify-content: center;
+    }
+
+    .btn-icon.primary {
+      background: linear-gradient(90deg,#22d3ee,#6366f1);
+      color: #020617;
+      border-color: transparent;
+    }
+
+    body[data-theme="light"] .btn-icon.primary {
+      background: linear-gradient(90deg,#0ea5e9,#6366f1);
+      color: #f9fafb;
+    }
+
+    .btn-icon i {
+      font-size: 0.85rem;
+    }
+
+    .btn-icon:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 8px 18px rgba(15,23,42,0.6);
+    }
+
+    .btn-icon:active {
+      transform: translateY(0);
+      box-shadow: none;
+    }
+
+    .slide-indicator {
+      font-size: 0.78rem;
+      opacity: 0.85;
+      min-width: 4.5rem;
+      text-align: center;
+    }
+
+    .progress {
+      flex: 0 0 auto;
+      height: 3px;
+      background: rgba(15,23,42,0.8);
+      overflow: hidden;
+    }
+
+    body[data-theme="light"] .progress {
+      background: rgba(148,163,184,0.4);
+    }
+
+    .progress-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg,#22d3ee,#6366f1,#f97316);
+      transition: width 0.25s ease-out;
+    }
+
+    .main {
+      flex: 1 1 auto;
+      padding: 0.5rem 0.8rem 0.8rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 0;
+    }
+
+    .slide-frame {
+      position: relative;
+      width: 100%;
+      max-width: 1920px;
+      aspect-ratio: 16 / 9;
+      border-radius: 24px;
+      overflow: hidden;
+      background-color: rgba(15,23,42,0.85);
+      box-shadow:
+        0 25px 80px rgba(15,23,42,0.95),
+        0 0 0 1px rgba(148,163,184,0.5);
+      padding: 1.8rem 2.4rem 2rem;
+    }
+
+    body[data-theme="light"] .slide-frame {
+      background-color: rgba(249,250,251,0.98);
+      box-shadow:
+        0 25px 80px rgba(15,23,42,0.4),
+        0 0 0 1px rgba(148,163,184,0.4);
+    }
+
+    .slide-inner-bg {
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(circle at top left, rgba(56,189,248,0.15), transparent 55%),
+        radial-gradient(circle at bottom right, rgba(129,140,248,0.16), transparent 60%);
+      mix-blend-mode: soft-light;
+      pointer-events: none;
+      opacity: 0.75;
+    }
+
+    body[data-theme="light"] .slide-inner-bg {
+      opacity: 0.3;
+    }
+
+    .slides {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+    }
+
+    .slide {
+      position: absolute;
+      inset: 0;
+      padding: 0.4rem 0;
+      display: flex;
+      flex-direction: column;
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(10px) scale(0.99);
+      transition: opacity 0.2s ease-out, transform 0.2s ease-out;
+    }
+
+    .slide.active {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateY(0) scale(1);
+    }
+
+    .slide-header {
+      margin-bottom: 0.8rem;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      padding: 0.18rem 0.7rem;
+      border-radius: 999px;
+      background-color: rgba(15,23,42,0.7);
+      color: #e5e7eb;
+      border: 1px solid rgba(148,163,184,0.7);
+    }
+
+    body[data-theme="light"] .badge {
+      background-color: #eff6ff;
+      color: #1e293b;
+      border-color: rgba(148,163,184,0.8);
+    }
+
+    .badge i {
+      font-size: 0.8rem;
+    }
+
+    .title-main {
+      margin: 0.35rem 0 0.25rem;
+      font-family: "Chakra Petch","Prompt";
+      font-size: 2rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .title-sub {
+      margin: 0;
+      font-size: 0.95rem;
+      color: var(--text-muted-dark);
+    }
+
+    body[data-theme="light"] .title-sub {
+      color: var(--text-muted-light);
+    }
+
+    .title-underline {
+      width: 80px;
+      height: 3px;
+      margin-top: 0.35rem;
+      border-radius: 999px;
+      background: linear-gradient(90deg,#22d3ee,#6366f1,#f97316);
+    }
+
+    .tag-row {
+      margin-top: 0.45rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem;
+    }
+
+    .tag {
+      font-size: 0.78rem;
+      padding: 0.12rem 0.6rem;
+      border-radius: 999px;
+      border: 1px solid rgba(148,163,184,0.7);
+      background: rgba(15,23,42,0.65);
+      color: #e5e7eb;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+
+    body[data-theme="light"] .tag {
+      background: #eef2ff;
+      color: #111827;
+      border-color: rgba(148,163,184,0.8);
+    }
+
+    .tag i {
+      font-size: 0.8rem;
+    }
+
+    /* content layout */
+    .slide-body {
+      flex: 1 1 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 0.9rem;
+      min-height: 0;
+    }
+
+    .columns-2 {
+      display: grid;
+      grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+      gap: 1.4rem;
+      min-height: 0;
+      align-items: center;
+    }
+
+    .columns-2.reverse {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr);
+    }
+
+    .card,
+    .glass-panel {
+      border-radius: 18px;
+      padding: 0.85rem 1rem;
+      background-color: rgba(15,23,42,0.85);
+      border: 1px solid rgba(148,163,184,0.7);
+      box-shadow: 0 18px 40px rgba(15,23,42,0.75);
+    }
+
+    body[data-theme="light"] .card,
+    body[data-theme="light"] .glass-panel {
+      background-color: #ffffff;
+      border-color: rgba(148,163,184,0.7);
+      box-shadow: 0 16px 40px rgba(15,23,42,0.25);
+    }
+
+    .card.compact {
+      padding: 0.7rem 0.9rem;
+    }
+
+    .card h3,
+    .card h4,
+    .glass-panel h3,
+    .glass-panel h4 {
+      margin: 0 0 0.4rem;
+      font-size: 1rem;
+    }
+
+    .card p,
+    .glass-panel p {
+      margin: 0.15rem 0;
+      font-size: 0.88rem;
+    }
+
+    .card ul,
+    .glass-panel ul {
+      margin: 0.25rem 0;
+      padding-left: 1.1rem;
+      font-size: 0.88rem;
+    }
+
+    .card li + li,
+    .glass-panel li + li {
+      margin-top: 0.12rem;
+    }
+
+    .emoji-list li span.emoji {
+      margin-right: 0.3rem;
+    }
+
+    /* question / think boxes */
+    .think-box {
+      border-radius: 16px;
+      border: 1px dashed rgba(248,250,252,0.6);
+      padding: 0.6rem 0.85rem;
+      margin-top: 0.4rem;
+      background: var(--question-bg-dark);
+      font-size: 0.86rem;
+    }
+
+    body[data-theme="light"] .think-box {
+      background: var(--question-bg-light);
+      border-color: rgba(30,64,175,0.4);
+    }
+
+    .think-box-title {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      font-weight: 600;
+      margin-bottom: 0.25rem;
+      font-size: 0.85rem;
+    }
+
+    .think-box-title i {
+      color: #facc15;
+    }
+
+    /* chips */
+    .chip-row,
+    .tag-row-alt {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.3rem;
+      margin-top: 0.3rem;
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      padding: 0.16rem 0.55rem;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      border: 1px solid rgba(148,163,184,0.7);
+      background-color: rgba(15,23,42,0.8);
+      color: #e5e7eb;
+    }
+
+    body[data-theme="light"] .chip {
+      background-color: #eef2ff;
+      color: #020617;
+    }
+
+    .chip i {
+      font-size: 0.75rem;
+    }
+
+    /* image card */
+    .img-card {
+      border-radius: 18px;
+      border: 1px solid rgba(148,163,184,0.75);
+      background-color: rgba(15,23,42,0.95);
+      overflow: hidden;
+      position: relative;
+      cursor: zoom-in;
+    }
+
+    body[data-theme="light"] .img-card {
+      background-color: #0f172a;
+    }
+
+    .img-card img {
+      width: 100%;
+      max-height: 360px;
+      object-fit: contain;
+      display: block;
+      mix-blend-mode: screen;
+    }
+
+    body[data-theme="light"] .img-card img {
+      mix-blend-mode: normal;
+    }
+
+    .img-caption {
+      position: absolute;
+      inset-inline: 0.65rem;
+      bottom: 0.55rem;
+      padding: 0.16rem 0.6rem;
+      border-radius: 999px;
+      background: linear-gradient(90deg,rgba(15,23,42,0.96),rgba(15,23,42,0.86));
+      color: #e5e7eb;
+      font-size: 0.7rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .img-caption span:last-child {
+      opacity: 0.85;
+    }
+
+    .img-caption i {
+      font-size: 0.8rem;
+    }
+
+    /* highlight lists */
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.7rem;
+      font-size: 0.86rem;
+    }
+
+    .feature-item {
+      border-radius: 16px;
+      padding: 0.6rem 0.75rem;
+      border: 1px solid rgba(148,163,184,0.7);
+      background: rgba(15,23,42,0.8);
+    }
+
+    body[data-theme="light"] .feature-item {
+      background: #ffffff;
+    }
+
+    .feature-item h4 {
+      margin: 0 0 0.2rem;
+      font-size: 0.9rem;
+    }
+
+    .feature-item .num {
+      font-family: "Chakra Petch";
+      font-size: 1.1rem;
+      margin-right: 0.35rem;
+      color: #22d3ee;
+    }
+
+    body[data-theme="light"] .feature-item .num {
+      color: #0ea5e9;
+    }
+
+    /* small table */
+    .comparison {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.8rem;
+      margin-top: 0.3rem;
+    }
+
+    .comparison th,
+    .comparison td {
+      padding: 0.28rem 0.4rem;
+      text-align: left;
+      border-bottom: 1px dashed rgba(148,163,184,0.7);
+      white-space: nowrap;
+    }
+
+    .comparison th {
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-size: 0.78rem;
+    }
+
+    .star {
+      color: #facc15;
+      text-shadow: 0 0 6px rgba(250,204,21,0.7);
+    }
+
+    /* code block */
+    .code {
+      font-family: "Fira Code", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 0.8rem;
+      padding: 0.7rem 0.9rem;
+      border-radius: 14px;
+      background: #020617;
+      border: 1px solid rgba(148,163,184,0.7);
+      color: #e5e7eb;
+      overflow: hidden;
+    }
+
+    body[data-theme="light"] .code {
+      background: #0f172a;
+      color: #e5e7eb;
+    }
+
+    .code small {
+      opacity: 0.8;
+      display: block;
+      margin-bottom: 0.2rem;
+    }
+
+    .code-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.8rem;
+    }
+
+    /* footer */
+    .slide-footer {
+      margin-top: auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.78rem;
+      color: var(--text-muted-dark);
+      padding-top: 0.5rem;
+      border-top: 1px dashed rgba(148,163,184,0.7);
+    }
+
+    body[data-theme="light"] .slide-footer {
+      color: var(--text-muted-light);
+    }
+
+    .clo-tag {
+      padding: 0.12rem 0.55rem;
+      border-radius: 999px;
+      border: 1px solid rgba(148,163,184,0.7);
+      font-size: 0.75rem;
+    }
+
+    .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 999px;
+      background: linear-gradient(135deg,#22d3ee,#f97316);
+      margin-right: 0.35rem;
+    }
+
+    .highlight {
+      color: #22d3ee;
+    }
+    body[data-theme="light"] .highlight { color:#0284c7; }
+    .accent { color:#f97316; }
+
+    /* image modal */
+    .image-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(15,23,42,0.95);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 50;
+    }
+
+    .image-modal.open {
+      display: flex;
+    }
+
+    .image-modal-inner {
+      max-width: 92vw;
+      max-height: 88vh;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .image-modal img {
+      max-width: 100%;
+      max-height: 80vh;
+      border-radius: 20px;
+      box-shadow:
+        0 40px 100px rgba(0,0,0,0.85),
+        0 0 0 1px rgba(148,163,184,0.7);
+    }
+
+    .image-modal-caption {
+      font-size: 0.82rem;
+      color: #e5e7eb;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+    }
+
+    .image-modal-caption small { opacity:0.8; }
+
+    /* responsive */
+    @media (max-width: 1100px) {
+      .slide-frame {
+        border-radius: 0;
+        padding: 1.6rem 1.4rem 1.8rem;
+      }
+      .columns-2,
+      .columns-2.reverse {
+        grid-template-columns: minmax(0, 1fr);
+      }
+      .feature-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+      .code-grid {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
+
+    @media (max-width: 820px) {
+      .toolbar {
+        flex-wrap: wrap;
+      }
+      .toolbar-center {
+        order: 3;
+        width: 100%;
+      }
+      .slide-frame {
+        padding: 1.2rem 0.8rem 1.4rem;
+      }
+      .title-main {
+        font-size: 1.5rem;
+      }
+      .feature-grid {
+        grid-template-columns: minmax(0,1fr);
+      }
+    }
+  </style>
+</head>
+<body data-theme="dark">
+<div class="app">
+  <!-- TOOLBAR -->
+  <header class="toolbar">
+    <div class="toolbar-left">
+      <div class="course-tag">
+        <i class="fa-solid fa-code-branch"></i>
+        <span>ENGSE207</span>
+      </div>
+      <div class="toolbar-title">
+        <div class="toolbar-title-main">Software Architecture</div>
+        <div class="toolbar-title-sub">Week 4 • Microservices · Event-Driven · SOA · Serverless</div>
+      </div>
+    </div>
+
+    <div class="toolbar-center" id="slideTitle">กำลังโหลดสไลด์...</div>
+
+    <div class="toolbar-right">
+      <button class="btn-icon round" id="themeToggle" title="สลับโหมดสว่าง/มืด">
+        <i class="fa-regular fa-moon"></i>
+      </button>
+      <div class="divider"></div>
+      <button class="btn-icon round" id="fontDown" title="ลดขนาดตัวอักษร">A-</button>
+      <button class="btn-icon round" id="fontUp" title="เพิ่มขนาดตัวอักษร">A+</button>
+      <div class="divider"></div>
+      <button class="btn-icon round" id="prevSlide" title="สไลด์ก่อนหน้า (← / PgUp)">
+        <i class="fa-solid fa-chevron-left"></i>
+      </button>
+      <div class="slide-indicator" id="slideIndicator">1 / 30</div>
+      <button class="btn-icon round primary" id="nextSlide" title="สไลด์ถัดไป (→ / Space / PgDn)">
+        <i class="fa-solid fa-chevron-right"></i>
+      </button>
+      <div class="divider"></div>
+      <button class="btn-icon" id="fullscreenBtn" title="Fullscreen (F)">
+        <i class="fa-solid fa-expand"></i><span>Full</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- PROGRESS BAR -->
+  <div class="progress">
+    <div class="progress-fill" id="progressFill"></div>
+  </div>
+
+  <!-- MAIN AREA -->
+  <main class="main">
+    <div class="slide-frame">
+      <div class="slide-inner-bg"></div>
+      <div class="slides">
+
+        <!-- 01 TITLE -->
+        <section class="slide active" data-title="Week 4 – Microservices · Event-Driven · SOA · Serverless">
+          <div class="slide-header">
+            <div class="badge">
+              <i class="fa-solid fa-diagram-project"></i>
+              <span>Week 4 • Architectural Styles & Patterns (2)</span>
+            </div>
+            <h1 class="title-main">Microservices · Event-Driven · SOA · Serverless</h1>
+            <p class="title-sub">สถาปัตยกรรมสมัยใหม่สำหรับระบบ Cloud-native & Distributed Systems</p>
+            <div class="title-underline"></div>
+            <div class="tag-row">
+              <div class="tag"><i class="fa-solid fa-cloud"></i> Cloud-native</div>
+              <div class="tag"><i class="fa-solid fa-scale-balanced"></i> Trade-offs & Quality Attributes</div>
+              <div class="tag"><i class="fa-solid fa-users-gear"></i> Real-world Case Studies</div>
+            </div>
+          </div>
+
+          <div class="slide-body">
+            <div class="columns-2">
+              <div class="card">
+                <h3>เป้าหมายการเรียนรู้ (CLO)</h3>
+                <ul class="emoji-list">
+                  <li><span class="emoji">🎯</span>อธิบายแนวคิดของ <strong>Microservices, Event-Driven, SOA, Serverless</strong> ได้ (CLO2, CLO4)</li>
+                  <li><span class="emoji">⚖️</span>วิเคราะห์ข้อดี–ข้อเสียด้าน <strong>Scalability, Maintainability, Cost</strong> (CLO3, CLO7)</li>
+                  <li><span class="emoji">🧩</span>ออกแบบสถาปัตยกรรมระดับสูง และเลือกสไตล์ที่เหมาะกับโจทย์ระบบ (CLO6, CLO7)</li>
+                </ul>
+                <div class="think-box">
+                  <div class="think-box-title">
+                    <i class="fa-regular fa-lightbulb"></i> คำถามชวนคิด
+                  </div>
+                  <p>ถ้าระบบ <strong>Task Board</strong> ของเราโตขึ้น 10 เท่า – สถาปัตยกรรมเดิมยังรอดไหม?</p>
+                </div>
+              </div>
+              <div class="card compact">
+                <h3>ภาพรวม 2 ชม. Lecture + 3 ชม. Workshop</h3>
+                <ul class="emoji-list">
+                  <li><span class="emoji">1️⃣</span>ทบทวนสัปดาห์ที่ 3: Monolith, Layered, N-Tier, Pipe-and-Filter</li>
+                  <li><span class="emoji">2️⃣</span><strong>Microservices</strong> + Case Study: LINE / Grab</li>
+                  <li><span class="emoji">3️⃣</span><strong>Event-Driven</strong> + Event Sourcing & CQRS (ภาพรวม)</li>
+                  <li><span class="emoji">4️⃣</span><strong>SOA</strong> & Enterprise Integration</li>
+                  <li><span class="emoji">5️⃣</span><strong>Serverless</strong> & Hybrid Architecture สำหรับ Task Board</li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="slide-footer">
+              <span><span class="dot"></span> ใช้ปุ่ม <strong>← / →</strong> หรือ <strong>Space</strong> เพื่อเลื่อนสไลด์</span>
+              <span class="clo-tag">CLO2 · CLO3 · CLO4 · CLO6 · CLO7</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- 02 AGENDA -->
+        <section class="slide" data-title="Agenda & Learning Path">
+          <div class="slide-header">
+            <div class="badge">
+              <i class="fa-solid fa-route"></i>
+              <span>Learning Roadmap</span>
+            </div>
+            <h2 class="title-main">เส้นทางการเรียนรู้ในสัปดาห์นี้</h2>
+            <p class="title-sub">เห็นภาพรวมก่อนลงลึกทีละสถาปัตยกรรม</p>
+            <div class="title-underline"></div>
+          </div>
+
+          <div class="slide-body">
+            <div class="columns-2">
+              <div class="feature-grid">
+                <div class="feature-item">
+                  <h4><span class="num">01</span> Review Week 3</h4>
+                  <p>ทบทวน Monolithic, Layered, Client–Server, N-Tier, Pipe-and-Filter</p>
+                </div>
+                <div class="feature-item">
+                  <h4><span class="num">02</span> Microservices</h4>
+                  <p>Concept, Bounded Context, Database-per-Service, LINE & Grab cases</p>
+                </div>
+                <div class="feature-item">
+                  <h4><span class="num">03</span> Event-Driven</h4>
+                  <p>Pub/Sub, Event Bus, Event Sourcing, CQRS (ระดับภาพใหญ่)</p>
+                </div>
+                <div class="feature-item">
+                  <h4><span class="num">04</span> SOA</h4>
+                  <p>Service reuse & integration ในองค์กรใหญ่</p>
+                </div>
+                <div class="feature-item">
+                  <h4><span class="num">05</span> Serverless</h4>
+                  <p>Functions, Pay-per-use, เหมาะกับงานแบบไหน</p>
+                </div>
+                <div class="feature-item">
+                  <h4><span class="num">06</span> Hybrid & Decision</h4>
+                  <p>เปรียบเทียบ + เลือกสไตล์สำหรับ Task Board</p>
+                </div>
+              </div>
+              <div class="card">
+                <h3>เชื่อมโยงกับโปรเจกต์ Task Board</h3>
+                <ul class="emoji-list">
+                  <li><span class="emoji">🧱</span>สัปดาห์ที่ 3: <strong>Monolith + Layered</strong> (เริ่มต้นง่าย)</li>
+                  <li><span class="emoji">🧩</span>สัปดาห์นี้: เพิ่ม <strong>Microservices + Event-Driven</strong> เข้ามาในภาพ</li>
+                  <li><span class="emoji">🗺️</span>สัปดาห์ถัดไป: ใช้ <strong>C4 Model</strong> สื่อสารสถาปัตยกรรม Task Board</li>
+                </ul>
+                <div class="think-box">
+                  <div class="think-box-title">
+                    <i class="fa-regular fa-circle-question"></i> ลองคิดดู
+                  </div>
+                  <p>ถ้าต้องอธิบายสถาปัตยกรรม Task Board ให้ทีมใหม่เข้าใจใน 5 นาที – จะเริ่มเล่าอย่างไร?</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="slide-footer">
+              <span>วันนี้เน้น “ภาพใหญ่” ก่อน – รายละเอียดโค้ดจะไปอยู่ใน Lab และวิชาอื่น</span>
+              <span class="clo-tag">Big-picture Architecture</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- 03 REVIEW WEEK3 -->
+        <section class="slide" data-title="Review Week 3 – Traditional Styles">
+          <div class="slide-header">
+            <div class="badge">
+              <i class="fa-solid fa-rotate-left"></i>
+              <span>Review • Week 3</span>
+            </div>
+            <h2 class="title-main">ทบทวนสถาปัตยกรรมพื้นฐาน</h2>
+            <p class="title-sub">จาก Monolith → Layered → N-Tier → Pipe-and-Filter</p>
+            <div class="title-underline"></div>
+          </div>
+
+          <div class="slide-body">
+            <div class="columns-2">
+              <div class="card compact">
+                <h3>ภาพรวมแบบเร็ว</h3>
+                <ul class="emoji-list">
+                  <li><span class="emoji">🏢</span><strong>Monolithic</strong> – โค้ดทุกอย่างอยู่ในแอปเดียว, deploy ครั้งเดียว</li>
+                  <li><span class="emoji">📚</span><strong>Layered / N-Tier</strong> – แยก Presentation / Business / Data</li>
+                  <li><span class="emoji">🖥️</span><strong>Client–Server</strong> – พื้นฐาน Web / Mobile app</li>
+                  <li><span class="emoji">🚰</span><strong>Pipe-and-Filter</strong> – ข้อมูลไหลผ่านขั้นตอนต่าง ๆ (ETL, Data Pipeline)</li>
+                </ul>
+              </div>
+              <div class="card compact">
+                <h3>คำถามชวนคิดจาก Week 3</h3>
+                <ul class="emoji-list">
+                  <li><span class="emoji">🤔</span>เมื่อระบบโตขึ้นมาก ๆ – Monolith จะเริ่ม “อึดอัด” ตรงไหนก่อน?</li>
+                  <li><span class="emoji">🧱</span>ทำไม Monolith + Layered ยังเป็นตัวเลือกที่ดีสำหรับ MVP เสมอ?</li>
+                  <li><span class="emoji">🚀</span>อะไรคือ trigger สำคัญ ที่ทำให้ต้องเริ่มมองหา Microservices / EDA?</li>
+                </ul>
+                <div class="think-box">
+                  <div class="think-box-title">
+                    <i class="fa-solid fa-brain"></i> Mini Reflection
+                  </div>
+                  <p>ลองให้คะแนน (1–5) ว่าระบบที่เราเคยทำ <strong>ใกล้เคียง</strong> สถาปัตยกรรมไหนมากที่สุด?</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="slide-footer">
+              <span>สไตล์ใหม่ ๆ = การต่อยอดจากพื้นฐานเหล่านี้ ไม่ใช่การทิ้งของเดิม</span>
+              <span class="clo-tag">Prerequisite from Week 3</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- 04 EVOLUTION -->
+        <section class="slide" data-title="From Monolith to Cloud-native">
+          <div class="slide-header">
+            <div class="badge">
+              <i class="fa-solid fa-cloud-arrow-up"></i>
+              <span>Evolution • Monolith → Cloud</span>
+            </div>
+            <h2 class="title-main">จาก Monolith → Microservices บน Cloud</h2>
+            <p class="title-sub">มองระบบเป็น “การเดินทาง” มากกว่า “การเลือกครั้งเดียวจบ”</p>
+            <div class="title-underline"></div>
+          </div>
+
+          <div class="slide-body">
+            <div class="columns-2">
+              <div class="card compact">
+                <h3>Stage ที่เจอบ่อย</h3>
+                <ul class="emoji-list">
+                  <li><span class="emoji">🌱</span><strong>Stage 1:</strong> Monolith ง่าย ๆ – เน้นความเร็วในการเริ่ม</li>
+                  <li><span class="emoji">🌿</span><strong>Stage 2:</strong> Layered / N-Tier – แยก concerns ชัดขึ้น</li>
+                  <li><span class="emoji">🌳</span><strong>Stage 3:</strong> Microservices + EDA – scale สูง, feature เยอะ, team ใหญ่</li>
+                  <li><span class="emoji">☁️</span><strong>Stage 4:</strong> ผสม Serverless & Hybrid architecture</li>
+                </ul>
+                <div class="think-box">
+                  <div class="think-box-title">
+                    <i class="fa-solid fa-location-dot"></i> เช็คตำแหน่งตัวเอง
+                  </div>
+                  <p>ถ้าให้เลือก – ระบบ Task Board ของทีมตอนนี้อยู่ Stage ไหน? และอยากไป Stage ไหนในอนาคต?</p>
+                </div>
+              </div>
+              <div class="img-card">
+                <img src="images/02-Evolution-Monolith-to-Cloud.png"
+                     alt="วิวัฒนาการสถาปัตยกรรมจาก Monolith ไปสู่ Microservices/Cloud-native"
+                     class="zoomable">
+                <div class="img-caption">
+                  <span>02-Evolution-Monolith-to-Cloud.png</span>
+                  <span><i class="fa-solid fa-magnifying-glass-plus"></i> คลิกเพื่อขยาย</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="slide-footer">
+              <span>Architecture = สิ่งที่ “เปลี่ยนได้” เมื่อระบบโตขึ้น ไม่ใช่สิ่งที่ล็อกตายตั้งแต่วันแรก</span>
+              <span class="clo-tag">Evolution mindset</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- 05 MONOLITH VS MICROSERVICES -->
+        <section class="slide" data-title="Monolith vs Microservices (Big Picture)">
+          <div class="slide-header">
+            <div class="badge">
+              <i class="fa-solid fa-scale-balanced"></i>
+              <span>Comparison • Monolith vs Microservices</span>
+            </div>
+            <h2 class="title-main">Monolith vs Microservices</h2>
+            <p class="title-sub">ไม่ใช่ใครชนะ – แต่คือคนละเครื่องมือสำหรับโจทย์คนละแบบ</p>
+            <div class="title-underline"></div>
+          </div>
+
+          <div class="slide-body">
+            <div class="columns-2 reverse">
+              <div class="img-card">
+                <img src="images/03-Monolith-vs-Microservices.png"
+                     alt="ภาพเปรียบเทียบ Monolith vs Microservices"
+                     class="zoomable">
+                <div class="img-caption">
+                  <span>03-Monolith-vs-Microservices.png</span>
+                  <span><i class="fa-solid fa-magnifying-glass-plus"></i> Zoom ดูรายละเอียด</span>
+                </div>
+              </div>
+              <div class="card compact">
+                <h3>สรุปความต่างแบบสั้น ๆ</h3>
+                <ul class="emoji-list">
+                  <li><span class="emoji">🏢</span><strong>Monolith</strong> – codebase เดียว, deploy เดียว, debug ง่าย, เหมาะกับ MVP / ทีมเล็ก</li>
+                  <li><span class="emoji">🧩</span><strong>Microservices</strong> – แบ่งหลาย service, scale แยกกันได้, deploy แยกกันได้, เหมาะกับทีมใหญ่</li>
+                </ul>
+                <div class="chip-row">
+                  <div class="chip"><i class="fa-solid fa-cube"></i> Monolith = “ก้อนเดียวใหญ่”</div>
+                  <div class="chip"><i class="fa-solid fa-cubes-stacked"></i> Microservices = “หลายก้อนที่ต่อกัน”</div>
+                </div>
+                <div class="think-box">
+                  <div class="think-box-title">
+                    <i class="fa-regular fa-circle-question"></i> ถามตัวเองก่อน “อยากใช้ Microservices”
+                  </div>
+                  <p>โจทย์ของเราจำเป็นต้อง scale แบบแยกส่วนจริงไหม? หรือ Monolith ที่ออกแบบดี ก็เพียงพอ?</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="slide-footer">
+              <span>อย่าเริ่มจากคำว่า “อยากเท่” – ให้เริ่มจาก <strong>Requirements & Constraints</strong> ก่อนเสมอ</span>
+              <span class="clo-tag">CLO3 – Trade-offs</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- 06 MICRO DEF -->
+        <section class="slide" data-title="Microservices – Definition & Mindset">
+          <div class="slide-header">
+            <div class="badge">
+              <i class="fa-solid fa-cubes"></i>
+              <span>1.1 Microservices Architecture</span>
+            </div>
+            <h2 class="title-main">Microservices คืออะไร?</h2>
+            <p class="title-sub">แยกระบบออกเป็นบริการเล็ก ๆ ที่ดูแลตัวเองได้</p>
+            <div class="title-underline"></div>
+          </div>
+
+          <div class="slide-body">
+            <div class="columns-2">
+              <div class="card">
+                <h3>นิยามแบบเข้าใจง่าย</h3>
+                <ul class="emoji-list">
+                  <li><span class="emoji">🧩</span>แบ่งระบบเป็น <strong>services เล็ก ๆ</strong> ที่ทำหน้าที่เฉพาะอย่าง</li>
+                  <li><span class="emoji">🚀</span>แต่ละ service <strong>deploy / scale / เลือก tech เองได้</strong></li>
+                  <li><span class="emoji">🔌</span>สื่อสารกันผ่าน API หรือ message (REST, gRPC, Kafka ฯลฯ)</li>
+                  <li><span class="emoji">🗄️</span>Each <strong>service มี database ของตัวเอง</strong> (Database per Service)</li>
+                </ul>
+                <div class="think-box">
+                  <div class="think-box-title">
+                    <i class="fa-solid fa-magnifying-glass"></i> Focus Question
+                  </div>
+                  <p>ถ้าจะเปลี่ยน logic ของ “การชำระเงิน” – ใน Microservices ต้องแตะกี่ service? ใน Monolith ต้องแตะกี่ module?</p>
+                </div>
+              </div>
+              <div class="img-card">
+                <img src="images/01-Microservices-Concept.png"
+                     alt="แผนภาพ Microservices – หลาย service เชื่อมกันผ่าน API Gateway"
+                     class="zoomable">
+                <div class="img-caption">
+                  <span>01-Microservices-Concept.png</span>
+                  <span><i class="fa-solid fa-magnifying-glass-plus"></i> คลิกเพื่อดูเต็มจอ</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="slide-footer">
+              <span>Microservices ไม่ได้แค่ “แตก services” – แต่เปลี่ยนทั้งวิธีคิดเรื่องทีม & deploy</span>
+              <span class="clo-tag">CLO2 – Explain Microservices</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- 07 MICRO ECOSYSTEM -->
+        <section class="slide" data-title="Microservices Ecosystem – Key Components">
+          <div class="slide-header">
+            <div class="badge">
+              <i class="fa-solid fa-network-wired"></i>
+              <span>Microservices • Ecosystem</span>
+            </div>
+            <h2 class="title-main">ไม่ใช่แค่ Services แต่คือทั้ง Ecosystem</h2>
+            <p class="title-sub">องค์ประกอบรอบ ๆ Microservices ที่ขาดไม่ได้</p>
+            <div class="title-underline"></div>
+          </div>
+
+          <div class="slide-body">
+            <div class="columns-2">
+              <div class="img-card">
+                <img src="images/Microservices Ecosystem.png"
+                     alt="แผนภาพ Microservices Ecosystem – API Gateway, Service Discovery, Message Bus, Monitoring"
+                     class="zoomable">
+                <div class="img-caption">
+                  <span>Microservices Ecosystem.png</span>
+                  <span><i class="fa-solid fa-magnifying-glass-plus"></i> Zoom ดูรายละเอียด</span>
+                </div>
+              </div>
+              <div class="card compact">
+                <h3>ส่วนประกอบหลัก</h3>
+                <ul class="emoji-list">
+                  <li><span class="emoji">🚪</span><strong>API Gateway</strong> – จุดเข้าเดียว, ทำ routing, auth, rate limit</li>
+                  <li><span class="emoji">🧭</span><strong>Service Discovery</strong> – ช่วยให้ services หา endpoint กันเอง</li>
+                  <li><span class="emoji">📨</span><strong>Message Bus / Event Stream</strong> – Kafka, RabbitMQ, SNS/SQS</li>
+                  <li><span class="emoji">📈</span><strong>Monitoring & Tracing</strong> – ดู health, log, trace ข้ามหลาย service</li>
+                  <li><span class="emoji">🔁</span><strong>CI/CD Pipeline</strong> – Deploy อัตโนมัติ, rollback ได้เร็ว</li>
+                </ul>
+                <div class="think-box">
+                  <div class="think-box-title">
+                    <i class="fa-solid fa-screwdriver-wrench"></i> DevOps Question
+                  </div>
+                  <p>ทีมของเรามีเครื่องมือพวกนี้พร้อมแค่ไหน? ถ้าตอบว่า “ยังไม่ค่อยมี” → Microservices อาจยังไม่ใช่คำตอบตอนนี้</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="slide-footer">
+              <span>Microservices = Architecture + DevOps + Observability ไปพร้อมกัน</span>
+              <span class="clo-tag">Ecosystem thinking</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- 08 MICRO + DDD -->
+        <section class="slide" data-title="Microservices & Domain-driven Design">
+          <div class="slide-header">
+            <div class="badge">
+              <i class="fa-solid fa-puzzle-piece"></i>
+              <span>Microservices • Bounded Context</span>
+            </div>
+            <h2 class="title-main">แบ่ง Microservices ด้วยโดเมน ไม่ใช่ด้วย Table</h2>
+            <p class="title-sub">ใช้แนวคิด Domain-driven Design (DDD) ช่วยหา Bounded Context</p>
+            <div class="title-underline"></div>
+          </div>
+
+          <div class="slide-body">
+            <div class="columns-2">
+              <div class="card compact">
+                <h3>ตัวอย่าง E-Commerce (Shopee-style)</h3>
+                <ul class="emoji-list">
+                  <li><span class="emoji">👤</span><strong>User Service</strong> – สมัครสมาชิก, Login, Profile</li>
+                  <li><span class="emoji">📦</span><strong>Catalog Service</strong> – สินค้า, หมวดหมู่, stock</li>
+                  <li><span class="emoji">🛒</span><strong>Cart Service</strong> – ตะกร้าสินค้าชั่วคราว</li>
+                  <li><span class="emoji">📄</span><strong>Order Service</strong> – สร้าง / ติดตามคำสั่งซื้อ</li>
+                  <li><span class="emoji">💳</span><strong>Payment Service</strong> – การชำระเงิน</li>
+                  <li><span class="emoji">🚚</span><strong>Shipping Service</strong> – การจัดส่ง</li>
+                  <li><span class="emoji">🔔</span><strong>Notification Service</strong> – Email, SMS, Push</li>
+                </ul>
+              </div>
+              <div class="card compact">
+                <h3>Checklist เวลาแบ่ง Service</h3>
+                <ul>
+                  <li>✅ แต่ละ service มี “ภาษาธุรกิจ” ของตัวเองชัดเจน</li>
+                  <li>✅ เปลี่ยน schema ภายใน โดยไม่ทำลาย service อื่นได้</li>
+                  <li>✅ มีทีมรับผิดชอบ service นั้นโดยตรง</li>
+                  <li>⚠️ ถ้า A ต้อง call B,C,D ทุกครั้ง = อาจแบ่งผิด</li>
+                </ul>
+                <div class="think-box">
+                  <div class="think-box-title">
+                    <i class="fa-regular fa-lightbulb"></i> Task Board Challenge
+                  </div>
+                  <p>ลองกำหนด Bounded Context สำหรับ Task Board: ควรแยกเป็น Board / Card / User / Notification หรืออย่างไร?</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="slide-footer">
+              <span>เริ่มจาก “ภาษาโดเมน” ก่อน – ค่อยลงมาดู code & database</span>
+              <span class="clo-tag">CLO6 – High-level design</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- 09 DB PER SERVICE -->
+        <section class="slide" data-title="Database per Service & Consistency">
+          <div class="slide-header">
+            <div class="badge">
+              <i class="fa-solid fa-database"></i>
+              <span>Microservices • Data</span>
+            </div>
+            <h2 class="title-main">Database per Service & Consistency</h2>
+            <p class="title-sub">ยอมรับ Eventual Consistency แลกกับความอิสระในการ scale</p>
+            <div class="title-underline"></div>
+          </div>
+
+          <div class="slide-body">
+            <div class="columns-2">
+              <div class="card compact">
+                <h3>Pattern ทั่วไป</h3>
+                <ul>
+                  <li><strong>Database per Service</strong> – ไม่แชร์ DB ตรง ๆ</li>
+                  <li><strong>API Composition</strong> – รวมข้อมูลจากหลาย service ผ่าน API Gateway</li>
+                  <li><strong>Event-driven Sync</strong> – data เปลี่ยน → ส่ง event เพื่อ sync</li>
+                  <li><strong>CQRS</strong> – แยก DB สำหรับเขียน / อ่าน</li>
+                </ul>
+                <div class="think-box">
+                  <div class="think-box-title">
+                    <i class="fa-solid fa-scale-balanced"></i> Trade-off Question
+                  </div>
+                  <p>ระบบของเรายอมให้ข้อมูล “ต่างกันเล็กน้อยชั่วคราว” ได้ไหม? ถ้าไม่ได้ – จะออกแบบ transaction อย่างไร?</p>
+                </div>
+              </div>
+              <div class="code">
+                <small>เปรียบเทียบ Monolith vs Microservices</small>
+<pre>
+[Monolith + Shared DB]
+  UserModule
+  OrderModule      ──►  [ Single DB ]
+  PaymentModule
+
+[Microservices + DB per Service]
+  UserService      ──►  [ UserDB ]
+  OrderService     ──►  [ OrderDB ]
+  PaymentService   ──►  [ PaymentDB ]
+
+✔ Independence, scalability, tech diversity
+✖ ไม่มี ACID ข้าม services → ต้องคิดเรื่อง Saga / Eventual Consistency
+</pre>
+              </div>
+            </div>
+
+            <div class="slide-footer">
+              <span>คำถามหลัก: “ระบบนี้สำคัญเรื่องความถูกต้องทันที หรือความยืดหยุ่นในระยะยาว?”</span>
+              <span class="clo-tag">CLO3 – Quality attributes</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- 10 MICROSERVICES COMM -->
+        <section class="slide" data-title="Synchronous vs Asynchronous Communication">
+          <div class="slide-header">
+            <div class="badge">
+              <i class="fa-solid fa-arrows-rotate"></i>
+              <span>Microservices • Communication</span>
+            </div>
+            <h2 class="title-main">การสื่อสารระหว่าง Services</h2>
+            <p class="title-sub">เลือกใช้ Sync / Async ให้เหมาะกับงาน</p>
+            <div class="title-underline"></div>
+          </div>
+
+          <div class="slide-body">
+            <div class="code-grid">
+              <div class="code">
+                <small>แบบ Synchronous – HTTP / gRPC</small>
+<pre>
+[Client] → [API Gateway] → [Service A] → [Service B]
+  │             │              │            │
+  └─────────────┴────── Waiting response ──┘
+
+✓ ง่ายต่อการเข้าใจและ debug
+✗ ถ้า B ช้าหรือล่ม → ทั้ง chain ช้าหรือพังตาม
+</pre>
+              </div>
+              <div class="code">
+                <small>แบบ Asynchronous – Message Queue / Event Bus</small>
+<pre>
+[Service A] → Publish Event → [Event Bus] → [Service B, C, D...]
+
+Service A ไม่ต้องรอ B/C/D
+สามารถเพิ่ม consumer ใหม่ได้ในภายหลัง
+
+✓ Decoupling ดี, scale ง่าย, ทนต่อความผิดพลาด
+✗ ซับซ้อนขึ้น, debug ยากกว่า
+</pre>
+              </div>
+            </div>
+            <div class="chip-row">
+              <div class="chip"><i class="fa-solid fa-phone"></i> Sync = คุยโทรศัพท์แบบรออีกฝ่าย</div>
+              <div class="chip"><i class="fa-solid fa-envelope"></i> Async = ส่งข้อความไว้ อีกฝ่ายว่างค่อยอ่าน</div>
+            </div>
+
+            <div class="slide-footer">
+              <span>ระบบจริงมัก “ผสม” ทั้งสองแบบ – ไม่ใช่เลือกอย่างใดอย่างหนึ่ง</span>
+              <span class="clo-tag">Bridge to Event-Driven</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- 11 CASE LINE -->
+        <section class="slide" data-title="Case Study: LINE as Microservices">
+          <div class="slide-header">
+            <div class="badge">
+              <i class="fa-brands fa-line"></i>
+              <span>Case • Microservices</span>
+            </div>
+            <h2 class="title-main">Case Study: LINE Messaging Platform</h2>
+            <p class="title-sub">ผู้ใช้หลักร้อยล้าน – ต้อง scaling แบบไหนถึงเอาอยู่?</p>
+            <div class="title-underline"></div>
+          </div>
+
+          <div class="slide-body">
+            <div class="columns-2">
+              <div class="card compact">
+                <h3>ทำไม LINE เลือก Microservices?</h3>
+                <ul class="emoji-list">
+                  <li><span class="emoji">📨</span>ข้อความจำนวนมหาศาล → ต้อง scale เฉพาะ message service</li>
+                  <li><span class="emoji">🎨</span>Feature เยอะ: Chat, Timeline, Sticker, Payment, Games</li>
+                  <li><span class="emoji">👥</span>ทีมพัฒนาหลายทีม → แบ่งทีมตาม service</li>
+                  <li><span class="emoji">🚀</span>ต้อง deploy บ่อย ๆ โดยไม่ล่มทั้งระบบ</li>
+                </ul>
+                <div class="think-box">
+                  <div class="think-box-title">
+                    <i class="fa-solid fa-circle-question"></i> ถามเล่น ๆ
+                  </div>
+                  <p>ถ้า LINE ยังเป็น Monolith ก้อนเดียว – ทุกครั้งที่เพิ่ม sticker ใหม่ต้อง deploy ทั้งระบบ – จะกล้า deploy ไหม?</p>
+                </div>
+              </div>
+              <div class="card compact">
+                <h3>บทเรียนที่ยกมาใช้กับโปรเจกต์เรา</h3>
+                <ul>
+                  <li>แยก service ตาม <strong>โดเมนที่โตเร็ว</strong> (เช่น Messaging, Payment)</li>
+                  <li>ใช้ <strong>Event-Driven</strong> เชื่อม Analytics / Notification เข้ากับ event เดิม</li>
+                  <li>Observability สำคัญ – trace request ข้ามหลาย service ให้ได้</li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="slide-footer">
+              <span>ไม่ต้องทำระบบขนาด LINE แต่เรียนรู้ “แนวคิด” ที่อยู่เบื้องหลัง</span>
+              <span class="clo-tag">CLO2 – Real-world example</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- 12 CASE GRAB -->
+        <section class="slide" data-title="Case Study: Grab Super App">
+          <div class="slide-header">
+            <div class="badge">
+              <i class="fa-solid fa-car-side"></i>
+              <span>Case • Microservices</span>
+            </div>
+            <h2 class="title-main">Case Study: Grab – จาก Monolith → Super App</h2>
+            <p class="title-sub">Ride, Food, Pay, Delivery… ทั้งหมดอยู่บนสถาปัตยกรรมแบบไหน?</p>
+            <div class="title-underline"></div>
+          </div>
+
+          <div class="slide-body">
+            <div class="columns-2">
+              <div class="card compact">
+                <h3>วิวัฒนาการของ Grab</h3>
+                <ul>
+                  <li><strong>Phase 1 – Monolith</strong>
+                    <ul>
+                      <li>Booking + Driver + Payment อยู่ใน codebase เดียว</li>
+                      <li>Deploy ช้า, bug จุดเดียวอาจล่มทั้งระบบ</li>
+                    </ul>
+                  </li>
+                  <li><strong>Phase 2 – Microservices</strong>
+                    <ul>
+                      <li>แยก Passenger, Driver, Matching, Payment, Food, Delivery ฯลฯ</li>
+                      <li>Scale เฉพาะ Matching/Payment ในช่วง peak</li>
+                    </ul>
+                  </li>
+                </ul>
+              </div>
+              <div class="card compact">
+                <h3>สิ่งที่เรานำมาปรับใช้ได้</h3>
+                <ul>
+                  <li>เริ่มจาก <strong>Monolith ที่ออกแบบดี</strong> ก่อน → refactor เป็น Microservices เมื่อถึงเวลา</li>
+                  <li>ใช้ <strong>Bounded Context</strong> ช่วยคิดว่าจะ “ตัดตรงไหน” ออกมาเป็น service ใหม่</li>
+                  <li>ใช้ event เช่น <strong>OrderPlaced</strong> ให้หลาย service มาฟังเอง (Food, Rewards, Notification)</li>
+                </ul>
+                <div class="think-box">
+                  <div class="think-box-title">
+                    <i class="fa-solid fa-bullseye"></i> Reflection
+                  </div>
+                  <p>ถ้า Task Board ของเราโดนใช้โดยบริษัทหลายพันทีม – services ไหนที่ควรถูกแยกออกมาก่อน?</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="slide-footer">
+              <span>กลยุทธ์ = Start simple → Break apart เมื่อจำเป็น (ไม่ใช่เริ่มด้วย Microservices ทุกครั้ง)</span>
+              <span class="clo-tag">CLO7 – Evaluate options</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- 13 CHALLENGES -->
+        <section class="slide" data-title="Microservices Challenges & Observability">
+          <div class="slide-header">
+            <div class="badge">
+              <i class="fa-solid fa-triangle-exclamation"></i>
+              <span>Microservices • Challenges</span>
+            </div>
+            <h2 class="title-main">ความท้าทาย & Observability</h2>
+            <p class="title-sub">รู้ด้านสว่างแล้ว ต้องไม่ลืมด้านมืดของ Microservices</p>
+            <div class="title-underline"></div>
+          </div>
+
+          <div class="slide-body">
+            <div class="columns-2">
+              <div class="img-card">
+                <img src="images/09-Observability-Stack.png"
+                     alt="Observability Stack: Logs, Metrics, Traces สำหรับ Microservices"
+                     class="zoomable">
+                <div class="img-caption">
+                  <span>09-Observability-Stack.png</span>
+                  <span><i class="fa-solid fa-magnifying-glass-plus"></i> ดู stack เต็ม ๆ</span>
+                </div>
+              </div>
+              <div class="card compact">
+                <h3>ความท้าทายหลัก</h3>
+                <ul>
+                  <li><strong>Distributed System Problems</strong> – latency, timeouts, network partition</li>
+                  <li><strong>Data Consistency</strong> – ไม่มี ACID ข้าม services</li>
+                  <li><strong>Operational Overhead</strong> – ต้อง monitor หลาย service พร้อมกัน</li>
+                  <li><strong>Testing</strong> – Integration / E2E ท้าทายกว่ามาก</li>
+                  <li><strong>Organizational Change</strong> – ต้องปรับวัฒนธรรมทีม</li>
+                </ul>
+                <div class="think-box">
+                  <div class="think-box-title">
+                    <i class="fa-regular fa-lightbulb"></i> คำถามชวนคิด
+                  </div>
+                  <p>ทีมของเรา “พร้อม” แค่ไหนสำหรับความซับซ้อนเหล่านี้? ถ้ายังไม่พร้อม – Monolith ที่ดีอาจตอบโจทย์กว่า</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="slide-footer">
+              <span>“อยากใช้ Microservices” = ต้องพร้อมเรื่อง DevOps + Observability ด้วยเสมอ</span>
+              <span class="clo-tag">Risk awareness</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- 14 WHEN TO USE MICRO -->
+        <section class="slide" data-title="When (Not) to Use Microservices">
+          <div class="slide-header">
+            <div class="badge">
+              <i class="fa-solid fa-circle-question"></i>
+              <span>Microservices • Decision</span>
+            </div>
+            <h2 class="title-main">เมื่อไหร่ “ควร” / “ไม่ควร” ใช้ Microservices</h2>
+            <p class="title-sub">เกณฑ์ช่วยตัดสินใจในชีวิตจริง</p>
+            <div class="title-underline"></div>
+          </div>
+
+          <div class="slide-body">
+            <div class="columns-2">
+              <div class="card compact">
+                <h3 class="highlight">เหมาะกับ</h3>
+                <ul>
+                  <li>ระบบใหญ่ ซับซ้อน หลายโดเมน</li>
+                  <li>ทีมพัฒนาหลายทีม (เช่น 50+ dev)</li>
+                  <li>ต้องการ release บ่อย ๆ, feature เคลื่อนไหวเร็ว</li>
+                  <li>ต้องการ scale เฉพาะบางส่วนของระบบ</li>
+                  <li>มี DevOps & monitoring ที่แข็งแรง</li>
+                </ul>
+              </div>
+              <div class="card compact">
+                <h3 class="accent">ไม่เหมาะเมื่อ</h3>
+                <ul>
+                  <li>ระบบเล็ก / Simple CRUD / MVP เริ่มต้น</li>
+                  <li>ทีมเล็ก (&lt; 10 คน) ยังไม่มี DevOps จริงจัง</li>
+                  <li>Requirement ธุรกิจยังเปลี่ยนเร็ว ไม่แน่นอน</li>
+                  <li>ต้องการ strong ACID ข้ามหลาย module</li>
+                  <li>งบประมาณด้าน Infrastructure & Tools ยังจำกัด</li>
+                </ul>
+                <div class="think-box">
+                  <div class="think-box-title">
+                    <i class="fa-solid fa-balance-scale"></i> Self-check
+                  </div>
+                  <p>ลองให้คะแนนระบบที่อยากทำ (1–5) ว่า “เข้าเงื่อนไข Microservices” มากน้อยแค่ไหน ก่อนจะเลือกใช้</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="slide-footer">
+              <span>เป้าหมาย = เลือกสถาปัตยกรรม “เหมาะกับปัญหา” ไม่ใช่ “ฮิตในกระแส”</span>
+              <span class="clo-tag">CLO7 – Evaluate options</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- 15 EDA INTRO -->
+        <section class="slide" data-title="Event-Driven Architecture – Overview">
+          <div class="slide-header">
+            <div class="badge">
+              <i class="fa-solid fa-bolt"></i>
+              <span>1.2 Event-Driven Architecture</span>
+            </div>
+            <h2 class="title-main">Event-Driven Architecture (EDA)</h2>
+            <p class="title-sub">เปลี่ยนจาก “เรียกกันตรง ๆ” เป็น “ส่ง event ปล่อยในระบบ”</p>
+            <div class="title-underline"></div>
+          </div>
+
+          <div class="slide-body">
+            <div class="columns-2">
+              <div class="card">
+                <h3>แนวคิดหลัก</h3>
+                <ul class="emoji-list">
+                  <li><span class="emoji">📢</span>ระบบสื่อสารกันผ่าน <strong>events</strong> (สิ่งที่เกิดขึ้น)</li>
+                  <li><span class="emoji">📰</span>มี <strong>Publisher</strong> ส่ง event และ <strong>Subscriber</strong> มาฟัง</li>
+                  <li><span class="emoji">📬</span>มี <strong>Event Bus / Message Broker</strong> เป็นตัวกลาง เช่น Kafka, RabbitMQ</li>
+                  <li><span class="emoji">⏱️</span>ส่วนใหญ่มักเป็นแบบ <strong>async</strong> – ส่งแล้วไม่ต้องรอทันที</li>
+                </ul>
+              </div>
+              <div class="img-card">
+                <img src="images/04-Event-Driven-Pattern.png"
+                     alt="ภาพรวม Event-Driven Pattern: Producer, Event Bus, Consumer"
+                     class="zoomable">
+                <div class="img-caption">
+                  <span>04-Event-Driven-Pattern.png</span>
+                  <span><i class="fa-solid fa-magnifying-glass-plus"></i> คลิกเพื่อขยาย</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="slide-footer">
+              <span>ลองจินตนาการ: ใน Task Board มี event อะไรเกิดขึ้นบ้างระหว่างวัน?</span>
+              <span class="clo-tag">CLO2 – Explain EDA</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- 16 REQ VS EVENT -->
+        <section class="slide" data-title="Request–Response vs Event-Driven">
+          <div class="slide-header">
+            <div class="badge">
+              <i class="fa-solid fa-arrows-left-right"></i>
+              <span>EDA • Comparison</span>
+            </div>
+            <h2 class="title-main">Request–Response vs Event-Driven</h2>
+            <p class="title-sub">ต่อยอดจากที่เรียนเรื่อง Sync/Async เมื่อกี้</p>
+            <div class="title-underline"></div>
+          </div>
+
+          <div class="slide-body">
+            <div class="code-grid">
+              <div class="code">
+                <small>Traditional Request–Response</small>
+<pre>
+[Client] ──► [Service A] ──► [Service B]
+   │                         │
+   └──────────── Waiting ────┘
+
+เหมาะกับ:
+• REST API ทั่วไป
+• ต้องการผลทันที
+</pre>
+              </div>
+              <div class="code">
+                <small>Event-Driven ผ่าน Event Bus</small>
+<pre>
+[Service A] ──► Publish Event ──► [Event Bus] ──► [Service B, C, D...]
+
+Service ใหม่สามารถ subscribe event เดิมได้
+โดยไม่ต้องแก้โค้ด Service A
+</pre>
+              </div>
+            </div>
+            <div class="chip-row">
+              <div class="chip"><i class="fa-solid fa-comments"></i> Request–Response = คุยตัวต่อตัวแบบทันที</div>
+              <div class="chip"><i class="fa-solid fa-paper-plane"></i> Event-Driven = กระจายข่าวลงกลุ่ม – ใครสนใจค่อยอ่าน</div>
+            </div>
+
+            <div class="slide-footer">
+              <span>ระบบจริง = ใช้ REST สำหรับ user-facing + Event สำหรับ background flow</span>
+              <span class="clo-tag">CLO4 – Modern patterns</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- 17 PUB/SUB TASKBOARD -->
+        <section class="slide" data-title="Pub/Sub & Task Board Events">
+          <div class="slide-header">
+            <div class="badge">
+              <i class="fa-solid fa-wave-square"></i>
+              <span>EDA • Pub/Sub</span>
+            </div>
+            <h2 class="title-main">Pub/Sub Pattern & Task Board</h2>
+            <p class="title-sub">ตัวอย่าง event flow ที่จะใช้ต่อใน Workshop</p>
+            <div class="title-underline"></div>
+          </div>
+
+          <div class="slide-body">
+            <div class="columns-2">
+              <div class="card compact">
+                <h3>ตัวอย่าง Events ใน Task Board</h3>
+                <ul>
+                  <li><strong>CardCreated</strong> – มีการ์ดใหม่บนบอร์ด</li>
+                  <li><strong>CardMoved</strong> – ย้ายการ์ดระหว่างคอลัมน์</li>
+                  <li><strong>CommentAdded</strong> – มีคอมเมนต์ใหม่</li>
+                  <li><strong>DueDateReached</strong> – การ์ดถึง deadline</li>
+                </ul>
+                <div class="think-box">
+                  <div class="think-box-title">
+                    <i class="fa-regular fa-lightbulb"></i> Workshop Hint
+                  </div>
+                  <p>แต่ละ event ควรให้ service ไหนฟังบ้าง? (Notification, Analytics, Activity Log ฯลฯ)</p>
+                </div>
+              </div>
+              <div class="img-card">
+                <img src="images/05-TaskBoard-Microservices-EDA.png"
+                     alt="Task Board Microservices + Event-Driven Architecture Diagram"
+                     class="zoomable">
+                <div class="img-caption">
+                  <span>05-TaskBoard-Microservices-EDA.png</span>
+                  <span><i class="fa-solid fa-magnifying-glass-plus"></i> ดู diagram เต็ม ๆ</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="slide-footer">
+              <span>งาน Workshop: ให้วาด Event Flow จาก use case ของทีมตัวเอง</span>
+              <span class="clo-tag">CLO6 – Design with EDA</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- 18 EVENT SOURCING + CQRS -->
+        <section class="slide" data-title="Event Sourcing & CQRS (Overview)">
+          <div class="slide-header">
+            <div class="badge">
+              <i class="fa-solid fa-layer-group"></i>
+              <span>EDA • Event Sourcing & CQRS</span>
+            </div>
+            <h2 class="title-main">Event Sourcing & CQRS</h2>
+            <p class="title-sub">เก็บประวัติทุกเหตุการณ์ แทนที่จะเก็บแต่สถานะสุดท้าย</p>
+            <div class="title-underline"></div>
+          </div>
+
+          <div class="slide-body">
+            <div class="columns-2">
+              <div class="img-card">
+                <img src="images/06-EventSourcing-CQRS.png"
+                     alt="ภาพรวม Event Sourcing + CQRS – แยก Write/Read Model"
+                     class="zoomable">
+                <div class="img-caption">
+                  <span>06-EventSourcing-CQRS.png</span>
+                  <span><i class="fa-solid fa-magnifying-glass-plus"></i> Zoom</span>
+                </div>
+              </div>
+              <div class="card compact">
+                <h3>แนวคิดสำคัญ</h3>
+                <ul>
+                  <li><strong>Event Sourcing</strong> – เก็บทุก event ลง event store, สามารถ replay เพื่อ rebuild state ได้</li>
+                  <li><strong>CQRS</strong> – แยก model/DB สำหรับ write กับ read</li>
+                  <li>เหมาะกับระบบที่ต้องการ <strong>Audit Trail</strong> ชัดเจน เช่น Banking, Healthcare</li>
+                </ul>
+                <div class="think-box">
+                  <div class="think-box-title">
+                    <i class="fa-solid fa-circle-question"></i> Question
+                  </div>
+                  <p>ระบบ Task Board ของเรา “จำเป็นต้องรู้ประวัติทุก step” หรือเก็บแค่สถานะปัจจุบันก็พอ?</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="slide-footer">
+              <span>สำหรับวิชานี้ – ขอให้เข้าใจ <strong>แนวคิด</strong> และ “ใช้เมื่อไร” ก็เพียงพอ</span>
+              <span class="clo-tag">CLO4 – Modern concepts</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- 19 BANKING EDA -->
+        <section class="slide" data-title="EDA Case Study: Mobile Banking">
+          <div class="slide-header">
+            <div class="badge">
+              <i class="fa-solid fa-piggy-bank"></i>
+              <span>EDA • Banking</span>
+            </div>
+            <h2 class="title-main">Case Study: Mobile Banking – โอนเงินด้วย Events</h2>
+            <p class="title-sub">แยก “ธุรกรรมเงิน” ออกจาก “การแจ้งเตือน” อย่างปลอดภัย</p>
+            <div class="title-underline"></div>
+          </div>
+
+          <div class="slide-body">
+            <div class="columns-2">
+              <div class="img-card">
+                <img src="images/07-Banking-Transfer-EDA.png"
+                     alt="Event-Driven สำหรับ Mobile Banking – TransferCompleted event"
+                     class="zoomable">
+                <div class="img-caption">
+                  <span>07-Banking-Transfer-EDA.png</span>
+                  <span><i class="fa-solid fa-magnifying-glass-plus"></i> ดู flow เต็ม ๆ</span>
+                </div>
+              </div>
+              <div class="card compact">
+                <h3>หลักการออกแบบ</h3>
+                <ul>
+                  <li>ตัว <strong>Transfer Service</strong> โฟกัสแค่ความถูกต้องของธุรกรรม</li>
+                  <li>เมื่อโอนสำเร็จ → <strong>Publish “TransferCompleted”</strong></li>
+                  <li>SMS, Email, Analytics, Audit Log = subscribers ของ event นี้</li>
+                </ul>
+                <div class="think-box">
+                  <div class="think-box-title">
+                    <i class="fa-regular fa-lightbulb"></i> Think
+                  </div>
+                  <p>ถ้า SMS ล่มชั่วคราว – การโอนเงินควรล้มเหลวด้วยไหม? ถ้าไม่ – EDA ช่วยได้อย่างไร?</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="slide-footer">
+              <span>หลักการ: แยก “ธุรกรรมหลัก” ออกจาก “การแจ้งเตือน” เสมอ</span>
+              <span class="clo-tag">CLO6 – Design & analysis</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- 20 HEALTHCARE EDA -->
+        <section class="slide" data-title="EDA Case Study: Healthcare Appointment">
+          <div class="slide-header">
+            <div class="badge">
+              <i class="fa-solid fa-hospital-user"></i>
+              <span>EDA • Healthcare</span>
+            </div>
+            <h2 class="title-main">Case Study: ระบบนัดหมายแพทย์</h2>
+            <p class="title-sub">Events หนึ่งรายการ เชื่อมหลายบริการรอบ ๆ คนไข้</p>
+            <div class="title-underline"></div>
+          </div>
+
+          <div class="slide-body">
+            <div class="columns-2">
+              <div class="img-card">
+                <img src="images/08-Healthcare-Appointment-EDA.png"
+                     alt="ระบบนัดหมายแพทย์แบบ Event-Driven"
+                     class="zoomable">
+                <div class="img-caption">
+                  <span>08-Healthcare-Appointment-EDA.png</span>
+                  <span><i class="fa-solid fa-magnifying-glass-plus"></i> Zoom</span>
+                </div>
+              </div>
+              <div class="card compact">
+                <h3>ตัวอย่าง Event Flow</h3>
+                <ul>
+                  <li><strong>AppointmentCreated</strong> → แจ้งเตือนคนไข้, หมอ, สร้าง payment link</li>
+                  <li><strong>AppointmentStarting</strong> → เตรียมห้อง video call + ประวัติคนไข้</li>
+                  <li><strong>PrescriptionCreated</strong> → ส่งข้อมูลไป Pharmacy & Delivery</li>
+                </ul>
+                <div class="think-box">
+                  <div class="think-box-title">
+                    <i class="fa-solid fa-circle-question"></i> คิดต่อ
+                  </div>
+                  <p>ถ้าอยากเพิ่ม “ระบบแบบสอบถามความพึงพอใจหลังพบแพทย์” – ต้องแก้โค้ด service เดิมไหม ถ้าใช้ EDA?</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="slide-footer">
+              <span>ข้อดีของ EDA = เพิ่ม service ใหม่ได้ โดยไม่ต้องแก้ของเดิม</span>
+              <span class="clo-tag">CLO7 – Evaluate EDA</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- 21 EDA PROS/CONS -->
+        <section class="slide" data-title="EDA – Pros, Cons & When to Use">
+          <div class="slide-header">
+            <div class="badge">
+              <i class="fa-solid fa-balance-scale"></i>
+              <span>EDA • Pros & Cons</span>
+            </div>
+            <h2 class="title-main">Event-Driven: จุดแข็งและข้อควรระวัง</h2>
+            <p class="title-sub">เลือกใช้ให้ตรงสถานการณ์ จะได้ไม่ต้อง debug event กลางดึก 😅</p>
+            <div class="title-underline"></div>
+          </div>
+
+          <div class="slide-body">
+            <div class="columns-2">
+              <div class="card compact">
+                <h3 class="highlight">จุดแข็ง</h3>
+                <ul>
+                  <li>Loose coupling ระหว่าง services</li>
+                  <li>รองรับ Real-time / Streaming ได้ดี</li>
+                  <li>เพิ่ม subscriber ใหม่ได้ง่าย</li>
+                  <li>เก็บ event log ใช้ทำ analytics / audit ได้</li>
+                </ul>
+              </div>
+              <div class="card compact">
+                <h3 class="accent">ข้อควรระวัง</h3>
+                <ul>
+                  <li>Eventual consistency – state อาจไม่ตรงกันทันที</li>
+                  <li>debug flow ยาก (กระโดดหลาย service)</li>
+                  <li>ต้องออกแบบ idempotency & error handling ดี ๆ</li>
+                  <li>ต้องมี dead-letter queue, monitoring ที่ดี</li>
+                </ul>
+              </div>
+            </div>
+            <div class="think-box">
+              <div class="think-box-title">
+                <i class="fa-regular fa-lightbulb"></i> สรุปแบบสั้น
+              </div>
+              <p>ถ้างาน “ต้องทันทีและซับซ้อนน้อย” → REST; ถ้า “มีหลายผู้ฟัง, ทำ background, ขยายต่อในอนาคต” → พิจารณา EDA</p>
+            </div>
+
+            <div class="slide-footer">
+              <span>ใน Task Board – Activity Log / Analytics / Notification คือ candidate ที่ดีสำหรับ EDA</span>
+              <span class="clo-tag">CLO3 – Trade-offs</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- 22 SOA BASICS -->
+        <section class="slide" data-title="Service-Oriented Architecture (SOA)">
+          <div class="slide-header">
+            <div class="badge">
+              <i class="fa-solid fa-diagram-project"></i>
+              <span>1.3 Service-Oriented Architecture</span>
+            </div>
+            <h2 class="title-main">Service-Oriented Architecture (SOA)</h2>
+            <p class="title-sub">รุ่นพี่ของ Microservices ในโลก Enterprise</p>
+            <div class="title-underline"></div>
+          </div>
+
+          <div class="slide-body">
+            <div class="columns-2">
+              <div class="card compact">
+                <h3>แนวคิดหลัก</h3>
+                <ul>
+                  <li>สร้าง <strong>services ที่ใช้ซ้ำได้</strong> ระดับองค์กร</li>
+                  <li>สื่อสารผ่านมาตรฐานกลาง: SOAP, REST, XML ฯลฯ</li>
+                  <li>ใช้ <strong>ESB (Enterprise Service Bus)</strong> เป็นตัวกลาง</li>
+                  <li>เน้นเชื่อมระหว่าง <strong>ระบบเก่า (legacy)</strong> กับระบบใหม่</li>
+                </ul>
+              </div>
+              <div class="card compact">
+                <h3>SOA vs Microservices (แบบเร็ว)</h3>
+                <table class="comparison">
+                  <thead>
+                  <tr>
+                    <th>ด้าน</th>
+                    <th>SOA</th>
+                    <th>Microservices</th>
+                  </tr>
+                  </thead>
+                  <tbody>
+                  <tr>
+                    <td>ขนาด Service</td>
+                    <td>ค่อนข้างใหญ่</td>
+                    <td>เล็ก, โฟกัสโดเมน</td>
+                  </tr>
+                  <tr>
+                    <td>Integration</td>
+                    <td>ผ่าน ESB, SOAP/XML</td>
+                    <td>API Gateway, REST/gRPC</td>
+                  </tr>
+                  <tr>
+                    <td>Database</td>
+                    <td>แชร์กันได้บางส่วน</td>
+                    <td>แยก DB ต่อ service</td>
+                  </tr>
+                  <tr>
+                    <td>Governance</td>
+                    <td>คุมกลางทั้งองค์กร</td>
+                    <td>กระจายตามทีม</td>
+                  </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div class="slide-footer">
+              <span>SOA ยังสำคัญมากในองค์กรที่มีระบบเดิมจำนวนมาก (เช่น หน่วยงานรัฐ/โรงพยาบาล)</span>
+              <span class="clo-tag">CLO2 – Explain SOA</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- 23 SOA E-HEALTH -->
+        <section class="slide" data-title="SOA Case: Thailand e-Health">
+          <div class="slide-header">
+            <div class="badge">
+              <i class="fa-solid fa-stethoscope"></i>
+              <span>SOA • e-Health</span>
+            </div>
+            <h2 class="title-main">Case Study: ระบบสาธารณสุขไทยแบบ SOA</h2>
+            <p class="title-sub">เชื่อมโรงพยาบาลหลายแห่ง ด้วย Service กลางของกระทรวง</p>
+            <div class="title-underline"></div>
+          </div>
+
+          <div class="slide-body">
+            <div class="card">
+              <h3>แนวคิดแบบย่อ</h3>
+              <ul class="emoji-list">
+                <li><span class="emoji">🏥</span>แต่ละโรงพยาบาลมี HIS ของตัวเอง (vendor ต่างกัน)</li>
+                <li><span class="emoji">🌐</span>กระทรวงสร้าง <strong>ชุด services กลาง</strong> เช่น Patient, Lab, Claim</li>
+                <li><span class="emoji">🚌</span>ใช้ ESB ช่วย mapping และ routing message ระหว่างระบบ</li>
+                <li><span class="emoji">📡</span>HIS เดิมไม่ต้องทิ้ง – แค่เขียน adapter มาคุยกับ SOA layer</li>
+              </ul>
+              <div class="think-box">
+                <div class="think-box-title">
+                  <i class="fa-regular fa-lightbulb"></i> ลองเชื่อมโยง
+                </div>
+                <p>ถ้าคณะของเราอยากเชื่อมระบบ “ทะเบียนนักศึกษา – LMS – ระบบยืมอุปกรณ์” เข้าด้วยกัน – จะใช้แนวคิด SOA ช่วยได้อย่างไร?</p>
+              </div>
+            </div>
+
+            <div class="slide-footer">
+              <span>SOA เน้น “ทำให้ระบบต่าง ๆ คุยกันได้” มากกว่าการ scale แบบ Microservices</span>
+              <span class="clo-tag">Integration-focused architecture</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- 24 SERVERLESS INTRO -->
+        <section class="slide" data-title="Serverless Architecture – Basics">
+          <div class="slide-header">
+            <div class="badge">
+              <i class="fa-solid fa-cloud-bolt"></i>
+              <span>1.4 Serverless Architecture</span>
+            </div>
+            <h2 class="title-main">Serverless Architecture</h2>
+            <p class="title-sub">“มีเซิร์ฟเวอร์ แต่เราไม่ต้องจัดการเซิร์ฟเวอร์เอง”</p>
+            <div class="title-underline"></div>
+          </div>
+
+          <div class="slide-body">
+            <div class="columns-2">
+              <div class="card compact">
+                <h3>ภาพรวม</h3>
+                <ul>
+                  <li>รันโค้ดเป็น <strong>Function</strong> สั้น ๆ (FaaS) เช่น AWS Lambda, Cloud Functions</li>
+                  <li>ถูกเรียกเมื่อมี <strong>Event / Request</strong> เกิดขึ้น</li>
+                  <li><strong>Pay-per-use</strong> – ใช้เท่าไหร่จ่ายเท่านั้น</li>
+                  <li><strong>Auto-scaling</strong> – รองรับ traffic สูง ๆ ได้โดยไม่ต้อง config server เอง</li>
+                </ul>
+              </div>
+              <div class="img-card">
+                <img src="images/10-Serverless-Patterns.png"
+                     alt="Serverless Patterns – API, Event, Schedule"
+                     class="zoomable">
+                <div class="img-caption">
+                  <span>10-Serverless-Patterns.png</span>
+                  <span><i class="fa-solid fa-magnifying-glass-plus"></i> คลิกเพื่อดู pattern</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="slide-footer">
+              <span>เหมาะกับงานเป็นชิ้นเล็ก ๆ, ไม่รันต่อเนื่องทั้งวัน</span>
+              <span class="clo-tag">CLO4 – Explain Serverless</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- 25 SERVERLESS USE CASES -->
+        <section class="slide" data-title="Serverless – Use Cases">
+          <div class="slide-header">
+            <div class="badge">
+              <i class="fa-solid fa-wand-magic-sparkles"></i>
+              <span>Serverless • Use Cases</span>
+            </div>
+            <h2 class="title-main">งานแบบไหนเหมาะกับ Serverless?</h2>
+            <p class="title-sub">คิดจากงานจริงรอบตัวเรา</p>
+            <div class="title-underline"></div>
+          </div>
+
+          <div class="slide-body">
+            <div class="columns-2">
+              <div class="card compact">
+                <h3>เหมาะกับ</h3>
+                <ul>
+                  <li>Webhook (LINE Notify, Payment callback)</li>
+                  <li>Image / File processing – resize, convert เมื่อมีการ upload</li>
+                  <li>Cron jobs – รายงานรายวัน, cleanup log เก่า</li>
+                  <li>Backend เล็ก ๆ สำหรับ front-end บางหน้า</li>
+                </ul>
+              </div>
+              <div class="card compact">
+                <h3>ควรระวังเมื่อ</h3>
+                <ul>
+                  <li>งานต้องรันนานมาก (10–15 นาทีขึ้นไป)</li>
+                  <li>ระบบมี traffic สูงต่อเนื่อง 24/7 → VM/Container อาจคุ้มกว่า</li>
+                  <li>ระบบที่ห้ามมี cold start เลย เช่น trading</li>
+                </ul>
+                <div class="think-box">
+                  <div class="think-box-title">
+                    <i class="fa-regular fa-circle-question"></i> Task Board Idea
+                  </div>
+                  <p>ใน Task Board – งานไหนบ้างที่เหมาะเป็น Serverless? เช่น nightly report, archive การ์ดเก่า, notification ฯลฯ</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="slide-footer">
+              <span>ข้อดีใหญ่ของ Serverless = “เอาเวลาไปโฟกัสที่ logic มากกว่าดูแล infra”</span>
+              <span class="clo-tag">CLO7 – Evaluate Serverless</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- 26 COMPARISON MATRIX -->
+        <section class="slide" data-title="Architecture Comparison Matrix">
+          <div class="slide-header">
+            <div class="badge">
+              <i class="fa-solid fa-table-list"></i>
+              <span>Comparison • 4 Styles</span>
+            </div>
+            <h2 class="title-main">เปรียบเทียบ Microservices • EDA • SOA • Serverless</h2>
+            <p class="title-sub">ไม่มี “สถาปัตยกรรมที่ดีที่สุด” – มีแต่ “เหมาะที่สุดกับบริบทนั้น”</p>
+            <div class="title-underline"></div>
+          </div>
+
+          <div class="slide-body">
+            <div class="columns-2">
+              <div class="card compact">
+                <table class="comparison">
+                  <thead>
+                  <tr>
+                    <th>ด้าน</th>
+                    <th>Micro</th>
+                    <th>EDA</th>
+                    <th>SOA</th>
+                    <th>Serverless</th>
+                  </tr>
+                  </thead>
+                  <tbody>
+                  <tr>
+                    <td>Scalability</td>
+                    <td><span class="star">★★★★★</span></td>
+                    <td><span class="star">★★★★★</span></td>
+                    <td>★★★☆☆</td>
+                    <td><span class="star">★★★★★</span></td>
+                  </tr>
+                  <tr>
+                    <td>Complexity</td>
+                    <td>สูง</td>
+                    <td>สูง</td>
+                    <td>ปานกลาง</td>
+                    <td>ปานกลาง</td>
+                  </tr>
+                  <tr>
+                    <td>Cost Pattern</td>
+                    <td>Infra + scale</td>
+                    <td>Infra + broker</td>
+                    <td>ESB cost สูง</td>
+                    <td>จ่ายตามใช้</td>
+                  </tr>
+                  <tr>
+                    <td>DevOps Need</td>
+                    <td>สูงมาก</td>
+                    <td>สูง</td>
+                    <td>ปานกลาง</td>
+                    <td>ไม่สูงมาก</td>
+                  </tr>
+                  </tbody>
+                </table>
+              </div>
+              <div class="img-card">
+                <img src="images/11-Hybrid-Architecture-Decision.png"
+                     alt="Hybrid Architecture Decision Map – เลือกสถาปัตยกรรมให้เหมาะกับส่วนต่าง ๆ"
+                     class="zoomable">
+                <div class="img-caption">
+                  <span>11-Hybrid-Architecture-Decision.png</span>
+                  <span><i class="fa-solid fa-magnifying-glass-plus"></i> คลิกเพื่อดู decision map</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="slide-footer">
+              <span>ระบบจริงมักเป็น <strong>Hybrid</strong> ไม่ได้ใช้แค่สถาปัตยกรรมเดียว</span>
+              <span class="clo-tag">CLO7 – Compare options</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- 27 DECISION TREE -->
+        <section class="slide" data-title="Architecture Decision Tree">
+          <div class="slide-header">
+            <div class="badge">
+              <i class="fa-solid fa-tree"></i>
+              <span>Decision • Choosing Styles</span>
+            </div>
+            <h2 class="title-main">Decision Tree – เลือกสถาปัตยกรรมอย่างไรดี?</h2>
+            <p class="title-sub">Guideline เวลาเริ่มออกแบบระบบใหม่</p>
+            <div class="title-underline"></div>
+          </div>
+
+          <div class="slide-body">
+            <div class="card">
+              <h3>แนวทางคิดแบบ Step-by-step</h3>
+              <ul class="emoji-list">
+                <li><span class="emoji">1️⃣</span>ทีมเล็ก, ระบบยังไม่ใหญ่ → เริ่มจาก <strong>Monolith + Layered</strong> หรือ <strong>Monolith + Serverless</strong></li>
+                <li><span class="emoji">2️⃣</span>เริ่มมีหลายทีม, feature เยอะ → ค่อยเลือกบางโดเมนมาทำ <strong>Microservices</strong></li>
+                <li><span class="emoji">3️⃣</span>ต้องเชื่อมระบบเดิมหลายตัว → เพิ่ม <strong>SOA / API Gateway / ESB</strong> เป็นชั้นกลาง</li>
+                <li><span class="emoji">4️⃣</span>มี event เยอะ, background jobs เยอะ → ผสม <strong>Event-Driven + Serverless</strong></li>
+              </ul>
+              <div class="think-box">
+                <div class="think-box-title">
+                  <i class="fa-solid fa-user-gear"></i> Architect Mindset
+                </div>
+                <p>หน้าที่ของ Architect ไม่ใช่ “หาคำตอบเดียวที่ถูกต้อง” แต่คือ “ตั้งคำถามให้ครบ และอธิบาย trade-off ได้ชัดเจน”</p>
+              </div>
+            </div>
+
+            <div class="slide-footer">
+              <span>ลองใช้ decision tree นี้กับ Task Board ของทีมดู – จะเลือกเส้นทางไหน?</span>
+              <span class="clo-tag">Architect mindset</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- 28 HYBRID TASKBOARD -->
+        <section class="slide" data-title="Task Board – Hybrid Architecture">
+          <div class="slide-header">
+            <div class="badge">
+              <i class="fa-solid fa-clipboard-list"></i>
+              <span>Case • Task Board Hybrid</span>
+            </div>
+            <h2 class="title-main">ออกแบบ Task Board แบบ Hybrid</h2>
+            <p class="title-sub">ใช้จุดแข็งของแต่ละสถาปัตยกรรมให้เหมาะกับส่วนต่าง ๆ</p>
+            <div class="title-underline"></div>
+          </div>
+
+          <div class="slide-body">
+            <div class="columns-2">
+              <div class="card compact">
+                <h3>ไอเดียเบื้องต้น</h3>
+                <ul>
+                  <li><strong>Core API</strong> – Monolith/Layered หรือ Microservices (Board, Column, Card)</li>
+                  <li><strong>Activity Log & Analytics</strong> – Event-Driven (CardCreated, CardMoved)</li>
+                  <li><strong>Notifications</strong> – Serverless function ยิง email/LINE</li>
+                  <li><strong>Integration</strong> – REST / SOA เชื่อมกับระบบอื่นขององค์กร</li>
+                </ul>
+                <div class="think-box">
+                  <div class="think-box-title">
+                    <i class="fa-solid fa-lightbulb"></i> Workshop Task
+                  </div>
+                  <p>แต่ละทีมจะออกแบบ “เวอร์ชันของตัวเอง” อย่างไร? จะเน้นตรงไหนให้เด่น – scaling, analytics, integration หรืออย่างอื่น?</p>
+                </div>
+              </div>
+              <div class="img-card">
+                <img src="images/05-TaskBoard-Microservices-EDA.png"
+                     alt="Task Board Hybrid Architecture Diagram"
+                     class="zoomable">
+                <div class="img-caption">
+                  <span>Task Board – Microservices + EDA</span>
+                  <span><i class="fa-solid fa-magnifying-glass-plus"></i> ใช้เป็นจุดเริ่มต้นออกแบบของทีม</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="slide-footer">
+              <span>จุดประสงค์ = ให้แต่ละทีม “คิดอย่างสถาปนิก” ไม่ใช่แค่เขียนโค้ดให้เสร็จ</span>
+              <span class="clo-tag">CLO6 – Apply to project</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- 29 SUMMARY -->
+        <section class="slide" data-title="Week 4 Summary – Key Takeaways">
+          <div class="slide-header">
+            <div class="badge">
+              <i class="fa-solid fa-clipboard-check"></i>
+              <span>Summary • Week 4</span>
+            </div>
+            <h2 class="title-main">สรุปภาพรวมสัปดาห์ที่ 4</h2>
+            <p class="title-sub">Microservices • Event-Driven • SOA • Serverless ในมุมของ Architect</p>
+            <div class="title-underline"></div>
+          </div>
+
+          <div class="slide-body">
+            <div class="card">
+              <ul class="emoji-list">
+                <li><span class="emoji">🧩</span><strong>Microservices</strong> – แตกระบบเป็น service เล็ก ๆ ที่ deploy/scale แยกกันได้ แต่ซับซ้อนขึ้น</li>
+                <li><span class="emoji">⚡</span><strong>Event-Driven</strong> – ใช้ events เชื่อม service ให้หลวม, เหมาะกับ real-time & analytics</li>
+                <li><span class="emoji">🌐</span><strong>SOA</strong> – เน้น integration & reuse ในองค์กรใหญ่ที่มี legacy เยอะ</li>
+                <li><span class="emoji">☁️</span><strong>Serverless</strong> – เหมาะกับงาน event-driven ขนาดเล็ก, จ่ายตามใช้</li>
+              </ul>
+              <div class="think-box">
+                <div class="think-box-title">
+                  <i class="fa-solid fa-brain"></i> Takeaway สำหรับวิชานี้
+                </div>
+                <p>สิ่งสำคัญไม่ใช่ “จำทุกชื่อ pattern” แต่คือสามารถ <strong>อธิบายเหตุผล</strong> ว่า
+                  “ทำไมเลือก/ไม่เลือก” สถาปัตยกรรมหนึ่งในบริบทจริง</p>
+              </div>
+            </div>
+
+            <div class="slide-footer">
+              <span>ใช้ความรู้นี้ต่อยอดใน Workshop และโปรเจกต์ Task Board ของทีม</span>
+              <span class="clo-tag">CLO2 · CLO3 · CLO4 · CLO6 · CLO7</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- 30 NEXT WEEK -->
+        <section class="slide" data-title="Next Week: C4 Model & Architecture Views">
+          <div class="slide-header">
+            <div class="badge">
+              <i class="fa-solid fa-forward-step"></i>
+              <span>Next • C4 Model</span>
+            </div>
+            <h2 class="title-main">สัปดาห์หน้า: C4 Model & Architecture Views</h2>
+            <p class="title-sub">จาก “ไอเดียในหัว” → “แผนภาพที่คนทั้งทีมเข้าใจตรงกัน”</p>
+            <div class="title-underline"></div>
+          </div>
+
+          <div class="slide-body">
+            <div class="columns-2">
+              <div class="card compact">
+                <h3>สิ่งที่จะเรียน</h3>
+                <ul>
+                  <li>C1 – Context View: ระบบของเราในภาพใหญ่</li>
+                  <li>C2 – Container View: Web, API, DB, External Service</li>
+                  <li>C3 – Component View: ส่วนประกอบภายในแต่ละ service</li>
+                  <li>C4 – Code View (ถ้าจำเป็น)</li>
+                </ul>
+              </div>
+              <div class="card compact">
+                <h3>สิ่งที่อยากให้เตรียม</h3>
+                <ul>
+                  <li>คิดต่อว่าทีมของเราอยากใช้สถาปัตยกรรมแบบไหนกับ Task Board</li>
+                  <li>เตรียมเครื่องมือวาด diagram (draw.io ฯลฯ)</li>
+                  <li>ลองเปิดดูตัวอย่างที่ <span class="highlight">c4model.com</span> เบื้องต้นได้</li>
+                </ul>
+                <div class="think-box">
+                  <div class="think-box-title">
+                    <i class="fa-solid fa-question"></i> Q&A Time
+                  </div>
+                  <p>มีคำถามหรือข้อสงสัยเกี่ยวกับ Microservices / EDA / SOA / Serverless ที่อยากเคลียร์ก่อนขึ้นสัปดาห์หน้าไหม?</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="slide-footer">
+              <span>ปิดท้ายสัปดาห์ด้วยการถาม–ตอบ แลกเปลี่ยนประสบการณ์จริง</span>
+              <span class="clo-tag">Q&A / Discussion</span>
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- IMAGE MODAL -->
+<div class="image-modal" id="imageModal">
+  <div class="image-modal-inner">
+    <img id="modalImage" src="" alt="">
+    <div class="image-modal-caption">
+      <span id="modalCaption"></span>
+      <small><i class="fa-solid fa-mouse-pointer"></i> คลิกพื้นหลังหรือกด ESC เพื่อปิด</small>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const slides = Array.from(document.querySelectorAll('.slide'));
+  const total = slides.length;
+  let index = 0;
+  let fontScale = 1;
+
+  const titleEl = document.getElementById('slideTitle');
+  const indicatorEl = document.getElementById('slideIndicator');
+  const progressEl = document.getElementById('progressFill');
+
+  const prevBtn = document.getElementById('prevSlide');
+  const nextBtn = document.getElementById('nextSlide');
+  const fontUpBtn = document.getElementById('fontUp');
+  const fontDownBtn = document.getElementById('fontDown');
+  const themeBtn = document.getElementById('themeToggle');
+  const fullscreenBtn = document.getElementById('fullscreenBtn');
+
+  const modal = document.getElementById('imageModal');
+  const modalImg = document.getElementById('modalImage');
+  const modalCaption = document.getElementById('modalCaption');
+
+  function updateTitle(){
+    const t = slides[index].dataset.title || `Slide ${index+1}`;
+    titleEl.textContent = t;
+  }
+
+  function updateIndicator(){
+    indicatorEl.textContent = `${index+1} / ${total}`;
+  }
+
+  function updateProgress(){
+    progressEl.style.width = ((index+1)/total*100) + '%';
+  }
+
+  function showSlide(i){
+    if(i < 0 || i >= total) return;
+    slides[index].classList.remove('active');
+    slides[i].classList.add('active');
+    index = i;
+    updateTitle();
+    updateIndicator();
+    updateProgress();
+  }
+
+  function changeFont(delta){
+    fontScale = Math.min(1.7, Math.max(0.75, fontScale + delta));
+    document.documentElement.style.setProperty('--font-scale', fontScale.toString());
+  }
+
+  function initTheme(){
+    const stored = localStorage.getItem('engse207_week4_theme_v2');
+    if(stored === 'light' || stored === 'dark'){
+      document.body.dataset.theme = stored;
+    }
+    updateThemeIcon();
+  }
+
+  function updateThemeIcon(){
+    const theme = document.body.dataset.theme;
+    if(theme === 'light'){
+      themeBtn.innerHTML = '<i class="fa-regular fa-sun"></i>';
+      themeBtn.title = 'สลับเป็นโหมดมืด';
+    }else{
+      themeBtn.innerHTML = '<i class="fa-regular fa-moon"></i>';
+      themeBtn.title = 'สลับเป็นโหมดสว่าง';
+    }
+  }
+
+  function toggleTheme(){
+    const theme = document.body.dataset.theme === 'light' ? 'dark' : 'light';
+    document.body.dataset.theme = theme;
+    localStorage.setItem('engse207_week4_theme_v2', theme);
+    updateThemeIcon();
+  }
+
+  function toggleFullscreen(){
+    if(!document.fullscreenElement){
+      document.documentElement.requestFullscreen().catch(()=>{});
+    }else{
+      document.exitFullscreen().catch(()=>{});
+    }
+  }
+
+  function openModal(src, alt){
+    modalImg.src = src;
+    modalImg.alt = alt || '';
+    modalCaption.textContent = alt || '';
+    modal.classList.add('open');
+  }
+
+  function closeModal(){
+    modal.classList.remove('open');
+    modalImg.src = '';
+    modalImg.alt = '';
+  }
+
+  // listeners
+  prevBtn.addEventListener('click', ()=> showSlide(index-1));
+  nextBtn.addEventListener('click', ()=> showSlide(index+1));
+  fontUpBtn.addEventListener('click', ()=> changeFont(0.08));
+  fontDownBtn.addEventListener('click', ()=> changeFont(-0.08));
+  themeBtn.addEventListener('click', toggleTheme);
+  fullscreenBtn.addEventListener('click', toggleFullscreen);
+
+  document.addEventListener('keydown', (e)=>{
+    if(modal.classList.contains('open')){
+      if(e.key === 'Escape'){ closeModal(); }
+      return;
+    }
+    switch(e.key){
+      case 'ArrowRight':
+      case 'PageDown':
+      case ' ':
+        e.preventDefault();
+        showSlide(index+1);
+        break;
+      case 'ArrowLeft':
+      case 'PageUp':
+        e.preventDefault();
+        showSlide(index-1);
+        break;
+      case 'Home':
+        showSlide(0);
+        break;
+      case 'End':
+        showSlide(total-1);
+        break;
+      case '+':
+        changeFont(0.08);
+        break;
+      case '-':
+        changeFont(-0.08);
+        break;
+      case 'f':
+      case 'F':
+        toggleFullscreen();
+        break;
+    }
+  });
+
+  modal.addEventListener('click', (e)=>{
+    if(e.target === modal || e.target === modalImg || e.target === modalCaption){
+      closeModal();
+    }
+  });
+
+  document.querySelectorAll('.img-card img').forEach(img=>{
+    img.classList.add('zoomable');
+    img.addEventListener('click', ()=>{
+      openModal(img.src, img.alt);
+    });
+  });
+
+  // init
+  initTheme();
+  updateTitle();
+  updateIndicator();
+  updateProgress();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ENGSE207 Week 4: Architectural Styles & Patterns (2)</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600;700&family=Sarabun:wght@300;400;600&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            /* Light Theme Variables */
+            --bg-color: #f8f9fa;
+            --text-color: #2d3436;
+            --accent-color: #0984e3;
+            --secondary-color: #636e72;
+            --card-bg: #ffffff;
+            --shadow: 0 4px 15px rgba(0,0,0,0.1);
+            --slide-width: 1200px;
+            --slide-height: 675px; /* 16:9 Aspect Ratio */
+            --success-color: #00b894;
+            --danger-color: #d63031;
+            --warning-color: #fdcb6e;
+        }
+
+        [data-theme="dark"] {
+            /* Dark Theme Variables */
+            --bg-color: #1e1e2e;
+            --text-color: #dfe6e9;
+            --accent-color: #74b9ff;
+            --secondary-color: #b2bec3;
+            --card-bg: #2d2d42;
+            --shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Prompt', sans-serif;
+            background-color: #2d3436; /* Background outside slide */
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        /* Slide Container */
+        #slide-container {
+            width: var(--slide-width);
+            height: var(--slide-height);
+            background-color: var(--bg-color);
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 0 50px rgba(0,0,0,0.5);
+            border-radius: 8px;
+            transition: background-color 0.3s ease;
+        }
+
+        /* Individual Slide */
+        .slide {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            padding: 40px 60px;
+            display: flex;
+            flex-direction: column;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.4s ease, transform 0.4s ease;
+            transform: translateX(50px);
+        }
+
+        .slide.active {
+            opacity: 1;
+            visibility: visible;
+            transform: translateX(0);
+            z-index: 1;
+        }
+
+        /* Typography */
+        h1 { font-size: 3rem; color: var(--accent-color); margin-bottom: 1rem; line-height: 1.2; }
+        h2 { font-size: 2.2rem; color: var(--accent-color); margin-bottom: 1rem; border-bottom: 2px solid var(--accent-color); padding-bottom: 10px; }
+        h3 { font-size: 1.6rem; color: var(--text-color); margin-top: 1rem; margin-bottom: 0.5rem; }
+        p, li { font-size: 1.3rem; line-height: 1.6; color: var(--text-color); margin-bottom: 10px; }
+        
+        .small-text { font-size: 1rem; color: var(--secondary-color); }
+        .highlight { color: var(--accent-color); font-weight: bold; }
+
+        /* Layout Utilities */
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; height: 100%; align-items: center; }
+        .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+        .flex-center { display: flex; justify-content: center; align-items: center; flex-direction: column; text-align: center; height: 100%; }
+        .content-box { height: 80%; display: flex; flex-direction: column; justify-content: flex-start; }
+
+        /* Components */
+        .card {
+            background-color: var(--card-bg);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: var(--shadow);
+            border-left: 5px solid var(--accent-color);
+        }
+
+        .img-container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .img-container img {
+            max-width: 100%;
+            max-height: 500px;
+            border-radius: 8px;
+            box-shadow: var(--shadow);
+            object-fit: contain;
+        }
+
+        /* Infographic Boxes */
+        .info-box {
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            font-size: 1.1rem;
+        }
+        .box-success { background-color: rgba(0, 184, 148, 0.1); border: 1px solid var(--success-color); color: var(--success-color); }
+        .box-danger { background-color: rgba(214, 48, 49, 0.1); border: 1px solid var(--danger-color); color: var(--danger-color); }
+        .box-info { background-color: rgba(9, 132, 227, 0.1); border: 1px solid var(--accent-color); color: var(--accent-color); }
+
+        /* Comparison Table */
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 1.1rem;
+        }
+        .comparison-table th { background-color: var(--accent-color); color: white; padding: 10px; }
+        .comparison-table td { border: 1px solid var(--secondary-color); padding: 10px; text-align: center; color: var(--text-color); }
+
+        /* Controls */
+        .controls-top {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 100;
+            display: flex;
+            gap: 10px;
+        }
+
+        .controls-bottom {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            z-index: 100;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            background: rgba(0,0,0,0.5);
+            padding: 10px 20px;
+            border-radius: 30px;
+            backdrop-filter: blur(5px);
+        }
+
+        .btn-control {
+            background: var(--card-bg);
+            border: none;
+            color: var(--text-color);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.2rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            transition: transform 0.2s;
+        }
+
+        .btn-control:hover { transform: scale(1.1); background-color: var(--accent-color); color: white; }
+        
+        .slide-counter {
+            color: white;
+            font-weight: bold;
+            font-size: 1.2rem;
+            min-width: 50px;
+            text-align: center;
+        }
+
+        /* Footer */
+        .footer {
+            position: absolute;
+            bottom: 15px;
+            left: 20px;
+            font-size: 0.9rem;
+            color: var(--secondary-color);
+            opacity: 0.7;
+        }
+
+        /* Animations */
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-item { animation: fadeIn 0.5s ease forwards; opacity: 0; }
+        .delay-1 { animation-delay: 0.1s; }
+        .delay-2 { animation-delay: 0.2s; }
+        .delay-3 { animation-delay: 0.3s; }
+
+    </style>
+</head>
+<body data-theme="light">
+
+    <div class="controls-top">
+        <button class="btn-control" onclick="toggleTheme()" title="เปลี่ยนธีม"><i class="fas fa-moon"></i></button>
+        <button class="btn-control" onclick="adjustFontSize(-1)" title="ลดขนาดตัวอักษร"><i class="fas fa-minus"></i></button>
+        <button class="btn-control" onclick="adjustFontSize(1)" title="เพิ่มขนาดตัวอักษร"><i class="fas fa-plus"></i></button>
+        <button class="btn-control" onclick="toggleFullscreen()" title="เต็มจอ"><i class="fas fa-expand"></i></button>
+    </div>
+
+    <div id="slide-container">
+        
+        <section class="slide active flex-center">
+            <h3 class="animate-item">ENGSE207 Software Architecture</h3>
+            <h1 class="animate-item delay-1">สัปดาห์ที่ 4: Architectural Styles & Patterns (2)</h1>
+            <h2 class="animate-item delay-2">Microservices, Event-Driven, SOA, Serverless</h2>
+            <hr style="width: 50%; border: 2px solid var(--accent-color); margin: 20px 0;">
+            <div class="card animate-item delay-3" style="text-align: left; display: inline-block;">
+                <p><strong>👨‍🏫 อาจารย์ผู้สอน:</strong> นายธนิต เกตุแก้ว</p>
+                <p><strong>📚 หลักสูตร:</strong> วิศวกรรมซอฟต์แวร์ มทร.ล้านนา</p>
+                <p><strong>🕒 ระยะเวลา:</strong> 2 ชั่วโมงบรรยาย + 3 ชั่วโมง Workshop</p>
+            </div>
+        </section>
+
+        <section class="slide">
+            <h2>📋 สารบัญ</h2>
+            <div class="grid-2">
+                <div class="content-box justify-center">
+                    <div class="card animate-item">1. ทบทวนสัปดาห์ที่แล้ว</div><br>
+                    <div class="card animate-item delay-1">2. Microservices Architecture</div><br>
+                    <div class="card animate-item delay-2">3. Event-Driven Architecture</div><br>
+                    <div class="card animate-item delay-3">4. Service-Oriented Architecture (SOA)</div>
+                </div>
+                <div class="content-box justify-center">
+                    <div class="card animate-item delay-1">5. Serverless Architecture</div><br>
+                    <div class="card animate-item delay-2">6. การเปรียบเทียบและเลือกใช้</div><br>
+                    <div class="card animate-item delay-3">7. สรุปและ Workshop</div>
+                </div>
+            </div>
+        </section>
+
+        <section class="slide">
+            <h2>🔄 ทบทวนสัปดาห์ที่แล้ว (Styles พื้นฐาน)</h2>
+            <div class="grid-3" style="margin-top: 20px;">
+                <div class="card animate-item">
+                    <h3>🏢 Monolithic</h3>
+                    <p class="small-text">ก้อนเดียว / Deploy ทีเดียว</p>
+                    <div class="box-success">✅ ง่าย, เร็ว, เริ่มต้นดี</div>
+                    <div class="box-danger">❌ Scale ยาก, แก้ไขกระทบหมด</div>
+                </div>
+                <div class="card animate-item delay-1">
+                    <h3>📚 Layered</h3>
+                    <p class="small-text">แบ่งชั้น (Presentation → Logic → Data)</p>
+                    <div class="box-success">✅ แยกส่วนชัดเจน (SoC)</div>
+                    <div class="box-danger">❌ Performance ลดลง (ผ่านหลายชั้น)</div>
+                </div>
+                <div class="card animate-item delay-2">
+                    <h3>🏗️ N-Tier</h3>
+                    <p class="small-text">แยก Physical Server</p>
+                    <div class="box-success">✅ Scalable, Secure</div>
+                    <div class="box-danger">❌ ซับซ้อน, Network Latency</div>
+                </div>
+            </div>
+            <div class="box-info animate-item delay-3" style="margin-top: 20px;">
+                <strong>💡 Key Concept:</strong> Monolith คือลักษณะการ Deploy (ก้อนเดียว) แต่ข้างในอาจจัดโค้ดแบบ Layered ก็ได้!
+            </div>
+        </section>
+
+        <section class="slide">
+            <h2>1.1 Microservices Architecture</h2>
+            <div class="grid-2">
+                <div>
+                    <h3>💡 คำนิยาม</h3>
+                    <p>แบ่งแอปพลิเคชันออกเป็น <strong>บริการเล็กๆ (services)</strong> ที่อิสระต่อกัน</p>
+                    <ul style="margin-left: 20px;">
+                        <li class="animate-item">🎯 <strong>Single Responsibility:</strong> หน้าที่เฉพาะด้าน</li>
+                        <li class="animate-item delay-1">🔧 <strong>Independently Deployable:</strong> Deploy แยกกันได้</li>
+                        <li class="animate-item delay-2">💾 <strong>Own Database:</strong> มีฐานข้อมูลของตัวเอง</li>
+                        <li class="animate-item delay-3">🔌 <strong>API Communication:</strong> สื่อสารผ่าน REST/gRPC</li>
+                    </ul>
+                </div>
+                <div class="img-container animate-item delay-1">
+                    <img src="01-Microservices-Concept.png" alt="Microservices Concept">
+                </div>
+            </div>
+        </section>
+
+        <section class="slide">
+            <h2>🧩 องค์ประกอบหลักของ Microservices</h2>
+            <div class="grid-3" style="font-size: 0.9em;">
+                <div class="card animate-item">
+                    <h3>1️⃣ API Gateway</h3>
+                    <p>ประตูทางเข้าเดียว (Single Entry Point)</p>
+                    <hr>
+                    <ul class="small-text">
+                        <li>Routing</li>
+                        <li>Auth / Rate Limiting</li>
+                        <li>Ex: Kong, Nginx</li>
+                    </ul>
+                </div>
+                <div class="card animate-item delay-1">
+                    <h3>2️⃣ Service Discovery</h3>
+                    <p>สมุดหน้าเหลืองสำหรับหา Service</p>
+                    <hr>
+                    <ul class="small-text">
+                        <li>Service ลงทะเบียนตัวเอง</li>
+                        <li>ค้นหาว่า Service อยู่ IP ไหน</li>
+                        <li>Ex: Consul, Eureka</li>
+                    </ul>
+                </div>
+                <div class="card animate-item delay-2">
+                    <h3>3️⃣ Message Bus</h3>
+                    <p>ช่องทางสื่อสารแบบ Asynchronous</p>
+                    <hr>
+                    <ul class="small-text">
+                        <li>Decoupling Services</li>
+                        <li>Event-Driven</li>
+                        <li>Ex: Kafka, RabbitMQ</li>
+                    </ul>
+                </div>
+            </div>
+            <div style="margin-top: 20px;" class="card animate-item delay-3">
+                <h3>4️⃣ Database per Service</h3>
+                <p>แต่ละ Service มี DB ของตัวเอง ห้ามแชร์! เพื่อความเป็นอิสระในการเปลี่ยน Schema และเลือก Technology (Polyglot Persistence)</p>
+            </div>
+        </section>
+
+        <section class="slide">
+            <h2>⚔️ Monolith vs Microservices</h2>
+            <div class="grid-2">
+                <div class="img-container">
+                    <img src="03-Monolith-vs-Microservices.png" alt="Monolith vs Microservices Comparison">
+                </div>
+                <div>
+                    <div class="card animate-item">
+                        <h3>🏢 Monolith</h3>
+                        <div class="box-info">Shared Database</div>
+                        <ul class="small-text">
+                            <li>ทีมเล็ก / MVP</li>
+                            <li>Domain ยังไม่ชัด</li>
+                            <li>Transaction ง่าย (ACID)</li>
+                        </ul>
+                    </div>
+                    <br>
+                    <div class="card animate-item delay-1">
+                        <h3>🧩 Microservices</h3>
+                        <div class="box-info">Database per Service</div>
+                        <ul class="small-text">
+                            <li>Domain ซับซ้อน / ทีมใหญ่</li>
+                            <li>ต้องการ Scale แยกส่วน</li>
+                            <li>Distributed Transactions ยาก</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="slide">
+            <h2>📊 กรณีศึกษา: Grab (Evolution)</h2>
+            <div class="grid-2">
+                <div class="card animate-item">
+                    <h3>Phase 1: Monolithic (2012)</h3>
+                    <p>Single App & DB</p>
+                    <div class="box-danger">
+                        ❌ Scale ยาก (คนขับเยอะ แต่คนนั่งน้อย)<br>
+                        ❌ ระบบล่มทีเดียว ล่มทั้งแอป<br>
+                        ❌ Deploy ช้า
+                    </div>
+                </div>
+                <div class="card animate-item delay-1">
+                    <h3>Phase 2: Microservices (Present)</h3>
+                    <p>100+ Services</p>
+                    <div class="box-success">
+                        ✅ <strong>Indep. Scaling:</strong> Scale Passenger/Driver แยกกัน<br>
+                        ✅ <strong>Fault Isolation:</strong> GrabFood ล่ม GrabCar ยังวิ่งได้<br>
+                        ✅ <strong>Tech Choice:</strong> Matching (Go), Pay (Java)
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="slide">
+            <h2>⚖️ ข้อดีและข้อเสียของ Microservices</h2>
+            <div class="grid-2">
+                <div>
+                    <h3>✅ Advantages</h3>
+                    <div class="box-success animate-item"><strong>Independent Scalability:</strong> Scale เฉพาะจุดที่ Traffic สูง</div>
+                    <div class="box-success animate-item delay-1"><strong>Fault Isolation:</strong> ล่มจุดเดียว ไม่ตายทั้งระบบ</div>
+                    <div class="box-success animate-item delay-2"><strong>Tech Diversity:</strong> เลือกเครื่องมือที่เหมาะกับงาน</div>
+                    <div class="box-success animate-item delay-3"><strong>Faster Deployment:</strong> ทีมเล็ก ตัดสินใจเร็ว</div>
+                </div>
+                <div>
+                    <h3>❌ Challenges</h3>
+                    <div class="box-danger animate-item"><strong>Complexity:</strong> ระบบซับซ้อน Debug ยาก</div>
+                    <div class="box-danger animate-item delay-1"><strong>Data Consistency:</strong> ไม่มี ACID ข้าม Service (Eventual Consistency)</div>
+                    <div class="box-danger animate-item delay-2"><strong>Network Latency:</strong> ช้ากว่า In-process call</div>
+                    <div class="box-danger animate-item delay-3"><strong>Ops Overhead:</strong> ต้องมี DevOps/Monitoring ที่แข็งแกร่ง</div>
+                </div>
+            </div>
+        </section>
+
+        <section class="slide">
+            <h2>🔍 Challenge: การตรวจสอบระบบ (Observability)</h2>
+            <p>เมื่อระบบแตกเป็นชิ้นเล็กๆ เราจะรู้ได้อย่างไรว่าปัญหาอยู่ที่ไหน?</p>
+            <div class="img-container animate-item">
+                <img src="09-Observability-Stack.png" alt="Observability Stack">
+            </div>
+            <div class="grid-3 small-text" style="text-align: center; margin-top: 10px;">
+                <div class="card">📜 <strong>Logs</strong><br>(ELK Stack)</div>
+                <div class="card">📊 <strong>Metrics</strong><br>(Prometheus)</div>
+                <div class="card">🔗 <strong>Tracing</strong><br>(Jaeger/Zipkin)</div>
+            </div>
+        </section>
+
+        <section class="slide">
+            <h2>1.2 Event-Driven Architecture (EDA)</h2>
+            <div class="grid-2">
+                <div>
+                    <h3>💡 Concept</h3>
+                    <p>ระบบสื่อสารกันผ่าน <strong>Events</strong> (เหตุการณ์) แทนการเรียก API ตรงๆ (Request-Response)</p>
+                    <div class="box-info animate-item">
+                        <strong>Event Examples:</strong><br>
+                        ✅ UserRegistered<br>
+                        ✅ OrderPlaced<br>
+                        ✅ PaymentCompleted
+                    </div>
+                </div>
+                <div class="card animate-item delay-1">
+                    <h3>📨 Pub/Sub Pattern</h3>
+                    <ul>
+                        <li><strong>Publisher:</strong> ส่ง Event โดยไม่รู้ว่าใครจะรับ (Fire & Forget)</li>
+                        <li><strong>Broker:</strong> ตัวกลาง (Kafka, RabbitMQ)</li>
+                        <li><strong>Subscriber:</strong> รอรับ Event ที่สนใจ</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section class="slide">
+            <h2>🔄 Event-Driven Core Pattern</h2>
+            <div class="img-container animate-item">
+                <img src="04-Event-Driven-Pattern.png" alt="Event Driven Core Pattern">
+            </div>
+            <div class="grid-2" style="margin-top: 20px;">
+                <div class="box-success">✅ <strong>Decoupling:</strong> Producer ไม่รู้จัก Consumer</div>
+                <div class="box-warning">⚠️ <strong>Eventual Consistency:</strong> ข้อมูลไม่ได้ตรงกันทันที</div>
+            </div>
+        </section>
+
+        <section class="slide">
+            <h2>🏦 กรณีศึกษา: Banking Transfer (Event-Driven)</h2>
+            <p>เปลี่ยนจาก "รอทุกอย่างเสร็จ" เป็น "แจ้งเตือนเมื่อเสร็จ"</p>
+            <div class="img-container animate-item">
+                <img src="07-Banking-Transfer-EDA.png" alt="Banking Transfer EDA">
+            </div>
+            <div class="box-info animate-item delay-1" style="font-size: 0.9em;">
+                <strong>Process:</strong> โอนเงินเสร็จ (Core) → Publish 'TransferCompleted' → Services อื่นๆ (SMS, Email, Analytics) รับไปทำงานต่อขนานกัน
+            </div>
+        </section>
+
+        <section class="slide">
+            <h2>🏥 กรณีศึกษา: Healthcare (Appointment)</h2>
+            <p>ระบบจองคิวแพทย์: ลดการรอคอยและการเชื่อมต่อที่แน่นเกินไป</p>
+            <div class="img-container animate-item">
+                <img src="08-Healthcare-Appointment-EDA.png" alt="Healthcare EDA">
+            </div>
+            <ul class="small-text animate-item delay-1" style="margin-top: 10px;">
+                <li>✅ <strong>Extensibility:</strong> อยากเพิ่มระบบ Analytics ก็แค่ Subscribe Event ใหม่ ไม่ต้องแก้โค้ดระบบจอง</li>
+                <li>✅ <strong>Resilience:</strong> ถ้าระบบ Notification ล่ม การจองยังสำเร็จ (Event รอใน Queue)</li>
+            </ul>
+        </section>
+
+        <section class="slide">
+            <h2>🎨 Advanced Patterns: Event Sourcing & CQRS</h2>
+            <div class="grid-2">
+                <div class="card animate-item">
+                    <h3>📜 Event Sourcing</h3>
+                    <p>เก็บ <strong>"ทุกการเปลี่ยนแปลง"</strong> (Events) แทนการเก็บสถานะปัจจุบัน</p>
+                    <ul class="small-text">
+                        <li>เหมือนสมุดบัญชีธนาคาร (เก็บรายการ ฝาก/ถอน)</li>
+                        <li>Replay เพื่อสร้าง State ใหม่ได้</li>
+                        <li>Audit Trail สมบูรณ์ 100%</li>
+                    </ul>
+                </div>
+                <div class="card animate-item delay-1">
+                    <h3>👀 CQRS</h3>
+                    <p>Command Query Responsibility Segregation</p>
+                    <ul class="small-text">
+                        <li>แยก DB สำหรับ <strong>เขียน (Write)</strong> และ <strong>อ่าน (Read)</strong></li>
+                        <li>Write: Normalized, Complex Logic</li>
+                        <li>Read: Denormalized, Optimized for Query</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section class="slide">
+            <h2>🖼️ Diagram: Event Sourcing + CQRS</h2>
+            <div class="img-container animate-item">
+                <img src="06-EventSourcing-CQRS.png" alt="Event Sourcing CQRS">
+            </div>
+        </section>
+
+        <section class="slide">
+            <h2>1.3 Service-Oriented Architecture (SOA)</h2>
+            <div class="grid-2">
+                <div>
+                    <h3>🏢 Enterprise Scale</h3>
+                    <p>สถาปัตยกรรมที่เน้นการสร้าง <strong>Reusable Services</strong> เชื่อมต่อผ่าน Standard Protocols</p>
+                    <div class="card animate-item" style="margin-top: 20px;">
+                        <h4>🔑 Key Component: ESB</h4>
+                        <p>(Enterprise Service Bus)</p>
+                        <p class="small-text">ตัวกลางอัจฉริยะ: Routing, Transformation, Security</p>
+                    </div>
+                </div>
+                <div class="content-box">
+                    <h3>SOA vs Microservices</h3>
+                    <table class="comparison-table animate-item delay-1">
+                        <tr>
+                            <th>Aspect</th>
+                            <th>SOA</th>
+                            <th>Microservices</th>
+                        </tr>
+                        <tr>
+                            <td>Scope</td>
+                            <td>Enterprise-wide</td>
+                            <td>Application Scope</td>
+                        </tr>
+                        <tr>
+                            <td>Comm.</td>
+                            <td>ESB, SOAP (Smart Pipe)</td>
+                            <td>REST, MQ (Dumb Pipe)</td>
+                        </tr>
+                        <tr>
+                            <td>Data</td>
+                            <td>Shared Data</td>
+                            <td>Database per Service</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <section class="slide">
+            <h2>🌐 Web Services Protocols</h2>
+            <div class="grid-2">
+                <div class="card animate-item">
+                    <h3>✉️ SOAP</h3>
+                    <p class="small-text">Simple Object Access Protocol</p>
+                    <ul class="small-text">
+                        <li>XML Based</li>
+                        <li>Strict Standards (WSDL)</li>
+                        <li>Built-in Security (WS-Security)</li>
+                        <li><strong>Use Case:</strong> Banking, Legacy Enterprise</li>
+                    </ul>
+                    <div class="box-info code-font">&lt;soap:Envelope&gt;...&lt;/soap:Envelope&gt;</div>
+                </div>
+                <div class="card animate-item delay-1">
+                    <h3>🚀 REST</h3>
+                    <p class="small-text">Representational State Transfer</p>
+                    <ul class="small-text">
+                        <li>HTTP Methods (GET, POST)</li>
+                        <li>JSON (Lightweight)</li>
+                        <li>Easy to use</li>
+                        <li><strong>Use Case:</strong> Mobile Apps, Modern Web</li>
+                    </ul>
+                    <div class="box-success code-font">{ "id": 1, "name": "John" }</div>
+                </div>
+            </div>
+        </section>
+
+        <section class="slide">
+            <h2>1.4 Serverless Architecture</h2>
+            <h3 style="text-align: center;">"มี Server นะ แต่เราไม่ต้องจัดการเอง"</h3>
+            <div class="grid-2">
+                <div class="img-container animate-item">
+                    <i class="fas fa-cloud-bolt" style="font-size: 150px; color: var(--accent-color);"></i>
+                </div>
+                <div>
+                    <h3>⚡ Functions as a Service (FaaS)</h3>
+                    <ul style="line-height: 2;">
+                        <li class="animate-item">💰 <strong>Pay-per-use:</strong> จ่ายตามเวลาที่ Code รัน (หน่วย ms)</li>
+                        <li class="animate-item delay-1">🚀 <strong>Auto-Scaling:</strong> 0 ถึง 10,000 requests อัตโนมัติ</li>
+                        <li class="animate-item delay-2">🚫 <strong>No Ops:</strong> ไม่ต้อง Patch OS, Manage Server</li>
+                        <li class="animate-item delay-3">🎯 <strong>Event-Driven:</strong> ทำงานเมื่อมี Trigger (HTTP, Upload, Time)</li>
+                    </ul>
+                    <p class="small-text highlight">Providers: AWS Lambda, Google Cloud Functions, Azure Functions</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="slide">
+            <h2>🎯 Serverless: เหมาะหรือไม่เหมาะ?</h2>
+            <div class="grid-2">
+                <div class="card box-success animate-item">
+                    <h3>✅ Great Fit (เหมาะสม)</h3>
+                    <ul>
+                        <li><strong>Event Tasks:</strong> Resize รูปเมื่ออัปโหลด</li>
+                        <li><strong>API ไม่บ่อย:</strong> Admin API, Webhook</li>
+                        <li><strong>Prototyping:</strong> เริ่มต้นเร็ว ไม่เสียค่าเซิร์ฟ</li>
+                        <li><strong>Burst Traffic:</strong> คนเข้าเยอะช่วงสั้นๆ</li>
+                    </ul>
+                </div>
+                <div class="card box-danger animate-item delay-1">
+                    <h3>❌ Poor Fit (ไม่เหมาะสม)</h3>
+                    <ul>
+                        <li><strong>Long Running:</strong> งานเกิน 15 นาที (Video Process)</li>
+                        <li><strong>High Freq Constant:</strong> รันตลอด 24/7 (แพงกว่า VM)</li>
+                        <li><strong>Low Latency:</strong> Cold Start (ปลุก Function ช้า)</li>
+                        <li><strong>Stateful:</strong> เกมเซิร์ฟเวอร์, WebSocket</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section class="slide">
+            <h2>📊 Case Study: LINE Notify (Serverless)</h2>
+            <div class="grid-2">
+                <div class="card animate-item">
+                    <h3>Flow</h3>
+                    <ol>
+                        <li>User ยิง Webhook เข้า API Gateway</li>
+                        <li>Trigger <strong>AWS Lambda</strong></li>
+                        <li>Lambda Validate Token & เรียก LINE API</li>
+                        <li>จบการทำงาน (หยุดคิดเงิน)</li>
+                    </ol>
+                </div>
+                <div class="card box-info animate-item delay-1">
+                    <h3>ทำไมใช้ Serverless?</h3>
+                    <ul>
+                        <li>Traffic ไม่แน่นอน (บางทีเงียบ บางทีรัว)</li>
+                        <li>Logic สั้นๆ (รับค่า -> ส่งต่อ)</li>
+                        <li>ประหยัดค่าใช้จ่ายมหาศาลเมื่อเทียบกับการเปิด Server ทิ้งไว้</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section class="slide">
+            <h2>🔍 เปรียบเทียบ 4 Architectures</h2>
+            <table class="comparison-table animate-item">
+                <thead>
+                    <tr>
+                        <th>Aspect</th>
+                        <th>Microservices</th>
+                        <th>Event-Driven</th>
+                        <th>SOA</th>
+                        <th>Serverless</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Scalability</strong></td>
+                        <td>⭐⭐⭐⭐⭐</td>
+                        <td>⭐⭐⭐⭐⭐</td>
+                        <td>⭐⭐⭐</td>
+                        <td>⭐⭐⭐⭐⭐</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Performance</strong></td>
+                        <td>⭐⭐⭐⭐</td>
+                        <td>⭐⭐⭐</td>
+                        <td>⭐⭐</td>
+                        <td>⭐⭐⭐</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Complexity</strong></td>
+                        <td>High</td>
+                        <td>Very High</td>
+                        <td>High</td>
+                        <td>Low (Code) / High (Arch)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Cost</strong></td>
+                        <td>Medium</td>
+                        <td>Medium</td>
+                        <td>High</td>
+                        <td>Low (Start) / High (Scale)</td>
+                    </tr>
+                </tbody>
+            </table>
+            <p class="small-text" style="text-align: center; margin-top: 10px;">⭐ จำนวนดาวแสดงถึงประสิทธิภาพ/ความง่าย</p>
+        </section>
+
+        <section class="slide">
+            <h2>🌳 Decision Tree: เลือกใช้อย่างไร?</h2>
+            <div class="flex-center animate-item">
+                <div style="background: var(--card-bg); padding: 20px; border-radius: 10px; width: 80%;">
+                    <h3>เริ่มต้นโปรเจกต์</h3>
+                    <i class="fas fa-arrow-down"></i>
+                    <div class="grid-2">
+                        <div class="box-info">ทีมเล็ก / MVP</div>
+                        <div class="box-info">ทีมใหญ่ / Complex</div>
+                    </div>
+                    <div class="grid-2">
+                        <div><i class="fas fa-arrow-down"></i><br><strong>Monolith / Serverless</strong></div>
+                        <div><i class="fas fa-arrow-down"></i><br><strong>Microservices</strong></div>
+                    </div>
+                    <div style="margin-top: 20px; border-top: 1px dashed var(--secondary-color); padding-top: 10px;">
+                        <p><strong>Add-ons:</strong></p>
+                        <p>ต้องการ Real-time/Decoupling? ➡️ <strong>+ Event-Driven</strong></p>
+                        <p>ต้องการเชื่อมต่อ Legacy System? ➡️ <strong>+ SOA</strong></p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="slide">
+            <h2>📈 Evolution of Architectures</h2>
+            <p>จากก้อนเดียว สู่ Cloud-Native</p>
+            <div class="img-container animate-item">
+                <img src="02-Evolution-Monolith-to-Cloud.png" alt="Evolution Monolith to Cloud">
+            </div>
+        </section>
+
+        <section class="slide">
+            <h2>📝 สรุป: ไม่มี "Perfect Architecture"</h2>
+            <div class="grid-2">
+                <div class="card box-warning animate-item">
+                    <h3>Trade-offs (ข้อแลกเปลี่ยน)</h3>
+                    <ul>
+                        <li>Microservices ได้ Scale แต่เสีย Simplicity</li>
+                        <li>Event-Driven ได้ Decoupling แต่เสีย Consistency</li>
+                        <li>Serverless ได้ Cost แต่เสีย Control</li>
+                    </ul>
+                </div>
+                <div class="card box-success animate-item delay-1">
+                    <h3>Hybrid is King 👑</h3>
+                    <p>ระบบจริงมักผสมผสาน:</p>
+                    <ul>
+                        <li>Core Business = Microservices</li>
+                        <li>Notification = Event-Driven</li>
+                        <li>Image Processing = Serverless</li>
+                        <li>Payment Gateway = SOA (Legacy)</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section class="slide">
+            <h2>🛠️ Workshop: Task Board Design</h2>
+            <p>ออกแบบระบบ <strong>"Task Board" (Trello Clone)</strong> ด้วย Microservices + Event-Driven</p>
+            <div class="grid-2">
+                <div class="card animate-item">
+                    <h3>Requirements</h3>
+                    <ul>
+                        <li>User สร้าง Task ได้</li>
+                        <li>เมื่อสร้าง Task → แจ้งเตือนเพื่อน (Notification)</li>
+                        <li>เก็บสถิติการสร้างงาน (Analytics)</li>
+                        <li>รองรับผู้ใช้ 10,000 คน</li>
+                    </ul>
+                </div>
+                <div class="box-info animate-item delay-1">
+                    <h3>โจทย์</h3>
+                    <p>จงออกแบบ Services และ Event Flow<br>1. มีกี่ Service?<br>2. ใคร Publish? ใคร Subscribe?</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="slide">
+            <h2>✅ เฉลยแนวทาง: Task Board Architecture</h2>
+            <div class="img-container animate-item">
+                <img src="05-TaskBoard-Microservices-EDA.png" alt="TaskBoard Architecture">
+            </div>
+        </section>
+
+        <section class="slide">
+            <h2>🔜 สัปดาห์หน้า: C4 Model & Documentation</h2>
+            <div class="grid-2">
+                <div class="content-box">
+                    <h3>สิ่งที่จะเรียน</h3>
+                    <ul>
+                        <li class="animate-item">📐 <strong>C4 Model:</strong> Context, Container, Component, Code</li>
+                        <li class="animate-item delay-1">👁️ <strong>Architecture Views:</strong> Logical, Physical, Process</li>
+                        <li class="animate-item delay-2">📄 <strong>ADR:</strong> การบันทึกการตัดสินใจทางสถาปัตยกรรม</li>
+                    </ul>
+                </div>
+                <div class="card box-info flex-center animate-item delay-3">
+                    <h3>การบ้าน (Homework)</h3>
+                    <p>ติดตั้งโปรแกรม <strong>Draw.io</strong> หรือสมัคร <strong>Lucidchart</strong></p>
+                    <p>ทบทวน Styles ทั้งหมดเพื่อเตรียมสอบ Midterm</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="slide flex-center">
+            <h1 class="animate-item">Q & A</h1>
+            <h2 class="animate-item delay-1">ถาม-ตอบ</h2>
+            <p class="animate-item delay-2">แลกเปลี่ยนความคิดเห็น / ข้อสงสัย</p>
+            <div style="font-size: 5rem; color: var(--accent-color); margin-top: 30px;" class="animate-item delay-3">
+                <i class="fas fa-comments"></i>
+            </div>
+        </section>
+
+    </div>
+
+    <div class="controls-bottom">
+        <button class="btn-control" onclick="prevSlide()"><i class="fas fa-chevron-left"></i></button>
+        <span class="slide-counter" id="slide-counter">1 / 28</span>
+        <button class="btn-control" onclick="nextSlide()"><i class="fas fa-chevron-right"></i></button>
+    </div>
+
+    <div class="footer">
+        ENGSE207 Software Architecture | Week 4
+    </div>
+
+    <script>
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slide');
+        const totalSlides = slides.length;
+        const counter = document.getElementById('slide-counter');
+        const body = document.body;
+        let fontSizeLevel = 100;
+
+        function updateSlide() {
+            slides.forEach((slide, index) => {
+                slide.classList.remove('active');
+                if (index === currentSlide) {
+                    slide.classList.add('active');
+                }
+            });
+            counter.innerText = `${currentSlide + 1} / ${totalSlides}`;
+        }
+
+        function nextSlide() {
+            if (currentSlide < totalSlides - 1) {
+                currentSlide++;
+                updateSlide();
+            }
+        }
+
+        function prevSlide() {
+            if (currentSlide > 0) {
+                currentSlide--;
+                updateSlide();
+            }
+        }
+
+        function toggleTheme() {
+            if (body.getAttribute('data-theme') === 'light') {
+                body.setAttribute('data-theme', 'dark');
+            } else {
+                body.setAttribute('data-theme', 'light');
+            }
+        }
+
+        function adjustFontSize(direction) {
+            fontSizeLevel += direction * 10;
+            if (fontSizeLevel < 60) fontSizeLevel = 60;
+            if (fontSizeLevel > 150) fontSizeLevel = 150;
+            document.documentElement.style.fontSize = `${fontSizeLevel}%`;
+        }
+
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+            }
+        }
+
+        // Keyboard Navigation
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === ' ') {
+                nextSlide();
+            } else if (e.key === 'ArrowLeft') {
+                prevSlide();
+            } else if (e.key === 'f') {
+                toggleFullscreen();
+            }
+        });
+
+        // Initialize
+        updateSlide();
+    </script>
+</body>
+</html>
