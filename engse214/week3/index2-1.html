@@ -1,0 +1,2241 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <title>ENGSE214 – Week 3: Vulnerabilities & Basic Risk Assessment</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600;700&family=Inter:wght@400;600;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --font-scale: 1;
+      --bg-body: #020617;
+      --bg-slide: radial-gradient(circle at top right, #1e293b 0%, #020617 60%, #000000 100%);
+      --bg-slide-soft: rgba(15, 23, 42, 0.9);
+      --text-main: #e5f0ff;
+      --text-muted: #9ca3af;
+      --accent-main: #38bdf8;
+      --accent-soft: rgba(56, 189, 248, 0.1);
+      --accent-strong: #f97316;
+      --border-subtle: rgba(148, 163, 184, 0.45);
+      --badge-bg: rgba(15, 23, 42, 0.85);
+      --danger: #fb7185;
+      --success: #22c55e;
+      --warning: #facc15;
+      --card-bg: rgba(15, 23, 42, 0.85);
+      --scroll-thumb: rgba(148, 163, 184, 0.6);
+    }
+
+    body.light-theme {
+      --bg-body: #e5f0ff;
+      --bg-slide: radial-gradient(circle at top right, #ffffff 0%, #e5e7eb 50%, #e5f0ff 100%);
+      --bg-slide-soft: rgba(255, 255, 255, 0.94);
+      --text-main: #111827;
+      --text-muted: #4b5563;
+      --accent-main: #2563eb;
+      --accent-soft: rgba(37, 99, 235, 0.1);
+      --accent-strong: #ea580c;
+      --border-subtle: rgba(148, 163, 184, 0.7);
+      --badge-bg: rgba(243, 244, 246, 0.94);
+      --card-bg: rgba(255, 255, 255, 0.96);
+      --scroll-thumb: rgba(148, 163, 184, 0.9);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 0.5rem;
+      min-height: 100vh;
+      font-family: "Prompt", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: calc(16px * var(--font-scale));
+      background: radial-gradient(circle at top, #020617 0, #020617 40%, #000000 100%);
+      color: var(--text-main);
+      display: flex;
+      justify-content: center;
+      align-items: stretch;
+    }
+
+    #app {
+      width: 100%;
+      max-width: 1400px;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    header.app-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      padding: 0.4rem 0.75rem;
+      border-radius: 999px;
+      background: linear-gradient(90deg, rgba(15, 23, 42, 0.9), rgba(30, 64, 175, 0.9));
+      box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.9), 0 18px 45px rgba(15, 23, 42, 0.85);
+    }
+
+    .course-title {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      min-width: 0;
+    }
+
+    .course-pill {
+      padding: 0.15rem 0.65rem;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.6);
+      background: rgba(15, 23, 42, 0.85);
+      font-size: 0.75rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: #e5e7eb;
+      white-space: nowrap;
+    }
+
+    body.light-theme .course-pill {
+      background: rgba(243, 244, 246, 0.9);
+      color: #111827;
+    }
+
+    .course-main-label {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #e5e7eb;
+      white-space: nowrap;
+    }
+
+    .course-sub-label {
+      font-size: 0.8rem;
+      color: rgba(209, 213, 219, 0.9);
+    }
+
+    body.light-theme .course-main-label {
+      color: #111827;
+    }
+
+    body.light-theme .course-sub-label {
+      color: #4b5563;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .week-badge {
+      padding: 0.2rem 0.7rem;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid rgba(248, 250, 252, 0.15);
+      font-size: 0.8rem;
+      color: #e5f0ff;
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+
+    body.light-theme .week-badge {
+      background: rgba(243, 244, 246, 0.9);
+      color: #111827;
+    }
+
+    .header-mini-info {
+      font-size: 0.75rem;
+      display: flex;
+      gap: 0.5rem;
+      color: rgba(226, 232, 240, 0.9);
+      flex-wrap: wrap;
+    }
+
+    body.light-theme .header-mini-info {
+      color: #4b5563;
+    }
+
+    .header-dot {
+      width: 4px;
+      height: 4px;
+      border-radius: 999px;
+      background: rgba(148, 163, 184, 0.9);
+      display: inline-block;
+    }
+
+    .slide-frame {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .slide-container {
+      position: relative;
+      width: min(1180px, 100vw - 1rem);
+      aspect-ratio: 16 / 9;
+      border-radius: 1.75rem;
+      background: var(--bg-slide);
+      padding: 1.5rem 2rem 2.5rem 2rem;
+      box-shadow:
+        0 22px 55px rgba(15, 23, 42, 0.95),
+        0 0 0 1px rgba(15, 23, 42, 0.9),
+        0 0 0 1px inset rgba(148, 163, 184, 0.3);
+      overflow: hidden;
+    }
+
+    .slide {
+      position: absolute;
+      inset: 1.3rem 1.7rem 2.2rem 1.7rem;
+      padding: 0.25rem 0.2rem 0.5rem 0.2rem;
+      opacity: 0;
+      transform: translateX(30px);
+      transition: opacity 0.32s ease, transform 0.32s ease;
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: var(--scroll-thumb) transparent;
+    }
+
+    .slide::-webkit-scrollbar {
+      width: 6px;
+    }
+    .slide::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .slide::-webkit-scrollbar-thumb {
+      background: var(--scroll-thumb);
+      border-radius: 999px;
+    }
+
+    .slide.active {
+      opacity: 1;
+      transform: translateX(0);
+      pointer-events: auto;
+    }
+
+    .slide-header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 0.8rem;
+      flex-wrap: wrap;
+    }
+
+    h1, h2, h3, h4 {
+      margin: 0;
+      font-weight: 700;
+    }
+
+    h1 {
+      font-size: 2.3em;
+      letter-spacing: 0.03em;
+    }
+    h2 {
+      font-size: 1.6em;
+      letter-spacing: 0.02em;
+    }
+    h3 {
+      font-size: 1.25em;
+    }
+    h4 {
+      font-size: 1.05em;
+    }
+
+    p {
+      margin: 0;
+      line-height: 1.5;
+      font-size: 0.98em;
+    }
+
+    .kicker {
+      font-size: 0.9em;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--accent-main);
+      font-weight: 600;
+    }
+
+    .subtitle {
+      font-size: 1em;
+      color: var(--text-muted);
+    }
+
+    .pill-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+    }
+
+    .pill {
+      padding: 0.15rem 0.6rem;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.5);
+      background: rgba(15, 23, 42, 0.75);
+      font-size: 0.8em;
+      color: var(--text-muted);
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+    body.light-theme .pill {
+      background: rgba(243, 244, 246, 0.95);
+      color: #4b5563;
+    }
+
+    .pill strong {
+      color: var(--accent-main);
+      font-weight: 600;
+    }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+      gap: 1rem;
+      align-items: flex-start;
+    }
+
+    .three-col {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.9rem;
+    }
+
+    .cards-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 0.8rem;
+    }
+
+    .card, .glass-box {
+      border-radius: 1rem;
+      background: var(--card-bg);
+      border: 1px solid var(--border-subtle);
+      padding: 0.7rem 0.8rem;
+    }
+
+    .glass-soft {
+      border-radius: 1rem;
+      background: var(--accent-soft);
+      border: 1px solid rgba(148, 163, 184, 0.5);
+      padding: 0.7rem 0.8rem;
+    }
+
+    .card-title {
+      font-size: 0.98em;
+      font-weight: 600;
+      margin-bottom: 0.3rem;
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+
+    .badge {
+      padding: 0.1rem 0.45rem;
+      border-radius: 999px;
+      font-size: 0.7em;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      border: 1px solid rgba(148, 163, 184, 0.55);
+      background: var(--badge-bg);
+      color: var(--text-muted);
+      display: inline-flex;
+      gap: 0.25rem;
+      align-items: center;
+    }
+
+    .badge.badge-hot {
+      border-color: rgba(248, 113, 113, 0.9);
+      color: #fecaca;
+    }
+    .badge.badge-good {
+      border-color: rgba(45, 212, 191, 0.9);
+      color: #bbf7d0;
+    }
+    body.light-theme .badge.badge-hot {
+      color: #b91c1c;
+      background: #fee2e2;
+    }
+    body.light-theme .badge.badge-good {
+      color: #15803d;
+      background: #dcfce7;
+    }
+
+    ul {
+      margin: 0.1rem 0 0 1.1rem;
+      padding: 0;
+      font-size: 0.96em;
+    }
+
+    .muted {
+      color: var(--text-muted);
+      font-size: 0.9em;
+    }
+
+    .ascii-box {
+      font-family: "JetBrains Mono", "SF Mono", Menlo, Consolas, monospace;
+      font-size: 0.8em;
+      white-space: pre;
+      border-radius: 0.75rem;
+      padding: 0.7rem 0.8rem;
+      background: #020617;
+      color: #e5e7eb;
+      border: 1px solid rgba(148, 163, 184, 0.7);
+      overflow-x: auto;
+    }
+    body.light-theme .ascii-box {
+      background: #111827;
+      color: #e5e7eb;
+    }
+
+    .table-like {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9em;
+      margin-top: 0.25rem;
+    }
+
+    .table-like th,
+    .table-like td {
+      padding: 0.35rem 0.4rem;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.4);
+      text-align: left;
+    }
+
+    .table-like th {
+      font-size: 0.8em;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+    }
+
+    .table-like tr.highlight td {
+      background: rgba(56, 189, 248, 0.12);
+    }
+
+    .infographic-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.8rem;
+      align-items: stretch;
+    }
+
+    .step-pill {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.35rem 0.6rem;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.6);
+      background: rgba(15, 23, 42, 0.9);
+      font-size: 0.85em;
+      color: #e5e7eb;
+      white-space: nowrap;
+    }
+    body.light-theme .step-pill {
+      background: rgba(248, 250, 252, 0.98);
+      color: #111827;
+    }
+
+    .step-pill span.dot {
+      width: 18px;
+      height: 18px;
+      border-radius: 999px;
+      background: var(--accent-main);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75em;
+      color: #0b1120;
+      font-weight: 700;
+    }
+
+    .risk-matrix-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 0.25rem;
+      margin-top: 0.35rem;
+      font-size: 0.8em;
+    }
+
+    .risk-cell {
+      padding: 0.35rem 0.25rem;
+      border-radius: 0.55rem;
+      text-align: center;
+      border: 1px solid rgba(148, 163, 184, 0.7);
+    }
+
+    .risk-low {
+      background: rgba(22, 163, 74, 0.2);
+      color: #bbf7d0;
+    }
+    .risk-med {
+      background: rgba(245, 158, 11, 0.2);
+      color: #fee2b3;
+    }
+    .risk-high {
+      background: rgba(248, 113, 113, 0.24);
+      color: #fecaca;
+    }
+    .risk-crit {
+      background: rgba(220, 38, 38, 0.3);
+      color: #fee2e2;
+    }
+
+    body.light-theme .risk-low {
+      color: #166534;
+    }
+    body.light-theme .risk-med {
+      color: #92400e;
+    }
+    body.light-theme .risk-high,
+    body.light-theme .risk-crit {
+      color: #7f1d1d;
+    }
+
+    .link-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 0.6rem;
+      margin-top: 0.4rem;
+    }
+
+    .link-item {
+      padding: 0.45rem 0.6rem;
+      border-radius: 0.8rem;
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid rgba(148, 163, 184, 0.6);
+      font-size: 0.85em;
+    }
+
+    body.light-theme .link-item {
+      background: rgba(248, 250, 252, 0.96);
+    }
+
+    .link-item a {
+      color: var(--accent-main);
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    .link-item small {
+      display: block;
+      margin-top: 0.15rem;
+      color: var(--text-muted);
+      font-size: 0.8em;
+    }
+
+    .img-placeholder {
+      border-radius: 1rem;
+      border: 1px dashed rgba(148, 163, 184, 0.8);
+      background: rgba(15, 23, 42, 0.7);
+      padding: 0.7rem 0.8rem;
+      font-size: 0.85em;
+      color: var(--text-muted);
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+
+    body.light-theme .img-placeholder {
+      background: rgba(243, 244, 246, 0.96);
+    }
+
+    .img-label {
+      font-size: 0.75em;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      opacity: 0.7;
+    }
+
+    .controls-bar {
+      margin-top: 0.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+      padding: 0.35rem 0.75rem;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.95);
+      border: 1px solid rgba(148, 163, 184, 0.8);
+      box-shadow: 0 12px 30px rgba(15, 23, 42, 0.95);
+    }
+
+    body.light-theme .controls-bar {
+      background: rgba(243, 244, 246, 0.98);
+      border-color: rgba(148, 163, 184, 0.7);
+      box-shadow: 0 10px 26px rgba(15, 23, 42, 0.2);
+    }
+
+    .controls-left,
+    .controls-right {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      border: 1px solid rgba(148, 163, 184, 0.9);
+      background: radial-gradient(circle at top, #0f172a, #020617);
+      color: #e5e7eb;
+      border-radius: 999px;
+      padding: 0.2rem 0.65rem;
+      font-size: 0.8rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    body.light-theme .btn {
+      background: radial-gradient(circle at top, #ffffff, #e5e7eb);
+      color: #111827;
+    }
+
+    .btn-icon {
+      width: 1.1em;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .btn-primary {
+      border-color: var(--accent-main);
+      box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.35);
+    }
+
+    .btn-ghost {
+      background: transparent;
+      border-style: dashed;
+      border-color: rgba(148, 163, 184, 0.8);
+    }
+
+    .font-controls span {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-right: 0.2rem;
+    }
+
+    .font-controls .btn {
+      padding-inline: 0.5rem;
+    }
+
+    .slide-indicator {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      min-width: 5.5rem;
+      text-align: center;
+    }
+
+    .progress-shell {
+      flex: 1;
+      height: 4px;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.8);
+      overflow: hidden;
+      position: relative;
+    }
+
+    body.light-theme .progress-shell {
+      background: rgba(209, 213, 219, 0.9);
+    }
+
+    .progress-inner {
+      position: absolute;
+      inset: 0;
+      width: 0%;
+      background: linear-gradient(90deg, var(--accent-main), var(--accent-strong));
+      transition: width 0.25s ease;
+    }
+
+    .code-block {
+      font-family: "JetBrains Mono", "SF Mono", Menlo, Consolas, monospace;
+      font-size: 0.75em;
+      background: #020617;
+      color: #e5e7eb;
+      border-radius: 0.75rem;
+      padding: 0.65rem 0.75rem;
+      border: 1px solid rgba(148, 163, 184, 0.9);
+      overflow-x: auto;
+    }
+
+    body.light-theme .code-block {
+      background: #111827;
+      color: #e5e7eb;
+    }
+
+    .sim-card {
+      border-radius: 1rem;
+      background: var(--card-bg);
+      border: 1px solid var(--border-subtle);
+      padding: 0.75rem 0.8rem;
+      display: grid;
+      grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+      gap: 0.6rem;
+      align-items: center;
+    }
+
+    .sim-card label {
+      font-size: 0.85em;
+      color: var(--text-muted);
+      display: block;
+      margin-bottom: 0.15rem;
+    }
+
+    .sim-card select {
+      width: 100%;
+      border-radius: 0.6rem;
+      border: 1px solid rgba(148, 163, 184, 0.8);
+      padding: 0.25rem 0.4rem;
+      font-size: 0.85em;
+      background: rgba(15, 23, 42, 0.9);
+      color: var(--text-main);
+    }
+
+    body.light-theme .sim-card select {
+      background: rgba(255, 255, 255, 0.98);
+      color: #111827;
+    }
+
+    .risk-result {
+      padding: 0.5rem 0.65rem;
+      border-radius: 0.9rem;
+      border: 1px solid rgba(148, 163, 184, 0.8);
+      font-size: 0.9em;
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .risk-pill {
+      display: inline-flex;
+      padding: 0.15rem 0.5rem;
+      border-radius: 999px;
+      font-size: 0.8em;
+      align-items: center;
+      gap: 0.3rem;
+    }
+
+    .risk-pill span.dot {
+      width: 0.7em;
+      height: 0.7em;
+      border-radius: 999px;
+      display: inline-block;
+    }
+
+    .risk-pill.low span.dot { background: #22c55e; }
+    .risk-pill.medium span.dot { background: #eab308; }
+    .risk-pill.high span.dot { background: #fb7185; }
+    .risk-pill.critical span.dot { background: #dc2626; }
+
+    @media (max-width: 900px) {
+      .slide-container {
+        padding: 1.2rem 1.5rem 2.2rem 1.5rem;
+      }
+      .slide {
+        inset: 1rem 1.1rem 2rem 1.1rem;
+      }
+      h1 {
+        font-size: 2em;
+      }
+      h2 {
+        font-size: 1.4em;
+      }
+    }
+
+    @media (max-width: 720px) {
+      body {
+        padding: 0.25rem;
+      }
+      .slide-container {
+        width: 100%;
+      }
+      .two-col,
+      .three-col,
+      .sim-card {
+        grid-template-columns: minmax(0, 1fr);
+      }
+      .controls-bar {
+        border-radius: 1.2rem;
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .controls-left,
+      .controls-right {
+        justify-content: space-between;
+      }
+      .slide {
+        inset: 0.85rem 0.9rem 2rem 0.9rem;
+      }
+    }
+  </style>
+</head>
+<body class="dark-theme">
+<div id="app">
+  <header class="app-header">
+    <div class="course-title">
+      <div class="course-pill">ENGSE214 • Cyber Security</div>
+      <div>
+        <div class="course-main-label">Week 3 – Vulnerabilities & Basic Risk Assessment</div>
+        <div class="course-sub-label">ความมั่นคงปลอดภัยทางไซเบอร์เบื้องต้น – Year 2, 3(3-0-6)</div>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="week-badge">
+        <span>📅</span><span>2–3 ชม. (Lecture + Demo + Mini Lab)</span>
+      </div>
+      <div class="header-mini-info">
+        <span>🎯 CLO2: Threat & Vulnerability Analysis</span>
+        <span class="header-dot"></span>
+        <span>🎯 CLO4: Risk & Security Evaluation</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="slide-frame">
+    <div class="slide-container" id="slide-container">
+
+      <!-- 1. Title / Motivation -->
+      <section class="slide active" data-title="Welcome">
+        <div class="slide-header-row">
+          <div>
+            <div class="kicker">Week 3 • Vulnerabilities & Basic Risk Assessment</div>
+            <h1>จาก Threat สู่ Vulnerability<br />และการประเมินความเสี่ยง</h1>
+          </div>
+          <div class="pill-row">
+            <span class="pill"><strong>CLO2</strong> วิเคราะห์ช่องโหว่</span>
+            <span class="pill"><strong>CLO4</strong> ประเมินและจัดการความเสี่ยง</span>
+          </div>
+        </div>
+
+        <div class="two-col">
+          <div class="glass-box">
+            <div class="card-title">วันนี้เราจะโฟกัสอะไร? 🔍</div>
+            <ul>
+              <li>เข้าใจว่า <strong>Vulnerability</strong> คืออะไร ต่างจาก Threat อย่างไร</li>
+              <li>เรียนรู้การใช้ <strong>CVE / NVD / CVSS</strong> เพื่ออ่านค่าความรุนแรงของช่องโหว่</li>
+              <li>ฝึกทำ <strong>Risk Assessment</strong> แบบง่าย ๆ บนระบบตัวอย่าง</li>
+              <li>เชื่อมโยงกับเหตุการณ์จริง เช่น Equifax, SolarWinds</li>
+            </ul>
+          </div>
+
+          <div class="glass-soft">
+            <div class="card-title">ทำไมต้องเรียนเรื่องนี้? 💡</div>
+            <p>นักพัฒนาส่วนใหญ่ “fix bug” แต่ <strong>นักพัฒนาด้าน Security</strong> ต้อง “ลดความเสี่ยง” ให้ทั้งองค์กร</p>
+            <ul>
+              <li>ช่วยให้เราอ่าน advisory/ข่าวช่องโหว่แล้ว <strong>ตัดสินใจได้</strong> ว่าต้องรีบ patch แค่ไหน</li>
+              <li>เตรียมพื้นฐานสู่สายงาน <strong>AppSec, Blue Team, Red Team</strong></li>
+              <li>เป็นภาษาเดียวกับที่ SecOps, Auditor และ CISO ใช้คุยกัน</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- 2. Position in course -->
+      <section class="slide" data-title="Course Map">
+        <div class="slide-header-row">
+          <div>
+            <div class="kicker">Course Roadmap</div>
+            <h2>Week 3 อยู่ตรงไหนในภาพรวมรายวิชา?</h2>
+          </div>
+          <span class="badge">Foundation → Risk → Defense</span>
+        </div>
+
+        <div class="infographic-row">
+          <div class="card" style="flex:1.3;">
+            <div class="card-title">เส้นทางทั้งเทอม 🔐</div>
+            <div class="risk-matrix-grid" style="margin-top:0.4rem; grid-template-columns: repeat(5,minmax(0,1fr)); font-size:0.78em;">
+              <div class="risk-cell" style="grid-column:span 2;background:rgba(56,189,248,0.18);">
+                <strong>W1–W3</strong><br />พื้นฐาน &amp; Threat/Vuln &amp; Risk
+              </div>
+              <div class="risk-cell" style="grid-column:span 2;background:rgba(74,222,128,0.15);">
+                <strong>W4–W7</strong><br />OS / Network / Web Security
+              </div>
+              <div class="risk-cell" style="grid-column:span 1;background:rgba(250,204,21,0.18);">
+                <strong>W8</strong><br />Midterm
+              </div>
+              <div class="risk-cell" style="grid-column:span 2;background:rgba(56,189,248,0.18);">
+                <strong>W9–W12</strong><br />Audit / IR / Cloud &amp; IoT
+              </div>
+              <div class="risk-cell" style="grid-column:span 2;background:rgba(244,114,182,0.15);">
+                <strong>W13–W15</strong><br />Management / Future / Review
+              </div>
+            </div>
+            <p class="muted" style="margin-top:0.6rem;">
+              Week 3 เป็น <strong>จุดเชื่อม</strong> ระหว่าง “เข้าใจ Threat” (W1–2) และ “ลงมือป้องกันจริง” (W4–7): ถ้ารู้ Threat แต่ไม่วัด Risk → ไม่รู้ว่าควรป้องกันอะไรก่อน
+            </p>
+          </div>
+
+          <div class="card" style="flex:1;">
+            <div class="card-title">CLO ที่ Week 3 สนับสนุน 🎯</div>
+            <ul>
+              <li><strong>CLO2:</strong> วิเคราะห์ภัยคุกคามและช่องโหว่จากกรณีศึกษา/สถานการณ์จำลอง</li>
+              <li><strong>CLO4:</strong> ประเมินความเสี่ยงด้านความปลอดภัยและเสนอแนวทางลดความเสี่ยง</li>
+            </ul>
+            <p class="muted" style="margin-top:0.4rem;">
+              การบ้าน + Quiz ของสัปดาห์นี้จะถูกนับในส่วน <strong>Quizzes</strong> และ <strong>Assignments</strong> ตามแผนการประเมินรายวิชา
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- 3. Learning objectives -->
+      <section class="slide" data-title="Objectives">
+        <div class="slide-header-row">
+          <div>
+            <div class="kicker">Learning Objectives</div>
+            <h2>วัตถุประสงค์การเรียนรู้ Week 3</h2>
+          </div>
+          <span class="badge badge-good">Learning Outcomes</span>
+        </div>
+
+        <div class="cards-row">
+          <div class="glass-box">
+            <div class="card-title">1. เข้าใจ Vulnerabilities</div>
+            <ul>
+              <li>อธิบายคำว่า <strong>Vulnerability</strong> และประเภทหลัก ๆ ได้</li>
+              <li>แยกให้ชัดระหว่าง <strong>Threat / Vulnerability / Risk</strong></li>
+            </ul>
+          </div>
+          <div class="glass-box">
+            <div class="card-title">2. อ่าน CVE &amp; NVD เป็น</div>
+            <ul>
+              <li>ค้นหา CVE จากฐานข้อมูลมาตรฐาน (NVD / MITRE)</li>
+              <li>ดึงข้อมูลสำคัญ เช่น product ที่ได้รับผลกระทบ, เวอร์ชัน, CVSS score</li>
+            </ul>
+          </div>
+          <div class="glass-box">
+            <div class="card-title">3. ประเมิน Risk เบื้องต้น</div>
+            <ul>
+              <li>ใช้แนวคิด <strong>Impact × Likelihood</strong> ทำ Risk Matrix ง่าย ๆ</li>
+              <li>เลือกแนวทางจัดการความเสี่ยง: Avoid / Reduce / Transfer / Accept</li>
+            </ul>
+          </div>
+          <div class="glass-box">
+            <div class="card-title">4. อ่าน CVSS Score</div>
+            <ul>
+              <li>แปลช่วงคะแนน 0–10 เป็นระดับความรุนแรง (Low–Critical)</li>
+              <li>อ่าน Base Vector คร่าว ๆ เช่น <code>AV:N/AC:L/PR:N...</code></li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- 4. Recap W1–W2 -->
+      <section class="slide" data-title="Recap">
+        <div class="slide-header-row">
+          <div>
+            <div class="kicker">Recap</div>
+            <h2>ทบทวน Week 1–2: จาก CIA Triad สู่ Threats</h2>
+          </div>
+          <span class="badge">Foundation Recap</span>
+        </div>
+
+        <div class="two-col">
+          <div class="card">
+            <div class="card-title">Week 1 – Introduction &amp; CIA Triad</div>
+            <ul>
+              <li><strong>CIA Triad</strong>: Confidentiality, Integrity, Availability</li>
+              <li>แนวคิด <strong>Asset → Threat → Vulnerability → Risk</strong></li>
+              <li>ตัวอย่าง <strong>ภัยในชีวิตจริง</strong> เช่น Wi-Fi สาธารณะ, รหัสผ่านอ่อน</li>
+            </ul>
+          </div>
+          <div class="card">
+            <div class="card-title">Week 2 – Threat Types &amp; Malware</div>
+            <ul>
+              <li>ประเภท <strong>Malware</strong>: Virus, Worm, Trojan, Ransomware</li>
+              <li><strong>Social Engineering</strong>: Phishing, Spear Phishing</li>
+              <li><strong>APT</strong>: การโจมตีแบบมีเป้าหมายและยืดเยื้อ</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="ascii-box">
+┌───────────────────────────────────────────┐
+│  สัปดาห์ที่แล้ว: เราโฟกัส "THREATS"                 │
+│     – ใครจะโจมตีเรา?                                 │
+│     – เขาใช้วิธีอะไร?                                 │
+│                                                       │
+│  สัปดาห์นี้: เราจะโฟกัส "VULNERABILITIES"           │
+│     – จุดอ่อนในระบบเราอยู่ตรงไหน?                      │
+│     – ถ้าโดนโจมตีแล้วจะ "เสี่ยง" แค่ไหน?               │
+└───────────────────────────────────────────┘
+        </div>
+      </section>
+
+      <!-- 5. Risk formula -->
+      <section class="slide" data-title="Risk Formula">
+        <div class="slide-header-row">
+          <div>
+            <div class="kicker">Core Concept</div>
+            <h2>สูตรความเสี่ยง: ไม่มี Vulnerability → ไม่มี Risk</h2>
+          </div>
+          <span class="badge badge-hot">Key Idea</span>
+        </div>
+
+        <div class="two-col">
+          <div>
+            <div class="ascii-box">
+┌────────────────────────────────────────────────────┐
+│                     RISK FORMULA                   │
+│                                                    │
+│   RISK = Threat × Vulnerability × Impact           │
+│                                                    │
+│   ถ้าไม่มีช่องโหว่ (Vulnerability ≈ 0)            │
+│   → ต่อให้มี Threat ก็ "โจมตีไม่เข้า"              │
+└────────────────────────────────────────────────────┘
+            </div>
+            <p style="margin-top:0.6rem;">
+              เป้าหมายของวิชานี้ <strong>ไม่ใช่</strong> การทำให้ Threat หายไป (เพราะควบคุมไม่ได้) แต่คือการลด
+              <strong>Vulnerabilities + Impact</strong> ให้ Risk เหลือน้อยที่สุดในงบประมาณที่มี
+            </p>
+          </div>
+          <div class="glass-box">
+            <div class="card-title">ผลลัพธ์ที่อยากให้นักศึกษาได้ 🎯</div>
+            <ul>
+              <li>อ่านสถานการณ์แล้วคิดออกว่า <strong>Risk มาจากส่วนไหนของสูตร</strong></li>
+              <li>เวลาเจอช่องโหว่ในโค้ด/ระบบ จะไม่ panic แต่ <strong>วัดความเสี่ยงก่อน</strong></li>
+              <li>ใช้ภาษาของ Risk พูดกับ <strong>ทีม Dev / Ops / ผู้บริหาร</strong> ได้</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- 6. Vulnerability definition -->
+      <section class="slide" data-title="Vulnerability">
+        <div class="slide-header-row">
+          <div>
+            <div class="kicker">Part 1</div>
+            <h2>Vulnerability คืออะไร?</h2>
+          </div>
+          <span class="badge">Definition</span>
+        </div>
+
+        <div class="two-col">
+          <div class="card">
+            <div class="card-title">นิยามสั้น ๆ</div>
+            <p><strong>Vulnerability (ช่องโหว่)</strong> คือจุดอ่อนหรือข้อบกพร่องในระบบ ซอฟต์แวร์ เครือข่าย หรือกระบวนการ ที่ผู้โจมตีสามารถใช้ประโยชน์ (exploit) เพื่อทำให้เกิดความเสียหายหรือละเมิดความปลอดภัยได้</p>
+            <ul style="margin-top:0.4rem;">
+              <li>อาจเกิดจาก <strong>bug ในโค้ด</strong>, config ผิด, หรือ <strong>พฤติกรรมมนุษย์</strong></li>
+              <li>สามารถ <strong>ค้นหา–แก้ไข–ลดความเสี่ยง</strong> ได้ (ต่างจาก Threat)</li>
+            </ul>
+          </div>
+          <div class="glass-soft">
+            <div class="card-title">เปรียบเทียบง่าย ๆ 🏠</div>
+            <ul>
+              <li>บ้าน = ระบบของเรา</li>
+              <li>โจร = Threat</li>
+              <li>ประตูล็อกไม่ดี / หน้าต่างเปิดค้าง = Vulnerability</li>
+              <li>ของมีค่าในบ้าน = Asset</li>
+            </ul>
+            <p class="muted" style="margin-top:0.4rem;">
+              ถ้าเรารู้ว่า “ประตูไหนล็อกไม่ดี” เราก็รู้ว่าจะต้อง <strong>เสริมเหล็ก / เปลี่ยนกุญแจ</strong> ที่จุดไหนก่อน
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- 7. Threat vs Vulnerability vs Risk -->
+      <section class="slide" data-title="Threat vs Vulnerability">
+        <div class="slide-header-row">
+          <div>
+            <div class="kicker">Concept Clarity</div>
+            <h2>แยกให้ชัด: Threat vs Vulnerability vs Risk</h2>
+          </div>
+          <span class="badge">Compare</span>
+        </div>
+
+        <table class="table-like">
+          <thead>
+          <tr>
+            <th>มุมมอง</th>
+            <th>Threat (ภัยคุกคาม)</th>
+            <th>Vulnerability (ช่องโหว่)</th>
+            <th>Risk (ความเสี่ยง)</th>
+          </tr>
+          </thead>
+          <tbody>
+          <tr>
+            <td><strong>นิยาม</strong></td>
+            <td>สิ่งที่ <strong>อาจโจมตี</strong> ระบบ</td>
+            <td>จุดอ่อนที่ <strong>ถูกโจมตีได้</strong></td>
+            <td>โอกาส + ผลกระทบจากการโจมตีสำเร็จ</td>
+          </tr>
+          <tr>
+            <td><strong>ตัวอย่าง</strong></td>
+            <td>Hacker, Malware, น้ำท่วม</td>
+            <td>รหัสผ่านเป็น "admin", SQLi bug</td>
+            <td>ข้อมูลลูกค้ารั่ว, ระบบล่ม 3 วัน</td>
+          </tr>
+          <tr class="highlight">
+            <td><strong>ควบคุมได้ไหม?</strong></td>
+            <td>ควบคุมได้ <em>จำกัด</em></td>
+            <td><strong>ควบคุมได้</strong> ผ่านการ hardening</td>
+            <td>ลดได้โดยลด Vuln / Impact / Likelihood</td>
+          </tr>
+          </tbody>
+        </table>
+
+        <p class="muted" style="margin-top:0.5rem;">
+          ในฐานะวิศวกรซอฟต์แวร์ เรา “สร้างระบบ” เอง → เราจึงมีพลังที่สุดในการ <strong>ลด Vulnerabilities</strong> ด้วยการออกแบบและเขียนโค้ดที่ดี
+        </p>
+      </section>
+
+      <!-- 8. Types of vulns (tree infographic) -->
+      <section class="slide" data-title="Types of Vulns">
+        <div class="slide-header-row">
+          <div>
+            <div class="kicker">Vulnerability Landscape</div>
+            <h2>ประเภทของ Vulnerabilities (ภาพรวม)</h2>
+          </div>
+          <span class="badge">Infographic</span>
+        </div>
+
+        <div class="three-col">
+          <div class="glass-box">
+            <div class="card-title">Software Vulns 🧩</div>
+            <ul>
+              <li>Buffer Overflow</li>
+              <li>SQL Injection</li>
+              <li>Cross-Site Scripting (XSS)</li>
+              <li>Insecure Deserialization</li>
+              <li>Auth Bypass / Broken Access Control</li>
+            </ul>
+          </div>
+          <div class="glass-box">
+            <div class="card-title">Configuration &amp; Infra ⚙️</div>
+            <ul>
+              <li>Default Credentials</li>
+              <li>เปิดบริการที่ไม่จำเป็น</li>
+              <li>Weak / Deprecated Encryption</li>
+              <li>Missing Security Patches</li>
+              <li>Cloud misconfiguration</li>
+            </ul>
+          </div>
+          <div class="glass-box">
+            <div class="card-title">Human &amp; Process 👥</div>
+            <ul>
+              <li>Weak Passwords</li>
+              <li>Lack of Awareness / Training</li>
+              <li>Insider Threat</li>
+              <li>ตกเป็นเหยื่อ Social Engineering</li>
+              <li>ไม่มีขั้นตอน review / change control</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="img-placeholder">
+          <div><strong>Infographic Placeholder:</strong> Vulnerability Tree (Software / Config / Human)</div>
+          <div class="img-label">[วางรูปจาก draw.io: vuln-types.png]</div>
+          <p class="muted">ไฟล์ <code>drawio-vuln-types.xml</code> อยู่ในส่วนท้ายของไฟล์ HTML นี้ สำหรับอาจารย์นำไปเปิดใน diagrams.net แล้ว export เป็นรูป</p>
+        </div>
+      </section>
+
+      <!-- 9. CVE intro -->
+      <section class="slide" data-title="CVE Intro">
+        <div class="slide-header-row">
+          <div>
+            <div class="kicker">Part 2</div>
+            <h2>CVE: เลขบัตรประชาชนของ “ช่องโหว่”</h2>
+          </div>
+          <span class="badge">CVE Basics</span>
+        </div>
+
+        <div class="two-col">
+          <div class="card">
+            <div class="card-title">CVE คืออะไร?</div>
+            <p><strong>CVE (Common Vulnerabilities and Exposures)</strong> คือระบบการตั้งรหัสมาตรฐานให้ช่องโหว่ที่ถูกเปิดเผยต่อสาธารณะ เช่น <code>CVE-2021-44228</code></p>
+            <ul style="margin-top:0.4rem;">
+              <li>ช่วยให้ทุกคนพูดถึง “ช่องโหว่เดียวกัน” ได้ตรงกัน</li>
+              <li>เชื่อมโยงไปยังฐานข้อมูลรายละเอียด (เช่น NVD, vendor advisory)</li>
+            </ul>
+          </div>
+          <div class="glass-soft">
+            <div class="card-title">รูปแบบชื่อ CVE</div>
+            <div class="ascii-box" style="margin-top:0.3rem;">
+┌───────────────────────────────┐
+│   CVE-YYYY-NNNN               │
+│                               │
+│   ตัวอย่าง: CVE-2024-3094     │
+│   • 2024 = ปี ค.ศ. ที่ประกาศ  │
+│   • 3094 = เลขลำดับช่องโหว่   │
+└───────────────────────────────┘
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 10. Famous CVEs -->
+      <section class="slide" data-title="Famous CVEs">
+        <div class="slide-header-row">
+          <div>
+            <div class="kicker">CVE in the News</div>
+            <h2>ตัวอย่าง CVE ที่เขย่าโลก Cybersecurity</h2>
+          </div>
+          <span class="badge badge-hot">Real Impact</span>
+        </div>
+
+        <div class="cards-row">
+          <div class="glass-box">
+            <div class="card-title">CVE-2014-0160 – Heartbleed 💔</div>
+            <ul>
+              <li>ช่องโหว่ใน OpenSSL ทำให้ attacker อ่านหน่วยความจำของ server ได้</li>
+              <li>กระทบเว็บไซต์จำนวนมากทั่วโลก (รวมถึงบริการใหญ่ ๆ)</li>
+            </ul>
+          </div>
+          <div class="glass-box">
+            <div class="card-title">CVE-2017-0144 – EternalBlue</div>
+            <ul>
+              <li>ช่องโหว่ SMB ใน Windows</li>
+              <li>ถูกใช้แพร่กระจาย <strong>WannaCry Ransomware</strong> ไปกว่า 150 ประเทศ</li>
+            </ul>
+          </div>
+          <div class="glass-box">
+            <div class="card-title">CVE-2021-44228 – Log4Shell</div>
+            <ul>
+              <li>ช่องโหว่ RCE ใน Apache Log4j</li>
+              <li>ได้คะแนน <strong>CVSS 10.0 (Critical)</strong>, กระทบระบบจำนวนนับไม่ถ้วน</li>
+            </ul>
+          </div>
+          <div class="glass-box">
+            <div class="card-title">CVE-2024-3094 – XZ Utils Backdoor</div>
+            <ul>
+              <li>พบ backdoor ในไลบรารีการบีบอัด XZ Utils</li>
+              <li>ชี้ให้เห็นความสำคัญของ <strong>Software Supply Chain Security</strong></li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- 11. CVE Sources / links -->
+      <section class="slide" data-title="CVE Sources">
+        <div class="slide-header-row">
+          <div>
+            <div class="kicker">Where to Look</div>
+            <h2>แหล่งข้อมูล CVE &amp; NVD ที่ควรรู้จัก</h2>
+          </div>
+          <span class="badge">Reference Links</span>
+        </div>
+
+        <div class="link-list">
+          <div class="link-item">
+            <strong>National Vulnerability Database (NVD)</strong>
+            <a href="https://nvd.nist.gov/" target="_blank" rel="noopener">🔗 nvd.nist.gov</a>
+            <small>ฐานข้อมูลช่องโหว่ของ NIST มีรายละเอียด + CVSS Score ครบถ้วน</small>
+          </div>
+          <div class="link-item">
+            <strong>CVE Program (MITRE)</strong>
+            <a href="https://cve.mitre.org/" target="_blank" rel="noopener">🔗 cve.mitre.org</a>
+            <small>ดูรายการ CVE ทั้งหมด พร้อมลิงก์ไปยัง vendor/รายงานต่าง ๆ</small>
+          </div>
+          <div class="link-item">
+            <strong>YouTube: CVE &amp; CVSS Explained</strong>
+            <a href="https://www.youtube.com/watch?v=KLR0cEaVJJk" target="_blank" rel="noopener">▶️ Understanding CVEs and CVSS Scores</a>
+            <small>วิดีโอสรุปภาพรวมการใช้ CVE และการอ่านคะแนน CVSS</small>
+          </div>
+          <div class="link-item">
+            <strong>NVD Overview (บทความสั้น)</strong>
+            <a href="https://www.nist.gov/programs-projects/national-vulnerability-database-nvd" target="_blank" rel="noopener">🔗 NIST – NVD Overview</a>
+            <small>อธิบายบทบาทของ NVD ในการแชร์ข้อมูลช่องโหว่ระดับสากล</small>
+          </div>
+        </div>
+
+        <p class="muted" style="margin-top:0.5rem;">
+          ใน Mini Lab นศ. จะเข้า NVD จริง ๆ เพื่อค้นหา CVE หนึ่งรายการ และลองอ่านทั้ง <strong>Description, CVSS, References</strong> ด้วยตนเอง
+        </p>
+      </section>
+
+      <!-- 12. Risk Assessment intro -->
+      <section class="slide" data-title="Risk Assessment">
+        <div class="slide-header-row">
+          <div>
+            <div class="kicker">Part 3</div>
+            <h2>Risk Assessment คืออะไร?</h2>
+          </div>
+          <span class="badge">Risk Basics</span>
+        </div>
+
+        <div class="two-col">
+          <div class="card">
+            <div class="card-title">นิยาม</div>
+            <p><strong>Risk Assessment</strong> คือกระบวนการระบุ วิเคราะห์ และประเมินความเสี่ยงที่อาจเกิดขึ้นกับระบบหรือองค์กร</p>
+            <ul style="margin-top:0.4rem;">
+              <li>เริ่มจากการเก็บ <strong>Asset / Threat / Vulnerability</strong></li>
+              <li>ประเมิน <strong>Impact</strong> และ <strong>Likelihood</strong></li>
+              <li>สรุปเป็น <strong>ระดับความเสี่ยง</strong> เพื่อจัดลำดับความสำคัญ</li>
+            </ul>
+          </div>
+          <div class="glass-soft">
+            <div class="card-title">ขั้นตอนสั้น ๆ</div>
+            <div class="ascii-box">
+┌───────────────────────────────┐
+│  1. IDENTIFY  – ระบุความเสี่ยง   │
+│  2. ANALYZE   – วิเคราะห์      │
+│  3. EVALUATE  – ประเมิน        │
+│  4. TREAT     – จัดการ         │
+│  5. MONITOR   – ติดตาม/ทบทวน   │
+└───────────────────────────────┘
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 13. Risk Management Cycle -->
+      <section class="slide" data-title="Risk Cycle">
+        <div class="slide-header-row">
+          <div>
+            <div class="kicker">Risk Management</div>
+            <h2>Risk Management Lifecycle (วงจรการจัดการความเสี่ยง)</h2>
+          </div>
+          <span class="badge">Lifecycle</span>
+        </div>
+
+        <div class="infographic-row">
+          <div class="card" style="flex:1.2;">
+            <div class="card-title">5 เฟสหลักของ Risk Management</div>
+            <div class="infographic-row" style="margin-top:0.5rem; flex-wrap:wrap;">
+              <span class="step-pill"><span class="dot">1</span> Identify</span>
+              <span class="step-pill"><span class="dot">2</span> Analyze</span>
+              <span class="step-pill"><span class="dot">3</span> Evaluate</span>
+              <span class="step-pill"><span class="dot">4</span> Treat</span>
+              <span class="step-pill"><span class="dot">5</span> Monitor</span>
+            </div>
+            <ul style="margin-top:0.6rem;">
+              <li><strong>Identify:</strong> รวบรวม Asset, Threat, Vulnerability</li>
+              <li><strong>Analyze:</strong> ประเมิน Impact, Likelihood, Controls ปัจจุบัน</li>
+              <li><strong>Evaluate:</strong> จัดลำดับความเสี่ยง, ตัดสินใจว่ารับได้หรือไม่</li>
+              <li><strong>Treat:</strong> เลือก Avoid / Reduce / Transfer / Accept</li>
+              <li><strong>Monitor:</strong> ติดตามผลและปรับปรุงอย่างต่อเนื่อง</li>
+            </ul>
+          </div>
+          <div class="img-placeholder" style="flex:0.9;">
+            <div><strong>Infographic Placeholder:</strong> Risk Management Cycle (วงกลม 5 ขั้น)</div>
+            <div class="img-label">[วางรูปจาก draw.io: risk-cycle.png]</div>
+            <p class="muted">XML ของแผนภาพนี้อยู่ใน <code>&lt;script type="text/plain" id="drawio-risk-cycle"&gt;</code> ด้านล่างของไฟล์</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- 14. Risk Matrix -->
+      <section class="slide" data-title="Risk Matrix">
+        <div class="slide-header-row">
+          <div>
+            <div class="kicker">Risk Matrix</div>
+            <h2>Risk Matrix: วัด Impact &amp; Likelihood</h2>
+          </div>
+          <span class="badge">Prioritization</span>
+        </div>
+
+        <div class="two-col">
+          <div class="card">
+            <div class="card-title">แนวคิด</div>
+            <p>ใช้ตาราง <strong>Impact vs Likelihood</strong> เพื่อจัดระดับความเสี่ยงเป็น Low / Medium / High / Critical</p>
+            <div class="risk-matrix-grid" style="margin-top:0.6rem;">
+              <div class="risk-cell risk-crit">Critical</div>
+              <div class="risk-cell risk-high">High</div>
+              <div class="risk-cell risk-high">High</div>
+              <div class="risk-cell risk-med">Medium</div>
+              <div class="risk-cell risk-high">High</div>
+              <div class="risk-cell risk-med">Medium</div>
+              <div class="risk-cell risk-med">Medium</div>
+              <div class="risk-cell risk-low">Low</div>
+              <div class="risk-cell risk-med">Medium</div>
+              <div class="risk-cell risk-low">Low</div>
+              <div class="risk-cell risk-low">Low</div>
+              <div class="risk-cell risk-low">Low</div>
+            </div>
+            <p class="muted" style="margin-top:0.4rem;">
+              ตารางจริงอาจ custom ได้ตามบริบทขององค์กร แต่หลักการคือ <strong>Impact สูง + Likelihood สูง → ต้องจัดการก่อน</strong>
+            </p>
+          </div>
+          <div class="img-placeholder">
+            <div><strong>Infographic Placeholder:</strong> 4x4 Risk Matrix (Impact vs Likelihood)</div>
+            <div class="img-label">[วางรูปจาก draw.io: risk-matrix.png]</div>
+            <p class="muted">สามารถใช้ template Risk_Assessment_Template.xlsx ที่แนบใน LMS สำหรับทำ Matrix แบบเต็ม</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- 15. CVSS intro -->
+      <section class="slide" data-title="CVSS Intro">
+        <div class="slide-header-row">
+          <div>
+            <div class="kicker">Part 4</div>
+            <h2>CVSS: คะแนนความรุนแรงของช่องโหว่ (0–10)</h2>
+          </div>
+          <span class="badge">CVSS Basics</span>
+        </div>
+
+        <div class="two-col">
+          <div class="card">
+            <div class="card-title">CVSS คืออะไร?</div>
+            <p><strong>CVSS (Common Vulnerability Scoring System)</strong> เป็นมาตรฐานให้คะแนนความรุนแรงของช่องโหว่ในช่วง 0.0–10.0</p>
+            <ul style="margin-top:0.4rem;">
+              <li><strong>0.0</strong> – None</li>
+              <li><strong>0.1–3.9</strong> – Low</li>
+              <li><strong>4.0–6.9</strong> – Medium</li>
+              <li><strong>7.0–8.9</strong> – High</li>
+              <li><strong>9.0–10.0</strong> – Critical</li>
+            </ul>
+          </div>
+          <div class="glass-soft">
+            <div class="card-title">ใช้เพื่ออะไร?</div>
+            <ul>
+              <li>ช่วยทีม Security <strong>จัดลำดับ patch</strong> – อะไรต้องแก้ก่อน</li>
+              <li>ช่วย Dev เข้าใจว่าช่องโหว่ในโค้ดตัวเอง <strong>แรงแค่ไหน</strong></li>
+              <li>ใช้กำหนด <strong>SLA การแก้ไข</strong> เช่น Critical ต้อง fix ภายใน 24–48 ชม.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- 16. CVSS metrics -->
+      <section class="slide" data-title="CVSS Metrics">
+        <div class="slide-header-row">
+          <div>
+            <div class="kicker">CVSS Components</div>
+            <h2>Base / Temporal / Environmental Metrics</h2>
+          </div>
+          <span class="badge">Metric Groups</span>
+        </div>
+
+        <div class="three-col">
+          <div class="glass-box">
+            <div class="card-title">1. Base Metrics</div>
+            <ul>
+              <li><strong>Attack Vector (AV)</strong> – Network / Local / Physical</li>
+              <li><strong>Attack Complexity (AC)</strong> – Low / High</li>
+              <li><strong>Privileges Required (PR)</strong> – None / Low / High</li>
+              <li><strong>User Interaction (UI)</strong> – Required / None</li>
+              <li><strong>Impact</strong> ต่อ C / I / A</li>
+            </ul>
+          </div>
+          <div class="glass-box">
+            <div class="card-title">2. Temporal Metrics</div>
+            <ul>
+              <li>ปรับคะแนนตามสถานการณ์เวลา</li>
+              <li>เช่น มี exploit code เผยแพร่แล้วหรือยัง</li>
+              <li>มี patch/stable fix แล้วหรือยัง</li>
+            </ul>
+          </div>
+          <div class="glass-box">
+            <div class="card-title">3. Environmental Metrics</div>
+            <ul>
+              <li>ขึ้นกับ <strong>บริบทขององค์กรเราเอง</strong></li>
+              <li>เช่น Asset ตัวนี้ critical แค่ไหน, มี compensating controls อะไรอยู่</li>
+              <li>องค์กรเดียวกัน อาจได้คะแนนต่างกัน</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- 17. CVSS vector example -->
+      <section class="slide" data-title="CVSS Vector">
+        <div class="slide-header-row">
+          <div>
+            <div class="kicker">Reading CVSS</div>
+            <h2>ตัวอย่างการอ่าน CVSS Vector String</h2>
+          </div>
+          <span class="badge">Example</span>
+        </div>
+
+        <div class="two-col">
+          <div>
+            <div class="ascii-box">
+CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+
+AV:N  → โจมตีผ่านเครือข่าย (Network)  
+AC:L  → โจมตีง่าย (Low complexity)  
+PR:N  → ไม่ต้องมีสิทธิ์ใด ๆ  
+UI:N  → ไม่ต้องให้ผู้ใช้ทำอะไร  
+C:H / I:H / A:H → กระทบสูงทั้งสามด้าน
+            </div>
+            <p style="margin-top:0.5rem;">
+              คะแนนโดยรวม: <strong>9.x – 10.0 (Critical)</strong> → ควรรีบ patch / mitigation ทันที
+            </p>
+          </div>
+          <div class="glass-soft">
+            <div class="card-title">แนวคิดเวลาอ่าน Vector</div>
+            <ul>
+              <li>ยิ่งโจมตีได้จาก <strong>Network + No Auth + No UI</strong> → ยิ่งอันตราย</li>
+              <li>ถ้า Impact เป็น High ทั้ง C / I / A → มีสิทธิ์เป็น Critical</li>
+              <li>ลองเปิด CVE จริง แล้วหา vector string บน NVD</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- 18. CVSS example 1 -->
+      <section class="slide" data-title="CVSS Example 1">
+        <div class="slide-header-row">
+          <div>
+            <div class="kicker">Practice</div>
+            <h2>ตัวอย่าง 1 – SQL Injection ในระบบ Login</h2>
+          </div>
+          <span class="badge">Applied CVSS</span>
+        </div>
+
+        <div class="two-col">
+          <div class="card">
+            <div class="card-title">สถานการณ์ (สมมติ)</div>
+            <p>ระบบ e-commerce มีช่องโหว่ <strong>SQL Injection</strong> บนหน้า Login ทำให้ attacker ดึงข้อมูลลูกค้าได้</p>
+            <ul style="margin-top:0.3rem;">
+              <li>AV:N, AC:L, PR:N, UI:N</li>
+              <li>C:H, I:H, A:L</li>
+            </ul>
+            <p style="margin-top:0.4rem;"><strong>ผลลัพธ์:</strong> CVSS ≈ 9.x (Critical)</p>
+          </div>
+          <div class="glass-soft">
+            <div class="card-title">แล้วเราควรทำอย่างไร?</div>
+            <ul>
+              <li>ใช้ <strong>Prepared Statements / Parameterized Query</strong></li>
+              <li>ตรวจสอบ input (Input Validation)</li>
+              <li>เพิ่ม Monitoring / WAF rule ชั่วคราวระหว่าง patch</li>
+              <li>ตั้ง SLA: ต้อง fix ภายใน 24–48 ชม.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- 19. CVSS example 2 -->
+      <section class="slide" data-title="CVSS Example 2">
+        <div class="slide-header-row">
+          <div>
+            <div class="kicker">Practice</div>
+            <h2>ตัวอย่าง 2 – Local Privilege Escalation</h2>
+          </div>
+          <span class="badge">Applied CVSS</span>
+        </div>
+
+        <div class="two-col">
+          <div class="card">
+            <div class="card-title">สถานการณ์ (สมมติ)</div>
+            <p>ช่องโหว่ทำให้ผู้ใช้ local ที่มีสิทธิ์ต่ำสามารถยกระดับสิทธิ์เป็น root/admin ได้</p>
+            <ul style="margin-top:0.3rem;">
+              <li>AV:L, AC:L, PR:L, UI:N</li>
+              <li>C:H, I:H, A:H</li>
+            </ul>
+            <p style="margin-top:0.4rem;"><strong>ผลลัพธ์:</strong> CVSS ≈ 7–8 (High)</p>
+          </div>
+          <div class="glass-soft">
+            <div class="card-title">Priority เทียบกับ SQL Injection?</div>
+            <ul>
+              <li>แม้จะ “High” แต่ต้องมี access ในเครื่องอยู่แล้ว → อาจรองจาก Critical บางตัว</li>
+              <li>อย่างไรก็ตาม สำหรับ <strong>server สำคัญภายในองค์กร</strong> ก็ยังถือว่าเร่งด่วน</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- 20. Mini Lab overview -->
+      <section class="slide" data-title="Mini Lab">
+        <div class="slide-header-row">
+          <div>
+            <div class="kicker">Mini Lab</div>
+            <h2>Lab: ค้นหา CVE จริง &amp; อ่าน CVSS</h2>
+          </div>
+          <span class="badge">Hands-on</span>
+        </div>
+
+        <div class="two-col">
+          <div class="card">
+            <div class="card-title">Activity 1 – ค้นหา CVE</div>
+            <ol style="margin-left:1.1rem; font-size:0.95em;">
+              <li>เข้า <strong>NVD</strong>: <code>https://nvd.nist.gov/</code></li>
+              <li>ค้นหาคำว่า <strong>Apache</strong> หรือ <strong>MySQL</strong></li>
+              <li>เลือก CVE ที่มี <strong>CVSS &gt; 7.0</strong></li>
+              <li>บันทึก:
+                <ul>
+                  <li>CVE ID</li>
+                  <li>Product / Version</li>
+                  <li>CVSS Score + Vector</li>
+                  <li>คำอธิบายสั้น ๆ</li>
+                </ul>
+              </li>
+            </ol>
+          </div>
+          <div class="glass-soft">
+            <div class="card-title">Activity 2 – วิเคราะห์ CVSS</div>
+            <p>ใช้แบบฟอร์มวิเคราะห์ที่แจกใน handout:</p>
+            <ul>
+              <li>ติ๊ก AV/AC/PR/UI/S/C/I/A ที่ตรงกับ CVE</li>
+              <li>ตอบคำถาม:
+                <ul>
+                  <li>ทำไมได้คะแนนสูง/ต่ำ?</li>
+                  <li>ควรจัดการด้วยวิธีใด (Avoid / Reduce / Transfer / Accept)?</li>
+                  <li>มี patch แล้วหรือยัง?</li>
+                </ul>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- 21. Simulation: Risk calculator -->
+      <section class="slide" data-title="Risk Simulation">
+        <div class="slide-header-row">
+          <div>
+            <div class="kicker">Simulation</div>
+            <h2>Mini Simulation – ลองเล่น Risk Matrix ด้วยตัวเอง</h2>
+          </div>
+          <span class="badge">Interactive</span>
+        </div>
+
+        <p>ลองปรับ Impact และ Likelihood เพื่อดูระดับความเสี่ยงที่ได้ (แบบง่าย ๆ):</p>
+
+        <div class="sim-card">
+          <div>
+            <label for="impact-select">Impact (ผลกระทบถ้าโดนโจมตีสำเร็จ)</label>
+            <select id="impact-select">
+              <option value="1">Low – กระทบเล็กน้อย</option>
+              <option value="2">Medium – กระทบพอสมควร</option>
+              <option value="3">High – กระทบมาก</option>
+              <option value="4">Critical – กระทบรุนแรง/ธุรกิจหยุดชะงัก</option>
+            </select>
+
+            <label for="likelihood-select" style="margin-top:0.4rem;">Likelihood (โอกาสที่จะเกิดการโจมตี)</label>
+            <select id="likelihood-select">
+              <option value="1">Low – โอกาสต่ำ</option>
+              <option value="2">Medium – มีโอกาส</option>
+              <option value="3">High – สูง</option>
+              <option value="4">Very High – เกือบแน่นอน</option>
+            </select>
+          </div>
+          <div class="risk-result">
+            <div>ผลลัพธ์ Risk (ประมาณค่า):</div>
+            <div id="risk-result-pill" class="risk-pill low">
+              <span class="dot"></span><span id="risk-result-label">Low</span>
+            </div>
+            <p id="risk-result-explain" class="muted">
+              ลองเปลี่ยน Impact/Likelihood เพื่อดูว่าความเสี่ยงกระโดดขึ้นเร็วแค่ไหน 🚀
+            </p>
+          </div>
+        </div>
+
+        <p class="muted" style="margin-top:0.6rem;">
+          ในงานจริง เราจะใช้ Matrix ที่ละเอียดกว่านี้ และอิงคะแนน CVSS, business impact, data classification มาช่วยตัดสินใจ
+        </p>
+      </section>
+
+      <!-- 22. Case study: vulnerable login code -->
+      <section class="slide" data-title="Login Case">
+        <div class="slide-header-row">
+          <div>
+            <div class="kicker">Case Study</div>
+            <h2>ระบบ Login ที่มีช่องโหว่ – วิเคราะห์ Risk</h2>
+          </div>
+          <span class="badge">Code Review</span>
+        </div>
+
+        <div class="two-col">
+          <div>
+            <div class="card-title">โค้ดตัวอย่าง (ไม่ปลอดภัย)</div>
+            <div class="code-block">
+&lt;?php
+$username = $_POST['username'];
+$password = $_POST['password'];
+
+// ช่องโหว่: SQL Injection + No Hashing
+$sql = "SELECT * FROM users WHERE username='$username' AND password='$password'";
+$result = mysqli_query($conn, $sql);
+
+if (mysqli_num_rows($result) &gt; 0) {
+    $_SESSION['user'] = $username;   // Session management อ่อนแอ
+    echo "Login successful!";
+} else {
+    echo "Invalid credentials!";
+}
+?&gt;
+            </div>
+          </div>
+          <div class="glass-soft">
+            <div class="card-title">คำถามชวนคิด 🤔</div>
+            <ul>
+              <li>ระบุช่องโหว่อย่างน้อย 3 จุด (V1, V2, V3)</li>
+              <li>Threat ที่เกี่ยวข้องคือใคร/อะไร? (SQLi attacker, session hijacker ฯลฯ)</li>
+              <li>Impact ถ้าถูกโจมตีสำเร็จคืออะไร? (ข้อมูลหลุด? ยึดระบบ admin?)</li>
+              <li>ลองให้คะแนนความเสี่ยงแต่ละช่องโหว่ด้วย Matrix แบบง่าย ๆ</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- 23. Case worksheet -->
+      <section class="slide" data-title="Login Worksheet">
+        <div class="slide-header-row">
+          <div>
+            <div class="kicker">Case Worksheet</div>
+            <h2>Worksheet – Risk Assessment ระบบ Login</h2>
+          </div>
+          <span class="badge">Group Activity</span>
+        </div>
+
+        <div class="two-col">
+          <div class="card">
+            <div class="card-title">1) Identify &amp; Analyze</div>
+            <table class="table-like">
+              <thead>
+              <tr>
+                <th>Vulnerability</th>
+                <th>Impact</th>
+                <th>Likelihood</th>
+                <th>Risk Level</th>
+              </tr>
+              </thead>
+              <tbody>
+              <tr>
+                <td>SQL Injection</td>
+                <td>High</td>
+                <td>High</td>
+                <td><strong>High/Critical</strong></td>
+              </tr>
+              <tr>
+                <td>No Password Hashing</td>
+                <td>High</td>
+                <td>Medium</td>
+                <td>High</td>
+              </tr>
+              <tr>
+                <td>Weak Session Management</td>
+                <td>Medium</td>
+                <td>High</td>
+                <td>Medium/High</td>
+              </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="glass-soft">
+            <div class="card-title">2) Risk Treatment</div>
+            <ul>
+              <li><strong>V1 – SQL Injection</strong>
+                <ul>
+                  <li>ใช้ Prepared Statements</li>
+                  <li>ทำ Input Validation</li>
+                </ul>
+              </li>
+              <li><strong>V2 – No Hashing</strong>
+                <ul>
+                  <li>ใช้ Password Hashing (เช่น bcrypt)</li>
+                  <li>บังคับให้ผู้ใช้เปลี่ยนรหัสผ่านหลัง deploy</li>
+                </ul>
+              </li>
+              <li><strong>V3 – Session Management</strong>
+                <ul>
+                  <li>ใช้ session ID ที่ปลอดภัย + Regenerate ID หลัง login</li>
+                  <li>ตั้ง timeout / secure cookie flags</li>
+                </ul>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- 24. Real Case: Equifax -->
+      <section class="slide" data-title="Equifax">
+        <div class="slide-header-row">
+          <div>
+            <div class="kicker">Real World Case</div>
+            <h2>Equifax Data Breach (2017) – แพ้เพราะ “ไม่ patch”</h2>
+          </div>
+          <span class="badge badge-hot">Case Study</span>
+        </div>
+
+        <div class="two-col">
+          <div class="card">
+            <div class="card-title">ภาพรวมเหตุการณ์</div>
+            <ul>
+              <li>บริษัทเครดิตยักษ์ใหญ่ในสหรัฐ – Equifax</li>
+              <li>ข้อมูลส่วนบุคคลของ ~148 ล้านคนถูกเปิดเผย (SSN, วันเกิด, ที่อยู่ ฯลฯ)</li>
+              <li>ช่องโหว่: <strong>CVE-2017-5638</strong> ใน Apache Struts (Critical)</li>
+              <li>มี patch แล้ว แต่ <strong>ไม่ได้อัปเดตทันเวลา</strong></li>
+            </ul>
+          </div>
+          <div class="glass-soft">
+            <div class="card-title">บทเรียนด้าน Risk Management</div>
+            <ul>
+              <li>ไม่มี asset inventory ที่ดี – ไม่รู้ว่า Struts ใช้อยู่ที่ไหนบ้าง</li>
+              <li>ไม่ prioritize patch ตาม <strong>criticality</strong> ของ asset</li>
+              <li>Monitoring ไม่พอ – การโจมตีดำเนินไปหลายสิบวัน</li>
+              <li>สุดท้ายเสียค่าใช้จ่ายกว่าพันล้านดอลลาร์ + เสียชื่อเสียงอย่างหนัก</li>
+            </ul>
+            <p class="muted" style="margin-top:0.3rem;">
+              นี่คือกรณีที่ “รู้ CVE, มี patch, รู้ CVSS” แต่ <strong>ขาดกระบวนการจัดการช่องโหว่ที่ดี</strong>
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- 25. Real Case: SolarWinds -->
+      <section class="slide" data-title="SolarWinds">
+        <div class="slide-header-row">
+          <div>
+            <div class="kicker">Real World Case</div>
+            <h2>SolarWinds Supply Chain Attack (2020)</h2>
+          </div>
+          <span class="badge badge-hot">Case Study</span>
+        </div>
+
+        <div class="two-col">
+          <div class="card">
+            <div class="card-title">เกิดอะไรขึ้น?</div>
+            <ul>
+              <li>ผู้โจมตีแทรก backdoor ใน <strong>ซอฟต์แวร์อัปเดต</strong> ของ SolarWinds Orion</li>
+              <li>ลูกค้ากว่า 10,000+ ราย (รวมหน่วยงานรัฐบาล) ติดตั้ง update ที่มี backdoor</li>
+              <li>เป็นตัวอย่างของ <strong>Supply Chain Vulnerability</strong> ระดับใหญ่</li>
+            </ul>
+          </div>
+          <div class="glass-soft">
+            <div class="card-title">เชื่อมโยงกับ Risk ที่เราเรียน</div>
+            <ul>
+              <li>แค่ดู CVSS ของช่องโหว่ “ปลายทาง” อาจไม่พอ – <strong>ต้องคิดถึงห่วงโซ่ซอฟต์แวร์ทั้งหมด</strong></li>
+              <li>จำเป็นต้องมี <strong>Zero Trust</strong> mindset และ monitoring ที่ดี</li>
+              <li>แสดงให้เห็นว่า Risk ไม่ได้อยู่แค่ที่โค้ดของเรา แต่อยู่ที่ <strong>3rd-party / library / vendor</strong> ด้วย</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- 26. Tools & Resources -->
+      <section class="slide" data-title="Tools & Resources">
+        <div class="slide-header-row">
+          <div>
+            <div class="kicker">Tools</div>
+            <h2>เครื่องมือ &amp; แหล่งเรียนรู้เพิ่มเติม</h2>
+          </div>
+          <span class="badge">For Self-Study</span>
+        </div>
+
+        <div class="cards-row">
+          <div class="glass-box">
+            <div class="card-title">Vulnerability Databases</div>
+            <ul>
+              <li>NVD (NIST)</li>
+              <li>CVE (MITRE)</li>
+              <li>Exploit-DB</li>
+            </ul>
+          </div>
+          <div class="glass-box">
+            <div class="card-title">CVSS Calculators</div>
+            <ul>
+              <li>FIRST CVSS Calculator</li>
+              <li>NVD v3.1 Calculator</li>
+            </ul>
+          </div>
+          <div class="glass-box">
+            <div class="card-title">Scanning Tools (Concept)</div>
+            <ul>
+              <li>OpenVAS / Nessus (Network)</li>
+              <li>OWASP ZAP / Burp (Web)</li>
+              <li>Trivy (Container/Cloud)</li>
+            </ul>
+          </div>
+          <div class="glass-box">
+            <div class="card-title">ต่อยอดสายอาชีพ</div>
+            <ul>
+              <li>Certs เริ่มต้น: Security+, CEH</li>
+              <li>ขั้นสูง: OSCP, CISSP, CISM</li>
+              <li>สาย DevSecOps, AppSec Engineer, Security Architect</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- 27. Assignment & Quiz -->
+      <section class="slide" data-title="Assignment">
+        <div class="slide-header-row">
+          <div>
+            <div class="kicker">Assessment</div>
+            <h2>Mini Assignment &amp; Quiz – Week 3</h2>
+          </div>
+          <span class="badge">Graded Work</span>
+        </div>
+
+        <div class="two-col">
+          <div class="card">
+            <div class="card-title">Mini Assignment: Risk Assessment (10 คะแนน)</div>
+            <p>เลือกหนึ่งระบบ:</p>
+            <ul>
+              <li>ระบบ E-learning</li>
+              <li>Food Delivery App</li>
+              <li>Online Banking (simplified)</li>
+            </ul>
+            <p style="margin-top:0.3rem;">ทำ:</p>
+            <ul>
+              <li>ระบุ Asset / Threat / Vulnerability อย่างน้อยอย่างละ 3 รายการ</li>
+              <li>ทำ Risk Matrix (Impact / Likelihood / Priority)</li>
+              <li>เสนอแนวทางลดความเสี่ยงอย่างน้อย 5 ข้อ</li>
+            </ul>
+          </div>
+          <div class="glass-soft">
+            <div class="card-title">Quiz 2: CVE / Risk / CVSS (10 คะแนน)</div>
+            <ul>
+              <li>รูปแบบ: MCQ + Short Answer (ออนไลน์)</li>
+              <li>เน้น:
+                <ul>
+                  <li>นิยาม Vulnerability / Threat / Risk</li>
+                  <li>อ่าน CVE ID</li>
+                  <li>ตีความ CVSS Score &amp; Severity</li>
+                  <li>แนวคิด Risk Management</li>
+                </ul>
+              </li>
+            </ul>
+            <p class="muted" style="margin-top:0.4rem;">
+              ทั้งสองส่วนผูกอยู่กับ CLO2 และ CLO4 ตามแผนการสอน – ทำให้ดีคือการเตรียมตัวสำหรับ Midterm ไปในตัว
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- 28. Summary / Key Takeaways -->
+      <section class="slide" data-title="Summary">
+        <div class="slide-header-row">
+          <div>
+            <div class="kicker">Summary</div>
+            <h2>Key Takeaways – สิ่งสำคัญจาก Week 3</h2>
+          </div>
+          <span class="badge">Wrap-up</span>
+        </div>
+
+        <div class="glass-box">
+          <div class="ascii-box">
+┌─────────────────────────────────────────────────────┐
+│  1️⃣  Vulnerability = จุดอ่อนที่เราควบคุมและลดได้            │
+│                                                     │
+│  2️⃣  CVE ให้ "ชื่อมาตรฐาน" กับช่องโหว่ เพื่อให้คุยกันรู้เรื่อง   │
+│                                                     │
+│  3️⃣  CVSS ช่วยวัดความรุนแรง 0–10 และจัดลำดับการ patch     │
+│                                                     │
+│  4️⃣  Risk = Threat × Vulnerability × Impact        │
+│      การจัดการ Risk ที่ดี สำคัญไม่แพ้การเขียนโค้ดที่ปลอดภัย   │
+│                                                     │
+│  5️⃣  Risk Management คือวงจร (Identify→Monitor)      │
+│      ไม่ใช่กิจกรรมครั้งเดียวแล้วจบ                     │
+└─────────────────────────────────────────────────────┘
+          </div>
+        </div>
+        <p class="muted" style="margin-top:0.6rem;">
+          ถ้านักศึกษาจำได้เพียงอย่างเดียวจากวันนี้ ขอให้จำว่า: <strong>“ช่องโหว่ทุกจุดคือความเสี่ยงที่ตีเป็นเงินได้”</strong> – การมองเห็นและลดมันให้เร็วคือคุณค่าที่วิศวกรซอฟต์แวร์สาย Security สร้างให้กับองค์กร
+        </p>
+      </section>
+
+      <!-- 29. Next Week preview -->
+      <section class="slide" data-title="Next Week">
+        <div class="slide-header-row">
+          <div>
+            <div class="kicker">Next Week</div>
+            <h2>Preview Week 4 – Operating System Security &amp; Hardening</h2>
+          </div>
+          <span class="badge">Coming Up</span>
+        </div>
+
+        <div class="two-col">
+          <div class="card">
+            <div class="card-title">หัวข้อหลัก Week 4</div>
+            <ul>
+              <li>เปรียบเทียบ <strong>Windows vs Linux Security Model</strong></li>
+              <li>Access Control, Authentication, Authorization</li>
+              <li>User Privilege Management &amp; Principle of Least Privilege</li>
+              <li>OS Hardening ใน VM (Lab 1)</li>
+            </ul>
+          </div>
+          <div class="glass-soft">
+            <div class="card-title">เตรียมตัวล่วงหน้า 🧪</div>
+            <ul>
+              <li>ติดตั้ง VirtualBox/VMware</li>
+              <li>เตรียม ISO: Ubuntu / Windows (ตามที่อาจารย์แจ้ง)</li>
+              <li>อ่านแนวทาง CIS Benchmark ถ้ามีเวลา</li>
+            </ul>
+            <p class="muted" style="margin-top:0.4rem;">
+              Week 3 = รู้ว่า “ช่องโหว่ &amp; Risk” คืออะไร<br />
+              Week 4 เป็นต้นไป = เริ่มลงมือ <strong>Hardening ระบบจริง</strong> ทั้ง OS / Network / Web
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- 30. Motivation & Career -->
+      <section class="slide" data-title="Motivation">
+        <div class="slide-header-row">
+          <div>
+            <div class="kicker">Motivation</div>
+            <h2>ทำไม “สาย Security” จึงสำคัญสำหรับวิศวกรซอฟต์แวร์?</h2>
+          </div>
+          <span class="badge badge-good">Inspiration</span>
+        </div>
+
+        <div class="two-col">
+          <div class="card">
+            <div class="card-title">มุมมองอาชีพ 💼</div>
+            <ul>
+              <li>องค์กรทุกประเภทกำลัง <strong>ขาดคน Security</strong> ที่เข้าใจทั้งเทคนิคและธุรกิจ</li>
+              <li>พื้นฐานจากวิชานี้ต่อยอดไปได้ทั้ง:
+                <ul>
+                  <li>Software Engineer ที่เขียนโค้ดอย่าง Secure-by-Design</li>
+                  <li>Application Security Engineer</li>
+                  <li>Cloud / DevSecOps Engineer</li>
+                </ul>
+              </li>
+            </ul>
+          </div>
+          <div class="glass-soft">
+            <div class="card-title">ฝากข้อคิดส่งท้ายวันนี้ 🌟</div>
+            <p>“Security is not a product, but a process.” – Bruce Schneier</p>
+            <ul style="margin-top:0.4rem;">
+              <li>ทุกบั๊กไม่ใช่แค่ปัญหาทางเทคนิค แต่อาจเป็น <strong>ความเสี่ยงเชิงธุรกิจ</strong></li>
+              <li>การมองเห็นช่องโหว่ ≠ การโทษคนเขียนโค้ดในอดีต แต่คือโอกาสในการ <strong>ทำระบบให้ดีขึ้นกว่าเดิม</strong></li>
+              <li>เริ่มจากโปรเจกต์เล็ก ๆ ของตัวเอง – <strong>ลองใช้แนวคิด Risk Assessment</strong> ที่เรียนวันนี้กับระบบที่เรากำลังทำอยู่</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- 31. Q&A -->
+      <section class="slide" data-title="Q&A">
+        <div class="slide-header-row">
+          <div>
+            <div class="kicker">Q &amp; A</div>
+            <h2>มีคำถามไหม? – Let’s talk about Risk &amp; Vulnerabilities</h2>
+          </div>
+          <span class="badge">Discussion</span>
+        </div>
+
+        <div class="glass-box">
+          <p>หัวข้อที่อาจใช้เปิด discussion ในชั้นเรียน:</p>
+          <ul>
+            <li>ระบบ/แอปที่นักศึกษาชอบใช้ในชีวิตประจำวัน – มองเห็น Risk อะไรบ้าง?</li>
+            <li>คิดว่าบริษัทไทยโดยเฉลี่ย <strong>ให้ความสำคัญกับ patch channel</strong> แค่ไหน?</li>
+            <li>ถ้าเราเป็น Dev lead ของทีมหนึ่ง จะออกแบบ <strong>กระบวนการจัดการ Vulnerability</strong> ยังไงให้ทีมทำได้จริงและไม่เหนื่อยเกินไป?</li>
+          </ul>
+          <p class="muted" style="margin-top:0.5rem;">
+            นักศึกษาสามารถถามเพิ่มเติมได้ทั้งในห้อง, ผ่าน LMS, หรือ email ของอาจารย์ – การถามคำถามเกี่ยวกับ Risk คือจุดเริ่มต้นของการคิดแบบ Security Engineer 🙂
+          </p>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- Controls -->
+  <footer class="controls-bar">
+    <div class="controls-left">
+      <button class="btn btn-primary" id="btn-prev">
+        <span class="btn-icon">◀</span><span>ก่อนหน้า</span>
+      </button>
+      <button class="btn btn-primary" id="btn-next">
+        <span>ถัดไป</span><span class="btn-icon">▶</span>
+      </button>
+      <div class="slide-indicator" id="slide-indicator">Slide 1 / 31</div>
+      <div class="progress-shell">
+        <div class="progress-inner" id="slide-progress-inner"></div>
+      </div>
+    </div>
+    <div class="controls-right">
+      <div class="font-controls">
+        <span>Font:</span>
+        <button class="btn btn-ghost" id="btn-font-dec">A−</button>
+        <button class="btn btn-ghost" id="btn-font-inc">A+</button>
+      </div>
+      <button class="btn btn-ghost" id="btn-theme">
+        <span class="btn-icon">🌙</span><span>Dark</span>
+      </button>
+      <button class="btn btn-ghost" id="btn-fullscreen">
+        <span class="btn-icon">⛶</span><span>Full</span>
+      </button>
+    </div>
+  </footer>
+</div>
+
+<script>
+  window.addEventListener('DOMContentLoaded', function () {
+    const slides = Array.from(document.querySelectorAll('.slide'));
+    const indicator = document.getElementById('slide-indicator');
+    const progressInner = document.getElementById('slide-progress-inner');
+    const btnPrev = document.getElementById('btn-prev');
+    const btnNext = document.getElementById('btn-next');
+    const btnFontInc = document.getElementById('btn-font-inc');
+    const btnFontDec = document.getElementById('btn-font-dec');
+    const btnTheme = document.getElementById('btn-theme');
+    const btnFullscreen = document.getElementById('btn-fullscreen');
+
+    const impactSelect = document.getElementById('impact-select');
+    const likelihoodSelect = document.getElementById('likelihood-select');
+    const riskResultLabel = document.getElementById('risk-result-label');
+    const riskResultExplain = document.getElementById('risk-result-explain');
+    const riskResultPill = document.getElementById('risk-result-pill');
+
+    const totalSlides = slides.length;
+    let currentIndex = 0;
+
+    function showSlide(index, updateHash = true) {
+      if (index < 0) index = 0;
+      if (index >= totalSlides) index = totalSlides - 1;
+
+      slides.forEach((s, i) => {
+        if (i === index) {
+          s.classList.add('active');
+        } else {
+          s.classList.remove('active');
+        }
+      });
+
+      currentIndex = index;
+
+      if (indicator) {
+        indicator.textContent = 'Slide ' + (index + 1) + ' / ' + totalSlides;
+      }
+      if (progressInner) {
+        const pct = ((index + 1) / totalSlides) * 100;
+        progressInner.style.width = pct + '%';
+      }
+
+      if (updateHash) {
+        const newHash = '#slide-' + (index + 1);
+        if (history.replaceState) {
+          history.replaceState(null, '', newHash);
+        } else {
+          location.hash = newHash;
+        }
+      }
+    }
+
+    function changeFont(delta) {
+      const root = document.documentElement;
+      const style = getComputedStyle(root);
+      const cur = parseFloat(style.getPropertyValue('--font-scale')) || 1;
+      let next = cur + delta;
+      if (next < 0.7) next = 0.7;
+      if (next > 1.6) next = 1.6;
+      root.style.setProperty('--font-scale', String(next));
+    }
+
+    function toggleTheme() {
+      const body = document.body;
+      body.classList.toggle('light-theme');
+      const isLight = body.classList.contains('light-theme');
+      if (btnTheme) {
+        btnTheme.innerHTML = isLight
+          ? '<span class="btn-icon">☀️</span><span>Light</span>'
+          : '<span class="btn-icon">🌙</span><span>Dark</span>';
+      }
+    }
+
+    function toggleFullscreen() {
+      if (!document.fullscreenElement) {
+        const elem = document.documentElement;
+        if (elem.requestFullscreen) {
+          elem.requestFullscreen();
+        }
+      } else {
+        if (document.exitFullscreen) {
+          document.exitFullscreen();
+        }
+      }
+    }
+
+    function updateRiskSimulation() {
+      if (!impactSelect || !likelihoodSelect || !riskResultLabel || !riskResultPill || !riskResultExplain) return;
+
+      const impact = parseInt(impactSelect.value || '1', 10);
+      const likelihood = parseInt(likelihoodSelect.value || '1', 10);
+      const score = impact * likelihood; // 1–16
+
+      let level = 'Low';
+      let className = 'risk-pill low';
+      let explain = 'ความเสี่ยงต่ำ – ติดตามไว้และแก้ไขในรอบ maintenance ปกติได้';
+
+      if (score >= 12) {
+        level = 'Critical';
+        className = 'risk-pill critical';
+        explain = 'Critical – ต้องจัดการทันที เช่น patch / mitigation ด่วน และติดตามใกล้ชิด';
+      } else if (score >= 8) {
+        level = 'High';
+        className = 'risk-pill high';
+        explain = 'High – ความเสี่ยงสูง ควรแก้ในระยะสั้น และกำหนด owner ชัดเจน';
+      } else if (score >= 4) {
+        level = 'Medium';
+        className = 'risk-pill medium';
+        explain = 'Medium – ควรวางแผนแก้ไข และเฝ้าระวังแนวโน้ม/การเปลี่ยนแปลงของระบบ';
+      }
+
+      riskResultPill.className = className;
+      riskResultLabel.textContent = level;
+      riskResultExplain.textContent = explain;
+    }
+
+    // --- Event listeners ---
+
+    if (btnPrev) {
+      btnPrev.addEventListener('click', function () {
+        showSlide(currentIndex - 1);
+      });
+    }
+
+    if (btnNext) {
+      btnNext.addEventListener('click', function () {
+        showSlide(currentIndex + 1);
+      });
+    }
+
+    if (btnFontInc) {
+      btnFontInc.addEventListener('click', function () {
+        changeFont(0.1);
+      });
+    }
+
+    if (btnFontDec) {
+      btnFontDec.addEventListener('click', function () {
+        changeFont(-0.1);
+      });
+    }
+
+    if (btnTheme) {
+      btnTheme.addEventListener('click', toggleTheme);
+    }
+
+    if (btnFullscreen) {
+      btnFullscreen.addEventListener('click', toggleFullscreen);
+    }
+
+    if (impactSelect) {
+      impactSelect.addEventListener('change', updateRiskSimulation);
+    }
+    if (likelihoodSelect) {
+      likelihoodSelect.addEventListener('change', updateRiskSimulation);
+    }
+
+    // Keyboard navigation: ← / → และ PageUp / PageDown
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'ArrowRight' || e.key === 'PageDown') {
+        e.preventDefault();
+        showSlide(currentIndex + 1);
+      } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+        e.preventDefault();
+        showSlide(currentIndex - 1);
+      } else if (e.key === 'f' || e.key === 'F') {
+        // shortcut เข้า fullscreen
+        toggleFullscreen();
+      }
+    });
+
+    // เริ่มต้นจาก hash ถ้ามี (#slide-5 ฯลฯ)
+    let startIndex = 0;
+    if (location.hash && location.hash.startsWith('#slide-')) {
+      const n = parseInt(location.hash.replace('#slide-', ''), 10);
+      if (!Number.isNaN(n) && n >= 1 && n <= totalSlides) {
+        startIndex = n - 1;
+      }
+    }
+
+    showSlide(startIndex, false);
+    updateRiskSimulation();
+  });
+</script>

@@ -1,0 +1,1079 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ENGSE214 Week 3: Vulnerabilities & Risk Assessment</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Prompt:ital,wght@0,300;0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            /* Light Theme */
+            --bg-light: #f4f6f9;
+            --text-light: #2c3e50;
+            --accent-light: #3498db;
+            --secondary-light: #2980b9;
+            --card-light: #ffffff;
+            --code-bg-light: #eef1f6;
+            
+            /* Dark Theme (Default) */
+            --bg-dark: #0f172a;
+            --text-dark: #e2e8f0;
+            --accent-dark: #00e5ff; /* Cyberpunk Cyan */
+            --secondary-dark: #7000ff; /* Neon Purple */
+            --card-dark: #1e293b;
+            --code-bg-dark: #020617;
+            
+            /* Common */
+            --slide-width: 1920px;
+            --slide-height: 1080px;
+            --font-main: 'Prompt', sans-serif;
+            --font-code: 'Fira Code', monospace;
+        }
+
+        /* Default is Dark Mode */
+        body.dark-mode {
+            --bg-color: var(--bg-dark);
+            --text-color: var(--text-dark);
+            --accent-color: var(--accent-dark);
+            --secondary-color: var(--secondary-dark);
+            --card-bg: var(--card-dark);
+            --code-bg: var(--code-bg-dark);
+            --shadow: 0 0 20px rgba(0, 229, 255, 0.1);
+        }
+
+        body.light-mode {
+            --bg-color: var(--bg-light);
+            --text-color: var(--text-light);
+            --accent-color: var(--accent-light);
+            --secondary-color: var(--secondary-light);
+            --card-bg: var(--card-light);
+            --code-bg: var(--code-bg-light);
+            --shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: var(--font-main);
+            background-color: #000;
+            color: var(--text-color);
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        /* --- Controls --- */
+        .controls {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1000;
+            display: flex;
+            gap: 10px;
+            background: rgba(0,0,0,0.5);
+            padding: 10px;
+            border-radius: 30px;
+            backdrop-filter: blur(5px);
+            border: 1px solid var(--accent-color);
+        }
+
+        .btn {
+            background: transparent;
+            border: 1px solid var(--text-color);
+            color: var(--text-color);
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: var(--font-main);
+            font-size: 14px;
+        }
+
+        .btn:hover {
+            background: var(--accent-color);
+            color: #000;
+            border-color: var(--accent-color);
+        }
+
+        .progress-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            height: 5px;
+            background: var(--accent-color);
+            width: 0%;
+            transition: width 0.3s;
+            z-index: 1001;
+            box-shadow: 0 0 10px var(--accent-color);
+        }
+
+        /* --- Slide Container --- */
+        #slide-container {
+            width: var(--slide-width);
+            height: var(--slide-height);
+            background-color: var(--bg-color);
+            position: relative;
+            transform-origin: center center;
+            overflow: hidden;
+            box-shadow: 0 0 50px rgba(0,0,0,0.5);
+        }
+
+        .slide {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: none; /* Hidden by default */
+            flex-direction: column;
+            padding: 60px 80px;
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out;
+            background-image: 
+                radial-gradient(circle at 10% 10%, rgba(112, 0, 255, 0.05) 0%, transparent 20%),
+                radial-gradient(circle at 90% 90%, rgba(0, 229, 255, 0.05) 0%, transparent 20%);
+        }
+
+        .slide.active {
+            display: flex;
+            opacity: 1;
+        }
+
+        /* --- Typography --- */
+        h1 { font-size: 4rem; margin-bottom: 20px; color: var(--accent-color); line-height: 1.2; }
+        h2 { font-size: 2.8rem; margin-bottom: 30px; color: var(--text-color); border-bottom: 3px solid var(--secondary-color); padding-bottom: 10px; display: inline-block; }
+        h3 { font-size: 2rem; margin-top: 20px; color: var(--accent-color); }
+        p, li { font-size: 1.6rem; line-height: 1.6; margin-bottom: 15px; }
+        ul { padding-left: 40px; }
+        strong { color: var(--accent-color); }
+
+        /* --- Components --- */
+        .flex-row { display: flex; gap: 40px; height: 100%; align-items: center; }
+        .col-50 { flex: 1; }
+        .card {
+            background: var(--card-bg);
+            padding: 30px;
+            border-radius: 15px;
+            border-left: 5px solid var(--secondary-color);
+            box-shadow: var(--shadow);
+            margin-bottom: 20px;
+        }
+        
+        .code-block {
+            background: var(--code-bg);
+            padding: 20px;
+            border-radius: 10px;
+            font-family: var(--font-code);
+            font-size: 1.2rem;
+            border: 1px solid #333;
+            overflow-x: auto;
+            position: relative;
+        }
+
+        .tag {
+            background: var(--secondary-color);
+            color: white;
+            padding: 5px 15px;
+            border-radius: 5px;
+            font-size: 1rem;
+            vertical-align: middle;
+            margin-left: 10px;
+        }
+
+        .infographic-box {
+            border: 2px dashed var(--accent-color);
+            border-radius: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            background: rgba(0,0,0,0.1);
+            position: relative;
+            padding: 20px;
+        }
+        
+        .infographic-placeholder {
+            font-size: 1.5rem;
+            color: var(--text-color);
+            text-align: center;
+            opacity: 0.7;
+        }
+
+        .cvss-simulator {
+            background: var(--card-bg);
+            padding: 30px;
+            border-radius: 15px;
+            border: 1px solid var(--accent-color);
+        }
+        
+        .cvss-range {
+            width: 100%;
+            margin: 20px 0;
+            cursor: pointer;
+        }
+
+        .score-display {
+            font-size: 4rem;
+            font-weight: bold;
+            text-align: center;
+            color: var(--accent-color);
+        }
+
+        .quote-box {
+            border-left: 8px solid var(--accent-color);
+            padding-left: 30px;
+            font-style: italic;
+            font-size: 2.5rem;
+            margin: 50px 0;
+        }
+
+        .footer-info {
+            position: absolute;
+            bottom: 20px;
+            left: 80px;
+            font-size: 1rem;
+            opacity: 0.5;
+        }
+
+        /* --- Specific Slide Styles --- */
+        .title-slide { text-align: center; justify-content: center; }
+        .title-slide h1 { font-size: 6rem; text-transform: uppercase; letter-spacing: 5px; text-shadow: 0 0 20px var(--accent-color); }
+        
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 1.5rem;
+            margin-top: 20px;
+        }
+        .comparison-table th, .comparison-table td {
+            border: 1px solid var(--text-color);
+            padding: 15px;
+            text-align: left;
+        }
+        .comparison-table th { background: var(--secondary-color); color: white; }
+
+        /* --- Utilities --- */
+        .text-center { text-align: center; }
+        .text-right { text-align: right; }
+        .mt-20 { margin-top: 20px; }
+        .c-red { color: #ff4757; }
+        .c-green { color: #2ed573; }
+        .c-yellow { color: #ffa502; }
+
+    </style>
+</head>
+<body class="dark-mode">
+
+    <div class="progress-bar" id="progressBar"></div>
+
+    <div class="controls">
+        <button class="btn" onclick="toggleTheme()"><i class="fas fa-adjust"></i> Theme</button>
+        <button class="btn" onclick="changeFontSize(-1)"><i class="fas fa-minus"></i> A-</button>
+        <button class="btn" onclick="changeFontSize(1)"><i class="fas fa-plus"></i> A+</button>
+        <button class="btn" onclick="toggleFullScreen()"><i class="fas fa-expand"></i> Full</button>
+        <button class="btn" onclick="prevSlide()"><i class="fas fa-chevron-left"></i> Prev</button>
+        <span class="btn" id="slideCounter">1 / 35</span>
+        <button class="btn" onclick="nextSlide()">Next <i class="fas fa-chevron-right"></i></button>
+    </div>
+
+    <div id="slide-container">
+        
+        <section class="slide title-slide active">
+            <div style="font-size: 2rem; letter-spacing: 2px; margin-bottom: 20px;">ENGSE214 Introduction to Cyber Security</div>
+            <h1>Week 3:<br>Vulnerabilities & Risk Assessment</h1>
+            <p style="margin-top: 40px; font-size: 1.8rem;">By Tanit K. (Software Engineer & Lecturer)</p>
+            <div style="margin-top: 20px;">
+                <span class="tag">CLO2</span>
+                <span class="tag">CLO4</span>
+            </div>
+            <div class="footer-info">Department of Software Engineering</div>
+        </section>
+
+        <section class="slide">
+            <h2>Why This Matters?</h2>
+            <div class="flex-row">
+                <div class="col-50">
+                    <p>ในโลกของ Software Engineering...</p>
+                    <div class="card">
+                        <p>🚫 <strong>"No system is 100% secure"</strong></p>
+                        <p>แต่เรารู้ว่าระบบเรามี "จุดอ่อน" ตรงไหน และจะจัดการกับมันอย่างไร</p>
+                    </div>
+                    <p>สัปดาห์นี้จะเปลี่ยนมุมมองของคุณจาก <br><em>"Coding ให้ทำงานได้"</em> เป็น <em>"Coding ให้ปลอดภัย"</em></p>
+                </div>
+                <div class="col-50 text-center">
+                   <div class="infographic-box">
+                       <i class="fas fa-shield-virus" style="font-size: 10rem; color: var(--accent-color);"></i>
+                       <p class="mt-20">"Know your enemy, know yourself"</p>
+                   </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="slide">
+            <h2>⏮️ Recap: Week 1-2</h2>
+            <div class="flex-row">
+                <div class="col-50">
+                    <h3>CIA Triad</h3>
+                    <ul>
+                        <li><strong>Confidentiality:</strong> ความลับ</li>
+                        <li><strong>Integrity:</strong> ความถูกต้อง</li>
+                        <li><strong>Availability:</strong> ความพร้อมใช้งาน</li>
+                    </ul>
+                </div>
+                <div class="col-50">
+                    <h3>Threats (ภัยคุกคาม)</h3>
+                    <ul>
+                        <li>Malware (Virus, Ransomware)</li>
+                        <li>Social Engineering (Phishing)</li>
+                        <li>External Factors (Hacker, Nature)</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="card mt-20 text-center" style="font-size: 1.8rem;">
+                Relationship: Assets → Threats → <strong>Vulnerabilities</strong> → Risk
+            </div>
+        </section>
+
+        <section class="slide">
+            <h2>🎯 Learning Objectives</h2>
+            <ul>
+                <li><i class="fas fa-check-circle c-green"></i> อธิบายความหมายและประเภทของ <strong>Vulnerability</strong> ได้</li>
+                <li><i class="fas fa-check-circle c-green"></i> ค้นหาและอ่านข้อมูลจากฐานข้อมูล <strong>CVE/NVD</strong> ได้</li>
+                <li><i class="fas fa-check-circle c-green"></i> เข้าใจกระบวนการ <strong>Risk Assessment</strong></li>
+                <li><i class="fas fa-check-circle c-green"></i> อ่านค่า <strong>CVSS Score</strong> เบื้องต้นได้</li>
+                <li><i class="fas fa-check-circle c-green"></i> ประเมินความเสี่ยงของระบบ Login ง่ายๆ ได้</li>
+            </ul>
+        </section>
+
+        <section class="slide">
+            <h2>📖 Part 1: Vulnerability คืออะไร?</h2>
+            <div class="card">
+                <h3>Definition</h3>
+                <p><strong>Vulnerability (ช่องโหว่)</strong> คือจุดอ่อนหรือข้อบกพร่องในระบบ ซอฟต์แวร์ เครือข่าย หรือกระบวนการ ที่สามารถถูกใช้ประโยชน์ (Exploit) เพื่อทำให้เกิดความเสียหาย</p>
+            </div>
+            <div class="text-center mt-20">
+                <h1 style="font-size: 3rem;">RISK = Threat × <span style="color: var(--secondary-color);">Vulnerability</span> × Impact</h1>
+                <p>ถ้าไม่มีช่องโหว่... แม้มีภัยคุกคาม ก็ไม่เกิดความเสี่ยง (ทางทฤษฎี)</p>
+            </div>
+        </section>
+
+        <section class="slide">
+            <h2>Threat vs. Vulnerability</h2>
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>Vulnerability (ช่องโหว่)</th>
+                        <th>Threat (ภัยคุกคาม)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>จุดอ่อน "ภายใน" ระบบ</td>
+                        <td>สิ่งที่มาจาก "ภายนอก" หรือคนกระทำ</td>
+                    </tr>
+                    <tr>
+                        <td>แก้ไขได้ (Patch, Config)</td>
+                        <td>ควบคุมไม่ได้โดยตรง (ทำได้แค่ป้องกัน)</td>
+                    </tr>
+                    <tr>
+                        <td>ตัวอย่าง: รหัสผ่าน "admin"</td>
+                        <td>ตัวอย่าง: Hacker พยายามเดารหัส</td>
+                    </tr>
+                    <tr>
+                        <td><em>"ประตูล็อกไม่ดี"</em></td>
+                        <td><em>"โจร"</em></td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section class="slide">
+            <h2>Visualization</h2>
+            <div class="infographic-box">
+                <i class="fas fa-project-diagram" style="font-size: 5rem; opacity: 0.5;"></i>
+                <p class="mt-20"></p>
+                <p style="font-size: 1.2rem;">(Insert Draw.io XML for Threat/Vuln Model here)</p>
+            </div>
+        </section>
+
+        <section class="slide">
+            <h2>Types of Vulnerabilities</h2>
+            <div class="flex-row">
+                <div class="col-50">
+                    <div class="card">
+                        <h3>1. Software</h3>
+                        <ul>
+                            <li>Buffer Overflow</li>
+                            <li>SQL Injection</li>
+                            <li>XSS</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="col-50">
+                    <div class="card">
+                        <h3>2. Configuration</h3>
+                        <ul>
+                            <li>Default Passwords</li>
+                            <li>Unnecessary Services</li>
+                            <li>Missing Patches</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+             <div class="card mt-20">
+                <h3>3. Human</h3>
+                <p>Weak Passwords, Social Engineering Susceptibility, Insider Threats</p>
+            </div>
+        </section>
+
+        <section class="slide">
+            <h2>Software Vulnerability Example</h2>
+            <h3>SQL Injection (SQLi)</h3>
+            <div class="flex-row">
+                <div class="col-50">
+                    <p>การแทรกคำสั่ง SQL ผ่าน Input ที่ไม่มีการตรวจสอบ</p>
+                    <div class="code-block">
+SELECT * FROM users 
+WHERE username = '$user' 
+AND password = '$pass'
+                    </div>
+                </div>
+                <div class="col-50">
+                    <p>Attacker Input: <span class="code-block" style="padding: 5px;">' OR '1'='1</span></p>
+                    <p class="c-red mt-20">Result: Always True! Login Bypass.</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="slide">
+            <h2>Configuration Vulnerability</h2>
+            <div class="flex-row">
+                <div class="col-50">
+                    <img src="https://images.unsplash.com/photo-1555949963-aa79dcee981c?auto=format&fit=crop&q=80&w=600" style="width: 100%; border-radius: 10px;" alt="Router Config">
+                </div>
+                <div class="col-50">
+                    <h3>Default Credentials</h3>
+                    <ul>
+                        <li>Router: <code>admin / admin</code></li>
+                        <li>Database: <code>root / (blank)</code></li>
+                        <li>IoT: <code>admin / 1234</code></li>
+                    </ul>
+                    <p class="mt-20"><strong>อันตราย:</strong> Botnet (เช่น Mirai) สแกนหาและยึดเครื่องเหล่านี้ได้ในไม่กี่วินาที</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="slide">
+            <h2>Human: The Weakest Link</h2>
+            <div class="text-center">
+                <i class="fas fa-user-lock" style="font-size: 6rem; color: var(--secondary-color);"></i>
+                <div class="quote-box">
+                    "Amateurs hack systems, professionals hack people."
+                    <br><span style="font-size: 1.5rem;">- Bruce Schneier</span>
+                </div>
+                <p>ต่อให้ Firewall ราคา 10 ล้านบาท ก็ไร้ค่า...<br>ถ้าพนักงานแปะ Post-it รหัสผ่านไว้หน้าจอคอม</p>
+            </div>
+        </section>
+
+        <section class="slide">
+            <h2>🔍 Part 2: CVE (Common Vulnerabilities and Exposures)</h2>
+            <p>ฐานข้อมูลมาตรฐานสากลที่รวบรวมช่องโหว่ด้านความปลอดภัย</p>
+            <div class="card text-center">
+                <h1 style="font-size: 5rem;">CVE-YYYY-NNNNN</h1>
+                <p>Naming Convention</p>
+            </div>
+            <ul>
+                <li><strong>YYYY:</strong> ปีที่ประกาศ</li>
+                <li><strong>NNNNN:</strong> เลขลำดับ (Unique ID)</li>
+            </ul>
+        </section>
+
+        <section class="slide">
+            <h2>Famous CVE: Heartbleed (CVE-2014-0160)</h2>
+            <div class="flex-row">
+                <div class="col-50">
+                    <ul>
+                        <li><strong>Target:</strong> OpenSSL Library</li>
+                        <li><strong>Impact:</strong> อ่าน Memory ของ Server ได้ (ขโมย Key/Password)</li>
+                        <li><strong>Status:</strong> ตำนานที่ทำให้โลกรู้จักความสำคัญของ Open Source Security</li>
+                    </ul>
+                </div>
+                <div class="col-50 text-center">
+                   <i class="fas fa-heart-broken c-red" style="font-size: 8rem;"></i>
+                   <p>Heartbleed</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="slide">
+            <h2>Famous CVE: Log4Shell (CVE-2021-44228)</h2>
+            <div class="card" style="border-left-color: #ff4757;">
+                <h3>Severity: 10.0 (CRITICAL) 🔥</h3>
+                <p><strong>What:</strong> Java Logging Library (Log4j)</p>
+                <p><strong>Why so bad?</strong></p>
+                <ul>
+                    <li>ใช้งานง่ายมาก (Just send a string)</li>
+                    <li>Remote Code Execution (RCE) - ยึดเครื่องได้เลย</li>
+                    <li>กระทบเกือบทุกองค์กรทั่วโลก (Minecraft, Apple, Tesla ใช้หมด)</li>
+                </ul>
+            </div>
+            <p class="text-center mt-20"><a href="https://nvd.nist.gov/vuln/detail/CVE-2021-44228" target="_blank" style="color: var(--accent-color);">🔗 ดูรายละเอียดใน NVD</a></p>
+        </section>
+
+        <section class="slide">
+            <h2>แหล่งข้อมูล CVE</h2>
+            <div class="flex-row">
+                <div class="col-50">
+                    <div class="card">
+                        <h3><i class="fas fa-database"></i> NVD (NIST)</h3>
+                        <p>National Vulnerability Database. มีรายละเอียดทางเทคนิคครบถ้วน และคะแนน CVSS</p>
+                    </div>
+                </div>
+                <div class="col-50">
+                    <div class="card">
+                        <h3><i class="fas fa-list-alt"></i> MITRE CVE</h3>
+                        <p>องค์กรต้นทางที่กำหนดเลข CVE ID</p>
+                    </div>
+                </div>
+            </div>
+            <p class="text-center">Other: Exploit-DB, Vendor Bulletins (Microsoft, Cisco)</p>
+        </section>
+
+        <section class="slide">
+            <h2>💡 Part 3: Risk Assessment</h2>
+            <p>กระบวนการระบุ วิเคราะห์ และประเมินความเสี่ยง</p>
+            <div class="infographic-box" style="background: white;">
+                <div style="color: black; text-align: center;">
+                    <h3>The Process</h3>
+                    <div style="display: flex; gap: 20px; justify-content: center; margin-top: 20px;">
+                        <div style="background: #dae8fc; padding: 20px; border-radius: 50%;">1. Identify</div>
+                        <div style="font-size: 2rem;">→</div>
+                        <div style="background: #d5e8d4; padding: 20px; border-radius: 50%;">2. Analyze</div>
+                        <div style="font-size: 2rem;">→</div>
+                        <div style="background: #ffe6cc; padding: 20px; border-radius: 50%;">3. Evaluate</div>
+                    </div>
+                 </div>
+            </div>
+        </section>
+
+        <section class="slide">
+            <h2>Risk Management Lifecycle</h2>
+            <div class="flex-row">
+                <div class="col-50">
+                    <div class="infographic-box">
+                        <p>[Draw.io Diagram: Risk Cycle]</p>
+                        <small>Identify -> Analyze -> Evaluate -> Treat -> Monitor</small>
+                    </div>
+                </div>
+                <div class="col-50">
+                    <ul>
+                        <li><strong>Identify:</strong> หา Asset, Threat, Vuln</li>
+                        <li><strong>Analyze:</strong> ดู Impact & Likelihood</li>
+                        <li><strong>Evaluate:</strong> จัดลำดับความสำคัญ</li>
+                        <li><strong>Treat:</strong> จัดการความเสี่ยง</li>
+                        <li><strong>Monitor:</strong> เฝ้าระวังต่อเนื่อง</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section class="slide">
+            <h2>Risk Assessment Matrix</h2>
+            <div style="display: grid; grid-template-columns: 100px 1fr 1fr 1fr; gap: 5px; margin-top: 20px; text-align: center;">
+                <div></div>
+                <div style="background: #333; padding: 10px;">Low Impact</div>
+                <div style="background: #333; padding: 10px;">Med Impact</div>
+                <div style="background: #333; padding: 10px;">High Impact</div>
+
+                <div style="background: #333; padding: 10px; writing-mode: vertical-rl;">High Prob</div>
+                <div style="background: #f1c40f; color: black; padding: 30px;">Medium</div>
+                <div style="background: #e67e22; padding: 30px;">High</div>
+                <div style="background: #c0392b; padding: 30px;">Critical</div>
+
+                <div style="background: #333; padding: 10px; writing-mode: vertical-rl;">Med Prob</div>
+                <div style="background: #2ecc71; color: black; padding: 30px;">Low</div>
+                <div style="background: #f1c40f; color: black; padding: 30px;">Medium</div>
+                <div style="background: #e67e22; padding: 30px;">High</div>
+
+                <div style="background: #333; padding: 10px; writing-mode: vertical-rl;">Low Prob</div>
+                <div style="background: #2ecc71; color: black; padding: 30px;">Low</div>
+                <div style="background: #2ecc71; color: black; padding: 30px;">Low</div>
+                <div style="background: #f1c40f; color: black; padding: 30px;">Medium</div>
+            </div>
+        </section>
+
+        <section class="slide">
+            <h2>4 Ways to Treat Risk</h2>
+            <div class="flex-row" style="flex-wrap: wrap; gap: 20px;">
+                <div class="card" style="width: 45%;">
+                    <h3>1. Avoid (หลีกเลี่ยง)</h3>
+                    <p>เลิกทำกิจกรรมนั้นไปเลย (เช่น ปิด Server ที่ไม่ใช้)</p>
+                </div>
+                <div class="card" style="width: 45%;">
+                    <h3>2. Reduce/Mitigate (ลด)</h3>
+                    <p>หาทางป้องกัน (Patch, Firewall, Training) *พบบ่อยสุด</p>
+                </div>
+                <div class="card" style="width: 45%;">
+                    <h3>3. Transfer (โอนถ่าย)</h3>
+                    <p>ให้คนอื่นรับผิดชอบแทน (ซื้อประกันภัยไซเบอร์, Outsource)</p>
+                </div>
+                <div class="card" style="width: 45%;">
+                    <h3>4. Accept (ยอมรับ)</h3>
+                    <p>ต้นทุนแก้แพงกว่าความเสียหาย ยอมรับความเสี่ยงไว้</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="slide">
+            <h2>📊 Part 4: CVSS (Common Vulnerability Scoring System)</h2>
+            <p>ระบบมาตรฐานในการให้คะแนนความรุนแรง (0.0 - 10.0)</p>
+            <div class="cvss-simulator text-center">
+                <p>ระดับความรุนแรง (v3.1)</p>
+                <div style="display: flex; height: 30px; border-radius: 15px; overflow: hidden; margin-top: 20px;">
+                    <div style="flex: 4; background: #2ecc71;">None/Low</div>
+                    <div style="flex: 3; background: #f1c40f;">Medium</div>
+                    <div style="flex: 2; background: #e67e22;">High</div>
+                    <div style="flex: 1; background: #c0392b;">Critical</div>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-top: 5px;">
+                    <span>0.0</span>
+                    <span>4.0</span>
+                    <span>7.0</span>
+                    <span>9.0</span>
+                    <span>10.0</span>
+                </div>
+            </div>
+        </section>
+
+        <section class="slide">
+            <h2>องค์ประกอบของ CVSS (Base Metrics)</h2>
+            <div class="flex-row">
+                <div class="col-50">
+                    <h3>Exploitability (โจมตีง่ายแค่ไหน?)</h3>
+                    <ul>
+                        <li><strong>AV (Attack Vector):</strong> Network vs Local</li>
+                        <li><strong>AC (Complexity):</strong> ง่าย vs ซับซ้อน</li>
+                        <li><strong>PR (Privileges):</strong> ต้องมีสิทธิ์ไหม?</li>
+                        <li><strong>UI (User Interaction):</strong> ต้องหลอก user ไหม?</li>
+                    </ul>
+                </div>
+                <div class="col-50">
+                    <h3>Impact (CIA) (เสียหายแค่ไหน?)</h3>
+                    <ul>
+                        <li><strong>C:</strong> Confidentiality</li>
+                        <li><strong>I:</strong> Integrity</li>
+                        <li><strong>A:</strong> Availability</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section class="slide">
+            <h2>🎮 Simulation: CVSS Calculator (Simplified)</h2>
+            <div class="cvss-simulator">
+                <label>Attack Vector (ช่องทางโจมตี):</label>
+                <select id="cvss-av" class="btn" style="width: 100%; margin-bottom: 20px;" onchange="calculateCVSS()">
+                    <option value="0.85">Network (Internet) - Dangerous!</option>
+                    <option value="0.62">Local Network</option>
+                    <option value="0.55">Local Access (Keyboard)</option>
+                    <option value="0.20">Physical Access</option>
+                </select>
+
+                <label>Impact (ผลกระทบโดยรวม):</label>
+                <select id="cvss-impact" class="btn" style="width: 100%; margin-bottom: 20px;" onchange="calculateCVSS()">
+                    <option value="1.0">High (ข้อมูลหาย/ระบบพัง)</option>
+                    <option value="0.5">Low (กระทบเล็กน้อย)</option>
+                    <option value="0.0">None</option>
+                </select>
+
+                <div class="text-center">
+                    <p>Approx. Score:</p>
+                    <div id="sim-score" class="score-display">0.0</div>
+                    <div id="sim-rating" style="font-size: 2rem;">None</div>
+                </div>
+            </div>
+        </section>
+
+        <section class="slide">
+            <h2>Reading Vector String</h2>
+            <p>คุณจะเจอ string นี้ในรายงาน Scan:</p>
+            <div class="code-block" style="font-size: 1.5rem;">
+                CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+            </div>
+            <div class="card mt-20">
+                <p><strong>AV:N</strong> = Attack via Network (Internet)</p>
+                <p><strong>AC:L</strong> = Low Complexity (Easy to hack)</p>
+                <p><strong>PR:N</strong> = Privileges None (ใครๆ ก็ทำได้)</p>
+                <p><strong>C:H / I:H / A:H</strong> = หายนะครบทุกด้าน (CIA High)</p>
+                <p class="text-right"><strong>Score: 9.8 (Critical)</strong></p>
+            </div>
+        </section>
+
+        <section class="slide">
+            <h2>💻 Mini Lab: NVD Search</h2>
+            <p>ให้นักศึกษาลองทำตาม:</p>
+            <ol>
+                <li>เข้าเว็บ <a href="https://nvd.nist.gov/" target="_blank" style="color: var(--accent-color);">nvd.nist.gov</a></li>
+                <li>ค้นหาคำว่า <code>Apache Log4j</code> หรือ <code>SQL Injection</code></li>
+                <li>เลือกมา 1 CVE</li>
+                <li>อ่านค่า CVSS Score และ Vector String</li>
+            </ol>
+            <div class="infographic-box mt-20" style="height: 200px;">
+                <p></p>
+            </div>
+        </section>
+
+        <section class="slide">
+            <h2>🕵️ Case Study: Vulnerable Login</h2>
+            <div class="flex-row">
+                <div class="col-50 code-block">
+&lt;?php
+$username = $_POST['user'];
+$password = $_POST['pass'];
+
+// ❌ Vulnerability 1: SQL Injection
+$sql = "SELECT * FROM users WHERE 
+name='$username' AND pass='$password'";
+
+// ❌ Vulnerability 2: Plaintext Password
+// ...
+?&gt;
+                </div>
+                <div class="col-50">
+                    <h3>Risk Analysis</h3>
+                    <ul>
+                        <li><strong>Asset:</strong> User Database</li>
+                        <li><strong>Threat:</strong> Hacker (External)</li>
+                        <li><strong>Vuln:</strong> Input ไม่ถูกตรวจสอบ</li>
+                        <li><strong>Impact:</strong> ข้อมูลหลุดทั้งระบบ</li>
+                        <li><strong>Risk Level:</strong> <span class="c-red">CRITICAL</span></li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section class="slide">
+            <h2>🛡️ The Fix (Secure Coding)</h2>
+            <div class="flex-row">
+                <div class="col-50 code-block">
+&lt;?php
+// ✅ 1. Use Prepared Statement
+$stmt = $pdo->prepare(
+ "SELECT * FROM users WHERE name=?");
+$stmt->execute([$username]);
+$user = $stmt->fetch();
+
+// ✅ 2. Verify Hashed Password
+if(password_verify($password, $user['hash'])){
+    // Login Success
+}
+?&gt;
+                </div>
+                <div class="col-50">
+                    <h3>Mitigation</h3>
+                    <ul>
+                        <li>Prepared Statement แยก Code ออกจาก Data (กัน SQLi)</li>
+                        <li>Password Hashing (bcrypt/argon2) กันรหัสหลุดแล้วอ่านรู้เรื่อง</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section class="slide">
+            <h2>🌍 Real World: Equifax Breach (2017)</h2>
+            <div class="card">
+                <ul>
+                    <li><strong>สาเหตุ:</strong> Apache Struts มีช่องโหว่ (CVE-2017-5638)</li>
+                    <li><strong>ปัญหา:</strong> Patch ออกมาแล้ว 2 เดือน แต่บริษัท <em>"ลืมอัปเดต"</em></li>
+                    <li><strong>ผลกระทบ:</strong> ข้อมูลคนอเมริกัน 147 ล้านคนรั่วไหล (SSN, ที่อยู่)</li>
+                    <li><strong>ค่าเสียหาย:</strong> > $1.4 Billion USD 💸</li>
+                </ul>
+            </div>
+            <p class="mt-20"><strong>Lesson:</strong> Asset Inventory & Patch Management คือหัวใจสำคัญ</p>
+        </section>
+
+        <section class="slide">
+            <h2>🌍 Real World: SolarWinds (Supply Chain)</h2>
+            <div class="flex-row">
+                <div class="col-50">
+                    <p>Hacker ไม่ได้โจมตีบริษัทเป้าหมายโดยตรง... แต่ไปฝัง Backdoor ใน "ตัวอัปเดตซอฟต์แวร์" ที่บริษัทเป้าหมายใช้</p>
+                    <p><strong>Impact:</strong> รัฐบาลสหรัฐฯ, Fortune 500 โดนเจาะผ่าน Software Update ที่พวกเขา "เชื่อใจ"</p>
+                </div>
+                <div class="col-50 text-center">
+                    <i class="fas fa-box-open" style="font-size: 6rem; color: var(--accent-color);"></i>
+                    <p>Trust but Verify</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="slide">
+            <h2>⏳ SLA for Patching</h2>
+            <p>เจอช่องโหว่แล้ว ต้องแก้ภายในกี่วัน?</p>
+            <table class="comparison-table text-center">
+                <thead>
+                    <tr>
+                        <th>Severity</th>
+                        <th>CVSS</th>
+                        <th>Deadline (Example)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr style="color: var(--accent-color);">
+                        <td>Critical</td>
+                        <td>9.0 - 10.0</td>
+                        <td>⚡ 24 - 48 Hours</td>
+                    </tr>
+                    <tr style="color: #e67e22;">
+                        <td>High</td>
+                        <td>7.0 - 8.9</td>
+                        <td>📅 7 - 14 Days</td>
+                    </tr>
+                    <tr style="color: #f1c40f;">
+                        <td>Medium</td>
+                        <td>4.0 - 6.9</td>
+                        <td>📅 30 Days</td>
+                    </tr>
+                    <tr style="color: #2ecc71;">
+                        <td>Low</td>
+                        <td>0.1 - 3.9</td>
+                        <td>📅 90 Days / Next Cycle</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section class="slide">
+            <h2>🛠️ Tools for Vulnerability Mgmt</h2>
+            <div class="flex-row" style="flex-wrap: wrap; justify-content: center; gap: 30px;">
+                <div class="card text-center" style="width: 300px;">
+                    <i class="fas fa-network-wired" style="font-size: 3rem;"></i>
+                    <h3>Nmap</h3>
+                    <p>Network Scanner (หาเปิด Port/Service)</p>
+                </div>
+                <div class="card text-center" style="width: 300px;">
+                    <i class="fas fa-spider" style="font-size: 3rem;"></i>
+                    <h3>OWASP ZAP</h3>
+                    <p>Web App Scanner (ฟรี & ดีสำหรับ Dev)</p>
+                </div>
+                <div class="card text-center" style="width: 300px;">
+                    <i class="fas fa-file-code" style="font-size: 3rem;"></i>
+                    <h3>Snyk / Trivy</h3>
+                    <p>Code & Container Scanner (DevSecOps)</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="slide">
+            <h2>📝 Summary Week 3</h2>
+            <ul>
+                <li><strong>Vulnerability:</strong> จุดอ่อนในระบบ (Software, Config, Human)</li>
+                <li><strong>CVE:</strong> ชื่อเรียกมาตรฐานของช่องโหว่</li>
+                <li><strong>CVSS:</strong> คะแนนความรุนแรง (Critical = ต้องแก้ทันที)</li>
+                <li><strong>Risk Assessment:</strong> รู้เขา รู้เรา → จัดลำดับความสำคัญ</li>
+                <li><strong>Treatment:</strong> Avoid, Reduce, Transfer, Accept</li>
+            </ul>
+        </section>
+
+        <section class="slide">
+            <h2>🔮 Next Week: OS Security</h2>
+            <div class="flex-row">
+                <div class="col-50">
+                    <h3>Week 4 Topics:</h3>
+                    <ul>
+                        <li>Windows vs Linux Security</li>
+                        <li>Account Management & Permissions</li>
+                        <li>OS Hardening (ทำให้แข็งแกร่ง)</li>
+                        <li>Lab: Setting up Secure VM</li>
+                    </ul>
+                </div>
+                <div class="col-50 text-center">
+                    <i class="fab fa-linux" style="font-size: 5rem; margin: 10px;"></i>
+                    <i class="fab fa-windows" style="font-size: 5rem; margin: 10px;"></i>
+                    <p>Prepare your VirtualBox!</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="slide">
+            <h2>✍️ Homework & Assignments</h2>
+            <div class="card">
+                <h3>Assignment 1: Mini Risk Assessment</h3>
+                <p><strong>โจทย์:</strong> เลือกระบบ 1 อย่าง (เช่น แอปสั่งอาหาร) แล้ววิเคราะห์ Asset, Threat, Vulnerability พร้อมเสนอวิธีแก้</p>
+                <p><strong>ส่ง:</strong> ภายใน 7 วัน (PDF)</p>
+            </div>
+            <div class="card mt-20">
+                <h3>Quiz 2</h3>
+                <p>เตรียมตัวสอบเรื่อง CVE, CVSS, Risk Matrix สัปดาห์หน้า</p>
+            </div>
+        </section>
+
+        <section class="slide">
+            <h2>📚 Additional Resources</h2>
+            <ul>
+                <li><a href="https://owasp.org/www-project-top-ten/" target="_blank" style="color: var(--accent-color);">OWASP Top 10</a> - คัมภีร์ Web Security</li>
+                <li><a href="https://www.cvedetails.com/" target="_blank" style="color: var(--accent-color);">CVE Details</a> - สถิติช่องโหว่</li>
+                <li><a href="https://tryhackme.com/" target="_blank" style="color: var(--accent-color);">TryHackMe</a> - ฝึก Hacking แบบถูกกฎหมาย</li>
+            </ul>
+            <div class="text-center mt-20">
+                <img src="https://img.youtube.com/vi/0_gNA5147kE/maxresdefault.jpg" style="width: 300px; opacity: 0.7;" alt="Log4shell explainer placeholder">
+                <p>(Youtube: Computerphile - Log4Shell Explained)</p>
+            </div>
+        </section>
+
+        <section class="slide text-center">
+            <h1>Thank You</h1>
+            <p>Q & A Session</p>
+            <div class="quote-box" style="display: inline-block; text-align: left; font-size: 2rem;">
+                "Security is not a product,<br>but a process."
+            </div>
+            <p style="margin-top: 50px; font-size: 1.5rem;">See you next week!</p>
+            <p style="font-size: 1rem; opacity: 0.5;">ENGSE214 | Week 3</p>
+        </section>
+
+    </div>
+
+    <script>
+        // --- Logic for Slide Deck ---
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slide');
+        const progressBar = document.getElementById('progressBar');
+        const slideCounter = document.getElementById('slideCounter');
+        let fontSize = 100; // Percent
+
+        function updateSlide() {
+            slides.forEach((slide, index) => {
+                slide.classList.remove('active');
+                if (index === currentSlide) {
+                    slide.classList.add('active');
+                }
+            });
+            
+            // Update Progress
+            const progress = ((currentSlide + 1) / slides.length) * 100;
+            progressBar.style.width = `${progress}%`;
+            slideCounter.textContent = `${currentSlide + 1} / ${slides.length}`;
+        }
+
+        function nextSlide() {
+            if (currentSlide < slides.length - 1) {
+                currentSlide++;
+                updateSlide();
+            }
+        }
+
+        function prevSlide() {
+            if (currentSlide > 0) {
+                currentSlide--;
+                updateSlide();
+            }
+        }
+
+        function toggleTheme() {
+            document.body.classList.toggle('dark-mode');
+            document.body.classList.toggle('light-mode');
+        }
+
+        function changeFontSize(direction) {
+            fontSize += (direction * 10);
+            if(fontSize < 60) fontSize = 60;
+            if(fontSize > 150) fontSize = 150;
+            document.body.style.fontSize = fontSize + "%";
+            // Also scale font size variables if needed, but body scaling works generally
+        }
+
+        function toggleFullScreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+            }
+        }
+
+        // --- CVSS Simulator Logic ---
+        function calculateCVSS() {
+            const av = parseFloat(document.getElementById('cvss-av').value);
+            const impact = parseFloat(document.getElementById('cvss-impact').value);
+            
+            // Simplified Formula for Demo Purpose
+            // Base Score = (0.6 * Impact + 0.4 * Exploitability) * 10 (Very rough approx)
+            
+            let score = 0;
+            if (impact > 0) {
+               // Fake Math to simulate logical outcome
+               score = (av * 4) + (impact * 6); 
+               if(score > 10) score = 10;
+            } else {
+               score = 0;
+            }
+            
+            score = score.toFixed(1);
+            
+            const display = document.getElementById('sim-score');
+            const rating = document.getElementById('sim-rating');
+            
+            display.innerText = score;
+            
+            if (score == 0) {
+                display.style.color = "#2ecc71";
+                rating.innerText = "None";
+                rating.style.color = "#2ecc71";
+            } else if (score < 4.0) {
+                display.style.color = "#2ecc71";
+                rating.innerText = "Low";
+                rating.style.color = "#2ecc71";
+            } else if (score < 7.0) {
+                display.style.color = "#f1c40f";
+                rating.innerText = "Medium";
+                rating.style.color = "#f1c40f";
+            } else if (score < 9.0) {
+                display.style.color = "#e67e22";
+                rating.innerText = "High";
+                rating.style.color = "#e67e22";
+            } else {
+                display.style.color = "#c0392b";
+                rating.innerText = "Critical";
+                rating.style.color = "#c0392b";
+            }
+        }
+
+        // --- Event Listeners ---
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === ' ') {
+                nextSlide();
+            } else if (e.key === 'ArrowLeft') {
+                prevSlide();
+            } else if (e.key === 'f') {
+                toggleFullScreen();
+            }
+        });
+
+        // Initialize Scale for responsiveness
+        function resizeSlides() {
+            const container = document.getElementById('slide-container');
+            const windowWidth = window.innerWidth;
+            const windowHeight = window.innerHeight;
+            const scaleX = windowWidth / 1920;
+            const scaleY = windowHeight / 1080;
+            const scale = Math.min(scaleX, scaleY);
+            
+            container.style.transform = `scale(${scale})`;
+        }
+
+        window.addEventListener('resize', resizeSlides);
+        resizeSlides(); // Initial call
+        updateSlide(); // Initial render
+
+    </script>
+</body>
+</html>
