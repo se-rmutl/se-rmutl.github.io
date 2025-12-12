@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ENGSE207: Software Architecture Quiz (Week 4)</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    
+    <style>
+        :root {
+            --bg-color: #0f172a; /* Slate 900 */
+            --card-bg: #1e293b; /* Slate 800 */
+            --primary: #6366f1; /* Indigo 500 */
+            --accent: #10b981; /* Emerald 500 */
+            --danger: #ef4444; /* Red 500 */
+            --text-main: #f8fafc;
+            --text-dim: #94a3b8;
+            --border: #334155;
+            --code-bg: #020617;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Prompt', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 900px;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            min-height: 650px;
+        }
+
+        /* --- Header --- */
+        header {
+            background: rgba(2, 6, 23, 0.8);
+            padding: 15px 25px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            backdrop-filter: blur(10px);
+        }
+
+        .brand {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 700;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .status-dot {
+            width: 8px; height: 8px;
+            background-color: var(--accent);
+            border-radius: 50%;
+            box-shadow: 0 0 8px var(--accent);
+        }
+
+        /* --- Content --- */
+        .content {
+            padding: 40px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .hidden { display: none !important; }
+
+        /* --- Input & Buttons --- */
+        .input-group { margin-bottom: 20px; }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+            color: var(--text-dim);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px 15px;
+            background: var(--code-bg);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            border-radius: 6px;
+            font-family: 'JetBrains Mono', monospace;
+            transition: 0.3s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 14px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn:hover:not(:disabled) {
+            background: #4f46e5;
+            transform: translateY(-1px);
+        }
+
+        .btn:disabled {
+            background: var(--border);
+            cursor: not-allowed;
+            color: var(--text-dim);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255,255,255,0.05);
+        }
+
+        /* --- Quiz UI --- */
+        .progress-container {
+            height: 4px;
+            background: var(--code-bg);
+            width: 100%;
+            margin-bottom: 30px;
+            border-radius: 2px;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: var(--primary);
+            width: 0%;
+            transition: width 0.3s ease;
+            box-shadow: 0 0 10px rgba(99, 102, 241, 0.5);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-family: 'JetBrains Mono', monospace;
+            margin-bottom: 15px;
+        }
+        
+        .badge-basic { background: rgba(16, 185, 129, 0.15); color: var(--accent); }
+        .badge-challenge { background: rgba(239, 68, 68, 0.15); color: var(--danger); }
+
+        .question-text {
+            font-size: 1.25rem;
+            line-height: 1.6;
+            margin-bottom: 30px;
+            font-weight: 500;
+        }
+
+        .options-grid { display: grid; gap: 12px; }
+
+        .option-card {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--border);
+            padding: 16px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+        }
+
+        .option-card:hover {
+            background: rgba(255,255,255,0.06);
+            border-color: var(--text-dim);
+        }
+
+        .option-card.selected {
+            border-color: var(--primary);
+            background: rgba(99, 102, 241, 0.15);
+        }
+
+        .option-marker {
+            font-family: 'JetBrains Mono', monospace;
+            margin-right: 15px;
+            color: var(--text-dim);
+            font-size: 0.9rem;
+        }
+
+        /* --- Results --- */
+        .result-summary {
+            text-align: center;
+            padding: 30px;
+            background: var(--code-bg);
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            margin-bottom: 30px;
+        }
+
+        .score-display {
+            font-size: 4rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 700;
+            color: var(--text-main);
+            line-height: 1;
+            margin: 10px 0;
+        }
+
+        .review-panel {
+            flex: 1;
+            overflow-y: auto;
+            border-top: 1px solid var(--border);
+            padding-top: 20px;
+            padding-right: 5px;
+        }
+
+        .review-item {
+            margin-bottom: 20px;
+            padding: 15px;
+            border-radius: 6px;
+            background: rgba(255,255,255,0.02);
+            border-left: 3px solid transparent;
+        }
+
+        .review-item.correct { border-left-color: var(--accent); }
+        .review-item.incorrect { border-left-color: var(--danger); }
+
+        .rationale {
+            margin-top: 10px;
+            font-size: 0.9rem;
+            color: var(--text-dim);
+            font-family: 'Prompt', sans-serif;
+            background: rgba(0,0,0,0.2);
+            padding: 10px;
+            border-radius: 4px;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--text-dim); }
+
+    </style>
+</head>
+<body>
+
+    <div class="container" id="capture-area">
+        <header>
+            <div class="brand">
+                <span class="status-dot"></span>
+                <span>ENGSE207_QUIZ_SYSTEM</span>
+            </div>
+            <div style="font-family: 'JetBrains Mono'; font-size: 0.8rem; color: var(--text-dim);">
+                WEEK_04: ARCHITECTURE_STYLES_2
+            </div>
+        </header>
+
+        <div id="login-screen" class="content">
+            <div style="margin: auto 0;">
+                <h1 style="margin-bottom: 10px; font-size: 1.8rem;">ยืนยันตัวตน (Authentication)</h1>
+                <p style="color: var(--text-dim); margin-bottom: 40px;">กรุณาระบุข้อมูลนักศึกษาเพื่อเริ่มทำแบบทดสอบ</p>
+
+                <div class="input-group">
+                    <label>STUDENT NAME</label>
+                    <input type="text" id="username" placeholder="เช่น นายสมชาย ใจดี">
+                </div>
+                
+                <div class="input-group">
+                    <label>STUDENT ID</label>
+                    <input type="text" id="studentid" placeholder="เช่น 1165xxxxxx">
+                </div>
+
+                <button class="btn" onclick="startQuiz()">[ INITIALIZE TEST ]</button>
+            </div>
+        </div>
+
+        <div id="quiz-screen" class="content hidden">
+            <div class="progress-container">
+                <div class="progress-bar" id="progress-bar"></div>
+            </div>
+
+            <div id="question-badge" class="badge badge-basic">BASIC CONCEPT</div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 20px; font-family: 'JetBrains Mono'; font-size: 0.85rem; color: var(--text-dim);">
+                <span id="q-counter">Q 01/20</span>
+                <span id="user-display">GUEST</span>
+            </div>
+
+            <div class="question-text" id="q-text">Loading...</div>
+
+            <div class="options-grid" id="options-area">
+                </div>
+
+            <div style="margin-top: auto; padding-top: 30px;">
+                <button class="btn" id="next-btn" onclick="nextQuestion()" disabled>CONFIRM SELECTION >></button>
+            </div>
+        </div>
+
+        <div id="result-screen" class="content hidden">
+            <h2 style="text-align: center; margin-bottom: 20px;">สรุปผลการประเมิน (Result)</h2>
+            
+            <div class="result-summary">
+                <div style="font-family: 'JetBrains Mono'; font-size: 0.9rem; color: var(--text-dim); letter-spacing: 1px;">TOTAL SCORE</div>
+                <div class="score-display"><span id="score-val">0</span><span style="font-size: 2rem; color: var(--text-dim);">/20</span></div>
+                <div id="eval-msg" style="font-weight: 500; color: var(--primary);">Processing...</div>
+            </div>
+
+            <div style="margin-bottom: 10px; font-family: 'JetBrains Mono'; font-size: 0.9rem; color: var(--text-dim);">
+                > DEBUGLOG_ANALYSIS:
+            </div>
+            
+            <div class="review-panel" id="review-area">
+                </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px;">
+                <button class="btn btn-secondary" onclick="resetQuiz()">RETRY (เริ่มใหม่)</button>
+                <button class="btn" onclick="captureScreen()">SAVE IMAGE</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- 1. QUESTION DATABASE (20 Questions: 14 Basic, 6 Challenge) ---
+        // Basic: 70% | Challenge: 30%
+        const questions = [
+            // --- BASIC CONCEPTS (14 ข้อ) ---
+            {
+                type: 'basic',
+                q: "Microservices Architecture คืออะไร?",
+                options: [
+                    "การรวมทุกฟังก์ชันไว้ใน Codebase เดียวเพื่อให้จัดการง่าย",
+                    "การแบ่งแอปพลิเคชันออกเป็นบริการขนาดเล็กที่ทำงานอิสระต่อกัน",
+                    "การใช้ Database เพียงตัวเดียวสำหรับทุกบริการ",
+                    "การเขียนโปรแกรมโดยไม่ใช้ Server (Serverless)"
+                ],
+                a: 1,
+                exp: "Microservices คือการแตก Service ออกเป็นส่วนย่อยๆ (Fine-grained) ที่ Deploy และ Scale แยกกันได้อย่างอิสระ ต่างจาก Monolith ที่รวมทุกอย่างไว้ด้วยกัน "
+            },
+            {
+                q: "Component ใดทำหน้าที่เป็น 'จุดเข้าเดียว' (Single Entry Point) สำหรับจัดการ Request จาก Client ใน Microservices?",
+                options: [
+                    "Message Broker",
+                    "Service Registry",
+                    "API Gateway",
+                    "Event Store"
+                ],
+                a: 2,
+                exp: "API Gateway ทำหน้าที่เป็นประตูหน้าบ้าน (Entry Point) คอยรับ Request จาก Client แล้ว Route ไปยัง Service ที่ถูกต้อง รวมถึงจัดการ Auth และ Rate Limiting "
+            },
+            {
+                q: "หลักการ 'Database per Service' หมายความว่าอย่างไร?",
+                options: [
+                    "ทุก Service ต้องใช้ Database ประเภทเดียวกัน (เช่น MySQL ทั้งหมด)",
+                    "แต่ละ Service มี Database ของตัวเองและไม่แชร์กับ Service อื่น",
+                    "Database หนึ่งลูกรองรับได้เพียง 1 User เท่านั้น",
+                    "Service ทั้งหมดเชื่อมต่อกับ Database กลางตัวเดียว"
+                ],
+                a: 1,
+                exp: "เพื่อความอิสระ (Decoupling) อย่างแท้จริง แต่ละ Microservice ควรมี Database ส่วนตัว เพื่อให้สามารถปรับเปลี่ยน Schema ได้โดยไม่กระทบ Service อื่น "
+            },
+            {
+                q: "Serverless Architecture (FaaS) มีรูปแบบการคิดค่าใช้จ่ายแบบใด?",
+                options: [
+                    "จ่ายรายเดือนคงที่ (Subscription)",
+                    "จ่ายตามจำนวน Server ที่เช่า",
+                    "จ่ายตามการใช้งานจริง (Pay-per-use / Execution time)",
+                    "ใช้งานฟรีตลอดชีพ"
+                ],
+                a: 2,
+                exp: "จุดเด่นของ Serverless (เช่น AWS Lambda) คือคิดเงินเฉพาะตอนที่ Code ทำงาน (Execution) เท่านั้น ถ้าไม่มี Request ก็ไม่เสียเงิน "
+            },
+            {
+                q: "Cold Start ในบริบทของ Serverless คืออะไร?",
+                options: [
+                    "การที่ Server ทำงานได้ดีขึ้นเมื่ออยู่ในห้องแอร์",
+                    "ความล่าช้า (Latency) ในการเริ่มทำงานครั้งแรกหลังจากระบบ Idle",
+                    "กระบวนการบูตเครื่อง Server แบบดั้งเดิม",
+                    "การเขียนโปรแกรมโดยไม่ใช้ Framework"
+                ],
+                a: 1,
+                exp: "Cold Start เกิดขึ้นเมื่อ Cloud Provider ต้องเตรียม Container ใหม่เพื่อรัน Function หลังจากที่ไม่ได้ถูกใช้งานสักพัก ทำให้ Request แรกช้ากว่าปกติ "
+            },
+            {
+                q: "ข้อใดคือข้อแตกต่างสำคัญระหว่าง SOA (Service-Oriented Architecture) และ Microservices?",
+                options: [
+                    "SOA เน้นใช้ ESB (Enterprise Service Bus) เป็นตัวกลางที่ฉลาด (Smart Pipes)",
+                    "Microservices มีขนาดใหญ่กว่า SOA",
+                    "SOA ไม่มี Database",
+                    "Microservices ใช้ XML เป็นหลัก"
+                ],
+                a: 0,
+                exp: "SOA มักใช้ ESB จัดการ Logic การสื่อสารที่ซับซ้อน (Smart Pipes) ส่วน Microservices เน้น Dumb Pipes (เช่น HTTP) และให้ Logic อยู่ที่ Endpoint (Smart Endpoints) "
+            },
+            {
+                q: "Event-Driven Architecture (EDA) ใช้รูปแบบการสื่อสารแบบใดเป็นหลัก?",
+                options: [
+                    "Synchronous (Request-Response)",
+                    "Asynchronous (Fire and Forget)",
+                    "Direct Database Connection",
+                    "Batch Processing"
+                ],
+                a: 1,
+                exp: "EDA เน้นการสื่อสารแบบ Asynchronous ผ่าน Event โดยผู้ส่ง (Producer) ไม่ต้องรอผู้รับ (Consumer) ตอบกลับ ทำให้ระบบมีความยืดหยุ่นสูง "
+            },
+            {
+                q: "Pub/Sub (Publish-Subscribe) Pattern มีประโยชน์อย่างไร?",
+                options: [
+                    "ช่วยให้ผู้ส่งและผู้รับไม่ต้องรู้จักกันโดยตรง (Decoupling)",
+                    "ช่วยให้ Database ทำงานเร็วขึ้น",
+                    "ทำให้ระบบมีความปลอดภัยสูงสุด",
+                    "บังคับให้ทุก Service ทำงานพร้อมกัน"
+                ],
+                a: 0,
+                exp: "ใน Pub/Sub ผู้ส่ง (Publisher) ส่งข้อความเข้า Topic โดยไม่รู้ว่าใครจะรับ ส่วนผู้รับ (Subscriber) เลือกรับเฉพาะ Topic ที่สนใจ ทำให้แยกส่วนกันได้อย่างสมบูรณ์ "
+            },
+            {
+                q: "ข้อดีหลักของ Monolithic Architecture ที่เหนือกว่า Microservices คือข้อใด?",
+                options: [
+                    "Scalability สูงกว่า",
+                    "ความซับซ้อนต่ำ เริ่มต้นง่าย และ Debug ง่ายกว่าในช่วงแรก",
+                    "Technology Diversity (ใช้หลายภาษาได้)",
+                    "Fault Isolation (ระบบล่มบางส่วนได้)"
+                ],
+                a: 1,
+                exp: "Monolith เหมาะกับการเริ่มต้นเพราะ Code ทั้งหมดรวมอยู่ที่เดียว ทำให้ Develop, Test และ Deploy ง่ายกว่า ไม่ต้องจัดการระบบ Network ที่ซับซ้อน "
+            },
+            {
+                q: "Two Pizza Team เป็นแนวคิดที่เกี่ยวข้องกับอะไร?",
+                options: [
+                    "ขนาดทีม DevOps ที่เหมาะสม",
+                    "ขนาดทีม Microservices ที่เหมาะสม (8-12 คน)",
+                    "สวัสดิการอาหารกลางวันของโปรแกรมเมอร์",
+                    "จำนวน Layer ใน Architecture"
+                ],
+                a: 1,
+                exp: "เป็นแนวคิดจาก Amazon ที่บอกว่าทีมที่ดูแล 1 Microservice ควรมีขนาดเล็กพอที่จะกินพิซซ่า 2 ถาดอิ่ม (ประมาณ 8-12 คน) เพื่อความคล่องตัว "
+            },
+            {
+                q: "ข้อเสียหลักของการใช้ Microservices คืออะไร?",
+                options: [
+                    "ไม่สามารถ Scale ได้",
+                    "ความซับซ้อนของระบบกระจาย (Distributed System Complexity)",
+                    "ผูกติดกับภาษาโปรแกรมเดียว",
+                    "Deployment ช้ากว่า Monolith เสมอ"
+                ],
+                a: 1,
+                exp: "Microservices แลกมาด้วยความซับซ้อนในการจัดการ Network, Data Consistency, Monitoring และ Distributed Tracing "
+            },
+            {
+                q: "เทคโนโลยีใดต่อไปนี้ทำหน้าที่เป็น Message Broker?",
+                options: [
+                    "React / Angular",
+                    "Apache Kafka / RabbitMQ",
+                    "MySQL / PostgreSQL",
+                    "Docker / Kubernetes"
+                ],
+                a: 1,
+                exp: "Apache Kafka และ RabbitMQ เป็นเครื่องมือยอดนิยมสำหรับการจัดการ Message Queue และ Event Streaming ในสถาปัตยกรรมแบบ Event-Driven "
+            },
+            {
+                q: "การ Scale แบบ Horizontal (Scale Out) หมายถึงอะไร?",
+                options: [
+                    "การเพิ่ม RAM/CPU ให้เครื่อง Server เดิม",
+                    "การเพิ่มจำนวนเครื่อง Server หรือ Instances",
+                    "การขยายขนาดหน้าจอ Monitor",
+                    "การเพิ่มจำนวนโปรแกรมเมอร์ในทีม"
+                ],
+                a: 1,
+                exp: "Horizontal Scaling คือการเพิ่มจำนวนเครื่องเพื่อช่วยกันรับ Load ซึ่งทำได้ง่ายใน Microservices ต่างจาก Vertical Scaling ที่เพิ่มสเปคเครื่องเดิม "
+            },
+            {
+                q: "Service Registry มีหน้าที่อะไรใน Microservices?",
+                options: [
+                    "เก็บ Log ของระบบ",
+                    "เป็นสมุดรายชื่อที่เก็บที่อยู่ (IP/Port) ของ Service ต่างๆ เพื่อให้ค้นหากันเจอ",
+                    "ตรวจสอบความปลอดภัยของผู้ใช้",
+                    "สำรองข้อมูล Database"
+                ],
+                a: 1,
+                exp: "Service Registry (เช่น Eureka, Consul) ทำหน้าที่เก็บ location ของ service instances ที่อาจเปลี่ยนแปลงตลอดเวลา เพื่อให้ Service อื่นค้นหา (Discovery) ได้ถูก "
+            },
+
+            // --- CHALLENGING SCENARIOS (6 ข้อ) ---
+            {
+                type: 'challenge',
+                q: "[Scenario] คุณรับผิดชอบระบบ E-Commerce ในช่วง Flash Sale ที่มีผู้ใช้งานพร้อมกันนับล้านคน คุณต้องการให้ระบบรับ Order ได้เร็วที่สุดโดยไม่ให้ User รอนาน แม้ว่าระบบตัดสต็อก (Inventory) จะทำงานช้าก็ตาม คุณควรเลือก Architecture แบบใด?",
+                options: [
+                    "Monolithic Architecture เพื่อลด Network Latency",
+                    "Event-Driven Architecture (Asynchronous) รับ Order แล้วส่ง Event ไปตัดสต็อกทีหลัง",
+                    "Strong Consistency Database เพื่อความถูกต้องแม่นยำที่สุด",
+                    "ใช้ 2-Phase Commit (2PC) เพื่อล็อคข้อมูลทุกระบบพร้อมกัน"
+                ],
+                a: 1,
+                exp: "การใช้ Event-Driven ช่วยให้ระบบรับ Order ได้ทันที (Non-blocking) และค่อยไปประมวลผลตัดสต็อกแบบ Asynchronous ซึ่งเหมาะสมที่สุดสำหรับ High Traffic load "
+            },
+            {
+                q: "[Scenario] บริษัทต้องการสร้างระบบ Image Processing ที่จะทำงานก็ต่อเมื่อมีผู้ใช้อัปโหลดรูปภาพเท่านั้น (วันละไม่กี่ครั้ง) เพื่อประหยัดงบประมาณให้มากที่สุด Architecture ใดเหมาะสมที่สุด?",
+                options: [
+                    "Microservices รันบน Kubernetes ตลอด 24 ชม.",
+                    "Serverless Architecture (FaaS) ที่ Trigger ด้วย Event การอัปโหลด",
+                    "Monolith บน Dedicated Server",
+                    "SOA พร้อม ESB"
+                ],
+                a: 1,
+                exp: "Serverless ตอบโจทย์เรื่อง Cost-efficiency มากที่สุด เพราะจะเสียค่าใช้จ่ายเฉพาะตอนที่มีการประมวลผลภาพเท่านั้น ไม่ต้องจ่ายค่า Server ทิ้งไว้ตอนไม่มีคนใช้ "
+            },
+            {
+                q: "[Scenario] ทีมของคุณเริ่มแยก Service 'User' ออกมาจาก Monolith แต่พบว่า Code ส่วนอื่นยังมีการ Join Table ข้ามมายัง Table ของ User ใน Database เดิมอยู่ ปัญหานี้เรียกว่าอะไรและขัดกับหลักการใด?",
+                options: [
+                    "ขัดกับหลักการ Database per Service (Tight Coupling ในระดับข้อมูล)",
+                    "ขัดกับหลักการ Service Discovery",
+                    "เป็นเรื่องปกติของการทำ Microservices",
+                    "ขัดกับหลักการ API Gateway"
+                ],
+                a: 0,
+                exp: "การแชร์ Database หรือ Join Table ข้าม Service เป็นการละเมิดหลักการ Database per Service ทำให้เกิด Tight Coupling ซึ่งจะทำให้แยก Service ไม่สำเร็จจริง "
+            },
+            {
+                q: "[Scenario] ในระบบ Microservices เมื่อ Service A เรียก Service B แล้ว Service B ล่ม ทำให้ Service A รอจน Timeout และทรัพยากรหมดจนล่มตามกันไป (Cascading Failure) ควรใช้ Pattern ใดป้องกัน?",
+                options: [
+                    "Saga Pattern",
+                    "Circuit Breaker Pattern",
+                    "CQRS Pattern",
+                    "Event Sourcing"
+                ],
+                a: 1,
+                exp: "Circuit Breaker จะตัดวงจรการเชื่อมต่อเมื่อ Service ปลายทางมีปัญหา เพื่อให้ Service ต้นทาง Fail Fast ไม่ต้องรอ Timeout และป้องกันระบบล่มเป็นโดมิโน่ "
+            },
+            {
+                q: "[Scenario] คุณต้องพัฒนาระบบที่เชื่อมต่อกับระบบราชการเก่า (Legacy Systems) หลายแห่งที่มี Protocol ต่างกัน (SOAP, File, Mainframe) Architecture ใดเหมาะสมที่สุดในการเป็นตัวกลาง?",
+                options: [
+                    "Serverless Architecture",
+                    "Service-Oriented Architecture (SOA) โดยใช้ ESB เป็นตัวกลางแปลง Protocol",
+                    "Microservices with REST API",
+                    "Monolithic Application"
+                ],
+                a: 1,
+                exp: "SOA และ Enterprise Service Bus (ESB) ถูกออกแบบมาเพื่อแก้ปัญหา Integration ที่ซับซ้อนและการแปลง Protocol ระหว่างระบบที่แตกต่างกัน (Heterogeneous Systems) "
+            },
+            {
+                q: "[Scenario] Mobile App ของคุณต้องดึงข้อมูลจาก 5 Microservices เพื่อมาแสดงผลหน้า Home เพียงหน้าเดียว ทำให้เกิดปัญหา Network Latency สูง (Chatty) วิธีแก้ปัญหาที่ดีที่สุดคือ?",
+                options: [
+                    "รวม 5 Services กลับเป็น Monolith",
+                    "ใช้ Backend for Frontend (BFF) หรือ API Gateway เพื่อรวบรวมข้อมูล (Aggregation)",
+                    "เพิ่มความเร็ว Internet ให้ User",
+                    "ให้ Mobile App เชื่อมต่อ Database โดยตรง"
+                ],
+                a: 1,
+                exp: "BFF หรือ API Gateway สามารถทำ Request Aggregation คือรับ 1 Request จาก Mobile แล้วไปเรียก 5 Services ภายในให้ แล้วส่งผลลัพธ์รวมกลับมา ช่วยลด Round-trip "
+            }
+        ];
+
+        // --- 2. GAME STATE ---
+        let currentIdx = 0;
+        let score = 0;
+        let userDetails = { name: '', id: '' };
+        let shuffledQuestions = [];
+        let userAnswers = [];
+
+        // --- 3. FUNCTIONS ---
+
+        function startQuiz() {
+            const name = document.getElementById('username').value.trim();
+            const id = document.getElementById('studentid').value.trim();
+
+            if (!name || !id) {
+                alert("กรุณากรอกชื่อและรหัสนักศึกษาให้ครบถ้วน");
+                return;
+            }
+
+            userDetails = { name, id };
+            
+            // Randomize Questions
+            shuffledQuestions = [...questions].sort(() => Math.random() - 0.5);
+            userAnswers = new Array(shuffledQuestions.length).fill(null);
+            
+            // Switch UI
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('quiz-screen').classList.remove('hidden');
+            document.getElementById('user-display').textContent = `${id} : ${name}`;
+            
+            renderQuestion();
+        }
+
+        function renderQuestion() {
+            const q = shuffledQuestions[currentIdx];
+            
+            // Update Progress
+            const progress = ((currentIdx) / shuffledQuestions.length) * 100;
+            document.getElementById('progress-bar').style.width = `${progress}%`;
+            document.getElementById('q-counter').textContent = `Q ${currentIdx + 1}/${shuffledQuestions.length}`;
+
+            // Update Badge based on type
+            const badge = document.getElementById('question-badge');
+            if(q.type === 'challenge') {
+                badge.textContent = "CHALLENGE SCENARIO 🔥";
+                badge.className = "badge badge-challenge";
+            } else {
+                badge.textContent = "BASIC CONCEPT 📚";
+                badge.className = "badge badge-basic";
+            }
+
+            // Text
+            document.getElementById('q-text').textContent = q.q;
+
+            // Options
+            const area = document.getElementById('options-area');
+            area.innerHTML = '';
+            
+            q.options.forEach((opt, idx) => {
+                const el = document.createElement('div');
+                el.className = 'option-card';
+                // Check if already answered
+                if(userAnswers[currentIdx] === idx) el.classList.add('selected');
+                
+                el.innerHTML = `
+                    <span class="option-marker">[ ${String.fromCharCode(65+idx)} ]</span>
+                    <span>${opt}</span>
+                `;
+                
+                el.onclick = () => selectOption(idx);
+                area.appendChild(el);
+            });
+
+            // Button State
+            const nextBtn = document.getElementById('next-btn');
+            nextBtn.disabled = userAnswers[currentIdx] === null;
+            nextBtn.textContent = (currentIdx === shuffledQuestions.length - 1) ? "FINISH EXAM (ส่งข้อสอบ)" : "CONFIRM SELECTION >>";
+        }
+
+        function selectOption(idx) {
+            userAnswers[currentIdx] = idx;
+            renderQuestion(); // Re-render to show selection
+        }
+
+        function nextQuestion() {
+            if (currentIdx < shuffledQuestions.length - 1) {
+                currentIdx++;
+                renderQuestion();
+            } else {
+                finishQuiz();
+            }
+        }
+
+        function finishQuiz() {
+            // Calculate Score
+            score = 0;
+            shuffledQuestions.forEach((q, i) => {
+                if(userAnswers[i] === q.a) score++;
+            });
+
+            // Switch UI
+            document.getElementById('quiz-screen').classList.add('hidden');
+            document.getElementById('result-screen').classList.remove('hidden');
+
+            // Animate Score
+            const scoreEl = document.getElementById('score-val');
+            let temp = 0;
+            const timer = setInterval(() => {
+                scoreEl.textContent = temp;
+                if(temp >= score) clearInterval(timer);
+                temp++;
+            }, 50);
+
+            // Evaluate Message
+            const percent = (score / shuffledQuestions.length) * 100;
+            const evalEl = document.getElementById('eval-msg');
+            if(percent >= 80) { evalEl.textContent = "EXCELLENT (ยอดเยี่ยม) - คุณมีความเข้าใจระดับสูง"; evalEl.style.color = "#10b981"; }
+            else if(percent >= 60) { evalEl.textContent = "GOOD (ผ่านเกณฑ์) - เข้าใจพื้นฐานดี แต่ต้องฝึกวิเคราะห์เพิ่ม"; evalEl.style.color = "#fbbf24"; }
+            else { evalEl.textContent = "NEEDS IMPROVEMENT (ต้องปรับปรุง) - ควรทบทวนเนื้อหา Week 4 ใหม่"; evalEl.style.color = "#ef4444"; }
+
+            // Render Review
+            const reviewArea = document.getElementById('review-area');
+            reviewArea.innerHTML = '';
+
+            shuffledQuestions.forEach((q, i) => {
+                const isCorrect = userAnswers[i] === q.a;
+                const div = document.createElement('div');
+                div.className = `review-item ${isCorrect ? 'correct' : 'incorrect'}`;
+                div.innerHTML = `
+                    <div style="font-weight: bold; margin-bottom: 5px; color: var(--text-main);">
+                        ${i+1}. ${q.q}
+                    </div>
+                    <div style="font-size: 0.9rem; margin-bottom: 5px;">
+                        <span style="color: ${isCorrect ? 'var(--accent)' : 'var(--danger)'}">
+                            ตอบ: ${q.options[userAnswers[i]]}
+                        </span>
+                    </div>
+                    ${!isCorrect ? `<div style="font-size: 0.9rem; color: var(--accent);">เฉลย: ${q.options[q.a]}</div>` : ''}
+                    <div class="rationale">
+                        <strong>คำอธิบาย:</strong> ${q.exp}
+                    </div>
+                `;
+                reviewArea.appendChild(div);
+            });
+        }
+
+        function resetQuiz() {
+            currentIdx = 0;
+            score = 0;
+            userAnswers = [];
+            document.getElementById('result-screen').classList.add('hidden');
+            document.getElementById('login-screen').classList.remove('hidden');
+            document.getElementById('username').value = '';
+            document.getElementById('studentid').value = '';
+        }
+
+        function captureScreen() {
+            const btnArea = document.querySelector('.btn-secondary').parentElement;
+            btnArea.style.display = 'none'; // Hide buttons
+
+            // Temporarily Expand scroll for full capture
+            const reviewArea = document.getElementById('review-area');
+            const originalStyle = reviewArea.style.overflowY;
+            reviewArea.style.overflowY = 'visible';
+
+            html2canvas(document.getElementById('capture-area'), {
+                backgroundColor: "#1e293b",
+                scale: 2
+            }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = `Result_${userDetails.id}.png`;
+                link.href = canvas.toDataURL();
+                link.click();
+                
+                // Restore
+                btnArea.style.display = 'grid';
+                reviewArea.style.overflowY = originalStyle;
+            });
+        }
+
+    </script>
+</body>
+</html>
