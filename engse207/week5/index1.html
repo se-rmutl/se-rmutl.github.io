@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ENGSE207 Week 5: C4 Model & Architecture Views</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@200;300;400;500;600;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            /* Light Theme */
+            --bg-color: #f8f9fa;
+            --text-color: #2d3436;
+            --primary-color: #0984e3;
+            --secondary-color: #00cec9;
+            --accent-color: #e17055;
+            --card-bg: #ffffff;
+            --shadow: 0 10px 30px rgba(0,0,0,0.1);
+            --code-bg: #f1f2f6;
+            --nav-bg: rgba(255, 255, 255, 0.9);
+        }
+
+        [data-theme="dark"] {
+            /* Dark Theme */
+            --bg-color: #1e272e;
+            --text-color: #d2dae2;
+            --primary-color: #3498db;
+            --secondary-color: #00d2d3;
+            --accent-color: #ff7675;
+            --card-bg: #2f3640;
+            --shadow: 0 10px 30px rgba(0,0,0,0.5);
+            --code-bg: #111;
+            --nav-bg: rgba(30, 39, 46, 0.9);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        body {
+            font-family: 'Kanit', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            overflow: hidden; /* Prevent scrolling, use slides */
+            height: 100vh;
+            width: 100vw;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Slide Container 16:9 Aspect Ratio */
+        #slide-container {
+            width: 100%;
+            height: 100%;
+            max-width: 177.78vh; /* 16:9 aspect ratio constraint based on height */
+            max-height: 56.25vw; /* 16:9 aspect ratio constraint based on width */
+            background-color: var(--card-bg);
+            position: relative;
+            box-shadow: var(--shadow);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        @media (min-width: 1920px) {
+            #slide-container {
+                 max-width: 1920px;
+                 max-height: 1080px;
+            }
+        }
+
+        /* Slide Content */
+        .slide {
+            flex: 1;
+            padding: 4rem 6rem;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            opacity: 0;
+            transform: translateX(50px);
+            transition: opacity 0.5s ease, transform 0.5s ease;
+            height: 100%;
+        }
+
+        .slide.active {
+            display: flex;
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        /* Typography */
+        h1 { font-size: 3.5rem; font-weight: 700; color: var(--primary-color); margin-bottom: 1rem; line-height: 1.2; }
+        h2 { font-size: 2.5rem; font-weight: 600; color: var(--secondary-color); margin-bottom: 1.5rem; }
+        h3 { font-size: 1.8rem; font-weight: 500; color: var(--text-color); margin-bottom: 1rem; }
+        p, li { font-size: 1.4rem; line-height: 1.6; color: var(--text-color); margin-bottom: 1rem; }
+        ul { margin-left: 2rem; margin-bottom: 1.5rem; }
+        
+        strong { color: var(--accent-color); }
+        
+        .code-block {
+            font-family: 'Roboto Mono', monospace;
+            background: var(--code-bg);
+            padding: 1.5rem;
+            border-radius: 8px;
+            border-left: 5px solid var(--primary-color);
+            margin: 1rem 0;
+            font-size: 1.1rem;
+            white-space: pre-wrap;
+        }
+
+        /* Specific Layouts */
+        .intro-slide { text-align: center; align-items: center; }
+        .two-column { display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; align-items: center; height: 100%; }
+        .image-container { 
+            width: 100%; 
+            height: 100%; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            background: rgba(0,0,0,0.05);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .image-container img { 
+            max-width: 100%; 
+            max-height: 60vh; 
+            object-fit: contain; 
+            border-radius: 8px;
+            box-shadow: var(--shadow);
+        }
+
+        /* UI Controls */
+        .controls {
+            position: absolute;
+            bottom: 20px;
+            right: 30px;
+            display: flex;
+            gap: 15px;
+            background: var(--nav-bg);
+            padding: 10px 20px;
+            border-radius: 30px;
+            box-shadow: var(--shadow);
+            z-index: 1000;
+            backdrop-filter: blur(5px);
+        }
+
+        .btn {
+            background: none;
+            border: none;
+            color: var(--text-color);
+            cursor: pointer;
+            font-size: 1.2rem;
+            padding: 5px 10px;
+            border-radius: 5px;
+            transition: all 0.2s;
+        }
+
+        .btn:hover { background: var(--primary-color); color: white; }
+        .btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+        .progress-bar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            height: 5px;
+            background: var(--primary-color);
+            width: 0%;
+            transition: width 0.3s;
+            z-index: 1001;
+        }
+
+        .slide-number {
+            position: absolute;
+            bottom: 30px;
+            left: 30px;
+            font-size: 1rem;
+            opacity: 0.6;
+            font-weight: bold;
+        }
+
+        /* Tags */
+        .tag {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            margin-right: 5px;
+            color: white;
+        }
+        .tag-k { background-color: #2ecc71; }
+        .tag-c { background-color: #f1c40f; color: black; }
+        .tag-p { background-color: #e74c3c; }
+
+        /* Simulation Box */
+        .sim-box {
+            background: var(--card-bg);
+            border: 2px dashed var(--primary-color);
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+        .sim-layer {
+            transition: all 0.5s ease;
+        }
+        .sim-box:hover .sim-layer { transform: scale(1.1); }
+
+        /* Callout Box */
+        .callout {
+            background-color: rgba(9, 132, 227, 0.1);
+            border-left: 5px solid var(--primary-color);
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 0 5px 5px 0;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div id="slide-container">
+        <div class="progress-bar" id="progressBar"></div>
+        <div class="slide-number" id="slideNumber">1 / 35</div>
+
+        <div class="slide active intro-slide">
+            <h4>ENGSE207 Software Architecture</h4>
+            <h1>C4 Model & Architecture Views</h1>
+            <h2>Context & Container</h2>
+            <p style="margin-top: 2rem;">อาจารย์ธนิต เกตุแก้ว | สัปดาห์ที่ 5</p>
+            <div style="margin-top: 2rem;">
+                <span class="tag tag-k">CLO1</span>
+                <span class="tag tag-c">CLO6</span>
+                <span class="tag tag-p">CLO9</span>
+            </div>
+            <p style="margin-top: 1rem; font-size: 1rem; opacity: 0.7;">วิศวกรรมซอฟต์แวร์ มทร.ล้านนา</p>
+        </div>
+
+        <div class="slide">
+            <h2>🎯 วัตถุประสงค์การเรียนรู้</h2>
+            <ul>
+                <li><strong>1.1 บทนำ C4 Model:</strong> เข้าใจปัญหาของ Diagram เดิม และแนวคิด Google Maps ของ C4</li>
+                <li><strong>1.2 System Context Diagram (C1):</strong> วาดภาพรวมระบบและ Stakeholders ได้</li>
+                <li><strong>1.3 Container Diagram (C2):</strong> เข้าใจโครงสร้างภายในและ Technology Stack</li>
+            </ul>
+            <div class="callout">
+                <i class="fas fa-info-circle"></i> เป้าหมายวันนี้คือการสื่อสารสถาปัตยกรรมให้ "คนอื่นเข้าใจ" ไม่ใช่แค่เราเข้าใจคนเดียว
+            </div>
+        </div>
+
+        <div class="slide two-column">
+            <div>
+                <h2>📚 ทบทวนสัปดาห์ที่แล้ว</h2>
+                <h3>Modern Architectural Styles</h3>
+                <ul>
+                    <li>🔷 <strong>Microservices:</strong> Services เล็กๆ อิสระกัน</li>
+                    <li>📨 <strong>Event-Driven:</strong> สื่อสารผ่าน Events/Messages</li>
+                    <li>☁️ <strong>Serverless:</strong> ไม่ต้องจัดการ Server (AWS Lambda)</li>
+                    <li>🔗 <strong>SOA:</strong> Enterprise Service Bus</li>
+                </ul>
+            </div>
+            <div>
+                <div class="code-block">
+                    ปัญหาที่ตามมา:<br>
+                    "เราจะวาด Microservices ที่ซับซ้อน<br>
+                    ให้ CEO, Dev, และ Ops เข้าใจ<br>
+                    ในภาพเดียวกันได้อย่างไร?"
+                </div>
+                <p>👉 นี่คือเหตุผลที่เราต้องเรียน <strong>C4 Model</strong> ในวันนี้</p>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>😕 ปัญหาของการวาด Diagram แบบดั้งเดิม</h2>
+            <div class="two-column">
+                <ul>
+                    <li>❌ <strong>ไม่มีมาตรฐาน:</strong> กล่องนี้คือ Class? หรือ Server?</li>
+                    <li>❌ <strong>ความละเอียดไม่เหมาะสม:</strong> บางทีละเอียดเกินไปจนดูไม่รู้เรื่อง หรือหยาบเกินไปจนใช้งานไม่ได้</li>
+                    <li>❌ <strong>ไม่เหมาะกับ Stakeholder:</strong> CEO ไม่อยากเห็น Code, Dev อยากเห็น Tech Stack</li>
+                </ul>
+                <div class="image-container">
+                    <img src="https://via.placeholder.com/600x400?text=Confusing+Diagram+Example" alt="Confusing Diagram">
+                    </div>
+            </div>
+        </div>
+
+        <div class="slide intro-slide">
+            <i class="fas fa-map-marked-alt" style="font-size: 5rem; color: var(--primary-color); margin-bottom: 20px;"></i>
+            <h2>C4 Model: The Solution! 🎯</h2>
+            <p>คิดค้นโดย <strong>Simon Brown</strong></p>
+            <blockquote>
+                "Think of C4 like zooming in and out of Google Maps"
+            </blockquote>
+            <p>เหมือนการซูม Google Maps จากระดับประเทศ -> เมือง -> ถนน -> อาคาร</p>
+        </div>
+
+        <div class="slide">
+            <h2>🏢 4 Levels of Abstraction</h2>
+            <div style="display: flex; gap: 20px; justify-content: center; align-items: stretch;">
+                <div style="background:var(--primary-color); color:white; padding:20px; flex:1; border-radius:10px;">
+                    <h3>1. Context</h3>
+                    <p>ภาพรวมระบบ<br>(ทั้งประเทศ)</p>
+                </div>
+                <div style="background:var(--secondary-color); color:black; padding:20px; flex:1; border-radius:10px;">
+                    <h3>2. Container</h3>
+                    <p>Applications/DB<br>(เมือง)</p>
+                </div>
+                <div style="background:#b2bec3; color:black; padding:20px; flex:1; border-radius:10px;">
+                    <h3>3. Component</h3>
+                    <p>Internal Structure<br>(อาคาร)</p>
+                </div>
+                <div style="background:#636e72; color:white; padding:20px; flex:1; border-radius:10px;">
+                    <h3>4. Code</h3>
+                    <p>Classes/Interfaces<br>(รายละเอียดห้อง)</p>
+                </div>
+            </div>
+            <p style="margin-top: 20px; text-align: center;">*ในวิชานี้เราจะเน้นที่ <strong>Level 1 และ 2</strong> เป็นหลัก</p>
+        </div>
+
+        <div class="slide">
+            <h2>🌍 Level 1: System Context Diagram</h2>
+            <p><strong>เป้าหมาย:</strong> แสดง "ภาพใหญ่" ว่าระบบของเราอยู่ตรงไหนในโลกนี้</p>
+            <ul>
+                <li>👤 <strong>ใครเห็น:</strong> CEO, Project Manager, ลูกค้า, คนทั่วไป</li>
+                <li>❓ <strong>ตอบคำถาม:</strong>
+                    <ul>
+                        <li>ระบบเราทำหน้าที่อะไร?</li>
+                        <li>ใครใช้งานบ้าง?</li>
+                        <li>ต้องต่อกับระบบภายนอกอะไรบ้าง?</li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+
+        <div class="slide">
+            <h2>องค์ประกอบของ Context Diagram</h2>
+            <div class="two-column">
+                <div>
+                    <ul>
+                        <li><i class="fas fa-user" style="color:#3498db"></i> <strong>Person (สีฟ้า):</strong> ผู้ใช้งาน (Role) เช่น Admin, Customer</li>
+                        <li><i class="fas fa-box" style="color:#2ecc71"></i> <strong>Software System (สีเขียว):</strong> ระบบหลักที่เรากำลังออกแบบ (มีได้แค่อันเดียวที่เป็นศูนย์กลาง)</li>
+                        <li><i class="fas fa-server" style="color:#95a5a6"></i> <strong>External System (สีเทา):</strong> ระบบอื่นที่มาเกี่ยวข้อง (Payment Gateway, Email Service)</li>
+                    </ul>
+                </div>
+                <div class="image-container">
+                    <img src="week5_c4_examples-Template-Blank-Context.png" alt="Template Context Diagram">
+                    <p style="position: absolute; bottom: 10px; font-size: 0.8rem;"></p>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>🍕 ตัวอย่าง: Food Delivery System (Context)</h2>
+            <div class="image-container">
+                <img src="week5_c4_examples-Example1-Food-Delivery-Context.png" alt="Food Delivery Context">
+            </div>
+            <p class="citation"></p>
+            <p>สังเกตว่าเราไม่สนใจว่าข้างในเขียนด้วย Java หรือ Node.js สนใจแค่ <strong>"ใครทำอะไรกับระบบ"</strong></p>
+        </div>
+
+        <div class="slide">
+            <h2>🔍 วิเคราะห์ Food Delivery Context</h2>
+            <ul>
+                <li><strong>Software System:</strong> Food Delivery System (ตรงกลาง)</li>
+                <li><strong>Person:</strong> ลูกค้า (สั่งอาหาร), ร้านอาหาร (รับออเดอร์), ไรเดอร์ (ส่งของ)</li>
+                <li><strong>External Systems:</strong>
+                    <ul>
+                        <li>Payment Gateway (รับชำระเงิน)</li>
+                        <li>SMS Service (แจ้งเตือน)</li>
+                        <li>Google Maps API (คำนวณเส้นทาง)</li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+
+        <div class="slide">
+            <h2>🛍️ ตัวอย่าง: Shopee Platform (Context)</h2>
+            <div class="image-container">
+                <img src="week5_c4_examples-Example4-Shopee-Context.png" alt="Shopee Context">
+            </div>
+            <p class="citation"></p>
+            <p>เชื่อมโยงกับ Logistics Service และ Banking System ซึ่งเป็น External System ที่สำคัญ</p>
+        </div>
+
+        <div class="slide">
+            <h2>💬 ตัวอย่าง: LINE App (Context)</h2>
+            <div class="image-container">
+                <img src="week5_c4_examples-Example3-LINE-Context.png" alt="LINE Context">
+            </div>
+            <p class="citation"></p>
+            <p>ระบบเชื่อมต่อกับ Firebase (Push Notif) และ Cloud Storage (เก็บรูป)</p>
+        </div>
+
+        <div class="slide">
+            <h2>✅ Do's & ❌ Don'ts for Context Diagram</h2>
+            <div class="two-column">
+                <div class="callout" style="border-left-color: green; background: rgba(0,255,0,0.1);">
+                    <h3>✅ ควรทำ</h3>
+                    <ul>
+                        <li>มี System หลัก 1 ระบบ</li>
+                        <li>ใช้ชื่อ Role ที่ชัดเจน (Customer แทน User)</li>
+                        <li>อธิบายความสัมพันธ์บนลูกศร (สั่งอาหาร, ชำระเงิน)</li>
+                        <li>จำกัด External System ไม่ให้รกเกินไป (5-7 อัน)</li>
+                    </ul>
+                </div>
+                <div class="callout" style="border-left-color: red; background: rgba(255,0,0,0.1);">
+                    <h3>❌ ไม่ควรทำ</h3>
+                    <ul>
+                        <li>ใส่ Tech Stack (เช่น JSON, REST, SQL)</li>
+                        <li>ใส่ Database หรือ Server ภายใน</li>
+                        <li>วาดลูกศรไป-กลับที่ไม่มีความหมาย</li>
+                    </ul>
+                </div>
+            </div>
+            <p style="text-align: center;"></p>
+        </div>
+
+        <div class="slide intro-slide">
+            <h2>🔍 Zoom In...</h2>
+            <h1>Level 2: Container Diagram</h1>
+            <p>เจาะลึกเข้าไปใน "Software System" ของเรา</p>
+        </div>
+
+        <div class="slide">
+            <h2>📦 Level 2: Container Diagram</h2>
+            <p><strong>เป้าหมาย:</strong> แสดงโครงสร้างหลักภายในระบบ และ Technology Stack</p>
+            <div class="callout">
+                ⚠️ <strong>เตือนความจำ:</strong> Container ใน C4 Model <strong>ไม่ใช่</strong> Docker Container!<br>
+                แต่หมายถึง <strong>"สิ่งที่ Run/Deploy แยกกันได้" (Executable/Deployable Unit)</strong>
+            </div>
+            <ul>
+                <li>👤 <strong>ใครเห็น:</strong> Architect, Tech Lead, Developer, DevOps</li>
+                <li>❓ <strong>ตอบคำถาม:</strong> ใช้เทคโนโลยีอะไร? (React, Node, SQL) ระบบแยกส่วนกันอย่างไร?</li>
+            </ul>
+        </div>
+
+        <div class="slide">
+            <h2>📦 ตัวอย่างของ "Container"</h2>
+            <div class="two-column">
+                <ul>
+                    <li>✅ <strong>Web Application:</strong> (React, Angular, ASP.NET MVC)</li>
+                    <li>✅ <strong>Mobile App:</strong> (iOS, Android, Flutter)</li>
+                    <li>✅ <strong>API Application:</strong> (Node.js Express, Spring Boot)</li>
+                    <li>✅ <strong>Database:</strong> (MySQL, MongoDB Schema)</li>
+                    <li>✅ <strong>File Storage:</strong> (Amazon S3 bucket)</li>
+                </ul>
+                <div style="text-align: center; padding: 20px;">
+                    <i class="fas fa-cubes" style="font-size: 6rem; color: var(--secondary-color);"></i>
+                    <p style="margin-top: 20px;">คิดง่ายๆ: ถ้าต้อง Deploy แยกกัน = Container คนละตัว</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>🍔 ตัวอย่าง: Food Delivery (Container)</h2>
+            <div class="image-container">
+                <img src="week5_c4_examples-Example2-Food-Delivery-Container.jpg" alt="Food Delivery Container">
+            </div>
+            <p class="citation"></p>
+        </div>
+
+        <div class="slide">
+            <h2>🔍 วิเคราะห์ Food Delivery Container</h2>
+            <ul>
+                <li><strong>Frontend Containers:</strong>
+                    <ul>
+                        <li>Mobile App [React Native]</li>
+                        <li>Web App [React]</li>
+                    </ul>
+                </li>
+                <li><strong>Backend Containers:</strong>
+                    <ul>
+                        <li>Backend API [Node.js + Express]</li>
+                        <li>Real-time Service [Socket.io]</li>
+                    </ul>
+                </li>
+                <li><strong>Data Containers:</strong>
+                    <ul>
+                        <li>MySQL [User Data], Redis [Cache], S3 [Images]</li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+
+        <div class="slide">
+            <h2>🔗 การสื่อสารใน Container Diagram</h2>
+            <p>ในระดับนี้ เราต้องระบุ <strong>Protocol</strong> การสื่อสาร</p>
+            <div class="code-block">
+                Web App ---[HTTPS/JSON]---> Backend API
+                Backend API ---[SQL/TCP]---> Database
+                Mobile App ---[WebSocket]---> Real-time Service
+            </div>
+            <p>และระบุทิศทางของลูกศรตามการไหลของ Request (Dependency)</p>
+        </div>
+
+        <div class="slide">
+            <h2>📝 Template: Container Diagram</h2>
+            <div class="image-container">
+                <img src="week5_c4_examples-Template-Blank-Container.png" alt="Template Container">
+            </div>
+            <p>สังเกตการใช้เส้นประสำหรับ Boundary ของระบบเรา</p>
+        </div>
+
+        <div class="slide">
+            <h2>🧩 Level 3 & 4: Component & Code</h2>
+            <div class="two-column">
+                <div>
+                    <h3>Level 3: Component</h3>
+                    <p>แตก Container ออกเป็น Module ภายใน (Controller, Service, Repository)</p>
+                    <p><em>*เหมาะสำหรับ Dev ที่จะเขียนโค้ดส่วนนั้น</em></p>
+                </div>
+                <div>
+                    <h3>Level 4: Code</h3>
+                    <p>UML Class Diagram, ER Diagram</p>
+                    <p><em>*มักสร้าง Auto จาก IDE ไม่นิยมวาดเองเพราะล้าสมัยเร็ว</em></p>
+                </div>
+            </div>
+            <div class="callout">
+                ในวิชานี้และในการทำงานจริงระดับ High-level เรามักหยุดที่ <strong>Level 2 (Container)</strong> ก็เพียงพอสำหรับการเห็นภาพรวม
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>👀 Views & Viewpoints</h2>
+            <p>เลือก Diagram ให้เหมาะกับคนดู (Stakeholders)</p>
+            <table>
+                <thead style="background: var(--primary-color); color: white;">
+                    <tr>
+                        <th style="padding:10px;">Stakeholder</th>
+                        <th style="padding:10px;">Diagram ที่เหมาะสม</th>
+                        <th style="padding:10px;">เหตุผล</th>
+                    </tr>
+                </thead>
+                <tbody style="background: var(--card-bg);">
+                    <tr>
+                        <td style="padding:10px; border-bottom:1px solid #ddd;">CEO / ผู้บริหาร</td>
+                        <td style="padding:10px; border-bottom:1px solid #ddd;"><strong>C1 (Context)</strong></td>
+                        <td style="padding:10px; border-bottom:1px solid #ddd;">ดูภาพรวมธุรกิจ ไม่สน Tech</td>
+                    </tr>
+                    <tr>
+                        <td style="padding:10px; border-bottom:1px solid #ddd;">PM / Product Owner</td>
+                        <td style="padding:10px; border-bottom:1px solid #ddd;"><strong>C1 + C2</strong></td>
+                        <td style="padding:10px; border-bottom:1px solid #ddd;">วางแผน Feature, Resource</td>
+                    </tr>
+                    <tr>
+                        <td style="padding:10px; border-bottom:1px solid #ddd;">Developer / Architect</td>
+                        <td style="padding:10px; border-bottom:1px solid #ddd;"><strong>C2 + C3</strong></td>
+                        <td style="padding:10px; border-bottom:1px solid #ddd;">ต้องรู้ Tech Stack และโครงสร้าง</td>
+                    </tr>
+                </tbody>
+            </table>
+            <p style="margin-top: 10px;"></p>
+        </div>
+
+        <div class="slide">
+            <h2>🕹️ Simulation: Zooming In</h2>
+            <p>ลองคลิกที่กล่องระบบ เพื่อดูการเปลี่ยนผ่านจาก Context -> Container</p>
+            
+            <div id="sim-container" class="sim-box" onclick="toggleSim()">
+                <div id="sim-content" class="sim-layer">
+                    <h3>Context View (Level 1)</h3>
+                    <i class="fas fa-box" style="font-size: 5rem; color: #2ecc71;"></i>
+                    <p>E-Commerce System</p>
+                </div>
+            </div>
+            <p style="text-align: center; margin-top: 10px; font-size: 0.9rem;">(Click box above)</p>
+        </div>
+
+        <div class="slide">
+            <h2>🛠️ เครื่องมือวาด C4 Model</h2>
+            <div class="two-column">
+                <div>
+                    <h3>1. Draw.io (diagrams.net) ⭐⭐⭐⭐⭐</h3>
+                    <p>ฟรี, ง่าย, มี C4 Shape Library ในตัว (More Shapes -> Software -> C4)</p>
+                </div>
+                <div>
+                    <h3>2. Structurizr</h3>
+                    <p>C4-specific tool, เขียน Diagram ด้วย Code (Architecture as Code)</p>
+                </div>
+            </div>
+            <div class="callout">
+                ใน Lab วันนี้ เราจะใช้ <strong>Draw.io</strong> เป็นหลัก เพราะใช้งานง่ายและ Export ได้สะดวก
+            </div>
+        </div>
+
+        <div class="slide intro-slide">
+            <h2>🚀 ทำไมเรื่องนี้ถึงสำคัญกับอาชีพคุณ?</h2>
+            <ul style="list-style: none;">
+                <li>💰 <strong>Senior/Architect:</strong> เงินเดือนสูงเพราะ "ออกแบบ" ระบบได้ ไม่ใช่แค่เขียนโค้ด</li>
+                <li>🗣️ <strong>Communication:</strong> C4 Model ช่วยให้คุณคุยกับ Business รู้เรื่อง</li>
+                <li>🌍 <strong>Global Standard:</strong> บริษัทระดับโลก (Netflix, Spotify) ใช้แนวคิดนี้</li>
+            </ul>
+        </div>
+
+        <div class="slide">
+            <h2>📝 เตรียมตัวสำหรับ Lab (3 ชั่วโมง)</h2>
+            <ol>
+                <li><strong>Lab 1:</strong> วาด Context Diagram เลือกระบบ (LINE, Shopee, etc.)</li>
+                <li><strong>Lab 2:</strong> วาด Container Diagram ใส่ Tech Stack ให้ครบ</li>
+                <li><strong>Lab 3:</strong> Peer Review จับคู่แลกเปลี่ยน Feedback</li>
+                <li><strong>Lab 4:</strong> Revision ปรับปรุงและส่งงาน</li>
+            </ol>
+            <p>เปิดเครื่องมือรอไว้เลย: <a href="https://app.diagrams.net" target="_blank" style="color: var(--primary-color);">app.diagrams.net</a></p>
+        </div>
+
+        <div class="slide">
+            <h2>📌 สรุปเนื้อหาวันนี้</h2>
+            <ul>
+                <li>✅ <strong>C4 Model:</strong> เทคนิคการวาด Diagram แบบซูมเข้า-ออก (Context > Container > Component > Code)</li>
+                <li>✅ <strong>Context (C1):</strong> ใครใช้อะไร? ต่อกับใคร? (ภาพรวม)</li>
+                <li>✅ <strong>Container (C2):</strong> ใช้อะไรสร้าง? แยกส่วนยังไง? (Tech Stack)</li>
+                <li>✅ <strong>Views:</strong> เลือกภาพให้ถูกคนดู</li>
+            </ul>
+        </div>
+
+        <div class="slide">
+            <h2>🔜 สัปดาห์หน้า (Week 6)</h2>
+            <h3>Architectural Design Process & ADD-Lite</h3>
+            <p>เราจะเรียนรู้วิธี "คิด" ออกแบบสถาปัตยกรรมอย่างเป็นระบบ</p>
+            <ul>
+                <li>Attribute-Driven Design (ADD)</li>
+                <li>Design Process: Req -> Drivers -> Architecture</li>
+                <li>Workshop ออกแบบระบบจริง</li>
+            </ul>
+        </div>
+
+        <div class="slide intro-slide">
+            <h1>Q & A</h1>
+            <p>มีคำถามเพิ่มเติมเกี่ยวกับ Context หรือ Container ไหมครับ?</p>
+            <i class="fas fa-comments" style="font-size: 4rem; color: var(--accent-color); margin-top: 2rem;"></i>
+        </div>
+
+        <div class="slide intro-slide">
+            <h1>ขอบคุณครับ</h1>
+            <h2>Let's Start the Lab! 🚀</h2>
+            <p>ENGSE207 Software Architecture</p>
+        </div>
+
+    </div>
+
+    <div class="controls">
+        <button class="btn" onclick="toggleTheme()" title="Toggle Theme"><i class="fas fa-adjust"></i></button>
+        <button class="btn" onclick="changeFontSize(-1)" title="Decrease Font"><i class="fas fa-minus"></i></button>
+        <button class="btn" onclick="changeFontSize(1)" title="Increase Font"><i class="fas fa-plus"></i></button>
+        <button class="btn" onclick="toggleFullScreen()" title="Full Screen"><i class="fas fa-expand"></i></button>
+        <div style="width: 1px; background: var(--text-color); opacity: 0.2; margin: 0 5px;"></div>
+        <button class="btn" onclick="prevSlide()" id="prevBtn" title="Previous"><i class="fas fa-chevron-left"></i></button>
+        <button class="btn" onclick="nextSlide()" id="nextBtn" title="Next"><i class="fas fa-chevron-right"></i></button>
+    </div>
+
+    <script>
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slide');
+        const progressBar = document.getElementById('progressBar');
+        const slideNumber = document.getElementById('slideNumber');
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        let fontSizeLevel = 1;
+        
+        // Init
+        updateSlide();
+
+        // Navigation Functions
+        function showSlide(n) {
+            slides[currentSlide].classList.remove('active');
+            currentSlide = (n + slides.length) % slides.length;
+            slides[currentSlide].classList.add('active');
+            updateSlide();
+        }
+
+        function nextSlide() {
+            if (currentSlide < slides.length - 1) {
+                showSlide(currentSlide + 1);
+            }
+        }
+
+        function prevSlide() {
+            if (currentSlide > 0) {
+                showSlide(currentSlide - 1);
+            }
+        }
+
+        function updateSlide() {
+            // Update Progress Bar
+            const progress = ((currentSlide + 1) / slides.length) * 100;
+            progressBar.style.width = `${progress}%`;
+            
+            // Update Number
+            slideNumber.textContent = `${currentSlide + 1} / ${slides.length}`;
+
+            // Button States
+            prevBtn.disabled = currentSlide === 0;
+            nextBtn.disabled = currentSlide === slides.length - 1;
+        }
+
+        // Keyboard Navigation
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === ' ') {
+                nextSlide();
+            } else if (e.key === 'ArrowLeft') {
+                prevSlide();
+            }
+        });
+
+        // Theme Toggle
+        function toggleTheme() {
+            const body = document.body;
+            if (body.getAttribute('data-theme') === 'dark') {
+                body.removeAttribute('data-theme');
+            } else {
+                body.setAttribute('data-theme', 'dark');
+            }
+        }
+
+        // Font Size Control
+        function changeFontSize(direction) {
+            fontSizeLevel += direction * 0.1;
+            if (fontSizeLevel < 0.8) fontSizeLevel = 0.8;
+            if (fontSizeLevel > 1.5) fontSizeLevel = 1.5;
+            
+            document.documentElement.style.fontSize = `${16 * fontSizeLevel}px`;
+        }
+
+        // Full Screen
+        function toggleFullScreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+            }
+        }
+
+        // Simulation Logic
+        let simState = 0; // 0 = Context, 1 = Container
+        function toggleSim() {
+            const content = document.getElementById('sim-content');
+            const container = document.getElementById('sim-container');
+            
+            if (simState === 0) {
+                // Switch to Container
+                content.style.opacity = 0;
+                setTimeout(() => {
+                    content.innerHTML = `
+                        <h3>Container View (Level 2)</h3>
+                        <div style="display:flex; justify-content:center; gap:10px; margin-top:10px;">
+                            <div style="background:#0984e3; color:white; padding:10px; border-radius:5px;"><i class="fab fa-react"></i> Web</div>
+                            <div style="background:#0984e3; color:white; padding:10px; border-radius:5px;"><i class="fab fa-android"></i> Mobile</div>
+                            <div style="background:#00b894; color:white; padding:10px; border-radius:5px;"><i class="fab fa-node"></i> API</div>
+                        </div>
+                        <div style="margin-top:10px; background:#fdcb6e; color:black; padding:5px; border-radius:5px; width:50%; margin-left:auto; margin-right:auto;"><i class="fas fa-database"></i> DB</div>
+                    `;
+                    content.style.opacity = 1;
+                    container.style.borderColor = "var(--secondary-color)";
+                }, 300);
+                simState = 1;
+            } else {
+                // Switch back to Context
+                content.style.opacity = 0;
+                setTimeout(() => {
+                    content.innerHTML = `
+                        <h3>Context View (Level 1)</h3>
+                        <i class="fas fa-box" style="font-size: 5rem; color: #2ecc71;"></i>
+                        <p>E-Commerce System</p>
+                    `;
+                    content.style.opacity = 1;
+                    container.style.borderColor = "var(--primary-color)";
+                }, 300);
+                simState = 0;
+            }
+        }
+
+        // Add swipe support for mobile (basic)
+        let touchStartX = 0;
+        let touchEndX = 0;
+        
+        document.addEventListener('touchstart', e => {
+            touchStartX = e.changedTouches[0].screenX;
+        });
+
+        document.addEventListener('touchend', e => {
+            touchEndX = e.changedTouches[0].screenX;
+            handleSwipe();
+        });
+
+        function handleSwipe() {
+            if (touchEndX < touchStartX - 50) nextSlide();
+            if (touchEndX > touchStartX + 50) prevSlide();
+        }
+
+    </script>
+</body>
+</html>

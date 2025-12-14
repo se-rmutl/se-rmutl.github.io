@@ -1,0 +1,1955 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>ENGSE207 Week 5 — C4 Model & Architecture Views (C1/C2)</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Prompt:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      --bg: #0b1220;
+      --bg2:#0f1a33;
+      --card: rgba(255,255,255,.07);
+      --card2: rgba(255,255,255,.10);
+      --text: #e9f0ff;
+      --muted:#b9c6e6;
+      --accent:#7c3aed;
+      --accent2:#22c55e;
+      --warn:#f59e0b;
+      --danger:#ef4444;
+      --stroke: rgba(255,255,255,.16);
+      --shadow: 0 18px 55px rgba(0,0,0,.45);
+      --radius: 22px;
+      --fontScale: 1.08; /* default bigger for projector */
+    }
+    [data-theme="light"]{
+      --bg:#f7f8fc;
+      --bg2:#ffffff;
+      --card: rgba(17,24,39,.06);
+      --card2: rgba(17,24,39,.08);
+      --text:#0b1020;
+      --muted:#4b5563;
+      --accent:#6d28d9;
+      --accent2:#16a34a;
+      --warn:#b45309;
+      --danger:#b91c1c;
+      --stroke: rgba(17,24,39,.14);
+      --shadow: 0 18px 45px rgba(17,24,39,.12);
+    }
+
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family: Prompt, Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Sans Thai", sans-serif;
+      background:
+        radial-gradient(1200px 650px at 15% 10%, rgba(124,58,237,.28), transparent 60%),
+        radial-gradient(1000px 600px at 85% 15%, rgba(34,197,94,.20), transparent 55%),
+        radial-gradient(1000px 700px at 50% 90%, rgba(245,158,11,.12), transparent 60%),
+        linear-gradient(180deg, var(--bg), var(--bg2));
+      color:var(--text);
+      overflow:hidden;
+    }
+
+    /* --- Toolbar --- */
+    .toolbar{
+      position:fixed;
+      z-index:50;
+      left:18px;
+      right:18px;
+      top:14px;
+      display:flex;
+      gap:10px;
+      align-items:center;
+      justify-content:space-between;
+      padding:10px 12px;
+      border:1px solid var(--stroke);
+      border-radius:16px;
+      background: linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.04));
+      backdrop-filter: blur(12px);
+      box-shadow: var(--shadow);
+    }
+    [data-theme="light"] .toolbar{
+      background: linear-gradient(180deg, rgba(255,255,255,.85), rgba(255,255,255,.65));
+    }
+    .left, .right{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      flex-wrap:wrap;
+    }
+    .brand{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      padding:6px 10px;
+      border-radius:14px;
+      border:1px solid var(--stroke);
+      background: rgba(0,0,0,.12);
+    }
+    [data-theme="light"] .brand{background: rgba(255,255,255,.6);}
+    .dot{
+      width:10px;height:10px;border-radius:999px;
+      background: var(--accent);
+      box-shadow: 0 0 0 6px rgba(124,58,237,.16);
+    }
+    .titleSmall{
+      font-weight:800;
+      letter-spacing:.2px;
+      font-size:14px;
+      line-height:1.1;
+    }
+    .subtitleSmall{
+      font-size:12px;
+      color:var(--muted);
+      margin-top:2px;
+    }
+
+    .btn{
+      cursor:pointer;
+      user-select:none;
+      border:1px solid var(--stroke);
+      background: rgba(255,255,255,.06);
+      color:var(--text);
+      padding:10px 12px;
+      border-radius:14px;
+      font-weight:700;
+      display:inline-flex;
+      gap:10px;
+      align-items:center;
+      transition: transform .08s ease, background .18s ease, border-color .18s ease;
+    }
+    .btn:hover{transform: translateY(-1px); background: rgba(255,255,255,.09); border-color: rgba(255,255,255,.22);}
+    .btn:active{transform: translateY(0px) scale(.99);}
+    [data-theme="light"] .btn{background: rgba(0,0,0,.04);}
+    .btn .k{
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      font-size:12px;
+      padding:2px 6px;
+      border-radius:10px;
+      border:1px solid var(--stroke);
+      color:var(--muted);
+    }
+    .btn.primary{
+      border-color: rgba(124,58,237,.5);
+      background: rgba(124,58,237,.16);
+    }
+    .btn.good{
+      border-color: rgba(34,197,94,.5);
+      background: rgba(34,197,94,.12);
+    }
+    .btn.warn{
+      border-color: rgba(245,158,11,.55);
+      background: rgba(245,158,11,.12);
+    }
+    .btn.ghost{
+      background: transparent;
+    }
+    .counter{
+      padding:8px 10px;
+      border-radius:14px;
+      border:1px solid var(--stroke);
+      background: rgba(255,255,255,.05);
+      font-weight:800;
+      letter-spacing:.2px;
+    }
+    .progressWrap{
+      flex: 1;
+      min-width: 220px;
+      max-width: 460px;
+      padding:6px 8px;
+      border-radius:14px;
+      border:1px solid var(--stroke);
+      background: rgba(255,255,255,.05);
+    }
+    .progressBar{
+      height:10px;
+      border-radius:999px;
+      background: rgba(255,255,255,.12);
+      overflow:hidden;
+      border:1px solid rgba(255,255,255,.10);
+    }
+    .progressFill{
+      height:100%;
+      width:0%;
+      border-radius:999px;
+      background: linear-gradient(90deg, var(--accent), rgba(34,197,94,.95));
+      transition: width .25s ease;
+    }
+
+    /* --- Slide Stage (16:9) --- */
+    .stage{
+      position:fixed;
+      inset:0;
+      padding:92px 28px 28px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
+    .deck{
+      width: min(1600px, 96vw);
+      aspect-ratio: 16 / 9;
+      border-radius: var(--radius);
+      border:1px solid var(--stroke);
+      background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.04));
+      box-shadow: var(--shadow);
+      overflow:hidden;
+      position:relative;
+    }
+    [data-theme="light"] .deck{
+      background: linear-gradient(180deg, rgba(255,255,255,.92), rgba(255,255,255,.72));
+    }
+
+    .slide{
+      position:absolute;
+      inset:0;
+      padding: 38px 44px;
+      display:none;
+    }
+    .slide.active{display:block;}
+    .grid{
+      display:grid;
+      gap:18px;
+    }
+    .twoCol{ grid-template-columns: 1.1fr .9fr; }
+    .threeCol{ grid-template-columns: 1fr 1fr 1fr; }
+    .cols{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:16px;
+    }
+    .hTitle{
+      font-size: calc(44px * var(--fontScale));
+      font-weight: 800;
+      letter-spacing: .2px;
+      margin:0 0 8px;
+      line-height:1.08;
+    }
+    .h2{
+      font-size: calc(30px * var(--fontScale));
+      font-weight: 800;
+      margin:0 0 8px;
+      line-height:1.15;
+    }
+    .lead{
+      font-size: calc(20px * var(--fontScale));
+      color:var(--muted);
+      margin:0 0 16px;
+      line-height:1.5;
+    }
+    .pillRow{display:flex;flex-wrap:wrap;gap:10px;margin-top:10px}
+    .pill{
+      border:1px solid var(--stroke);
+      background: rgba(255,255,255,.06);
+      padding:8px 12px;
+      border-radius:999px;
+      font-weight:700;
+      font-size: calc(14px * var(--fontScale));
+      color:var(--text);
+    }
+    .card{
+      border:1px solid var(--stroke);
+      background: var(--card);
+      border-radius: 18px;
+      padding:16px 16px;
+      box-shadow: 0 10px 30px rgba(0,0,0,.18);
+    }
+    .card.soft{background: var(--card2);}
+    .card h3{
+      margin:0 0 8px;
+      font-size: calc(20px * var(--fontScale));
+      font-weight:800;
+    }
+    .card p{margin:0;color:var(--muted);font-size: calc(16px * var(--fontScale));line-height:1.6;}
+    ul{
+      margin:10px 0 0 18px;
+      color:var(--text);
+      font-size: calc(16px * var(--fontScale));
+      line-height:1.6;
+    }
+    li{margin:6px 0;}
+    .kpi{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:14px;
+    }
+    .kpi .item{
+      border:1px dashed rgba(255,255,255,.28);
+      border-radius:16px;
+      padding:12px 14px;
+      background: rgba(255,255,255,.05);
+    }
+    [data-theme="light"] .kpi .item{border-color: rgba(17,24,39,.22);}
+    .kpi .big{
+      font-size: calc(26px * var(--fontScale));
+      font-weight:900;
+      margin:0;
+    }
+    .kpi .cap{
+      margin:4px 0 0;
+      color:var(--muted);
+      font-weight:700;
+      font-size: calc(14px * var(--fontScale));
+    }
+
+    .quote{
+      font-size: calc(26px * var(--fontScale));
+      font-weight:800;
+      line-height:1.25;
+      margin:0;
+    }
+    .quote small{
+      display:block;
+      margin-top:10px;
+      font-size: calc(16px * var(--fontScale));
+      color:var(--muted);
+      font-weight:700;
+    }
+
+    .tag{
+      display:inline-flex;
+      gap:8px;
+      align-items:center;
+      padding:6px 10px;
+      border-radius:999px;
+      border:1px solid var(--stroke);
+      font-weight:800;
+      font-size: calc(14px * var(--fontScale));
+      color:var(--text);
+      background: rgba(255,255,255,.06);
+    }
+    .tag .b{
+      width:9px;height:9px;border-radius:99px;background: var(--accent2);
+      box-shadow: 0 0 0 6px rgba(34,197,94,.14);
+    }
+
+    /* images */
+    .figure{
+      border:1px solid var(--stroke);
+      border-radius: 18px;
+      background: rgba(0,0,0,.10);
+      overflow:hidden;
+      position:relative;
+    }
+    [data-theme="light"] .figure{background: rgba(17,24,39,.03);}
+    .figure img{
+      width:100%;
+      height:100%;
+      display:block;
+      object-fit:contain;
+      cursor:zoom-in;
+      background: rgba(0,0,0,.08);
+    }
+    .figcap{
+      position:absolute;
+      left:10px; right:10px; bottom:10px;
+      padding:8px 10px;
+      border-radius:14px;
+      border:1px solid var(--stroke);
+      background: rgba(0,0,0,.35);
+      color: rgba(255,255,255,.92);
+      font-weight:800;
+      font-size: calc(13px * var(--fontScale));
+      backdrop-filter: blur(8px);
+    }
+    [data-theme="light"] .figcap{background: rgba(255,255,255,.82); color: var(--text);}
+
+    /* code-ish blocks */
+    .mono{
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      font-size: calc(15px * var(--fontScale));
+      line-height:1.5;
+      color: rgba(255,255,255,.92);
+      background: rgba(0,0,0,.30);
+      border:1px solid rgba(255,255,255,.16);
+      border-radius: 16px;
+      padding:14px 14px;
+      overflow:auto;
+      white-space:pre-wrap;
+    }
+    [data-theme="light"] .mono{color:#0b1020;background: rgba(17,24,39,.06);border-color: rgba(17,24,39,.14);}
+
+    /* bottom hint */
+    .hint{
+      position:absolute;
+      right:18px;
+      bottom:14px;
+      display:flex;
+      gap:10px;
+      align-items:center;
+      opacity:.9;
+      color:var(--muted);
+      font-weight:700;
+      font-size: calc(13px * var(--fontScale));
+    }
+    .hint span{
+      border:1px solid var(--stroke);
+      border-radius:12px;
+      padding:6px 10px;
+      background: rgba(255,255,255,.05);
+      color:var(--text);
+    }
+
+    /* modal zoom */
+    .modal{
+      position:fixed;
+      inset:0;
+      z-index:100;
+      display:none;
+      align-items:center;
+      justify-content:center;
+      background: rgba(0,0,0,.72);
+      padding:20px;
+    }
+    .modal.open{display:flex;}
+    .modalCard{
+      width:min(1600px, 96vw);
+      height:min(900px, 92vh);
+      border-radius: 18px;
+      border:1px solid rgba(255,255,255,.18);
+      background: rgba(10,12,18,.55);
+      backdrop-filter: blur(10px);
+      box-shadow: 0 25px 70px rgba(0,0,0,.6);
+      overflow:hidden;
+      position:relative;
+    }
+    .modalCard img{
+      width:100%;
+      height:100%;
+      object-fit:contain;
+      background: rgba(0,0,0,.25);
+      cursor:zoom-out;
+    }
+    .modalTop{
+      position:absolute;
+      left:14px; right:14px; top:14px;
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      align-items:center;
+      pointer-events:none;
+    }
+    .modalTop .chip{
+      pointer-events:auto;
+      display:inline-flex;
+      gap:8px;
+      align-items:center;
+      padding:8px 10px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.22);
+      background: rgba(0,0,0,.35);
+      color: rgba(255,255,255,.92);
+      font-weight:800;
+      font-size: 13px;
+      backdrop-filter: blur(8px);
+    }
+
+    /* interactive mini-sim */
+    .sim{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:16px;
+      align-items:stretch;
+    }
+    .select{
+      width:100%;
+      padding:12px 12px;
+      border-radius:14px;
+      border:1px solid var(--stroke);
+      background: rgba(255,255,255,.06);
+      color: var(--text);
+      font-weight:800;
+      font-size: calc(16px * var(--fontScale));
+      outline:none;
+    }
+    [data-theme="light"] .select{background: rgba(0,0,0,.04);}
+    .resultBox{
+      border:1px solid var(--stroke);
+      border-radius:18px;
+      padding:14px;
+      background: rgba(255,255,255,.06);
+    }
+    .resultBox .r1{
+      font-weight:900;
+      font-size: calc(22px * var(--fontScale));
+      margin:0 0 6px;
+    }
+    .resultBox .r2{
+      margin:0;
+      color:var(--muted);
+      font-weight:700;
+      line-height:1.55;
+      font-size: calc(16px * var(--fontScale));
+    }
+
+    /* responsive */
+    @media (max-width: 980px){
+      .twoCol{grid-template-columns: 1fr;}
+      .sim{grid-template-columns: 1fr;}
+      .deck{width: 96vw;}
+      .slide{padding: 28px 22px;}
+      .toolbar{gap:8px;left:10px;right:10px;}
+      .progressWrap{display:none;}
+    }
+  </style>
+</head>
+
+<body data-theme="dark">
+  <div class="toolbar" role="toolbar" aria-label="slide controls">
+    <div class="left">
+      <div class="brand">
+        <div class="dot"></div>
+        <div>
+          <div class="titleSmall">ENGSE207 • Week 5</div>
+          <div class="subtitleSmall">C4 Model & Architecture Views (Context / Container)</div>
+        </div>
+      </div>
+
+      <div class="progressWrap" aria-label="progress">
+        <div class="progressBar"><div id="progressFill" class="progressFill"></div></div>
+      </div>
+
+      <div id="counter" class="counter">1 / 32</div>
+    </div>
+
+    <div class="right">
+      <button class="btn ghost" id="btnTheme" title="Toggle theme (T)">
+        🌗 Theme <span class="k">T</span>
+      </button>
+      <button class="btn warn" id="btnAminus" title="Decrease font ( - )">
+        A− <span class="k">-</span>
+      </button>
+      <button class="btn good" id="btnAplus" title="Increase font ( + )">
+        A+ <span class="k">+</span>
+      </button>
+      <button class="btn ghost" id="btnReset" title="Reset font (0)">
+        Reset <span class="k">0</span>
+      </button>
+      <button class="btn ghost" id="btnFull" title="Fullscreen (F)">
+        ⛶ Full <span class="k">F</span>
+      </button>
+      <button class="btn" id="btnPrev" title="Previous (←)">
+        ◀ Prev <span class="k">←</span>
+      </button>
+      <button class="btn primary" id="btnNext" title="Next (→)">
+        Next ▶ <span class="k">→</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="stage">
+    <div class="deck" id="deck" aria-live="polite">
+
+      <!-- Slide 1 -->
+      <section class="slide active">
+        <div class="grid twoCol">
+          <div>
+            <h1 class="hTitle">C4 Model & Architecture Views</h1>
+            <p class="lead">
+              สัปดาห์ที่ 5: “สื่อสารสถาปัตยกรรมให้คนทั้งทีมเข้าใจ” ด้วย <b>C1 Context</b> และ <b>C2 Container</b>
+            </p>
+
+            <div class="pillRow">
+              <div class="pill">เวลาเรียน: 5 ชม. (บรรยาย 2 + Lab 3)</div>
+              <div class="pill">ระดับ: ปี 2 วิศวกรรมซอฟต์แวร์</div>
+              <div class="pill">CLO: 1,3,5,6,8,9</div>
+            </div>
+
+            <div class="card" style="margin-top:16px">
+              <p class="quote">
+                “Diagram ที่ดี ไม่ใช่สวยอย่างเดียว…<br>แต่ต้องตอบคำถามของคนดูให้ได้”
+                <small>วันนี้เราจะ “เลือกความละเอียดให้พอดี” เหมือนซูม Google Maps</small>
+              </p>
+            </div>
+          </div>
+
+          <div class="grid" style="align-content:start;">
+            <div class="card soft">
+              <h3>ทำไมต้องเรียนเรื่องนี้?</h3>
+              <ul>
+                <li>ทำงานทีมใหญ่: ต้อง “คุยกันรู้เรื่อง”</li>
+                <li>ลดความเสี่ยง: เห็น boundary / dependency ชัด</li>
+                <li>ช่วย DevOps/Security/PM ใช้ diagram เดียวกัน</li>
+                <li>เป็นพื้นฐานทำ SAD + ADR ในโปรเจกต์</li>
+              </ul>
+            </div>
+            <div class="card soft">
+              <h3>กติกาใช้สไลด์</h3>
+              <ul>
+                <li>กด <b>←/→</b> เลื่อนสไลด์</li>
+                <li>กด <b>+</b>/<b>-</b> ปรับขนาดฟอนต์</li>
+                <li>คลิกรูปเพื่อ “ขยายเต็มจอ”</li>
+                <li>กด <b>T</b> เปลี่ยนธีม</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        <div class="hint">
+          <span>← →</span><span>+ −</span><span>F</span><span>T</span>
+        </div>
+      </section>
+
+      <!-- Slide 2 -->
+      <section class="slide">
+        <div class="grid twoCol">
+          <div>
+            <h2 class="h2">วัตถุประสงค์รายสัปดาห์</h2>
+            <div class="card">
+              <h3>หลังจบคาบนี้ นักศึกษาจะทำได้</h3>
+              <div class="kpi" style="margin-top:10px">
+                <div class="item">
+                  <p class="big">อธิบาย C4 ได้</p>
+                  <p class="cap">4 ระดับ + เลือกให้เหมาะกับคนดู</p>
+                </div>
+                <div class="item">
+                  <p class="big">วาด Context</p>
+                  <p class="cap">Person / System / External + boundary</p>
+                </div>
+                <div class="item">
+                  <p class="big">วาด Container</p>
+                  <p class="cap">Front/Back/DB + Tech + Protocol</p>
+                </div>
+                <div class="item">
+                  <p class="big">สื่อสารได้</p>
+                  <p class="cap">เลือก view ให้ stakeholder ต่างกัน</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="card soft" style="margin-top:14px">
+              <h3>เชื่อม CLO</h3>
+              <ul>
+                <li><b>CLO6</b>: ออกแบบสถาปัตยกรรมระดับสูงด้วย C4</li>
+                <li><b>CLO9</b>: ใช้เครื่องมือ (Draw.io/Structurizr/PlantUML)</li>
+                <li><b>CLO8</b>: สร้างเอกสารสถาปัตยกรรม (SAD/ADR)</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="grid" style="align-content:start">
+            <div class="card soft">
+              <h3>Roadmap: วันนี้เรียนอะไรบ้าง</h3>
+              <ul>
+                <li>ทบทวน Week 4: Modern Styles</li>
+                <li>ปัญหา diagram แบบเดิม + แนวคิด “Zoom”</li>
+                <li>C1 Context: องค์ประกอบ + กฎ + ตัวอย่าง</li>
+                <li>C2 Container: “กล่องที่ deploy ได้” + ตัวอย่าง</li>
+                <li>Views & Viewpoints: เลือกมุมมองให้เหมาะคน</li>
+                <li>Lab: วาด + peer review + revision</li>
+              </ul>
+            </div>
+            <div class="card soft">
+              <h3>แรงบันดาลใจสั้นๆ</h3>
+              <p>
+                สถาปัตยกรรมที่ดี “ไม่ได้เริ่มจากเทคโนโลยี” แต่เริ่มจากการสื่อสารสิ่งสำคัญ:
+                <b>ขอบเขต, ผู้ใช้, ระบบที่ต้องพึ่งพา, และวิธี deploy</b>
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 3 -->
+      <section class="slide">
+        <div class="grid twoCol">
+          <div>
+            <h2 class="h2">ทบทวนสัปดาห์ที่ 4: Modern Architectural Styles</h2>
+            <p class="lead">เรามีหลาย “สไตล์” แล้วเราจะอธิบายให้ทีมอื่นเข้าใจยังไง?</p>
+
+            <div class="cols">
+              <div class="card">
+                <h3>Microservices</h3>
+                <p>แยก service เล็กๆ deploy/scale อิสระ</p>
+              </div>
+              <div class="card">
+                <h3>Event-Driven</h3>
+                <p>สื่อสารผ่าน event/message ลด coupling</p>
+              </div>
+              <div class="card">
+                <h3>Serverless</h3>
+                <p>ไม่ต้องดูแล server จ่ายตามใช้ autoscale</p>
+              </div>
+              <div class="card">
+                <h3>SOA</h3>
+                <p>service reuse ในองค์กร + ESB ในบางกรณี</p>
+              </div>
+            </div>
+
+            <div class="card soft" style="margin-top:14px">
+              <p class="quote">คำถามสำคัญของวันนี้: <br>“เราจะเล่า architecture ให้คนดูต่างกัน เข้าใจเท่าที่เขาจำเป็นต้องรู้ ได้ยังไง?”</p>
+            </div>
+          </div>
+
+          <div class="grid" style="align-content:start">
+            <div class="card soft">
+              <h3>ปัญหาในชีวิตจริง</h3>
+              <ul>
+                <li>PM: “ระบบมีอะไรบ้าง ใช้ทีมไหนทำ?”</li>
+                <li>Dev: “API ไป DB ไหน? มี cache ไหม?”</li>
+                <li>Security: “ข้อมูลไหลไป third-party ไหน?”</li>
+                <li>DevOps: “ต้อง deploy กี่ชิ้น ใช้อะไร?”</li>
+              </ul>
+            </div>
+            <div class="card soft">
+              <h3>คำตอบ: C4 Model</h3>
+              <p>เลือกความละเอียดได้เป็นชั้นๆ (Zoom in/out) และมาตรฐานการสื่อสารชัดเจน</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 4 -->
+      <section class="slide">
+        <div class="grid twoCol">
+          <div>
+            <h2 class="h2">ปัญหา Architecture Diagram แบบดั้งเดิม</h2>
+            <div class="card">
+              <div class="mono">❌ แบบเดิมที่พบบ่อย:
+
+┌─────────┐
+│ System  │───────────────────┐
+└────┬────┘                   │
+     │                        ▼
+     │                   [Database]
+     ▼                        ▲
+ [Frontend] ──────────────────┘
+     │
+     ▼
+ [External API]
+
+คำถาม: System คืออะไร? ใช้ tech อะไร? ใครใช้? boundary อยู่ตรงไหน?</div>
+            </div>
+
+            <div class="card soft" style="margin-top:14px">
+              <h3>อาการ (Symptoms)</h3>
+              <ul>
+                <li>ไม่มีมาตรฐาน → วาดคนละภาษา</li>
+                <li>รายละเอียด “ไม่พอดี” → ลึกเกิน/หยาบเกิน</li>
+                <li>Diagram เดียวพยายามตอบทุกคน → สุดท้ายไม่ตอบใครเลย</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="grid" style="align-content:start">
+            <div class="card soft">
+              <h3>ผลกระทบ</h3>
+              <ul>
+                <li>Requirement ผิดความเข้าใจ → ทำของผิด</li>
+                <li>ประเมิน effort / resource พลาด</li>
+                <li>ช่องโหว่: ลืม external dependency</li>
+                <li>Onboarding ช้า: สมาชิกใหม่อ่านไม่ออก</li>
+              </ul>
+            </div>
+            <div class="card soft">
+              <h3>หลักคิดแก้ปัญหา</h3>
+              <p>
+                แยก “มุมมอง” (views) ตามกลุ่มคนดู แล้วค่อย “ซูม” ให้เท่าที่จำเป็น
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 5 -->
+      <section class="slide">
+        <div class="grid twoCol">
+          <div>
+            <h2 class="h2">C4 Model: Think like Google Maps</h2>
+            <p class="lead">ซูมออกเพื่อเห็นภาพรวม → ซูมเข้าเพื่อเห็นรายละเอียดที่ทีมเทคนิคต้องใช้</p>
+            <div class="card">
+              <div class="mono">C4 = 4 Levels of Abstraction
+
+C1 Context   = ภาพรวมระบบในโลกจริง
+C2 Container = กล่องหลักที่ deploy/run ได้
+C3 Component = โครงสร้างภายใน container
+C4 Code      = class/interface (มักให้ IDE ช่วย)</div>
+            </div>
+
+            <div class="pillRow" style="margin-top:12px">
+              <span class="tag"><span class="b"></span>วันนี้เน้น: C1 + C2</span>
+              <span class="pill">เป้าหมาย: สื่อสาร “พอดี”</span>
+            </div>
+          </div>
+
+          <div class="grid" style="align-content:start">
+            <div class="card soft">
+              <h3>ใครดูระดับไหน?</h3>
+              <ul>
+                <li>ผู้บริหาร / PO / PM → <b>C1</b></li>
+                <li>Architect / Tech Lead → <b>C2–C3</b></li>
+                <li>Developer → <b>C3–C4</b></li>
+                <li>DevOps / Security → <b>C1–C2</b></li>
+              </ul>
+            </div>
+            <div class="card soft">
+              <h3>คีย์เวิร์ดจำง่าย</h3>
+              <ul>
+                <li><b>C1</b> = Who / What / External?</li>
+                <li><b>C2</b> = What runs / What talks / Tech?</li>
+                <li><b>C3</b> = What modules inside?</li>
+                <li><b>C4</b> = What code objects?</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 6 -->
+      <section class="slide">
+        <div class="grid twoCol">
+          <div>
+            <h2 class="h2">Mini Simulation: เลือก C4 ให้เหมาะคนดู</h2>
+            <p class="lead">ลองเลือก stakeholder แล้วดูว่าควรใช้ diagram ระดับไหน (C1–C4)</p>
+
+            <div class="card">
+              <div class="sim">
+                <div>
+                  <label style="font-weight:900;display:block;margin-bottom:8px">เลือก Stakeholder</label>
+                  <select id="stakeholderSel" class="select">
+                    <option value="ceo">CEO / ผู้บริหาร</option>
+                    <option value="po">Product Owner</option>
+                    <option value="pm">Project Manager</option>
+                    <option value="arch">Architect</option>
+                    <option value="lead">Tech Lead</option>
+                    <option value="dev">Developer</option>
+                    <option value="devops">DevOps</option>
+                    <option value="sec">Security Team</option>
+                  </select>
+                  <p class="lead" style="margin:10px 0 0">Tip: ในประชุมจริง “สลับระดับ” ได้ใน deck เดียว (เริ่ม C1 แล้วค่อยซูม C2)</p>
+                </div>
+                <div class="resultBox">
+                  <p class="r1" id="stakeTitle">แนะนำ: C1 (Context)</p>
+                  <p class="r2" id="stakeDesc">เห็นภาพใหญ่: ใครใช้? ระบบทำอะไร? พึ่งพาอะไรบ้าง?</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="card soft" style="margin-top:14px">
+              <h3>กฎทอง</h3>
+              <ul>
+                <li>คนดูไม่เทคนิค → ยิ่ง “ซูมออก”</li>
+                <li>คนดูเทคนิค → ยิ่ง “ซูมเข้า”</li>
+                <li>อย่าบังคับ diagram เดียวตอบทุกคน</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="grid" style="align-content:start">
+            <div class="card soft">
+              <h3>คำถามชวนคิด</h3>
+              <p>
+                ถ้าคุณเอา diagram ระดับ C3 ไปอธิบายให้ผู้บริหาร…<br>
+                <b>ผลลัพธ์ที่น่าจะเกิดขึ้นคืออะไร?</b>
+              </p>
+              <ul>
+                <li>งง, หลุดประเด็น, เสียเวลา, และ “ตัดสินใจ” ไม่ได้</li>
+              </ul>
+            </div>
+            <div class="card soft">
+              <h3>ตัวอย่างสถานการณ์</h3>
+              <ul>
+                <li>Pitch idea ใหม่ → C1</li>
+                <li>วางแผน sprint / ทีม → C1 + C2</li>
+                <li>ทำ API contract / module ownership → C2 + C3</li>
+                <li>ทำ code review → C4 (หรือ IDE)</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 7 -->
+      <section class="slide">
+        <div class="grid twoCol">
+          <div>
+            <h2 class="h2">C1: System Context Diagram</h2>
+            <p class="lead">ตอบคำถามระดับ “ภาพใหญ่”: ระบบทำอะไร? ใครใช้? เชื่อมระบบไหน?</p>
+
+            <div class="card">
+              <h3>องค์ประกอบหลัก (3 อย่าง)</h3>
+              <ul>
+                <li><b>Person</b> — คน/บทบาทที่ใช้ระบบ</li>
+                <li><b>Software System</b> — ระบบหลัก “ของเรา” (มี 1 ระบบ)</li>
+                <li><b>External System</b> — ระบบภายนอกที่เราพึ่งพา</li>
+              </ul>
+            </div>
+
+            <div class="card soft" style="margin-top:14px">
+              <h3>Context ตอบอะไรได้?</h3>
+              <ul>
+                <li>ขอบเขต (boundary) อยู่ตรงไหน</li>
+                <li>ผู้ใช้/actor สำคัญคือใคร</li>
+                <li>external dependency ที่ต้องคุย/ต่อระบบ</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="grid" style="align-content:start">
+            <div class="card soft">
+              <h3>DO / DON'T แบบเร็ว</h3>
+              <ul>
+                <li>✅ ใส่ชื่อชัด + relationship label</li>
+                <li>✅ จำกัด external ไม่เยอะเกินไป (5–7)</li>
+                <li>❌ ไม่ต้องใส่ tech detail (OAuth, TLS ฯลฯ)</li>
+                <li>❌ ไม่ต้องโชว์ DB / MQ ในระดับ C1</li>
+              </ul>
+            </div>
+            <div class="card soft">
+              <h3>คำถามเช็คก่อนส่ง</h3>
+              <ul>
+                <li>มี “Software System หลัก” แค่ 1 กล่องไหม?</li>
+                <li>ใครเป็นผู้ใช้หลัก? มี role ครบไหม?</li>
+                <li>external ที่สำคัญต่อ business flow ครบไหม?</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 8 -->
+      <section class="slide">
+        <div class="grid twoCol">
+          <div>
+            <h2 class="h2">C1 Example: Food Delivery — Context</h2>
+            <p class="lead">ดูภาพรวม: ลูกค้า/เจ้าของร้าน/คนส่ง + Payment/SMS/Maps</p>
+
+            <div class="card soft">
+              <h3>สิ่งที่ควร “อ่านออก” จากรูปนี้</h3>
+              <ul>
+                <li>Actors หลัก: ลูกค้า, ร้าน, คนส่ง</li>
+                <li>External dependencies: Payment, SMS, Maps</li>
+                <li>ระบบกลาง: Food Delivery System (boundary)</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="figure" style="height:100%">
+            <img src="week5_c4_examples-Example1-Food-Delivery-Context.png" alt="C4 Context: Food Delivery" data-zoom />
+            <div class="figcap">คลิกรูปเพื่อขยาย: Food Delivery — Context (C1)</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 9 -->
+      <section class="slide">
+        <div class="grid threeCol">
+          <div class="card">
+            <h3>Person 👤</h3>
+            <p>คน/บทบาท (Role) ที่โต้ตอบกับระบบ</p>
+            <ul>
+              <li>Customer</li>
+              <li>Admin</li>
+              <li>Restaurant Owner</li>
+              <li>Delivery Driver</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h3>Software System 💎</h3>
+            <p>ระบบหลักที่เรากำลังออกแบบ (มี 1 ระบบ)</p>
+            <ul>
+              <li>ชื่อชัดเจน</li>
+              <li>มีคำอธิบายสั้นๆ</li>
+              <li>เป็น “ศูนย์กลาง” ของ context</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h3>External System 🔗</h3>
+            <p>ระบบที่เราไม่ได้ควบคุม/พัฒนาเอง</p>
+            <ul>
+              <li>Payment Gateway</li>
+              <li>SMS/Email Service</li>
+              <li>Maps API</li>
+              <li>Social Login</li>
+            </ul>
+          </div>
+        </div>
+        <div class="card soft" style="margin-top:16px">
+          <h3>ทริคสอนตัวเอง (เร็ว)</h3>
+          <div class="mono">ถามว่า “ถ้าอีกทีมแก้ระบบนี้ เราคุมได้ไหม?”
+- คุมไม่ได้ → External System
+- คุมได้ → อาจเป็นส่วนหนึ่งของระบบเรา (หรือ container ใน C2)</div>
+        </div>
+      </section>
+
+      <!-- Slide 10 -->
+      <section class="slide">
+        <div class="grid twoCol">
+          <div>
+            <h2 class="h2">กฎการวาด Context Diagram</h2>
+            <div class="card">
+              <h3>✅ DO</h3>
+              <ul>
+                <li>มี Software System หลัก “1 ระบบ”</li>
+                <li>ชื่อชัดเจน: <b>Customer (Person)</b>, <b>Payment Gateway (External)</b></li>
+                <li>ใส่ label ความสัมพันธ์: “ชำระเงิน”, “ส่งแจ้งเตือน”</li>
+                <li>จำกัดจำนวน external (ถ้าเยอะ ให้ grouping)</li>
+              </ul>
+            </div>
+
+            <div class="card soft" style="margin-top:14px">
+              <h3>❌ DON'T</h3>
+              <ul>
+                <li>ไม่ลง tech detail ลึกเกิน (OAuth, TLS, retry ฯลฯ)</li>
+                <li>ไม่เอา DB/Cache/MQ มาใส่ในระดับ C1</li>
+                <li>ไม่วาด “กล่องเยอะจนอ่านไม่ออก”</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="card soft" style="align-self:start">
+            <h3>Checklist ก่อนนำเสนอ (30 วินาที)</h3>
+            <ul>
+              <li>คนดูที่เราจะพรีเซนต์คือใคร? (CEO/DevOps/Dev)</li>
+              <li>diagram นี้ตอบคำถามของ “เขา” ได้ไหม?</li>
+              <li>มี dependency ที่สำคัญต่อ business flow ครบไหม?</li>
+              <li>มีคำอธิบาย relationship ครบไหม?</li>
+            </ul>
+            <div class="pillRow" style="margin-top:10px">
+              <div class="pill">ถ้าตอบไม่ได้ → ลด/เพิ่มความละเอียด</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 11 -->
+      <section class="slide">
+        <div class="grid twoCol">
+          <div>
+            <h2 class="h2">C1 Example: LINE — Context</h2>
+            <p class="lead">ระบบจริงซับซ้อนกว่านี้มาก แต่ context “ต้องเรียบ” และชัด</p>
+            <div class="card soft">
+              <h3>อ่านออกอะไร?</h3>
+              <ul>
+                <li>ผู้ใช้โต้ตอบกับ LINE Messaging Application</li>
+                <li>External: Push notification (FCM), Storage, Payment</li>
+                <li>ขอบเขตระบบอยู่ที่ “Messaging Application”</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="figure" style="height:100%">
+            <img src="week5_c4_examples-Example3-LINE-Context.png" alt="C4 Context: LINE" data-zoom />
+            <div class="figcap">คลิกรูปเพื่อขยาย: LINE — Context (C1)</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 12 -->
+      <section class="slide">
+        <div class="grid twoCol">
+          <div>
+            <h2 class="h2">C1 Example: Shopee — Context</h2>
+            <p class="lead">ตัวอย่าง e-commerce: ผู้ซื้อ/ผู้ขาย + logistic + payment + auth + SMS</p>
+            <div class="card soft">
+              <h3>คำถามระหว่างสอน</h3>
+              <ul>
+                <li>อะไรคือ “Software System หลัก” ในรูปนี้?</li>
+                <li>ระบบ Banking ควรเป็น External หรือ Container?</li>
+                <li>ทำไม Context ไม่ควรใส่ “Database”?</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="figure" style="height:100%">
+            <img src="week5_c4_examples-Example4-Shopee-Context.png" alt="C4 Context: Shopee" data-zoom />
+            <div class="figcap">คลิกรูปเพื่อขยาย: Shopee — Context (C1)</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 13 -->
+      <section class="slide">
+        <div class="grid twoCol">
+          <div>
+            <h2 class="h2">Workshop Prompt (C1)</h2>
+            <p class="lead">ทำให้ได้ “หนึ่งหน้า” ที่คนอ่านแล้วเข้าใจภาพใหญ่ใน 30 วินาที</p>
+
+            <div class="card">
+              <h3>โจทย์ (เลือก 1 ระบบ)</h3>
+              <ul>
+                <li>Lab Submission Portal</li>
+                <li>Task Board / Kanban</li>
+                <li>Co-op Supervision Planner</li>
+                <li>หรือระบบที่กลุ่มคุณสนใจ</li>
+              </ul>
+            </div>
+
+            <div class="card soft" style="margin-top:14px">
+              <h3>สิ่งที่ต้องมีใน C1</h3>
+              <ul>
+                <li>Person: 2–4 roles</li>
+                <li>External Systems: 2–6 รายการ (เท่าที่จำเป็น)</li>
+                <li>Relationship labels ทุกเส้น</li>
+                <li>คำอธิบายระบบ 1–2 บรรทัด</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="figure" style="height:100%">
+            <img src="week5_c4_examples-Template-Blank-Context.png" alt="Blank Context Template" data-zoom />
+            <div class="figcap">Template: Blank Context (ใช้เป็นโครงใน Draw.io ได้)</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 14 -->
+      <section class="slide">
+        <div class="grid twoCol">
+          <div>
+            <h2 class="h2">จาก C1 → C2: “ซูมเข้า” อย่างมีเหตุผล</h2>
+            <p class="lead">เมื่อ context ชัดแล้ว ค่อยแตกเป็น container เพื่อคุยเรื่อง tech / deploy / integration</p>
+            <div class="card">
+              <h3>ถาม 3 ข้อก่อนเริ่ม C2</h3>
+              <ul>
+                <li>ระบบเรามี “ช่องทางใช้งาน” อะไรบ้าง? (Web/Mobile/Admin)</li>
+                <li>มี “Backend” กี่ตัว? (API, Realtime, Worker)</li>
+                <li>ข้อมูลอยู่ไหน? (DB, Cache, File Storage)</li>
+              </ul>
+            </div>
+            <div class="card soft" style="margin-top:14px">
+              <h3>ผลลัพธ์ของ C2</h3>
+              <ul>
+                <li>เห็นโครงสร้างใหญ่ภายในระบบ</li>
+                <li>รู้ tech stack ในแต่ละกล่อง</li>
+                <li>รู้ protocol/data flow ระหว่างกล่อง</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="card soft" style="align-self:start">
+            <h3>คำเตือน: “Container” ใน C4 ≠ Docker</h3>
+            <div class="mono">Container (C4) = หน่วยที่ Run/Deploy ได้
+
+ตัวอย่าง Container:
+- Web App
+- Mobile App
+- Backend API
+- Database / Cache / Message Broker
+
+Docker Container = วิธี deploy หนึ่งแบบ (implementation detail)</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 15 -->
+      <section class="slide">
+        <div class="grid twoCol">
+          <div>
+            <h2 class="h2">C2: Container Diagram</h2>
+            <p class="lead">เน้น “กล่องที่ทำงานได้จริง” + เทคโนโลยี + วิธีคุยกัน</p>
+
+            <div class="card">
+              <h3>Container Diagram ต้องมี</h3>
+              <ul>
+                <li>Containers ภายในระบบ (Frontend/Backend/DB/Storage)</li>
+                <li><b>Technology Stack</b> ของแต่ละ container</li>
+                <li><b>Communication / Protocol</b> (HTTPS/JSON, SQL, TCP, WebSocket)</li>
+                <li>External Systems ที่จำเป็น (Payment/Maps ฯลฯ)</li>
+              </ul>
+            </div>
+
+            <div class="card soft" style="margin-top:14px">
+              <h3>คำถามที่ C2 ตอบ</h3>
+              <ul>
+                <li>ระบบประกอบด้วย “ส่วนใหญ่ๆ” อะไรบ้าง?</li>
+                <li>ส่วนไหน deploy/scale แยกกัน?</li>
+                <li>ข้อมูลไหลจากไหนไปไหน?</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="card soft" style="align-self:start">
+            <h3>นิยามสั้นๆ</h3>
+            <p class="quote">“ถ้าต้อง deploy แยกกัน → นับเป็นคนละ container”</p>
+            <div class="pillRow" style="margin-top:12px">
+              <div class="pill">Deploy unit</div>
+              <div class="pill">Executable</div>
+              <div class="pill">Independently scalable</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 16 -->
+      <section class="slide">
+        <div class="grid twoCol">
+          <div>
+            <h2 class="h2">C2 Example: Food Delivery — Container</h2>
+            <p class="lead">เห็น frontend หลายตัว + backend หลัก + realtime + storage/caches</p>
+
+            <div class="card soft">
+              <h3>อ่านออกอะไร?</h3>
+              <ul>
+                <li>มี client หลายช่องทาง: Mobile/Web/Restaurant/Admin</li>
+                <li>Backend API เป็นศูนย์กลาง REST</li>
+                <li>Realtime (Socket.io) แยกเพื่อ update สถานะ</li>
+                <li>Data: MySQL (ธุรกรรม), Redis (cache), Mongo (logs), S3 (files)</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="figure" style="height:100%">
+            <img src="week5_c4_examples-Example2-Food-Delivery-Container.png" alt="C4 Container: Food Delivery" data-zoom />
+            <div class="figcap">คลิกรูปเพื่อขยาย: Food Delivery — Container (C2)</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 17 -->
+      <section class="slide">
+        <div class="grid threeCol">
+          <div class="card">
+            <h3>Frontend Containers (เหลือง)</h3>
+            <ul>
+              <li>Web App [React]</li>
+              <li>Mobile App [React Native]</li>
+              <li>Admin Portal [Next.js]</li>
+              <li>Restaurant App [Flutter]</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h3>Backend Containers (เขียว)</h3>
+            <ul>
+              <li>Backend API [Node.js + Express]</li>
+              <li>Real-time Service [Socket.io]</li>
+              <li>Worker/Job (ถ้ามี)</li>
+              <li>Gateway (ถ้าจำเป็น)</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h3>Data/Storage (ส้ม)</h3>
+            <ul>
+              <li>SQL DB (ธุรกรรม)</li>
+              <li>Cache (session/cart)</li>
+              <li>Log/Analytics DB</li>
+              <li>Object Storage (รูป/ไฟล์)</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="card soft" style="margin-top:16px">
+          <h3>โปรโตคอลที่พบได้บ่อย</h3>
+          <div class="pillRow">
+            <div class="pill">HTTPS/JSON (REST)</div>
+            <div class="pill">WebSocket (Realtime)</div>
+            <div class="pill">SQL (DB)</div>
+            <div class="pill">TCP (Redis)</div>
+            <div class="pill">S3 API (Storage)</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 18 -->
+      <section class="slide">
+        <div class="grid twoCol">
+          <div>
+            <h2 class="h2">กฎการวาด Container Diagram</h2>
+            <div class="card">
+              <h3>✅ DO</h3>
+              <ul>
+                <li>ระบุ Technology Stack ทุก container</li>
+                <li>ใส่ protocol/communication บนลูกศร</li>
+                <li>จัด layout: client ด้านบน, data ด้านล่าง</li>
+                <li>จำกัดจำนวน container (10–15) → ถ้าเยอะ แยกระบบย่อย</li>
+              </ul>
+            </div>
+
+            <div class="card soft" style="margin-top:14px">
+              <h3>❌ DON'T</h3>
+              <ul>
+                <li>ไม่ลงถึงระดับ class/function</li>
+                <li>ไม่ใส่ทุก library/dependency</li>
+                <li>ไม่ทำให้สายลูกศรไขว้กันจนอ่านไม่ออก (จัดกลุ่ม)</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="card soft" style="align-self:start">
+            <h3>Checklist C2 (60 วินาที)</h3>
+            <ul>
+              <li>ช่องทางใช้งานครบไหม (Web/Mobile/Admin)?</li>
+              <li>Backend แยกบทบาทถูกไหม (API/Realtime/Worker)?</li>
+              <li>Data store เลือกสอดคล้องกับงานไหม?</li>
+              <li>protocol เขียนชัดไหม?</li>
+            </ul>
+            <div class="mono" style="margin-top:10px">ถามเพิ่ม:
+- อะไรต้อง scale มากที่สุด?
+- อะไรคือ single point of failure?
+- external system ใด “ล่มแล้ว” กระทบ flow?</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 19 -->
+      <section class="slide">
+        <div class="grid twoCol">
+          <div>
+            <h2 class="h2">Workshop Prompt (C2)</h2>
+            <p class="lead">ต่อจาก C1 ของกลุ่ม → แตกเป็น container ให้ครบ + ใส่ tech</p>
+            <div class="card">
+              <h3>สิ่งที่ต้องส่งใน C2</h3>
+              <ul>
+                <li>Frontend 1–3 containers</li>
+                <li>Backend 1–3 containers</li>
+                <li>Data/Storage 1–3 containers</li>
+                <li>External 1–5 systems (ถ้าจำเป็น)</li>
+                <li>Tech stack + protocol ครบ</li>
+              </ul>
+            </div>
+
+            <div class="card soft" style="margin-top:14px">
+              <h3>Hint สำหรับ ENGSE207 Task Board / Portal</h3>
+              <ul>
+                <li>Web App (React) + Admin (Next.js)</li>
+                <li>API (Node/Express) + Realtime (Socket)</li>
+                <li>DB (MySQL/Postgres) + Cache (Redis) + File (S3)</li>
+                <li>Auth (Google/Facebook) เป็น external</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="figure" style="height:100%">
+            <img src="week5_c4_examples-Template-Blank-Container.png" alt="Blank Container Template" data-zoom />
+            <div class="figcap">Template: Blank Container (เติม tech + protocol แล้วลบกล่องคำสั่ง)</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 20 -->
+      <section class="slide">
+        <div class="grid twoCol">
+          <div>
+            <h2 class="h2">Views & Viewpoints (แนวคิดสำคัญ)</h2>
+            <p class="lead">“View” = มุมมองหนึ่งของระบบ เพื่อคนดูบางกลุ่มโดยเฉพาะ</p>
+
+            <div class="card">
+              <h3>ตัวอย่าง Views</h3>
+              <ul>
+                <li><b>Logical View</b> — โครงสร้างตรรกะ (components/classes)</li>
+                <li><b>Physical/Deployment View</b> — server/network/deploy</li>
+                <li><b>Development View</b> — codebase/modules</li>
+                <li><b>Process View</b> — runtime behavior/processes</li>
+              </ul>
+            </div>
+
+            <div class="card soft" style="margin-top:14px">
+              <h3>C4 เป็น “View แบบลำดับชั้น”</h3>
+              <div class="pillRow">
+                <div class="pill">C1 = Context view</div>
+                <div class="pill">C2 = Container view</div>
+                <div class="pill">C3 = Component view</div>
+                <div class="pill">C4 = Code view</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card soft" style="align-self:start">
+            <h3>Viewpoint คืออะไร?</h3>
+            <p>
+              “Viewpoint” = กติกา/มุมมองที่ใช้สร้าง view เพื่อ stakeholder กลุ่มหนึ่ง เช่น
+              security viewpoint จะสนใจ “data flow + trust boundary” มากเป็นพิเศษ
+            </p>
+            <div class="mono" style="margin-top:10px">ตัวอย่าง:
+- Security review: C1 + C2 + Data Flow Diagram
+- DevOps planning: C2 + Deployment Diagram
+- Team onboarding: C1 → C2 → C3</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 21 -->
+      <section class="slide">
+        <div class="grid twoCol">
+          <div>
+            <h2 class="h2">ตัวอย่างเลือก View ให้เหมาะสถานการณ์</h2>
+            <div class="card">
+              <h3>Scenario → View ที่เหมาะ</h3>
+              <ul>
+                <li>นำเสนอให้ CEO: <b>C1</b> (5–10 นาที)</li>
+                <li>Workshop dev team: <b>C2 + C3</b> (1–2 ชม.)</li>
+                <li>Planning กับ DevOps: <b>C2 + Deployment</b> (30–60 นาที)</li>
+                <li>Security review: <b>C1 + C2 + DFD</b> (1–2 ชม.)</li>
+              </ul>
+            </div>
+
+            <div class="card soft" style="margin-top:14px">
+              <h3>คำถามชวนคิด</h3>
+              <p>
+                ถ้าระบบมี microservices 40 ตัว… คุณยังควรทำ C2 เป็นหน้าเดียวไหม?<br>
+                <b>คำตอบ:</b> อาจต้อง “จัดกลุ่ม” หรือแยกเป็น subsystem views
+              </p>
+            </div>
+          </div>
+
+          <div class="card soft" style="align-self:start">
+            <h3>เทคนิคทำให้สไลด์ไม่แน่น</h3>
+            <ul>
+              <li>เริ่มด้วย C1 → ซูมเข้า C2 เฉพาะ flow สำคัญ</li>
+              <li>ทำ “หลาย view” ไม่ใช่ “ยัดทุกอย่างใน view เดียว”</li>
+              <li>ใช้คำอธิบายสั้น + ให้รูปทำงานแทนข้อความ</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 22 -->
+      <section class="slide">
+        <div class="grid twoCol">
+          <div>
+            <h2 class="h2">Infographic: C1 vs C2 (จำให้ขึ้นใจ)</h2>
+            <div class="card">
+              <div class="mono">C1 (Context) — “โลกภายนอก”
+- ใครใช้? (Person)
+- ระบบเราทำอะไร? (Software System)
+- พึ่งพาอะไร? (External System)
+- Boundary อยู่ตรงไหน?
+
+C2 (Container) — “ภายในระบบ”
+- มีอะไร run/deploy บ้าง?
+- ใช้เทคโนโลยีอะไร?
+- คุยกันด้วยอะไร (protocol)?</div>
+            </div>
+
+            <div class="card soft" style="margin-top:14px">
+              <h3>จำง่ายด้วยคำถาม</h3>
+              <div class="pillRow">
+                <div class="pill">C1 = Who/What/External?</div>
+                <div class="pill">C2 = What runs/Tech/Protocol?</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card soft" style="align-self:start">
+            <h3>Mini Quiz (ในห้อง)</h3>
+            <ul>
+              <li>DB ควรอยู่ C1 หรือ C2?</li>
+              <li>OAuth2.0/TLS ควรอยู่ C1 หรือ C2?</li>
+              <li>Message Queue ควรอยู่ C2 หรือ C3?</li>
+            </ul>
+            <div class="mono" style="margin-top:10px">เฉลย (แนวคิด):
+- DB/MQ = C2 (เพราะเป็น deployable/runtime)
+- OAuth/TLS = มักไม่ใส่ใน C1; ใส่ในเอกสารเสริม/DFD/Security view</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 23 -->
+      <section class="slide">
+        <div class="grid twoCol">
+          <div>
+            <h2 class="h2">เครื่องมือวาด C4 Diagrams</h2>
+            <p class="lead">เป้าหมาย: ทำได้ไว + แก้ง่าย + ส่งงานง่าย</p>
+
+            <div class="card">
+              <h3>แนะนำสำหรับวิชานี้: Draw.io (diagrams.net)</h3>
+              <ul>
+                <li>ฟรี ใช้บนเว็บ/เดสก์ท็อป</li>
+                <li>มี shapes สำหรับ C4 (More Shapes → Software → C4)</li>
+                <li>Export PNG/SVG/PDF ง่าย</li>
+              </ul>
+            </div>
+
+            <div class="card soft" style="margin-top:14px">
+              <h3>เครื่องมืออื่น</h3>
+              <ul>
+                <li>Structurizr (C4-first)</li>
+                <li>PlantUML (text-to-diagram)</li>
+                <li>Lucidchart / Cloud diagram tools</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="card soft" style="align-self:start">
+            <h3>ลิงก์แนะนำ (เปิดดูได้)</h3>
+            <ul>
+              <li>Official: c4model.com</li>
+              <li>Draw.io: app.diagrams.net</li>
+              <li>YouTube: “Visualising Software Architecture with the C4 Model” (Simon Brown)</li>
+              <li>YouTube: “C4 Model Tutorial”</li>
+            </ul>
+            <p class="lead" style="margin-top:10px">หมายเหตุ: สไลด์นี้ไม่ใส่ URL ตรงๆ เพื่อความสะอาดของสไลด์ (ค้นด้วยชื่อได้เลย)</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 24 -->
+      <section class="slide">
+        <div class="grid twoCol">
+          <div>
+            <h2 class="h2">สรุปเนื้อหาสัปดาห์นี้</h2>
+            <div class="card">
+              <h3>✅ สิ่งที่ได้เรียน</h3>
+              <ul>
+                <li>ทำไม diagram แบบเดิมทำให้ “สื่อสารพลาด”</li>
+                <li>C4 = ซูมระดับความละเอียดตามคนดู</li>
+                <li><b>C1</b>: Person/System/External + boundary</li>
+                <li><b>C2</b>: Containers + Tech + Protocol</li>
+                <li>Views/Viewpoints: เลือกมุมมองให้เหมาะ stakeholder</li>
+              </ul>
+            </div>
+
+            <div class="card soft" style="margin-top:14px">
+              <h3>ประโยคจำง่าย</h3>
+              <p class="quote">“C1 ให้ทุกคนเข้าใจตรงกัน”<br>“C2 ให้ทีมเทคนิคลงมือทำได้”</p>
+            </div>
+          </div>
+
+          <div class="card soft" style="align-self:start">
+            <h3>สิ่งที่ควรเอาไปใช้ทันที</h3>
+            <ul>
+              <li>ทำ C1 ก่อนเริ่มทำโปรเจกต์กลุ่ม</li>
+              <li>แตก C2 เพื่อเลือก tech stack & deployment</li>
+              <li>ใช้ C1/C2 เป็นส่วนหนึ่งของ SAD/ADR</li>
+            </ul>
+            <div class="pillRow" style="margin-top:10px">
+              <div class="pill">ลดการคุยผิด</div>
+              <div class="pill">ลด rework</div>
+              <div class="pill">ช่วย onboarding</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 25 -->
+      <section class="slide">
+        <div class="grid twoCol">
+          <div>
+            <h2 class="h2">Lab Plan (3 ชั่วโมง)</h2>
+            <p class="lead">ทำจริง → นำเสนอ → รับ feedback → ปรับปรุง</p>
+
+            <div class="card">
+              <h3>ตารางกิจกรรม</h3>
+              <ul>
+                <li><b>Lab 1</b> (45 นาที): วาด Context (C1)</li>
+                <li><b>Lab 2</b> (60 นาที): วาด Container (C2)</li>
+                <li><b>Lab 3</b> (45 นาที): Peer Review (A ↔ B)</li>
+                <li><b>Lab 4</b> (30 นาที): Revision + ส่งงาน</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="card soft" style="align-self:start">
+            <h3>เกณฑ์ตรวจเร็ว (Rubric)</h3>
+            <ul>
+              <li>C1: role ครบ + external ครบ + label ทุกเส้น</li>
+              <li>C2: tech stack ครบ + protocol ครบ + layout อ่านง่าย</li>
+              <li>ความสมดุล: ไม่มี “ตัวหนังสือเยอะเกิน” ในรูป</li>
+              <li>อธิบายได้ 1–2 นาที / รูป</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 26 -->
+      <section class="slide">
+        <div class="grid twoCol">
+          <div>
+            <h2 class="h2">Peer Review Script (ใช้ในห้อง)</h2>
+            <div class="card">
+              <h3>คำถาม 5 ข้อ (กลุ่ม B ถามกลุ่ม A)</h3>
+              <ul>
+                <li>1) ระบบหลักคืออะไร? เป้าหมายคืออะไร?</li>
+                <li>2) actor ไหนสำคัญสุด? ทำไม?</li>
+                <li>3) external ไหน critical? ถ้าล่มเกิดอะไร?</li>
+                <li>4) ใน C2: container ไหนคือ bottleneck ที่คาดไว้?</li>
+                <li>5) ถ้าจะเพิ่ม feature ใหม่ 1 อย่าง จะกระทบ container ไหน?</li>
+              </ul>
+            </div>
+
+            <div class="card soft" style="margin-top:14px">
+              <h3>Feedback ที่ดี</h3>
+              <ul>
+                <li>ชี้จุดที่ “อ่านไม่ออก” พร้อมเสนอทางแก้</li>
+                <li>ถามเรื่อง boundary / dependency / protocol</li>
+                <li>ไม่จับผิดเรื่องสวยอย่างเดียว</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="card soft" style="align-self:start">
+            <h3>คำแนะนำ: วิธีแก้ diagram ให้ดีขึ้นไว</h3>
+            <div class="mono">1) ลดจำนวนเส้นที่ไขว้กัน (จัดกลุ่ม)
+2) เพิ่ม label ให้ลูกศรทุกเส้น
+3) ทำให้ชื่อ role/tech “เฉพาะเจาะจง”
+4) ใส่คำอธิบายสั้นๆ ในกล่อง (ไม่เกิน 1 บรรทัด)</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 27 -->
+      <section class="slide">
+        <div class="grid twoCol">
+          <div>
+            <h2 class="h2">ตัวอย่างผลลัพธ์ที่ดี (Checklist)</h2>
+            <div class="card">
+              <h3>C1 ดีเมื่อ…</h3>
+              <ul>
+                <li>คนที่ไม่เทคนิค “อธิบายระบบได้” หลังอ่าน 30 วิ</li>
+                <li>เห็น boundary ชัดว่าอะไรอยู่ใน/นอกระบบ</li>
+                <li>รู้ external ที่ต้อง integrate จริง</li>
+              </ul>
+            </div>
+            <div class="card soft" style="margin-top:14px">
+              <h3>C2 ดีเมื่อ…</h3>
+              <ul>
+                <li>ทีม dev/ops ใช้เป็นฐานคุยเรื่อง deploy ได้</li>
+                <li>รู้ tech stack ชัด ไม่คลุมเครือ</li>
+                <li>รู้ protocol/data flow เบื้องต้นครบ</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="card soft" style="align-self:start">
+            <h3>ข้อผิดพลาดยอดฮิต</h3>
+            <ul>
+              <li>ตั้งชื่อกล่องว่า “System A/B” (ไม่สื่อความหมาย)</li>
+              <li>ไม่มี label ความสัมพันธ์</li>
+              <li>ใส่ container เยอะเกิน 1 หน้า</li>
+              <li>เขียน tech แบบกว้างเกิน: “Database” (ควรเป็น MySQL/Postgres)</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 28 -->
+      <section class="slide">
+        <div class="grid twoCol">
+          <div>
+            <h2 class="h2">ต่อยอด: จาก C2 ไป C3 (แอบมอง)</h2>
+            <p class="lead">สัปดาห์นี้เราไม่ลงลึก C3 แต่รู้ไว้เพื่อเชื่อมกับงานจริง</p>
+            <div class="card">
+              <h3>C3 ตอบอะไร?</h3>
+              <ul>
+                <li>ภายใน Backend API แบ่งเป็น module อะไร?</li>
+                <li>Controller/Service/Repository แยกยังไง?</li>
+                <li>dependency ภายใน container เป็นแบบไหน?</li>
+              </ul>
+            </div>
+            <div class="card soft" style="margin-top:14px">
+              <h3>คำแนะนำสำหรับโปรเจกต์</h3>
+              <ul>
+                <li>ทำ C1 + C2 ให้ดี → ค่อยทำ C3 เฉพาะ container สำคัญ</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="card soft" style="align-self:start">
+            <h3>ตัวอย่างโครง C3 (แนวคิด)</h3>
+            <div class="mono">Backend API
+- Controllers: OrderController, UserController
+- Services: OrderService, PaymentService
+- Repositories: OrderRepository, UserRepository</div>
+            <p class="lead" style="margin-top:10px">ถ้าทำ C3 จริง: 1 container = 1 หน้า เพื่อไม่ให้แน่น</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 29 -->
+      <section class="slide">
+        <div class="grid twoCol">
+          <div>
+            <h2 class="h2">เชื่อมกับ “สถาปัตยกรรม” ในชีวิตจริง</h2>
+            <div class="card">
+              <h3>ทำ C1/C2 แล้วช่วยอะไรบ้าง?</h3>
+              <ul>
+                <li>วางแผนทีม/ขอบเขตงาน (PM/PO)</li>
+                <li>วางแผน deployment/infra (DevOps)</li>
+                <li>วางแผน security review (Security)</li>
+                <li>วางแผน scaling/performance (Architect)</li>
+              </ul>
+            </div>
+            <div class="card soft" style="margin-top:14px">
+              <h3>เชื่อมกับ Week 4</h3>
+              <p>
+                ไม่ว่าคุณจะใช้ Microservices หรือ Serverless…<br>
+                คุณยังต้องมี <b>C1/C2</b> เพื่ออธิบาย “ภาพรวมและการ deploy” ให้ชัด
+              </p>
+            </div>
+          </div>
+
+          <div class="card soft" style="align-self:start">
+            <h3>Motivation: นักพัฒนาที่โตเร็ว</h3>
+            <p class="quote">ไม่ใช่คนที่เขียนโค้ดได้เร็วที่สุด…<br>แต่คือคนที่ “สื่อสาร architecture ได้ชัดที่สุด”</p>
+            <p class="lead" style="margin-top:10px">เพราะการสื่อสารชัด = ลดงานแก้, ลด conflict, และเพิ่มคุณภาพระบบ</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 30 -->
+      <section class="slide">
+        <div class="grid twoCol">
+          <div>
+            <h2 class="h2">สัปดาห์หน้า: Architectural Design Process & ADD-Lite</h2>
+            <p class="lead">จาก “ภาพรวม” → ไปสู่ “กระบวนการออกแบบสถาปัตยกรรม” จาก quality attributes</p>
+            <div class="card">
+              <h3>หัวข้อ</h3>
+              <ul>
+                <li>Attribute-Driven Design (ADD)</li>
+                <li>Requirements → Drivers → Architecture</li>
+                <li>Iteration & Refinement</li>
+                <li>Workshop: ADD-Lite (ออกแบบระบบจริง)</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="card soft" style="align-self:start">
+            <h3>เตรียมตัวก่อนมาเรียน</h3>
+            <ul>
+              <li>ทบทวน Quality Attributes + QA Scenarios (Week 2)</li>
+              <li>คิดระบบที่จะทำโปรเจกต์กลุ่ม (เลือก 1 ระบบ)</li>
+              <li>เตรียม C1/C2 เวอร์ชันแรกมาด้วย</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 31 -->
+      <section class="slide">
+        <div class="grid twoCol">
+          <div>
+            <h2 class="h2">Reference (อ่านต่อได้)</h2>
+            <div class="card">
+              <h3>หนังสือ/บทความ</h3>
+              <ul>
+                <li>Simon Brown — “The C4 model for visualising software architecture”</li>
+                <li>Simon Brown — “Software Architecture for Developers”</li>
+              </ul>
+            </div>
+            <div class="card soft" style="margin-top:14px">
+              <h3>เว็บ/เครื่องมือ</h3>
+              <ul>
+                <li>c4model.com</li>
+                <li>structurizr.com</li>
+                <li>app.diagrams.net</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="card soft" style="align-self:start">
+            <h3>YouTube Keywords (ค้นได้)</h3>
+            <ul>
+              <li>“Visualising Software Architecture with the C4 Model”</li>
+              <li>“C4 Model Tutorial”</li>
+              <li>“Simon Brown C4 Model”</li>
+            </ul>
+            <p class="lead" style="margin-top:10px">คำแนะนำ: ดู 10–15 นาทีแรกให้เข้าใจแนวคิด “zoom”</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 32 -->
+      <section class="slide">
+        <div class="grid twoCol">
+          <div>
+            <h1 class="hTitle">Q & A + ส่งงาน</h1>
+            <p class="lead">ก่อนจบ: อยากให้แต่ละกลุ่มตอบ 2 คำถามนี้</p>
+
+            <div class="card">
+              <h3>คำถามปิดคาบ</h3>
+              <ul>
+                <li>1) C1 ของคุณ “บอก boundary” ได้ชัดหรือยัง?</li>
+                <li>2) C2 ของคุณ “บอก tech + protocol” ได้ครบหรือยัง?</li>
+              </ul>
+            </div>
+
+            <div class="card soft" style="margin-top:14px">
+              <h3>งานส่ง (สรุป)</h3>
+              <ul>
+                <li>ทำ C1 + C2 (PNG/PDF) ใส่ชื่อกลุ่ม</li>
+                <li>แนบไฟล์ .drawio (แก้ไขได้)</li>
+                <li>เขียนอธิบาย 5–10 บรรทัด: อะไรคือ critical external + critical container</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="card soft" style="align-self:start">
+            <h3>ขอบคุณครับ 🙌</h3>
+            <p class="quote">“เข้าใจภาพใหญ่ก่อน แล้วค่อยลงรายละเอียด”</p>
+            <p class="lead" style="margin-top:10px">เจอกันสัปดาห์หน้ากับ ADD-Lite 🚀</p>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+
+  <!-- Image Zoom Modal -->
+  <div class="modal" id="modal" aria-modal="true" role="dialog">
+    <div class="modalCard">
+      <div class="modalTop">
+        <div class="chip">🔎 คลิกที่ภาพเพื่อปิด</div>
+        <div class="chip" id="modalHint">Esc</div>
+      </div>
+      <img id="modalImg" alt="Zoomed image" />
+    </div>
+  </div>
+
+<script>
+(() => {
+  const slides = Array.from(document.querySelectorAll('.slide'));
+  const counter = document.getElementById('counter');
+  const progressFill = document.getElementById('progressFill');
+  const btnPrev = document.getElementById('btnPrev');
+  const btnNext = document.getElementById('btnNext');
+  const btnTheme = document.getElementById('btnTheme');
+  const btnFull = document.getElementById('btnFull');
+  const btnAplus = document.getElementById('btnAplus');
+  const btnAminus = document.getElementById('btnAminus');
+  const btnReset = document.getElementById('btnReset');
+  const deck = document.getElementById('deck');
+  const modal = document.getElementById('modal');
+  const modalImg = document.getElementById('modalImg');
+
+  let idx = 0;
+  const total = slides.length;
+
+  // font scale
+  const root = document.documentElement;
+  const defaultScale = parseFloat(getComputedStyle(root).getPropertyValue('--fontScale')) || 1.08;
+  let fontScale = parseFloat(localStorage.getItem('engse207_fontScale') || defaultScale);
+  fontScale = Math.min(1.50, Math.max(0.85, fontScale));
+  root.style.setProperty('--fontScale', fontScale.toFixed(2));
+
+  // theme
+  const body = document.body;
+  const savedTheme = localStorage.getItem('engse207_theme');
+  if (savedTheme === 'light') body.setAttribute('data-theme','light');
+
+  function updateUI(){
+    slides.forEach((s,i)=>s.classList.toggle('active', i===idx));
+    counter.textContent = `${idx+1} / ${total}`;
+    progressFill.style.width = `${((idx+1)/total)*100}%`;
+    // store index
+    localStorage.setItem('engse207_week5_slide', String(idx));
+  }
+
+  function go(n){
+    idx = (n + total) % total;
+    updateUI();
+  }
+  function next(){ go(idx+1); }
+  function prev(){ go(idx-1); }
+
+  btnNext.addEventListener('click', next);
+  btnPrev.addEventListener('click', prev);
+
+  // keyboard
+  window.addEventListener('keydown', (e)=>{
+    if (modal.classList.contains('open')){
+      if (e.key === 'Escape') closeModal();
+      return;
+    }
+    if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' '){
+      e.preventDefault(); next();
+    }
+    if (e.key === 'ArrowLeft' || e.key === 'PageUp'){
+      e.preventDefault(); prev();
+    }
+    if (e.key === 'f' || e.key === 'F'){ toggleFull(); }
+    if (e.key === 't' || e.key === 'T'){ toggleTheme(); }
+    if (e.key === '+'){ incFont(); }
+    if (e.key === '-'){ decFont(); }
+    if (e.key === '0'){ resetFont(); }
+  }, {passive:false});
+
+  // touch swipe
+  let startX = null, startY = null, moved = false;
+  deck.addEventListener('touchstart', (e)=>{
+    if (modal.classList.contains('open')) return;
+    const t = e.touches[0];
+    startX = t.clientX; startY = t.clientY; moved = false;
+  }, {passive:true});
+  deck.addEventListener('touchmove', (e)=>{
+    if (startX == null) return;
+    moved = true;
+  }, {passive:true});
+  deck.addEventListener('touchend', (e)=>{
+    if (!moved || startX == null) { startX=null; startY=null; return; }
+    const t = e.changedTouches[0];
+    const dx = t.clientX - startX;
+    const dy = t.clientY - startY;
+    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 40){
+      dx < 0 ? next() : prev();
+    }
+    startX=null; startY=null;
+  }, {passive:true});
+
+  // fullscreen
+  function toggleFull(){
+    const el = document.documentElement;
+    if (!document.fullscreenElement){
+      el.requestFullscreen?.();
+    } else {
+      document.exitFullscreen?.();
+    }
+  }
+  btnFull.addEventListener('click', toggleFull);
+
+  // theme toggle
+  function toggleTheme(){
+    const isLight = body.getAttribute('data-theme') === 'light';
+    body.setAttribute('data-theme', isLight ? 'dark' : 'light');
+    localStorage.setItem('engse207_theme', isLight ? 'dark' : 'light');
+  }
+  btnTheme.addEventListener('click', toggleTheme);
+
+  // font controls
+  function persistFont(){
+    root.style.setProperty('--fontScale', fontScale.toFixed(2));
+    localStorage.setItem('engse207_fontScale', String(fontScale));
+  }
+  function incFont(){
+    fontScale = Math.min(1.50, +(fontScale + 0.05).toFixed(2));
+    persistFont();
+  }
+  function decFont(){
+    fontScale = Math.max(0.85, +(fontScale - 0.05).toFixed(2));
+    persistFont();
+  }
+  function resetFont(){
+    fontScale = defaultScale;
+    persistFont();
+  }
+  btnAplus.addEventListener('click', incFont);
+  btnAminus.addEventListener('click', decFont);
+  btnReset.addEventListener('click', resetFont);
+
+  // zoom images
+  function openModal(src, alt){
+    modalImg.src = src;
+    modalImg.alt = alt || 'Zoomed image';
+    modal.classList.add('open');
+  }
+  function closeModal(){
+    modal.classList.remove('open');
+    modalImg.src = '';
+  }
+  document.querySelectorAll('img[data-zoom]').forEach(img=>{
+    img.addEventListener('click', ()=> openModal(img.getAttribute('src'), img.getAttribute('alt')));
+  });
+  modal.addEventListener('click', closeModal);
+  modalImg.addEventListener('click', closeModal);
+  window.closeModal = closeModal;
+
+  // restore last slide (nice for teaching)
+  const savedIdx = parseInt(localStorage.getItem('engse207_week5_slide') || '0', 10);
+  if (!Number.isNaN(savedIdx) && savedIdx >= 0 && savedIdx < total) idx = savedIdx;
+
+  // mini-sim: stakeholder mapping
+  const stakeholderSel = document.getElementById('stakeholderSel');
+  const stakeTitle = document.getElementById('stakeTitle');
+  const stakeDesc = document.getElementById('stakeDesc');
+  const map = {
+    ceo:  {t:'แนะนำ: C1 (Context)', d:'เห็นภาพใหญ่: ใครใช้? ระบบทำอะไร? พึ่งพาอะไรบ้าง?'},
+    po:   {t:'แนะนำ: C1 + C2', d:'รู้ภาพรวม + โครงสร้างใหญ่ เพื่อวาง roadmap/feature/impact'},
+    pm:   {t:'แนะนำ: C1 + C2', d:'ใช้วางแผน resource/timeline และ dependency ระหว่างทีม'},
+    arch: {t:'แนะนำ: C1 + C2 + C3', d:'ออกแบบทั้งระบบ ต้องเห็นระดับ deploy และโครงสร้างภายใน container'},
+    lead: {t:'แนะนำ: C2 + C3', d:'นำทีมพัฒนา ต้องรู้ container และ
+
+    </script>
+</body>
+</html>
