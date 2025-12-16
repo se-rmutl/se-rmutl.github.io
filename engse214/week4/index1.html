@@ -1,0 +1,1078 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ENGSE214: Week 4 - OS Security & Hardening</title>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* Light Theme */
+            --bg-color-light: #f4f4f9;
+            --text-color-light: #333;
+            --card-bg-light: #ffffff;
+            --accent-color-light: #2563eb;
+            --code-bg-light: #f1f5f9;
+            --border-light: #e2e8f0;
+
+            /* Dark Theme (Default) */
+            --bg-color-dark: #0f172a;
+            --text-color-dark: #e2e8f0;
+            --card-bg-dark: #1e293b;
+            --accent-color-dark: #38bdf8;
+            --code-bg-dark: #020617;
+            --border-dark: #334155;
+
+            /* Common */
+            --transition-speed: 0.3s;
+            --slide-ratio: 16/9;
+        }
+
+        body.light-mode {
+            --bg-color: var(--bg-color-light);
+            --text-color: var(--text-color-light);
+            --card-bg: var(--card-bg-light);
+            --accent-color: var(--accent-color-light);
+            --code-bg: var(--code-bg-light);
+            --border: var(--border-light);
+        }
+
+        body {
+            --bg-color: var(--bg-color-dark);
+            --text-color: var(--text-color-dark);
+            --card-bg: var(--card-bg-dark);
+            --accent-color: var(--accent-color-dark);
+            --code-bg: var(--code-bg-dark);
+            --border: var(--border-dark);
+
+            margin: 0;
+            padding: 0;
+            font-family: 'Sarabun', sans-serif;
+            background-color: #000; /* Outer letterbox */
+            color: var(--text-color);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            transition: background-color var(--transition-speed);
+        }
+
+        /* Slide Container */
+        #slide-container {
+            width: 90vw;
+            aspect-ratio: 16/9;
+            background-color: var(--bg-color);
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 0 50px rgba(0,0,0,0.5);
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            transition: background-color var(--transition-speed);
+        }
+
+        /* Content Area */
+        .slide {
+            flex: 1;
+            display: none; /* Hidden by default */
+            padding: 4rem 5rem;
+            flex-direction: column;
+            animation: fadeIn 0.5s ease;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            box-sizing: border-box;
+        }
+
+        .slide.active {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Typography */
+        h1, h2, h3 {
+            margin: 0 0 1rem 0;
+            color: var(--accent-color);
+            line-height: 1.2;
+        }
+
+        h1 { font-size: 3.5em; font-weight: 800; }
+        h2 { font-size: 2.5em; font-weight: 700; border-bottom: 2px solid var(--accent-color); padding-bottom: 0.5rem; display: inline-block; }
+        h3 { font-size: 1.8em; font-weight: 600; color: var(--text-color); opacity: 0.9; }
+        p, li { font-size: 1.3em; line-height: 1.6; margin-bottom: 0.8rem; }
+        strong { color: var(--accent-color); }
+
+        ul { padding-left: 2rem; }
+        
+        /* Layouts */
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            height: 100%;
+            align-items: center;
+        }
+
+        .center-content {
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+
+        /* Images */
+        img {
+            max-width: 100%;
+            max-height: 70vh;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            object-fit: contain;
+        }
+
+        .img-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: var(--card-bg);
+            padding: 1rem;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+        }
+
+        /* Code Blocks */
+        pre {
+            background-color: var(--code-bg);
+            padding: 1.5rem;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            font-family: 'JetBrains Mono', monospace;
+            overflow-x: auto;
+            font-size: 1em;
+            color: var(--accent-color);
+        }
+
+        code { font-family: 'JetBrains Mono', monospace; }
+
+        /* Tables */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+            font-size: 1.1em;
+        }
+        th, td {
+            padding: 1rem;
+            border: 1px solid var(--border);
+            text-align: left;
+        }
+        th { background-color: var(--card-bg); color: var(--accent-color); }
+        tr:nth-child(even) { background-color: rgba(255,255,255,0.05); }
+
+        /* Card/Box */
+        .info-box {
+            background-color: var(--card-bg);
+            padding: 1.5rem;
+            border-radius: 8px;
+            border-left: 5px solid var(--accent-color);
+            margin: 1rem 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        /* Simulation/Interactive */
+        .simulation-container {
+            background: var(--card-bg);
+            padding: 2rem;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            text-align: center;
+        }
+        .chmod-calc input {
+            width: 50px;
+            font-size: 1.5rem;
+            text-align: center;
+            margin: 5px;
+            background: var(--bg-color);
+            color: var(--text-color);
+            border: 1px solid var(--accent-color);
+            border-radius: 4px;
+        }
+        .chmod-result {
+            font-size: 2rem;
+            color: var(--accent-color);
+            font-weight: bold;
+            margin-top: 1rem;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .permission-checkboxes label {
+            display: inline-block;
+            margin: 0 10px;
+            cursor: pointer;
+            font-size: 1.1em;
+        }
+
+        /* Controls UI */
+        #controls {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.7);
+            padding: 10px 20px;
+            border-radius: 30px;
+            display: flex;
+            gap: 15px;
+            backdrop-filter: blur(5px);
+            z-index: 1000;
+        }
+
+        button {
+            background: transparent;
+            border: none;
+            color: white;
+            cursor: pointer;
+            font-size: 1.2rem;
+            padding: 5px 10px;
+            border-radius: 5px;
+            transition: all 0.2s;
+        }
+
+        button:hover { background: rgba(255,255,255,0.2); transform: scale(1.1); }
+        button:active { transform: scale(0.95); }
+
+        #progress-bar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            height: 5px;
+            background: var(--accent-color);
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+        .slide-number {
+            position: absolute;
+            bottom: 20px;
+            right: 30px;
+            font-family: 'JetBrains Mono', monospace;
+            opacity: 0.5;
+            font-size: 1rem;
+        }
+
+        /* Utilities */
+        .text-accent { color: var(--accent-color); }
+        .text-center { text-align: center; }
+        .mt-2 { margin-top: 2rem; }
+        .flex-col { display: flex; flex-direction: column; }
+        
+        /* Specific Slide Tweaks */
+        .quote {
+            font-style: italic;
+            font-size: 2em;
+            text-align: center;
+            color: var(--accent-color);
+            border-left: none;
+            border-top: 2px solid var(--border);
+            border-bottom: 2px solid var(--border);
+            padding: 2rem;
+        }
+
+        /* Scrollable content for overflowing slides */
+        .scrollable {
+            overflow-y: auto;
+            max-height: 80vh;
+            padding-right: 1rem;
+        }
+        /* Custom Scrollbar */
+        .scrollable::-webkit-scrollbar { width: 8px; }
+        .scrollable::-webkit-scrollbar-track { background: var(--bg-color); }
+        .scrollable::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+    </style>
+</head>
+<body>
+
+    <div id="slide-container">
+        
+        <div class="slide center-content active">
+            <h3>ENGSE214 – Introduction to Cyber Security</h3>
+            <h1>Week 4: Operating System Security & Hardening</h1>
+            <p class="text-accent" style="font-size: 1.5em; margin-top: 1rem;">ความมั่นคงปลอดภัยของระบบปฏิบัติการและการทำให้ระบบแข็งแกร่ง</p>
+            <div style="margin-top: 3rem; border-top: 1px solid var(--border); padding-top: 1rem; width: 60%;">
+                <p><strong>อาจารย์ผู้สอน:</strong> อาจารย์ธนิต เกตุแก้ว</p>
+                <p>วิศวกรรมซอฟต์แวร์ (Software Engineering)</p>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>📚 ทบทวน Week 3: Vulnerabilities & Risk</h2>
+            <div class="grid-2">
+                <div>
+                    <ul>
+                        <li><strong>Vulnerability:</strong> จุดอ่อนในระบบ (Internal)</li>
+                        <li><strong>Threat:</strong> ภัยคุกคาม (External)</li>
+                        <li><strong>Risk:</strong> ความเสี่ยง</li>
+                    </ul>
+                    <div class="info-box">
+                        <h3>สูตรความเสี่ยง (Risk Formula)</h3>
+                        <p style="font-size: 1.5em; text-align: center;">
+                            Risk = Threat × Vulnerability × Impact
+                        </p>
+                    </div>
+                    <p>สัปดาห์ที่แล้วเรารู้จัก "ช่องโหว่" สัปดาห์นี้เราจะมาเรียนรู้วิธี <strong>"ปิดช่องโหว่"</strong> ที่ระดับ OS!</p>
+                </div>
+                <div class="img-container">
+                    <pre style="width: 100%">
+CVE-2024-XXXX (Example)
+CVSS Score: 9.8 (Critical)
+Vector: Network / Low Complexity
+
+Solution: OS Hardening & Patching
+                    </pre>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>🎯 Learning Objectives</h2>
+            <p>เมื่อจบ Week 4 นักศึกษาวิศวกรรมซอฟต์แวร์จะสามารถ:</p>
+            <ul>
+                <li>✅ อธิบายหลักการรักษาความปลอดภัยระบบปฏิบัติการ (OS Security)</li>
+                <li>✅ เปรียบเทียบ Security Model ระหว่าง Windows และ Linux</li>
+                <li>✅ เข้าใจและประยุกต์ใช้หลัก <strong>AAA</strong> และ <strong>Least Privilege</strong></li>
+                <li>✅ ดำเนินการ <strong>OS Hardening</strong> เบื้องต้นได้ (เพื่อนำไปใช้กับ Server ที่เรา Deploy งานจริง)</li>
+            </ul>
+        </div>
+
+        <div class="slide center-content">
+            <h2 style="border: none; font-size: 3em;">💭 คำถามชวนคิด</h2>
+            <div class="info-box" style="padding: 3rem; background: rgba(255,0,0,0.1); border-color: #ef4444;">
+                <p style="font-size: 2em; font-weight: bold;">"ถ้าคุณเป็น Hacker คุณจะโจมตีส่วนไหนของ OS ก่อน?"</p>
+            </div>
+            <div style="margin-top: 2rem; text-align: left; display: inline-block;">
+                <p>👉 1. User Accounts (รหัสผ่านอ่อนแอ)</p>
+                <p>👉 2. Services ที่เปิดไว้ไม่จำเป็น</p>
+                <p>👉 3. Unpatched Software</p>
+                <p>👉 4. Misconfiguration (การตั้งค่าผิดพลาด)</p>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>🖥️ ทำไม OS Security ถึงสำคัญ?</h2>
+            <div class="grid-2">
+                <div>
+                    <p>OS เป็น <strong>รากฐาน</strong> ของทุกระบบคอมพิวเตอร์ ถ้า OS พัง Applications ที่รันอยู่ข้างบนก็ไม่รอด</p>
+                    <ul class="mt-2">
+                        <li><strong>Applications:</strong> Web Server, Database, APIs</li>
+                        <li><strong>Operating System:</strong> 🛡️ <em>(จุดที่เราจะโฟกัสวันนี้)</em></li>
+                        <li><strong>Hardware:</strong> CPU, RAM, Disk</li>
+                    </ul>
+                    <p class="text-accent mt-2">"ถ้า OS ถูกเจาะ = ทุกอย่างบน OS นั้นก็อยู่ในความเสี่ยง!"</p>
+                </div>
+                <div class="center-content">
+                    <div style="font-size: 5rem;">🛡️💻🔒</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>🛡️ Defense in Depth Layers</h2>
+            <div class="grid-2">
+                <div>
+                    <p>แนวคิดสำคัญ: <strong>ไม่พึ่งพาการป้องกันเพียงชั้นเดียว!</strong></p>
+                    <ul>
+                        <li>Layer 1: Physical Security</li>
+                        <li><strong>Layer 2: OS Security (Week 4)</strong></li>
+                        <li>Layer 3: Network Security (Week 5)</li>
+                        <li>Layer 4: App Security (Week 7)</li>
+                        <li>Layer 5: Data Security</li>
+                    </ul>
+                </div>
+                <div class="img-container">
+                    <img src="images/defense_in_depth.png" alt="Defense in Depth Diagram">
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>CIA Triad ในมุมมอง OS</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th width="20%">Component</th>
+                        <th width="40%">ในระบบปฏิบัติการ (OS Context)</th>
+                        <th width="40%">ตัวอย่างการละเมิด</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Confidentiality</strong></td>
+                        <td>File Permissions, Encryption</td>
+                        <td>User ทั่วไปอ่านไฟล์ /etc/shadow หรือ SAM file ได้</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Integrity</strong></td>
+                        <td>System File Protection, Logs</td>
+                        <td>Malware แก้ไขไฟล์ system32 หรือ /bin/ls</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Availability</strong></td>
+                        <td>Resource Management, Uptime</td>
+                        <td>Fork bomb หรือ DoS attack ทำให้ OS ค้าง</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="slide center-content">
+            <h1>🔐 Part 2: AAA Framework</h1>
+            <p style="font-size: 2em;">หัวใจสำคัญของการควบคุมการเข้าถึง</p>
+            <div class="grid-2 mt-2" style="gap: 1rem; width: 80%;">
+                <div class="info-box">1. Authentication<br>(ยืนยันตัวตน)</div>
+                <div class="info-box">2. Authorization<br>(กำหนดสิทธิ์)</div>
+                <div class="info-box" style="grid-column: span 2;">3. Accounting<br>(การบันทึก/ตรวจสอบ)</div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>AAA Framework Diagram</h2>
+            <div class="center-content" style="height: 80%;">
+                <img src="images/aaa_framework_and_hardening_workflow-AAA-Framework.png" alt="AAA Framework Diagram">
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>1️⃣ Authentication (การยืนยันตัวตน)</h2>
+            <p>"คุณคือใคร?" (Who are you?)</p>
+            <div class="grid-2">
+                <div>
+                    <h3>Methods:</h3>
+                    <ul>
+                        <li>Password / PIN</li>
+                        <li>Biometrics (FaceID, TouchID)</li>
+                        <li><strong>MFA (Multi-Factor Authentication)</strong></li>
+                    </ul>
+                </div>
+                <div class="info-box">
+                    <h3>Password Strength Reality</h3>
+                    <p>🔴 "123456" → < 1 second</p>
+                    <p>🟡 "Password123" → ~ 2 hours</p>
+                    <p>🟢 "C0rrect-H0rse-B@ttery-St@ple!" → Years!</p>
+                    <hr style="border-color: var(--border);">
+                    <p><strong>Dev Tip:</strong> Never store plain-text passwords! Use Hashing (Bcrypt, Argon2).</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>2️⃣ Authorization (การอนุญาต)</h2>
+            <p>"คุณทำอะไรได้บ้าง?" (What can you do?)</p>
+            <div class="grid-2">
+                <div>
+                    <ul>
+                        <li><strong>RBAC:</strong> Role-Based Access Control</li>
+                        <li><strong>Permissions:</strong> Read, Write, Execute</li>
+                    </ul>
+                    <pre>
+# Linux Permission Example
+-rwxr-xr--  1 user staff  script.sh
+ |  |  |
+ |  |  └─ Others: Read only
+ |  └──── Group: Read + Execute
+ └─────── Owner: Read + Write + Execute
+                    </pre>
+                </div>
+                <div>
+                     <h3>Permission Bits (Numeric)</h3>
+                     <ul>
+                         <li><strong>r</strong> (Read) = 4</li>
+                         <li><strong>w</strong> (Write) = 2</li>
+                         <li><strong>x</strong> (Execute) = 1</li>
+                     </ul>
+                     <p>Example: <code>chmod 755</code></p>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>🛠️ Interactive: Linux Permission Calculator</h2>
+            <p>ลองคำนวณค่า chmod สำหรับการตั้งค่า Security</p>
+            
+            <div class="simulation-container">
+                <div class="grid-2" style="text-align: left;">
+                    <div class="permission-group">
+                        <h3>Owner (u)</h3>
+                        <div class="permission-checkboxes">
+                            <label><input type="checkbox" onchange="calcChmod()" id="ur" value="4"> Read (4)</label><br>
+                            <label><input type="checkbox" onchange="calcChmod()" id="uw" value="2"> Write (2)</label><br>
+                            <label><input type="checkbox" onchange="calcChmod()" id="ux" value="1"> Execute (1)</label>
+                        </div>
+                    </div>
+                    <div class="permission-group">
+                        <h3>Group (g)</h3>
+                        <div class="permission-checkboxes">
+                            <label><input type="checkbox" onchange="calcChmod()" id="gr" value="4"> Read (4)</label><br>
+                            <label><input type="checkbox" onchange="calcChmod()" id="gw" value="2"> Write (2)</label><br>
+                            <label><input type="checkbox" onchange="calcChmod()" id="gx" value="1"> Execute (1)</label>
+                        </div>
+                    </div>
+                    <div class="permission-group" style="margin-top: 1rem;">
+                        <h3>Others (o)</h3>
+                        <div class="permission-checkboxes">
+                            <label><input type="checkbox" onchange="calcChmod()" id="or" value="4"> Read (4)</label><br>
+                            <label><input type="checkbox" onchange="calcChmod()" id="ow" value="2"> Write (2)</label><br>
+                            <label><input type="checkbox" onchange="calcChmod()" id="ox" value="1"> Execute (1)</label>
+                        </div>
+                    </div>
+                    
+                    <div class="center-content">
+                        <h3>Command Result:</h3>
+                        <div class="chmod-result" id="chmod-output">chmod 000 filename</div>
+                        <p id="chmod-desc" class="text-accent" style="font-size: 1rem; margin-top: 1rem;">No permissions</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>3️⃣ Accounting (การบันทึก/ตรวจสอบ)</h2>
+            <p>"คุณทำอะไรไปบ้าง?" (Tracking & Logging)</p>
+            <ul>
+                <li><strong>Logs:</strong> บันทึกเหตุการณ์ (System, Security, Application)</li>
+                <li><strong>Audit Trails:</strong> ใคร ทำอะไร เมื่อไหร่</li>
+            </ul>
+            <div class="grid-2">
+                <pre>
+# Linux Auth Log Example (/var/log/auth.log)
+Dec 16 10:23:01 server sshd[1234]: Failed password for root from 192.168.1.5 port 22 ssh2
+Dec 16 10:23:05 server sshd[1234]: Accepted password for john from 192.168.1.5 port 22 ssh2
+                </pre>
+                <div class="info-box">
+                    <strong>Why?</strong>
+                    <p>เพื่อใช้ในการตรวจสอบเมื่อเกิดเหตุการณ์ (Forensics) และเพื่อให้เป็นไปตามมาตรฐาน (Compliance)</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>👤 Part 3: User Privilege Management</h2>
+            <h3>Principle of Least Privilege (PoLP)</h3>
+            <div class="info-box" style="text-align: center; font-size: 1.5em;">
+                "ให้สิทธิ์เท่าที่จำเป็นในการทำงานเท่านั้น" <br>
+                (Give only the minimum permissions needed)
+            </div>
+            <div class="grid-2 mt-2">
+                <div>
+                    <p>❌ <strong>BAD:</strong> Dev ใช้ <code>root</code> เขียนโค้ด (ถ้าติดไวรัส = เครื่องพัง)</p>
+                </div>
+                <div>
+                    <p>✅ <strong>GOOD:</strong> Dev ใช้ <code>user</code> ธรรมดา (ใช้ <code>sudo</code> เฉพาะตอนจำเป็น)</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>User Privilege Hierarchy</h2>
+            <div class="center-content" style="height: 80%;">
+                <img src="images/user_privilege_and_comparison-User-Privilege-Hierarchy.png" alt="User Privilege Hierarchy">
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>ประเภทของ User Accounts</h2>
+            <div class="grid-2">
+                <div class="info-box">
+                    <h3>Standard User</h3>
+                    <ul>
+                        <li>ใช้งานทั่วไป</li>
+                        <li>เข้าถึงไฟล์ตัวเอง</li>
+                        <li>เปลี่ยนค่า System ไม่ได้</li>
+                    </ul>
+                </div>
+                <div class="info-box" style="border-left-color: #ef4444;">
+                    <h3>Administrator / Root</h3>
+                    <ul>
+                        <li>ติดตั้งโปรแกรม</li>
+                        <li>เปลี่ยนค่า System</li>
+                        <li>จัดการ Users</li>
+                        <li><strong>⚠ อันตรายถ้าใช้พร่ำเพรื่อ</strong></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>Linux: sudo vs su</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Feature</th>
+                        <th>sudo (SuperUser DO)</th>
+                        <th>su (Switch User)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Concept</strong></td>
+                        <td>รันคำสั่งเดียวด้วยสิทธิ์ Root</td>
+                        <td>เปลี่ยนร่างเป็น Root ทั้ง Session</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Password</strong></td>
+                        <td>ใช้รหัสผ่านของ <strong>User เอง</strong></td>
+                        <td>ต้องรู้รหัสผ่านของ <strong>Root</strong></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Security</strong></td>
+                        <td>✅ ดีกว่า (มี Log, จำกัดคำสั่งได้)</td>
+                        <td>⚠ เสี่ยงกว่า (ไม่มี Log ละเอียด)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Recommendation</strong></td>
+                        <td><strong>Recommended</strong></td>
+                        <td>Not Recommended</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="slide">
+            <h2>Windows: User Account Control (UAC)</h2>
+            <div class="grid-2">
+                <div class="center-content">
+                    <div class="info-box" style="background: #e2e8f0; color: #333; border: 1px solid #999; width: 100%;">
+                        <h3>User Account Control</h3>
+                        <p>Do you want to allow this app to make changes to your device?</p>
+                        <p><strong>Program:</strong> cmd.exe</p>
+                        <div style="display:flex; justify-content:center; gap: 10px;">
+                            <button style="background:#ddd; color:black; border:1px solid #999;">Yes</button>
+                            <button style="background:#ddd; color:black; border:1px solid #999;">No</button>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <p>UAC ช่วยป้องกันไม่ให้ Malware แอบรันด้วยสิทธิ์ Admin แบบเงียบๆ</p>
+                    <p><strong>Levels:</strong></p>
+                    <ol>
+                        <li>Always notify (Secure)</li>
+                        <li>Notify only when apps try to make changes (Default)</li>
+                        <li>Never notify (❌ Insecure)</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>🔍 Part 4: Windows vs Linux Security Model</h2>
+            <div class="grid-2">
+                <div>
+                    <h3>Windows</h3>
+                    <ul>
+                        <li><strong>Users:</strong> Local / Active Directory (AD)</li>
+                        <li><strong>Admin:</strong> Administrator</li>
+                        <li><strong>Permissions:</strong> ACL (Access Control Lists)</li>
+                        <li><strong>Firewall:</strong> Windows Defender Firewall</li>
+                    </ul>
+                </div>
+                <div>
+                    <h3>Linux</h3>
+                    <ul>
+                        <li><strong>Users:</strong> /etc/passwd, LDAP</li>
+                        <li><strong>Admin:</strong> root</li>
+                        <li><strong>Permissions:</strong> rwx bits (755, 644)</li>
+                        <li><strong>Firewall:</strong> iptables, ufw, firewalld</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>Windows vs Linux Security Model Diagram</h2>
+            <div class="center-content" style="height: 80%;">
+                <img src="images/user_privilege_and_comparison-Windows-vs-Linux-Security.png" alt="OS Comparison">
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>💻 Basic User Management Commands</h2>
+            <div class="grid-2">
+                <div>
+                    <h3>Linux (Bash)</h3>
+                    <pre>
+# Create User
+sudo useradd -m -s /bin/bash john
+sudo passwd john
+
+# Add to Sudo Group
+sudo usermod -aG sudo john
+
+# Lock Account
+sudo usermod -L john
+                    </pre>
+                </div>
+                <div>
+                    <h3>Windows (PowerShell)</h3>
+                    <pre>
+# Create User
+net user john P@ssw0rd123! /add
+
+# Add to Admin Group
+net localgroup Administrators john /add
+
+# Delete User
+net user john /delete
+                    </pre>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>🛡️ Part 5: OS Hardening</h2>
+            <p class="text-accent" style="font-size: 2em;">"Making the OS tougher to hack"</p>
+            <div class="info-box">
+                <strong>Goals:</strong>
+                <ul>
+                    <li>ลดพื้นที่โจมตี (Reduce Attack Surface)</li>
+                    <li>ปิดช่องโหว่ที่ไม่จำเป็น</li>
+                    <li>ตั้งค่าให้ Secure by Default</li>
+                </ul>
+            </div>
+            <p>ไม่ใช่แค่ลง Antivirus แต่คือการ <strong>Config</strong> ให้ปลอดภัย</p>
+        </div>
+
+        <div class="slide">
+            <h2>OS Hardening Workflow</h2>
+            <div class="center-content" style="height: 80%;">
+                <img src="images/aaa_framework_and_hardening_workflow-OS-Hardening-Workflow.png" alt="Hardening Workflow">
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>🔧 Hardening: Services</h2>
+            <p>ปิดประตูบ้านที่ไม่ได้ใช้ (Disable Unused Services)</p>
+            <div class="grid-2">
+                <div>
+                    <h3 class="text-accent">Windows Risks</h3>
+                    <ul>
+                        <li>Remote Registry</li>
+                        <li>Print Spooler (ถ้าไม่ใช่ Print Server)</li>
+                        <li>Telnet (ห้ามใช้เด็ดขาด!)</li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="text-accent">Linux Risks</h3>
+                    <ul>
+                        <li>CUPS (Printing)</li>
+                        <li>FTP (ใช้ SFTP แทน)</li>
+                        <li>Telnet/RSH</li>
+                    </ul>
+                    <pre>sudo systemctl disable cups</pre>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>🧱 Hardening: Firewall Strategy</h2>
+            <div class="grid-2">
+                <div class="info-box">
+                    <h3>✅ Default Deny (แนะนำ)</h3>
+                    <p>ปิดทุกอย่างก่อน แล้วเปิดเฉพาะที่จำเป็น</p>
+                    <p><em>(Secure but needs config)</em></p>
+                </div>
+                <div class="info-box" style="background: rgba(255,0,0,0.1); border-color: red;">
+                    <h3>❌ Default Allow</h3>
+                    <p>เปิดทุกอย่าง แล้วไล่ปิดตัวอันตราย</p>
+                    <p><em>(Insecure, easy to miss things)</em></p>
+                </div>
+            </div>
+            <div class="mt-2">
+                <h3>Ubuntu UFW Example:</h3>
+                <pre>
+sudo ufw default deny incoming
+sudo ufw default allow outgoing
+sudo ufw allow ssh  # Don't lock yourself out!
+sudo ufw enable
+                </pre>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>🧪 Lab 1: OS Hardening Exercise</h2>
+            <div class="info-box center-content">
+                <p><strong>Objective:</strong> ลงมือทำ Hardening บน VM จริง</p>
+                <p><strong>Tools:</strong> VirtualBox / VMware + Windows/Linux ISO</p>
+                <p><strong>Time:</strong> 60-90 นาที</p>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>📋 Lab Tasks: Windows</h2>
+            <ol>
+                <li><strong>Create Users:</strong> สร้าง Standard User และ Admin แยกกัน</li>
+                <li><strong>Password Policy:</strong>
+                    <ul>
+                        <li>ตั้งค่าใน <code>secpol.msc</code></li>
+                        <li>Min length: 12 chars</li>
+                        <li>Account lockout: 3 attempts</li>
+                    </ul>
+                </li>
+                <li><strong>Services:</strong> ปิด Service ที่ไม่จำเป็น (เช่น Remote Registry)</li>
+                <li><strong>Firewall:</strong> ตั้งค่า Block Inbound ทั้งหมด ยกเว้น Port ที่จำเป็น</li>
+            </ol>
+        </div>
+
+        <div class="slide">
+            <h2>📋 Lab Tasks: Linux</h2>
+            <ol>
+                <li><strong>User Management:</strong> สร้าง User ใหม่และเพิ่มเข้า <code>sudo</code> group</li>
+                <li><strong>SSH Hardening:</strong>
+                    <ul>
+                        <li>แก้ไข <code>/etc/ssh/sshd_config</code></li>
+                        <li><code>PermitRootLogin no</code> (ห้าม Root Login โดยตรง)</li>
+                    </ul>
+                </li>
+                <li><strong>UFW Firewall:</strong> Enable UFW และ Allow SSH</li>
+                <li><strong>Password Aging:</strong> ตั้งค่าให้ Password หมดอายุทุก 90 วัน (<code>chage</code>)</li>
+            </ol>
+        </div>
+
+        <div class="slide">
+            <h2>💀 Case Study: WannaCry (2017)</h2>
+            <div class="grid-2">
+                <div>
+                    <h3>What happened?</h3>
+                    <p>Ransomware ที่โจมตี 200,000+ เครื่องทั่วโลก</p>
+                    <h3>Root Cause:</h3>
+                    <ul>
+                        <li>ใช้ช่องโหว่ <strong>SMBv1</strong> (EternalBlue)</li>
+                        <li>Microsoft ออก Patch แล้วแต่คน <strong>ไม่อัปเดต</strong></li>
+                    </ul>
+                    <h3>Lesson Learned:</h3>
+                    <p>✅ Patch OS ทันที!<br>✅ ปิด Service เก่า (SMBv1)</p>
+                </div>
+                <div class="center-content">
+                    <div style="background: red; color: white; padding: 2rem; border-radius: 8px;">
+                        <h2>Ooops, your files have been encrypted!</h2>
+                        <p>Send Bitcoin to recover...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>🔴 Case Study: SolarWinds (Supply Chain)</h2>
+            <div class="grid-2">
+                <div>
+                    <h3>What happened?</h3>
+                    <p>Hacker ฝัง Backdoor ลงใน <strong>Software Update</strong> ของ SolarWinds Orion</p>
+                    <h3>Impact:</h3>
+                    <p>องค์กรกว่า 18,000 แห่ง (รวมรัฐบาลสหรัฐฯ) โดนเจาะผ่านช่องทาง Update ที่ "เชื่อถือได้"</p>
+                </div>
+                <div class="info-box">
+                    <h3>Lesson Learned for OS:</h3>
+                    <ul>
+                        <li><strong>Least Privilege:</strong> แม้แต่ Software Monitoring ก็ไม่ควรได้สิทธิ์สูงเกินจำเป็น</li>
+                        <li><strong>Network Segmentation:</strong> แยก Server สำคัญออกจากกัน</li>
+                        <li><strong>Monitor Logs:</strong> ตรวจจับพฤติกรรมผิดปกติ</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>📚 Hardening Standards</h2>
+            <p>เราไม่ต้องคิดเองทั้งหมด มีมาตรฐานระดับโลกให้ทำตาม</p>
+            <div class="grid-2">
+                <div class="info-box">
+                    <h3>CIS Benchmarks</h3>
+                    <p>คู่มือ Hardening ที่ละเอียดที่สุดสำหรับทุก OS (Win, Linux, Mac, Cloud)</p>
+                    <a href="https://www.cisecurity.org/cis-benchmarks" target="_blank" style="color: var(--accent-color);">cisecurity.org</a>
+                </div>
+                <div class="info-box">
+                    <h3>NIST Cybersecurity Framework</h3>
+                    <p>Identify, Protect, Detect, Respond, Recover</p>
+                    <p>เป็น Framework หลักในการวางแผน Security องค์กร</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>🚀 Career Path in OS Security</h2>
+            <div class="grid-2">
+                <div>
+                    <h3>Roles:</h3>
+                    <ul>
+                        <li><strong>System Administrator:</strong> ดูแล Server + Hardening</li>
+                        <li><strong>Security Engineer:</strong> ออกแบบระบบความปลอดภัย</li>
+                        <li><strong>DevSecOps:</strong> เขียน Code + Config Cloud Security</li>
+                        <li><strong>Penetration Tester:</strong> เจาะระบบเพื่อหาช่องโหว่</li>
+                    </ul>
+                </div>
+                <div>
+                    <h3>Skills Needed:</h3>
+                    <ul>
+                        <li>Linux/Windows Internals</li>
+                        <li>Scripting (Bash, PowerShell, Python)</li>
+                        <li>Networking (TCP/IP)</li>
+                        <li>Compliance (ISO27001, CIS)</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>📝 Summary Week 4</h2>
+            <div class="grid-2">
+                <div>
+                    <ul>
+                        <li>✅ <strong>OS Security</strong> คือรากฐาน</li>
+                        <li>✅ <strong>AAA Framework:</strong> AuthN, AuthZ, Accounting</li>
+                        <li>✅ <strong>Least Privilege:</strong> ให้สิทธิ์น้อยที่สุดเท่าที่ทำงานได้</li>
+                        <li>✅ <strong>Hardening:</strong> ปิด Service, Config Firewall, Update Patch</li>
+                        <li>✅ <strong>Defense in Depth:</strong> ป้องกันหลายชั้น</li>
+                    </ul>
+                </div>
+                <div class="center-content">
+                    <h3>การบ้าน:</h3>
+                    <p>ทำ Lab 1 ให้เสร็จและส่ง Report</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>🔮 Next Week: Network Security</h2>
+            <p>เมื่อ OS แข็งแกร่งแล้ว ต่อไปเราจะดูเรื่อง <strong>เครือข่าย</strong></p>
+            <ul>
+                <li>🌐 OSI Model & TCP/IP Review</li>
+                <li>🔥 Firewalls (Network based)</li>
+                <li>🕵️ IDS / IPS (ระบบตรวจจับผู้บุกรุก)</li>
+                <li>🔒 VPN</li>
+                <li>🧪 Lab: Packet Analysis with Wireshark</li>
+            </ul>
+        </div>
+
+        <div class="slide center-content">
+            <h1>❓ Q & A</h1>
+            <p>มีคำถามสงสัยตรงไหนไหมครับ?</p>
+            
+            <div class="quote" style="margin-top: 2rem;">
+                "The only secure system is one that is powered off, cast in a block of concrete and sealed in a lead-lined room with armed guards."
+                <br><br>
+                <span style="font-size: 0.6em;">- Gene Spafford</span>
+            </div>
+        </div>
+
+    </div>
+
+    <div id="controls">
+        <button onclick="prevSlide()" title="Previous (Left Arrow)">◀</button>
+        <span id="page-num" style="color:white; align-self: center; font-family: 'JetBrains Mono';">1/35</span>
+        <button onclick="nextSlide()" title="Next (Right Arrow)">▶</button>
+        <div style="width: 1px; background: rgba(255,255,255,0.3); margin: 0 10px;"></div>
+        <button onclick="toggleTheme()" title="Toggle Theme (T)">🌓</button>
+        <button onclick="changeFontSize(1)" title="Increase Font (+)">A+</button>
+        <button onclick="changeFontSize(-1)" title="Decrease Font (-)">A-</button>
+        <button onclick="toggleFullScreen()" title="Fullscreen (F)">⛶</button>
+    </div>
+
+    <div id="slide-container-footer" style="position: absolute; bottom: 0; left: 0; width: 100%; pointer-events: none;">
+         <div id="progress-bar"></div>
+    </div>
+
+    <script>
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slide');
+        const progressBar = document.getElementById('progress-bar');
+        const pageNumDisplay = document.getElementById('page-num');
+        const slideContainer = document.getElementById('slide-container');
+        let fontSizeModifier = 0;
+
+        // Initialize
+        function showSlide(index) {
+            slides[currentSlide].classList.remove('active');
+            
+            if (index >= slides.length) currentSlide = 0;
+            else if (index < 0) currentSlide = slides.length - 1;
+            else currentSlide = index;
+
+            slides[currentSlide].classList.add('active');
+            
+            // Update Progress
+            const progress = ((currentSlide + 1) / slides.length) * 100;
+            progressBar.style.width = `${progress}%`;
+            pageNumDisplay.innerText = `${currentSlide + 1} / ${slides.length}`;
+            
+            // Add slide number to bottom right inside container if needed, 
+            // but fixed control bar handles it nicely.
+        }
+
+        function nextSlide() { showSlide(currentSlide + 1); }
+        function prevSlide() { showSlide(currentSlide - 1); }
+
+        function toggleTheme() {
+            document.body.classList.toggle('light-mode');
+        }
+
+        function changeFontSize(dir) {
+            fontSizeModifier += dir * 2;
+            slideContainer.style.fontSize = `calc(1rem + ${fontSizeModifier}px)`;
+        }
+
+        function toggleFullScreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+            }
+        }
+
+        // Keyboard Navigation
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === ' ') nextSlide();
+            if (e.key === 'ArrowLeft') prevSlide();
+            if (e.key === 'f') toggleFullScreen();
+            if (e.key === 't') toggleTheme();
+        });
+
+        // Simulation Logic (Chmod Calculator)
+        function calcChmod() {
+            let u = (document.getElementById('ur').checked ? 4 : 0) + 
+                    (document.getElementById('uw').checked ? 2 : 0) + 
+                    (document.getElementById('ux').checked ? 1 : 0);
+            
+            let g = (document.getElementById('gr').checked ? 4 : 0) + 
+                    (document.getElementById('gw').checked ? 2 : 0) + 
+                    (document.getElementById('gx').checked ? 1 : 0);
+            
+            let o = (document.getElementById('or').checked ? 4 : 0) + 
+                    (document.getElementById('ow').checked ? 2 : 0) + 
+                    (document.getElementById('ox').checked ? 1 : 0);
+            
+            const resultText = `chmod ${u}${g}${o} filename`;
+            document.getElementById('chmod-output').innerText = resultText;
+            
+            let desc = [];
+            if(u===7) desc.push("Owner can do everything");
+            if(o===0) desc.push("Others have no access");
+            if(u===7 && g===7 && o===7) desc = ["⚠️ DANGER: Everyone can do everything!"];
+            
+            document.getElementById('chmod-desc').innerText = desc.join(". ") || "Custom permissions";
+        }
+
+        // Init
+        showSlide(0);
+
+        // Responsive handling
+        window.addEventListener('resize', () => {
+             // Optional: Force ratio fix if needed
+        });
+    </script>
+</body>
+</html>

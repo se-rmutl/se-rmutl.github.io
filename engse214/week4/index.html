@@ -3,504 +3,1200 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>สัปดาห์ที่ 4: การรักษาความปลอดภัยของระบบปฏิบัติการ</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;700&display=swap" rel="stylesheet">
+    <title>ENGSE214 Week 4: OS Security & Hardening</title>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
     <style>
+        :root {
+            /* Cyber Security Palette */
+            --bg-dark: #050a14;
+            --bg-panel: #0f172a;
+            --primary: #00f0ff; /* Neon Cyan */
+            --secondary: #7000ff; /* Neon Purple */
+            --accent: #00ff9d; /* Hacker Green */
+            --alert: #ff0055;
+            --text-main: #e0f2fe;
+            --text-muted: #94a3b8;
+            --border: rgba(0, 240, 255, 0.2);
+            --glass: rgba(15, 23, 42, 0.7);
+            
+            /* Light Mode Overrides */
+            --bg-light: #f0f4f8;
+            --text-light: #1e293b;
+
+            /* Slide Dimensions 1920 x 1080 */
+            /* --slide-width: 1280px;
+            --slide-height: 720px; */
+            --slide-width: 1920px;
+            --slide-height: 1080px;
+            --transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
         body {
+            margin: 0;
+            background-color: #000;
+            color: var(--text-main);
             font-family: 'Sarabun', sans-serif;
-            background-color: #f8fafc; /* gray-50 */
-            scroll-behavior: smooth;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
         }
-        .section-title {
-            font-size: 2.25rem; /* text-4xl */
-            font-weight: 700; /* font-bold */
-            margin-bottom: 1.5rem; /* mb-6 */
-            border-left: 5px solid #16a34a; /* border-green-600 */
-            padding-left: 1rem; /* pl-4 */
-            color: #1e293b; /* slate-800 */
+
+        body.light-mode {
+            background-color: #e2e8f0;
+            --bg-dark: var(--bg-light);
+            --bg-panel: #ffffff;
+            --text-main: var(--text-light);
+            --border: rgba(0,0,0,0.1);
         }
+
+        /* Slide Container */
+        #viewport {
+            width: var(--slide-width);
+            height: var(--slide-height);
+            background: var(--bg-dark);
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(112, 0, 255, 0.1) 0%, transparent 20%),
+                radial-gradient(circle at 90% 80%, rgba(0, 240, 255, 0.1) 0%, transparent 20%),
+                linear-gradient(rgba(0, 240, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 240, 255, 0.03) 1px, transparent 1px);
+            background-size: 100% 100%, 100% 100%, 40px 40px, 40px 40px;
+            position: relative;
+            box-shadow: 0 0 80px rgba(0, 240, 255, 0.1);
+            overflow: hidden;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        /* Slide Content */
+        .slide {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            /* padding: 60px 80px; */
+            padding: 50px 70px; /* Reduced padding slightly for more space */
+            box-sizing: border-box;
+            opacity: 0;
+            transform: scale(0.95) translateY(20px);
+            transition: var(--transition);
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .slide.active {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+            pointer-events: all;
+            z-index: 10;
+        }
+
+        /* Typography */
+        h1, h2, h3 {
+            font-family: 'Rajdhani', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin: 0 0 20px 0;
+            background: linear-gradient(90deg, var(--primary), #fff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        h1 { font-size: 4em; font-weight: 700; line-height: 1; }
+        h2 { font-size: 2.8em; border-left: 5px solid var(--primary); padding-left: 20px; }
+        h3 { font-size: 1.8em; color: var(--accent); -webkit-text-fill-color: var(--accent); }
+        
+        p, li { font-size: 1.4em; line-height: 1.6; color: var(--text-main); margin-bottom: 15px; }
+        strong { color: var(--primary); font-weight: 600; }
+        
+        code {
+            font-family: 'JetBrains Mono', monospace;
+            background: rgba(0, 240, 255, 0.1);
+            padding: 2px 8px;
+            border-radius: 4px;
+            color: var(--accent);
+        }
+
+        /* Components */
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; height: 100%; align-items: center; }
+        .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 30px; }
+        
         .card {
-            background-color: white;
-            border-radius: 0.75rem; /* rounded-xl */
-            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-            padding: 1.5rem; /* p-6 */
-            transition: transform 0.2s, box-shadow 0.2s;
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            padding: 25px;
+            border-radius: 12px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            transition: transform 0.3s;
         }
-        .card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-        }
-        details > summary {
-            cursor: pointer;
-            font-weight: 600;
-            padding: 0.75rem;
-            background-color: #f1f5f9; /* slate-100 */
-            border-radius: 0.5rem; /* rounded-lg */
-            transition: background-color 0.2s;
-            list-style: none; /* Remove default marker */
+        .card:hover { transform: translateY(-5px); border-color: var(--primary); }
+
+        .code-block {
+            background: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            padding: 20px;
+            font-family: 'JetBrains Mono', monospace;
+            overflow-x: auto;
+            color: #c9d1d9;
+            font-size: 0.9em;
             position: relative;
         }
-        details > summary::-webkit-details-marker { display: none; }
-        details > summary::before {
-            content: '+';
+        .code-block::before {
+            content: '● ● ●';
             position: absolute;
-            right: 1rem;
-            font-size: 1.5rem;
-            line-height: 1;
-            font-weight: 400;
-            transition: transform 0.2s;
+            top: 10px; left: 15px;
+            font-size: 10px;
+            color: #30363d;
+            letter-spacing: 2px;
         }
-        details[open] > summary::before { transform: rotate(45deg); }
-        details > summary:hover { background-color: #e2e8f0; /* slate-200 */ }
-        details[open] > summary {
-            background-color: #dcfce7; /* green-100 */
-            color: #15803d; /* green-700 */
+
+        /* Image Styling with Zoom Capability */
+        img.slide-img {
+            max-width: 100%;
+            max-height: 550px;
+            border-radius: 8px;
+            box-shadow: 0 0 20px rgba(0, 240, 255, 0.2);
+            border: 1px solid var(--border);
+            object-fit: contain;
+            transition: transform 0.3s, border-color 0.3s;
+            cursor: zoom-in; /* Change cursor to indicate clickability */
         }
-        .code-block {
-            background-color: #1e293b; /* slate-800 */
-            color: #e2e8f0; /* slate-200 */
-            padding: 1rem;
-            border-radius: 0.5rem;
-            overflow-x: auto;
-            font-family: 'Courier New', Courier, monospace;
-            font-size: 0.875rem;
+        
+        img.slide-img:hover {
+            border-color: var(--primary);
+            transform: scale(1.01);
         }
-        .tab-button {
-            padding: 0.5rem 1rem;
-            cursor: pointer;
-            border-radius: 0.5rem 0.5rem 0 0;
-            background-color: #e2e8f0; /* slate-200 */
-            border: 1px solid #cbd5e1; /* slate-300 */
-            border-bottom: none;
-            margin-bottom: -1px;
-            transition: background-color 0.2s;
+
+        .img-caption {
+            text-align: center; 
+            font-size: 0.9em; 
+            color: var(--text-muted); 
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
         }
-        .tab-button.active {
-            background-color: white;
-            color: #16a34a; /* green-600 */
-            font-weight: 600;
-            border-bottom: 1px solid white;
+
+        /* Interactive Terminal */
+        .terminal {
+            background: #0c0c0c;
+            border: 1px solid #333;
+            border-radius: 6px;
+            padding: 10px;
+            font-family: 'JetBrains Mono', monospace;
+            height: 300px;
+            display: flex;
+            flex-direction: column;
         }
-        .tab-content {
+        .terminal-output { flex: 1; color: #ccc; overflow-y: auto; font-size: 1.1em; padding: 10px; }
+        .terminal-input-line { display: flex; border-top: 1px solid #333; padding: 10px; align-items: center; }
+        .prompt { color: var(--accent); margin-right: 10px; }
+        .cmd-input { background: transparent; border: none; color: #fff; font-family: inherit; font-size: 1.1em; flex: 1; outline: none; }
+
+        /* Lightbox (Full Screen Image) */
+        .lightbox {
             display: none;
-            border: 1px solid #cbd5e1; /* slate-300 */
-            padding: 1rem;
-            border-radius: 0 0.5rem 0.5rem 0.5rem;
+            position: fixed;
+            z-index: 2000;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.9);
+            justify-content: center;
+            align-items: center;
+            cursor: zoom-out;
+            opacity: 0;
+            transition: opacity 0.3s;
         }
+        
+        .lightbox.show {
+            opacity: 1;
+        }
+
+        .lightbox img {
+            max-width: 95vw;
+            max-height: 95vh;
+            border: 2px solid var(--primary);
+            box-shadow: 0 0 50px var(--primary);
+            border-radius: 8px;
+            object-fit: contain;
+        }
+
+        /* Controls */
+        #controls {
+            position: absolute; bottom: 20px; right: 30px;
+            display: flex; gap: 15px; z-index: 100;
+        }
+        .btn {
+            background: var(--glass);
+            border: 1px solid var(--border);
+            color: var(--primary);
+            width: 45px; height: 45px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            transition: 0.3s;
+        }
+        .btn:hover { background: var(--primary); color: #000; box-shadow: 0 0 15px var(--primary); }
+
+        #progress {
+            position: absolute; bottom: 0; left: 0;
+            height: 4px; background: var(--primary);
+            width: 0%; transition: width 0.3s;
+            box-shadow: 0 0 10px var(--primary);
+        }
+
+        .page-num { position: absolute; bottom: 25px; left: 30px; font-family: 'JetBrains Mono'; opacity: 0.6; }
+
+        /* Animations */
+        @keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        .float { animation: float 6s ease-in-out infinite; }
+        
+        .highlight-box {
+            background: rgba(0, 240, 255, 0.05);
+            border-left: 4px solid var(--primary);
+            padding: 15px 20px;
+            margin: 15px 0;
+        }
+        
+        .danger-box {
+            background: rgba(255, 0, 85, 0.05);
+            border-left: 4px solid var(--alert);
+            padding: 15px 20px;
+            margin: 15px 0;
+        }
+
     </style>
 </head>
-<body class="text-slate-700">
+<body>
 
-    <!-- Header Section -->
-    <header class="bg-slate-800 text-white p-6 shadow-lg sticky top-0 z-50">
-        <div class="container mx-auto flex justify-between items-center">
-            <div>
-                <h1 class="text-2xl md:text-3xl font-bold">การรักษาความปลอดภัยของระบบปฏิบัติการ</h1>
-                <h1 class="text-2xl md:text-3xl font-bold">Operating System Security</h1>
-                <p class="text-md text-slate-300 mt-1">สัปดาห์ที่ 4: สำหรับ Software Engineers</p>
+    <div id="viewport">
+        <div id="progress"></div>
+        <div class="page-num" id="page-indicator">01 / 40</div>
+
+        <div class="slide active">
+            <div style="display: flex; flex-direction: column; justify-content: center; height: 100%; position: relative;">
+                <h3 style="margin-bottom: 0;"><i class="fas fa-shield-alt"></i> ENGSE214</h3>
+                <h1>OS SECURITY &<br><span style="color: var(--primary); -webkit-text-fill-color: var(--primary);">HARDENING</span></h1>
+                <p style="font-size: 1.8em; max-width: 600px; margin-top: 20px;">
+                    เรียนรู้วิธีสร้างป้อมปราการดิจิทัล ตั้งแต่ระดับรากฐานของระบบปฏิบัติการ
+                </p>
+                <div style="margin-top: 40px; display: flex; gap: 20px;">
+                    <div class="card" style="padding: 15px 30px;">
+                        <i class="fab fa-windows fa-2x" style="color: #00a4ef;"></i>
+                    </div>
+                    <div class="card" style="padding: 15px 30px;">
+                        <i class="fab fa-linux fa-2x" style="color: #fca311;"></i>
+                    </div>
+                    <div class="card" style="padding: 15px 30px;">
+                        <i class="fab fa-apple fa-2x" style="color: #fff;"></i>
+                    </div>
+                </div>
+                
+                <div style="position: absolute; bottom: 60px; right: 0; text-align: right;">
+                    <p style="margin:0; font-size: 1.2em;"><strong>Week 4</strong></p>
+                    <p style="margin:0; opacity: 0.7;">Software Engineering Year 3</p>
+                </div>
+                
+                <i class="fas fa-lock float" style="position: absolute; top: 100px; right: 100px; font-size: 15em; opacity: 0.05; color: var(--primary);"></i>
             </div>
-            <nav class="hidden md:block">
-                <a href="#fundamentals" class="px-3 py-2 rounded-md text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-700">หลักการ</a>
-                <a href="#access-control" class="px-3 py-2 rounded-md text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-700">การควบคุมการเข้าถึง</a>
-                <a href="#hardening" class="px-3 py-2 rounded-md text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-700">System Hardening</a>
-                <a href="#lab" class="px-3 py-2 rounded-md text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-700">Lab & Cases</a>
-            </nav>
         </div>
-    </header>
 
-    <main class="container mx-auto p-4 md:p-8 mt-8">
+        <div class="slide">
+            <h2><i class="fas fa-user-tie"></i> Instructor Profile</h2>
+            <div class="grid">
+                <div class="card" style="display: flex; flex-direction: column; align-items: center; text-align: center;">
+                    <div style="width: 150px; height: 150px; background: #333; border-radius: 50%; margin-bottom: 20px; display: flex; align-items: center; justify-content: center; font-size: 3em; color: var(--accent); border: 2px solid var(--accent);">
+                        <i class="fas fa-user-astronaut"></i>
+                    </div>
+                    <h3>อาจารย์ธนิต เกตุแก้ว</h3>
+                    <p>Full-stack Developer & Security Specialist</p>
+                    <div style="display: flex; gap: 10px; margin-top: 10px;">
+                        <span class="code">CISSP</span> <span class="code">OSCP</span> <span class="code">CompTIA+</span>
+                    </div>
+                </div>
+                <div>
+                    <h3><i class="fas fa-bullseye"></i> Goal for Today</h3>
+                    <p>"เปลี่ยนจากการเป็นแค่ผู้ใช้งาน (User) มาเป็นผู้ดูแลระบบ (Admin) ที่เข้าใจกลไกการป้องกันตัวเอง"</p>
+                    <div class="highlight-box">
+                        <i class="fas fa-quote-left"></i> 
+                        Software ที่ดีต้องไม่ใช่แค่ "ทำงานได้" แต่ต้อง "ทำงานได้อย่างปลอดภัย"
+                    </div>
+                </div>
+            </div>
+        </div>
 
-        <!-- Fundamentals -->
-        <section id="fundamentals" class="mb-16">
-            <h2 class="section-title">หลักการพื้นฐานด้านความปลอดภัย</h2>
+        <div class="slide">
+            <h2><i class="fas fa-list-ul"></i> Agenda: Week 4</h2>
+            <div class="grid-3">
+                <div class="card">
+                    <h3>01 Foundation</h3>
+                    <ul>
+                        <li>Defense in Depth</li>
+                        <li>CIA Triad in OS</li>
+                        <li>Threats to OS</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h3>02 Core Concepts</h3>
+                    <ul>
+                        <li>AAA Framework</li>
+                        <li>User Privileges</li>
+                        <li>Win vs Linux Models</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h3>03 Action!</h3>
+                    <ul>
+                        <li>OS Hardening</li>
+                        <li>Secure Configuration</li>
+                        <li><strong>Lab:</strong> Hands-on</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide" style="justify-content: center; align-items: center; text-align: center;">
+            <i class="fas fa-skull-crossbones" style="font-size: 5em; color: var(--alert); margin-bottom: 20px;"></i>
+            <h2 style="border: none; font-size: 3.5em;">"The only secure system is one that is powered off..."</h2>
+            <p style="font-size: 2em; font-style: italic; color: var(--text-muted);">
+                "...cast in a block of concrete and sealed in a lead-lined room with armed guards."
+            </p>
+            <p style="color: var(--primary); margin-top: 20px;">- Gene Spafford</p>
+            <p style="font-size: 1.2em; margin-top: 40px; background: rgba(255,255,255,0.1); padding: 10px 20px; border-radius: 50px;">
+                แต่นั่นไม่ใช่ระบบที่มีประโยชน์... หน้าที่ของเราคือทำให้มัน "ใช้งานได้" และ "ปลอดภัย"
+            </p>
+        </div>
+
+        <div class="slide">
+            <h2><i class="fas fa-history"></i> Recap Week 3</h2>
+            <div class="grid">
+                <div>
+                    <h3>Vulnerabilities & Risk</h3>
+                    <ul>
+                        <li><strong>Vulnerability:</strong> ช่องโหว่ (Internal) เช่น รหัสผ่านง่าย, บั๊กในโค้ด</li>
+                        <li><strong>Threat:</strong> ภัยคุกคาม (External) เช่น Hacker, Malware</li>
+                        <li><strong>Risk:</strong> ความเสี่ยงที่จะเกิดความเสียหาย</li>
+                    </ul>
+                </div>
+                <div class="card danger-box" style="text-align: center;">
+                    <h3>The Risk Formula</h3>
+                    <p style="font-size: 2em; font-weight: bold; margin: 20px 0;">
+                        Risk = <span style="color:var(--alert)">Threat</span> × <span style="color:var(--primary)">Vulnerability</span> × Impact
+                    </p>
+                    <p style="font-size: 1em;">ถ้าไม่มีช่องโหว่ (Vulnerability = 0) ความเสี่ยงก็จะเป็น 0!</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2><i class="fas fa-check-circle"></i> Learning Objectives</h2>
+            <p>เมื่อจบคลาสนี้ นักศึกษาจะสามารถ:</p>
+            <div class="grid">
+                <div>
+                    <div class="highlight-box">
+                        <i class="fas fa-brain"></i> <strong>Understand</strong>
+                        <p>อธิบายหลักการ OS Security และความต่างของ Windows/Linux Model</p>
+                    </div>
+                    <div class="highlight-box">
+                        <i class="fas fa-key"></i> <strong>Apply AAA</strong>
+                        <p>ประยุกต์ใช้ Authentication, Authorization, Accounting ได้ถูกต้อง</p>
+                    </div>
+                </div>
+                <div>
+                    <div class="highlight-box">
+                        <i class="fas fa-user-shield"></i> <strong>Manage Users</strong>
+                        <p>จัดการสิทธิ์ตามหลัก Least Privilege ไม่ให้สิทธิ์เกินความจำเป็น</p>
+                    </div>
+                    <div class="highlight-box">
+                        <i class="fas fa-tools"></i> <strong>Harden OS</strong>
+                        <p>ลงมือปรับแต่ง OS ให้แข็งแกร่ง (Hardening) ปิดช่องโหว่พื้นฐาน</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2><i class="fas fa-user-secret"></i> Hacker's Mindset</h2>
+            <div class="grid">
+                <div style="display:flex; flex-direction:column; justify-content:center;">
+                    <p style="font-size: 1.8em; font-weight: bold; color: var(--primary);">
+                        "ถ้าคุณจะแฮกเครื่อง Server นี้... คุณจะเริ่มที่ไหน?"
+                    </p>
+                </div>
+                <div class="card">
+                    <h3>Common Targets:</h3>
+                    <ul style="list-style: none; padding: 0;">
+                        <li style="margin-bottom: 15px;"><span style="color:var(--alert)">01</span> <strong>User Accounts:</strong> รหัสผ่านอ่อนแอ, Default Password</li>
+                        <li style="margin-bottom: 15px;"><span style="color:var(--alert)">02</span> <strong>Open Services:</strong> Port ที่เปิดทิ้งไว้ไม่ได้ใช้</li>
+                        <li style="margin-bottom: 15px;"><span style="color:var(--alert)">03</span> <strong>Unpatched OS:</strong> Windows/Linux เวอร์ชันเก่า</li>
+                        <li style="margin-bottom: 15px;"><span style="color:var(--alert)">04</span> <strong>Misconfiguration:</strong> ตั้งค่าสิทธิ์ไฟล์ผิด (777)</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2><i class="fas fa-layer-group"></i> Why OS Security Matters?</h2>
+            <div class="grid">
+                <div style="text-align: center;">
+                    <div style="font-size: 8em; color: var(--text-muted); position: relative;">
+                        <i class="fas fa-desktop"></i>
+                        <i class="fas fa-shield-alt" style="position: absolute; bottom: 0; right: 20%; color: var(--primary); font-size: 0.5em;"></i>
+                    </div>
+                </div>
+                <div>
+                    <p>OS เปรียบเสมือน <strong>"ฐานราก"</strong> ของตึก</p>
+                    <ul>
+                        <li>ถ้า OS พัง... Database ก็พัง</li>
+                        <li>ถ้า OS พัง... Web Server ก็พัง</li>
+                        <li>ถ้า OS พัง... Security Software ก็โดนปิด</li>
+                    </ul>
+                    <div class="danger-box">
+                        <strong>Critical:</strong> การโจมตีระดับ OS (Root/Admin Compromise) คือ "Game Over" เพราะแฮกเกอร์จะควบคุมทุกอย่างได้
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>🛡️ Defense in Depth</h2>
+            <p>กลยุทธ์ "หัวหอม" (Onion) - สร้างเกราะป้องกันหลายชั้น</p>
+            <div style="display: flex; justify-content: center; align-items: center; flex: 1; overflow: hidden; margin-top: 10px;">
+                <img src="images/defense_in_depth.png" 
+                     class="slide-img" 
+                     style="max-height: 90%; width: auto; object-fit: contain;" 
+                     alt="Defense in Depth Diagram"
+                     onclick="openLightbox(this.src)">
+            </div>
+            <div class="img-caption">
+                <i class="fas fa-search-plus"></i> คลิกที่รูปเพื่อขยาย (Click to Zoom)
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>CIA Triad in OS Context</h2>
+            <div class="grid-3" style="margin-top: 40px;">
+                <div class="card">
+                    <h3 style="color: var(--primary);">Confidentiality</h3>
+                    <p style="font-size: 1em;"><strong>OS Mechanism:</strong><br>File Permissions, Encryption (BitLocker/LUKS)</p>
+                    <p style="font-size: 0.9em; color: var(--text-muted);"><em>ป้องกันไม่ให้คนไม่มีสิทธิ์มาอ่านไฟล์เงินเดือน</em></p>
+                </div>
+                <div class="card">
+                    <h3 style="color: var(--secondary);">Integrity</h3>
+                    <p style="font-size: 1em;"><strong>OS Mechanism:</strong><br>System File Protection, Hashing, Logs</p>
+                    <p style="font-size: 0.9em; color: var(--text-muted);"><em>ป้องกัน Malware แอบแก้ไฟล์ system32</em></p>
+                </div>
+                <div class="card">
+                    <h3 style="color: var(--accent);">Availability</h3>
+                    <p style="font-size: 1em;"><strong>OS Mechanism:</strong><br>Resource Quotas, Backups, Cluster</p>
+                    <p style="font-size: 0.9em; color: var(--text-muted);"><em>ป้องกัน OS ล่มจนใช้งานไม่ได้ (Blue Screen)</em></p>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide center-text">
+            <h1 style="text-align: center; margin-top: 100px;">PART 2: AAA FRAMEWORK</h1>
+            <p style="text-align: center;">หัวใจสำคัญของการควบคุมการเข้าถึง (Access Control)</p>
+            <div style="display: flex; justify-content: center; gap: 40px; margin-top: 50px;">
+                <div class="card" style="text-align: center;">
+                    <i class="fas fa-id-card fa-3x" style="color: var(--primary);"></i>
+                    <h3>Authentication</h3>
+                </div>
+                <div class="card" style="text-align: center;">
+                    <i class="fas fa-door-open fa-3x" style="color: var(--secondary);"></i>
+                    <h3>Authorization</h3>
+                </div>
+                <div class="card" style="text-align: center;">
+                    <i class="fas fa-clipboard-list fa-3x" style="color: var(--accent);"></i>
+                    <h3>Accounting</h3>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>AAA Framework Diagram</h2>
+            <div style="display: flex; justify-content: center; align-items: center; flex: 1; overflow: hidden; margin-top: 10px;">
+                <img src="images/aaa_framework_and_hardening_workflow-AAA-Framework.png" 
+                     class="slide-img" 
+                     style="max-height: 90%; width: auto;" 
+                     alt="AAA Framework"
+                     onclick="openLightbox(this.src)">
+            </div>
+            <div class="img-caption"><i class="fas fa-search-plus"></i> คลิกเพื่อขยาย</div>
+        </div>
+
+        <div class="slide">
+            <h2>1. Authentication (การยืนยันตัวตน)</h2>
+            <p class="float">"Who are you? - คุณคือใคร?"</p>
+            <div class="grid">
+                <div>
+                    <h3>Factors of Authentication</h3>
+                    <ul>
+                        <li><i class="fas fa-brain"></i> <strong>Something you KNOW:</strong> Password, PIN</li>
+                        <li><i class="fas fa-mobile-alt"></i> <strong>Something you HAVE:</strong> Token, OTP, Phone</li>
+                        <li><i class="fas fa-fingerprint"></i> <strong>Something you ARE:</strong> Fingerprint, FaceID</li>
+                    </ul>
+                </div>
+                <div class="card danger-box">
+                    <h3>Password Reality</h3>
+                    <p><code>123456</code> <i class="fas fa-arrow-right"></i> แตกใน 0.1 วินาที</p>
+                    <p><code>P@ssw0rd</code> <i class="fas fa-arrow-right"></i> แตกใน 1 นาที</p>
+                    <p><code>MyD0gN@meIsJ0hn!</code> <i class="fas fa-arrow-right"></i> ใช้เวลาเป็นปี</p>
+                    <hr style="border-color: #555;">
+                    <p><strong>Recommendation:</strong> Use Passphrase + MFA</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>🔐 Multi-Factor Authentication (MFA)</h2>
+            <p>การใช้ปัจจัยมากกว่า 1 อย่างเพื่อยืนยันตัวตน ปลอดภัยกว่า Password อย่างเดียวถึง 99%</p>
+            <div class="grid-3" style="text-align: center;">
+                <div class="card">
+                    <i class="fas fa-sms fa-3x" style="color: var(--text-muted);"></i>
+                    <h4>SMS OTP</h4>
+                    <p style="font-size: 0.8em; color: var(--alert);">Not Recommended (SIM Swap)</p>
+                </div>
+                <div class="card" style="border-color: var(--primary);">
+                    <i class="fas fa-mobile fa-3x" style="color: var(--primary);"></i>
+                    <h4>Authenticator App</h4>
+                    <p style="font-size: 0.8em;">Good (Google Auth, Microsoft Auth)</p>
+                </div>
+                <div class="card" style="border-color: var(--accent);">
+                    <i class="fas fa-key fa-3x" style="color: var(--accent);"></i>
+                    <h4>Hardware Key</h4>
+                    <p style="font-size: 0.8em;">Best (YubiKey)</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>2. Authorization (การกำหนดสิทธิ์)</h2>
+            <p>"What can you do? - คุณทำอะไรได้บ้าง?"</p>
+            <div class="grid">
+                <div>
+                    <ul>
+                        <li>หลังจาก Login ผ่านแล้ว (AuthN) ระบบจะเช็คสิทธิ์ (AuthZ)</li>
+                        <li><strong>RBAC (Role-Based Access Control):</strong> กำหนดสิทธิ์ตาม "บทบาท" เช่น HR, IT, Manager</li>
+                        <li><strong>File Permissions:</strong> Read, Write, Execute</li>
+                    </ul>
+                </div>
+                <div class="code-block">
+# Linux Permissions Example
+-rwxr-xr--  1 user staff  presentation.pdf
+
+# r = Read (4)
+# w = Write (2)
+# x = Execute (1)
+
+Owner (user): rwx (4+2+1 = 7) -> Full Control
+Group (staff): r-x (4+0+1 = 5) -> Read/Run
+Others:       r-- (4+0+0 = 4) -> Read only
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>💻 Interactive: chmod Calculator</h2>
+            <p>ลองผสมสิทธิ์เพื่อดูค่าตัวเลข (Octal)</p>
             
-            <div class="card mb-8">
-                <h3 class="text-2xl font-bold text-slate-800 mb-4">🛡️ CIA Triad - รากฐานของความปลอดภัย</h3>
-                <p class="mb-6">คือกรอบแนวคิดพื้นฐานที่สำคัญที่สุดในการออกแบบระบบความปลอดภัย ประกอบด้วย 3 หลักการหลักที่ต้องสมดุลกัน</p>
-                <div class="grid md:grid-cols-3 gap-6 text-center">
-                    <div class="p-4 bg-blue-50 rounded-lg">
-                        <div class="text-4xl mb-2">🔒</div>
-                        <h4 class="font-bold text-lg text-blue-800">Confidentiality (ความลับ)</h4>
-                        <p>ป้องกันการเข้าถึงข้อมูลโดยไม่ได้รับอนุญาต เช่น ข้อมูลส่วนตัวของลูกค้า, รหัสผ่าน</p>
+            <div class="grid">
+                <div class="card" style="font-family: 'JetBrains Mono';">
+                    <div style="margin-bottom: 20px;">
+                        <strong style="color: var(--primary);">User (Owner)</strong><br>
+                        <input type="checkbox" id="ur" onchange="calcChmod()" value="4"> Read (4)
+                        <input type="checkbox" id="uw" onchange="calcChmod()" value="2"> Write (2)
+                        <input type="checkbox" id="ux" onchange="calcChmod()" value="1"> Execute (1)
                     </div>
-                    <div class="p-4 bg-green-50 rounded-lg">
-                        <div class="text-4xl mb-2">✅</div>
-                        <h4 class="font-bold text-lg text-green-800">Integrity (ความถูกต้อง)</h4>
-                        <p>รักษาความถูกต้องและครบถ้วนของข้อมูล ป้องกันการแก้ไขข้อมูลโดยไม่ได้รับอนุญาต</p>
+                    <div style="margin-bottom: 20px;">
+                        <strong style="color: var(--secondary);">Group</strong><br>
+                        <input type="checkbox" id="gr" onchange="calcChmod()" value="4"> Read (4)
+                        <input type="checkbox" id="gw" onchange="calcChmod()" value="2"> Write (2)
+                        <input type="checkbox" id="gx" onchange="calcChmod()" value="1"> Execute (1)
                     </div>
-                    <div class="p-4 bg-yellow-50 rounded-lg">
-                        <div class="text-4xl mb-2">⚡</div>
-                        <h4 class="font-bold text-lg text-yellow-800">Availability (ความพร้อมใช้)</h4>
-                        <p>รับประกันว่าระบบและข้อมูลพร้อมให้บริการเมื่อผู้ใช้ที่ได้รับอนุญาตต้องการใช้งาน</p>
-                    </div>
-                </div>
-            </div>
-
-            <div class="card mb-8">
-                <h3 class="text-2xl font-bold text-slate-800 mb-4">☣️ ภัยคุกคามต่อระบบปฏิบัติการ</h3>
-                <p class="mb-4">ระบบปฏิบัติการเป็นเป้าหมายหลักของผู้โจมตี เพราะเป็นศูนย์กลางการทำงานของคอมพิวเตอร์ ภัยคุกคามหลักๆ ได้แก่:</p>
-                 <div class="grid md:grid-cols-2 gap-4">
-                    <div class="p-4 border rounded-lg"><strong>Malware:</strong> ซอฟต์แวร์ประสงค์ร้าย เช่น Virus, Worms, Trojans, Ransomware</div>
-                    <div class="p-4 border rounded-lg"><strong>Unauthorized Access:</strong> การเข้าถึงโดยไม่ได้รับอนุญาต เช่น การโจมตีรหัสผ่าน, Privilege Escalation</div>
-                     <div class="p-4 border rounded-lg"><strong>Data Breach:</strong> การรั่วไหลหรือการขโมยข้อมูลสำคัญ</div>
-                    <div class="p-4 border rounded-lg"><strong>Insider Threats:</strong> ภัยจากบุคลากรภายในที่ใช้สิทธิ์ในทางที่ผิด</div>
-                </div>
-            </div>
-
-            <div class="card mb-8">
-                <h3 class="text-2xl font-bold text-slate-800 mb-4">🧱 7 หลักการสำคัญในการรักษาความปลอดภัย OS</h3>
-                 <div class="space-y-4">
-                    <details><summary>Defense in Depth (การป้องกันเชิงลึก)</summary><div class="p-4 bg-white border rounded-b-lg">
-                        <p>หลักการที่ว่า "ไม่ควรพึ่งพาระบบป้องกันเพียงชั้นเดียว" แต่ควรสร้างการป้องกันหลายๆ ชั้นซ้อนกันเหมือนชั้นของหัวหอม หากผู้โจมตีผ่านชั้นแรกมาได้ ก็จะเจอกับชั้นต่อไป(กดที่รูป)</p>
-                        <a href="https://www.kingston.com/th/blog/data-security/defense-in-depth-multiple-layers-cybersecurity-strategy-video" target="_blank" rel="noopener" class="mb-4 md:mb-0">
-                        <img src="https://media.kingston.com/kingston/content/ktc-content-blog-data-security-defense-in-depth-multi-layered-cybersecurity-strategy-video-manage-users.jpg" width="300" alt="แผนภาพ Defense in Depth" class="mt-4 rounded-lg w-full md:w-2/3 mx-auto">
-                        </a>
-                    </div></details>
-                    <details><summary>Principle of Least Privilege (หลักการให้สิทธิ์น้อยที่สุด)</summary><div class="p-4 bg-white border rounded-b-lg">
-                        <p>ผู้ใช้หรือโปรเซสควรได้รับสิทธิ์เท่าที่จำเป็นในการทำงานให้สำเร็จเท่านั้น เพื่อลดความเสียหายหากบัญชีหรือโปรเซสนั้นถูกบุกรุก</p>
-                    </div></details>
-                    <details><summary>Fail-Safe Defaults (ค่าเริ่มต้นที่ปลอดภัย)</summary><div class="p-4 bg-white border rounded-b-lg">
-                        <p>โดยค่าเริ่มต้น ระบบควรปฏิเสธการเข้าถึงทั้งหมด และจะอนุญาตเฉพาะสิ่งที่ระบุไว้อย่างชัดเจนเท่านั้น รวมถึงการปิดบริการที่ไม่จำเป็นทั้งหมดเป็นค่าเริ่มต้น</p>
-                    </div></details>
-                     <details><summary>Complete Mediation (การตรวจสอบที่สมบูรณ์)</summary><div class="p-4 bg-white border rounded-b-lg">
-                        <p>ต้องมีการตรวจสอบสิทธิ์ในการเข้าถึงทรัพยากรทุกครั้ง ไม่มีการจำการตัดสินใจครั้งก่อนหน้า เพื่อป้องกันช่องโหว่ที่อาจเกิดขึ้นระหว่างการใช้งาน</p>
-                    </div></details>
-                    <details><summary>Economy of Mechanism (เรียบง่ายและเล็กที่สุด)</summary><div class="p-4 bg-white border rounded-b-lg">
-                        <p>การออกแบบระบบความปลอดภัยควรจะเรียบง่ายและเล็กที่สุดเท่าที่จะทำได้ เพราะระบบที่ซับซ้อนมีโอกาสเกิดข้อผิดพลาด, มีช่องโหว่ได้ง่ายกว่า, และยากต่อการตรวจสอบความถูกต้อง</p>
-                    </div></details>
-                     <details><summary>Open Design (การออกแบบที่เปิดเผย)</summary><div class="p-4 bg-white border rounded-b-lg">
-                        <p>ความปลอดภัยของระบบไม่ควรขึ้นอยู่กับการปกปิดการออกแบบหรือการทำงาน (Security through obscurity) แต่ควรจะยังคงปลอดภัยแม้ว่าผู้โจมตีจะรู้ทุกอย่างเกี่ยวกับการออกแบบก็ตาม</p>
-                    </div></details>
-                     <details><summary>Separation of Privilege (การแยกสิทธิ์)</summary><div class="p-4 bg-white border rounded-b-lg">
-                        <p>การเข้าถึงทรัพยากรที่สำคัญควรต้องใช้สิทธิ์จากหลายแหล่งหรือหลายเงื่อนไขพร้อมกัน ไม่ใช่แค่เงื่อนไขเดียว เพื่อไม่ให้มีจุดตายจุดเดียว (single point of failure) ตัวอย่างเช่น การโอนเงินจำนวนมากที่ต้องได้รับการอนุมัติจากบุคคล 2 คน</p>
-                    </div></details>
-                </div>
-            </div>
-        </section>
-
-        <!-- Access Control -->
-        <section id="access-control" class="mb-16">
-            <h2 class="section-title">การจัดการผู้ใช้และการควบคุมการเข้าถึง</h2>
-            
-            <div class="card mb-8">
-                <h3 class="text-2xl font-bold text-slate-800 mb-4">👤 User Account Management</h3>
-                <div class="grid md:grid-cols-2 gap-6">
                     <div>
-                        <h4 class="font-semibold text-lg mb-2">ประเภทของบัญชีผู้ใช้</h4>
-                        <ul class="list-disc list-inside space-y-1">
-                            <li><strong>Administrator/Root:</strong> สิทธิ์เต็มในการจัดการระบบ</li>
-                            <li><strong>Standard User:</strong> สิทธิ์ใช้งานทั่วไป</li>
-                            <li><strong>Service Account:</strong> บัญชีสำหรับโปรแกรมหรือบริการโดยเฉพาะ</li>
-                            <li><strong>Guest Account:</strong> สิทธิ์จำกัดมาก ควรปิดใช้งาน</li>
-                        </ul>
-                    </div>
-                    <div>
-                        <h4 class="font-semibold text-lg mb-2">Best Practices</h4>
-                        <ul class="list-disc list-inside space-y-1">
-                            <li>แยกบัญชีสำหรับผู้ใช้แต่ละคน</li>
-                            <li>บังคับใช้นโยบายรหัสผ่านที่รัดกุม</li>
-                            <li>เปิดใช้ Account Lockout Policy</li>
-                            <li>ปิดหรือลบบัญชีที่ไม่ได้ใช้งาน</li>
-                        </ul>
+                        <strong style="color: var(--accent);">Others</strong><br>
+                        <input type="checkbox" id="or" onchange="calcChmod()" value="4"> Read (4)
+                        <input type="checkbox" id="ow" onchange="calcChmod()" value="2"> Write (2)
+                        <input type="checkbox" id="ox" onchange="calcChmod()" value="1"> Execute (1)
                     </div>
                 </div>
+                
+                <div class="card" style="display: flex; flex-direction: column; justify-content: center; align-items: center;">
+                    <h3 style="margin: 0;">Command Result</h3>
+                    <div id="chmod-result" style="font-size: 4em; font-family: 'JetBrains Mono'; color: var(--primary); margin: 20px 0;">000</div>
+                    <div id="chmod-cmd" style="font-size: 1.5em; background: #000; padding: 10px 20px; border-radius: 8px; font-family: 'JetBrains Mono';">chmod 000 filename</div>
+                    <p id="chmod-warning" style="color: var(--alert); height: 20px; margin-top: 10px; font-weight: bold;"></p>
+                </div>
             </div>
+        </div>
 
-            <div class="card mb-8">
-                <h3 class="text-2xl font-bold text-slate-800 mb-4">🔑 Password & Multi-Factor Authentication (MFA)</h3>
-                <p class="mb-4">รหัสผ่านคือด่านแรก แต่ไม่ควรเป็นด่านเดียว MFA คือการเพิ่มชั้นความปลอดภัยโดยการยืนยันตัวตนมากกว่าหนึ่งวิธี(กดที่รูป)</p>
-                <div class="flex flex-col md:flex-row items-center gap-6 p-4 bg-slate-50 rounded-lg">
-                    <a href="https://rta.mi.th/the-warrior-ep12-multi-factor-authentication" target="_blank" rel="noopener" class="mb-4 md:mb-0">
-                     <img src="https://rta.mi.th/wp-content/uploads/2024/05/ep.12-01-2048x1152.jpg" width="500" alt="ภาพประกอบ MFA" class="rounded-lg">
-                     </a>
-                     <div>
-                        <h4 class="font-bold text-lg mb-2">MFA คือการรวมปัจจัยเหล่านี้เข้าด้วยกัน:</h4>
-                        <ul class="list-disc list-inside space-y-2">
-                            <li><strong>Something you know:</strong> สิ่งที่คุณรู้ (เช่น Password, PIN)</li>
-                            <li><strong>Something you have:</strong> สิ่งที่คุณมี (เช่น Smartphone, Token)</li>
-                            <li><strong>Something you are:</strong> สิ่งที่คุณเป็น (เช่น ลายนิ้วมือ, ใบหน้า)</li>
+        <div class="slide">
+            <h2>3. Accounting (การบันทึกและตรวจสอบ)</h2>
+            <p>"What did you do? - คุณทำอะไรไปบ้าง?"</p>
+            <div class="grid">
+                <div>
+                    <p>ถ้าไม่มีการบันทึก (Logging) เราจะไม่รู้เลยว่าใครแอบเข้ามา หรือใครลบไฟล์ทิ้ง</p>
+                    <div class="highlight-box">
+                        <strong>Logs ที่สำคัญ:</strong>
+                        <ul>
+                            <li><strong>Auth Logs:</strong> Login สำเร็จ/ล้มเหลว</li>
+                            <li><strong>System Logs:</strong> Service error, Restart</li>
+                            <li><strong>Access Logs:</strong> ใครเข้าไฟล์ไหน</li>
                         </ul>
                     </div>
                 </div>
-            </div>
-            
-            <div class="card mb-8">
-                <h3 class="text-2xl font-bold text-slate-800 mb-4">🛂 Access Control Models</h3>
-                <div class="grid md:grid-cols-3 gap-4">
-                    <div class="p-4 border rounded-lg">
-                        <h4 class="font-bold">Discretionary (DAC)</h4>
-                        <p>เจ้าของข้อมูลกำหนดสิทธิ์เอง ยืดหยุ่น แต่ควบคุมจากส่วนกลางได้ยาก (ใช้ใน Windows/Linux ทั่วไป)</p>
+                <div class="terminal">
+                    <div class="terminal-output">
+Dec 16 10:23:01 server sshd[1234]: Failed password for root from 192.168.1.5 port 22
+Dec 16 10:23:05 server sshd[1234]: Accepted password for admin from 10.0.0.5 port 5432
+Dec 16 10:24:12 server sudo: admin : TTY=pts/0 ; PWD=/home/admin ; USER=root ; COMMAND=/bin/rm -rf /var/www
                     </div>
-                    <div class="p-4 border rounded-lg">
-                        <h4 class="font-bold">Mandatory (MAC)</h4>
-                        <p>ระบบเป็นผู้กำหนดสิทธิ์ตามป้ายกำกับความปลอดภัย ปลอดภัยสูง แต่ซับซ้อน (ใช้ใน SELinux/AppArmor)</p>
-                    </div>
-                    <div class="p-4 border rounded-lg">
-                        <h4 class="font-bold">Role-Based (RBAC)</h4>
-                        <p>กำหนดสิทธิ์ตามบทบาทหน้าที่ของผู้ใช้ เหมาะกับองค์กรขนาดใหญ่</p>
+                    <div style="border-top: 1px solid #333; padding-top: 10px; margin-top: auto; color: var(--accent);">
+                        tail -f /var/log/auth.log
                     </div>
                 </div>
             </div>
-        </section>
+        </div>
 
-        <!-- System Hardening -->
-        <section id="hardening" class="mb-16">
-            <h2 class="section-title">System Hardening: การทำให้ระบบแข็งแกร่ง</h2>
-            <p class="mb-8 -mt-4 text-slate-600">คือกระบวนการลดพื้นผิวการโจมตี (Attack Surface) ของระบบโดยการตั้งค่าความปลอดภัยต่างๆ, การลบบริการที่ไม่จำเป็น, และการอัปเดตระบบให้ทันสมัยอยู่เสมอ</p>
+        <div class="slide center-text">
+            <h1 style="text-align: center; margin-top: 100px;">PART 3: USER PRIVILEGES</h1>
+            <p style="text-align: center;">"With great power comes great responsibility"</p>
+        </div>
 
-            <div class="tabs-container card mb-8">
-                <h3 class="text-2xl font-bold text-slate-800 mb-4">🐧 Windows vs. 🐧 Linux: การจัดการผู้ใช้และสิทธิ์</h3>
-                <div class="tabs border-b">
-                    <button class="tab-button active" onclick="showTab(event, 'linux-perm', 'perm-tabs')">Linux Permissions</button>
-                    <button class="tab-button" onclick="showTab(event, 'linux-user', 'perm-tabs')">Linux User Commands</button>
-                    <button class="tab-button" onclick="showTab(event, 'win-uac', 'perm-tabs')">Windows UAC</button>
-                    <button class="tab-button" onclick="showTab(event, 'win-user', 'perm-tabs')">Windows User Commands</button>
+        <div class="slide">
+            <h2><i class="fas fa-balance-scale"></i> Principle of Least Privilege</h2>
+            <div class="grid">
+                <div>
+                    <div class="card" style="border-left: 5px solid var(--primary);">
+                        <h3>Definition</h3>
+                        <p>"ให้สิทธิ์ผู้ใช้หรือโปรแกรม <strong>เท่าที่จำเป็น</strong> ในการทำงานเท่านั้น ไม่มากไปกว่านั้น"</p>
+                    </div>
+                    <ul style="margin-top: 20px;">
+                        <li><i class="fas fa-times" style="color: var(--alert);"></i> <strong>Bad:</strong> ให้ทุกคนเป็น Admin เพื่อความสะดวก</li>
+                        <li><i class="fas fa-check" style="color: var(--accent);"></i> <strong>Good:</strong> ให้สิทธิ์ User ธรรมดา ถ้าจะลงโปรแกรมค่อยขอสิทธิ์ชั่วคราว</li>
+                    </ul>
                 </div>
-                <div id="perm-tabs" class="mt-4">
-                    <div id="linux-perm" class="tab-content">
-                        <h4 class="font-semibold text-lg mb-2">File Permissions (rwx)</h4>
-                        <p><code>r (read) = 4</code>, <code>w (write) = 2</code>, <code>x (execute) = 1</code></p>
-                        <div class="code-block">
-<pre><code># ตัวอย่าง: chmod 755 script.sh
-# 7 = 4+2+1 -> rwx (Owner)
-# 5 = 4+0+1 -> r-x (Group)
-# 5 = 4+0+1 -> r-x (Others)
-# ผลลัพธ์: -rwxr-xr-x
+                <div style="display: flex; justify-content: center; align-items: center;">
+                    <i class="fas fa-chess-pawn" style="font-size: 5em; color: var(--text-muted);"></i>
+                    <i class="fas fa-arrow-right" style="font-size: 2em; margin: 0 20px;"></i>
+                    <i class="fas fa-chess-king" style="font-size: 5em; color: var(--alert);"></i>
+                </div>
+            </div>
+        </div>
 
-# ตัวอย่างสิทธิ์ที่สำคัญ
-chmod 600 secret.key # --> rw------- (เจ้าของเท่านั้นที่อ่าน/เขียนได้)</code></pre>
-                        </div>
-                        <h4 class="font-semibold text-lg mt-4 mb-2">Advanced Permissions</h4>
-                        <ul class="list-disc list-inside">
-                            <li><strong>SUID (Set User ID):</strong> รันไฟล์ด้วยสิทธิ์ของเจ้าของไฟล์</li>
-                            <li><strong>SGID (Set Group ID):</strong> รันไฟล์ด้วยสิทธิ์ของกลุ่มที่เป็นเจ้าของไฟล์</li>
-                            <li><strong>Sticky Bit:</strong> ในไดเรกทอรี จะมีเพียงเจ้าของไฟล์เท่านั้นที่ลบไฟล์ของตนเองได้ (เช่น /tmp)</li>
-                            <li><strong>ACLs (Access Control Lists):</strong> กำหนดสิทธิ์ให้ผู้ใช้หรือกลุ่มอื่นนอกเหนือจาก Owner/Group ได้</li>
-                        </ul>
+        <div class="slide">
+            <h2>User Privilege Hierarchy</h2>
+            <div style="display: flex; justify-content: center; align-items: center; flex: 1; overflow: hidden; margin-top: 10px;">
+                <img src="images/user_privilege_and_comparison-User-Privilege-Hierarchy.png" 
+                     class="slide-img" 
+                     style="max-height: 90%; width: auto;" 
+                     alt="Privilege Hierarchy"
+                     onclick="openLightbox(this.src)">
+            </div>
+            <div class="img-caption"><i class="fas fa-search-plus"></i> คลิกเพื่อขยาย</div>
+        </div>
+
+        <div class="slide">
+            <h2>User Types in OS</h2>
+            <div class="grid-3">
+                <div class="card">
+                    <h3>Standard User</h3>
+                    <p>✅ ใช้งานทั่วไป (Web, Office)</p>
+                    <p>✅ แก้ไขไฟล์ตัวเองได้</p>
+                    <p>❌ แก้ไขไฟล์ระบบไม่ได้</p>
+                    <p>❌ ลงโปรแกรมไม่ได้</p>
+                </div>
+                <div class="card danger-box">
+                    <h3>Administrator / Root</h3>
+                    <p>⚡ พระเจ้าของเครื่อง</p>
+                    <p>⚡ ทำได้ทุกอย่าง (ลบ OS ทิ้งก็ได้)</p>
+                    <p>⚠ ความเสี่ยงสูงที่สุด</p>
+                </div>
+                <div class="card">
+                    <h3>System / Service</h3>
+                    <p>🤖 บัญชีสำหรับโปรแกรม (เช่น Apache, MySQL)</p>
+                    <p>🚫 มักจะ Login ไม่ได้ (No Shell)</p>
+                    <p>🔒 จำกัดสิทธิ์เฉพาะงานของ Service</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>Linux: sudo vs su</h2>
+            <p>การขอยืมสิทธิ์ Root มาใช้</p>
+            <div class="grid">
+                <div class="card">
+                    <h3><span class="code">sudo</span> (SuperUser DO)</h3>
+                    <p class="code">sudo apt update</p>
+                    <ul>
+                        <li>✅ <strong>Recommended</strong></li>
+                        <li>รันคำสั่งเดียวด้วยสิทธิ์ Root</li>
+                        <li>ใช้ Password ของ <strong>User เอง</strong></li>
+                        <li>มีการบันทึก Log (Accounting)</li>
+                    </ul>
+                </div>
+                <div class="card" style="opacity: 0.7;">
+                    <h3><span class="code">su</span> (Switch User)</h3>
+                    <p class="code">su -</p>
+                    <ul>
+                        <li>❌ <strong>Not Recommended</strong></li>
+                        <li>แปลงร่างเป็น Root ค้างไว้เลย</li>
+                        <li>ต้องรู้ Password ของ <strong>Root</strong> (ต้องแชร์รหัส)</li>
+                        <li>เสี่ยงลืมตัว และเผลอลบไฟล์ผิด</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>Windows: User Account Control (UAC)</h2>
+            <div class="grid">
+                <div>
+                    <p>กลไกที่ถามว่า <em>"Do you want to allow this app to make changes?"</em></p>
+                    <p>ช่วยป้องกันไม่ให้ Malware แอบทำงานในสิทธิ์ Admin โดยที่เราไม่รู้ตัว</p>
+                    <div class="danger-box">
+                        <strong>Warning:</strong> อย่าปิด UAC (Never Notify) เด็ดขาด!
                     </div>
-                    <div id="linux-user" class="tab-content">
-                        <div class="code-block">
-<pre><code># สร้างผู้ใช้ใหม่ชื่อ newuser และตั้งรหัสผ่าน
-sudo useradd -m -s /bin/bash newuser
-sudo passwd newuser
-
-# เพิ่ม newuser เข้าไปในกลุ่ม sudo
-sudo usermod -aG sudo newuser
-
-# ลบผู้ใช้ newuser พร้อม home directory
-sudo userdel -r newuser</code></pre>
-                        </div>
-                    </div>
-                    <div id="win-uac" class="tab-content">
-                        <h4 class="font-semibold text-lg mb-2">User Account Control (UAC)</h4>
-                        <p>เป็นฟีเจอร์ที่ช่วยป้องกันการเปลี่ยนแปลงระบบโดยไม่ได้รับอนุญาต โดยจะแสดงหน้าต่างยืนยันเมื่อโปรแกรมพยายามทำงานที่ต้องใช้สิทธิ์ระดับผู้ดูแลระบบ</p>
-                        <p><strong>ระดับการแจ้งเตือน (Default):</strong> Notify me only when apps try to make changes to my computer.</p>
-                    </div>
-                    <div id="win-user" class="tab-content">
-                        <div class="code-block">
-<pre><code># (PowerShell) สร้างผู้ใช้ใหม่ชื่อ NewUser
-New-LocalUser -Name "NewUser" -Password (ConvertTo-SecureString "P@ssw0rd!" -AsPlainText -Force)
-
-# เพิ่ม NewUser เข้าไปในกลุ่ม Administrators
-Add-LocalGroupMember -Group "Administrators" -Member "NewUser"
-
-# ลบผู้ใช้ NewUser
-Remove-LocalUser -Name "NewUser"</code></pre>
-                        </div>
+                </div>
+                <div class="card" style="background: #e6e6e6; color: #000; text-align: center; border: 2px solid #0078d7;">
+                    <div style="background: #f7d05c; height: 10px; width: 100%;"></div>
+                    <h3 style="color: #000; margin-top: 20px;">User Account Control</h3>
+                    <p>Do you want to allow this app to make changes to your device?</p>
+                    <div style="display: flex; gap: 10px; justify-content: center; margin-top: 20px;">
+                        <button style="padding: 5px 20px; background: #ccc; border: 1px solid #999;">Yes</button>
+                        <button style="padding: 5px 20px; background: #ccc; border: 1px solid #999;">No</button>
                     </div>
                 </div>
             </div>
+        </div>
 
-            <div class="tabs-container card mb-8">
-                <h3 class="text-2xl font-bold text-slate-800 mb-4">🔥 Firewall Configuration</h3>
-                <div class="tabs border-b">
-                    <button class="tab-button active" onclick="showTab(event, 'linux-fw', 'fw-tabs')">Linux (UFW)</button>
-                    <button class="tab-button" onclick="showTab(event, 'win-fw', 'fw-tabs')">Windows Defender Firewall</button>
+        <div class="slide center-text">
+            <h1 style="text-align: center; margin-top: 100px;">PART 4: WINDOWS vs LINUX</h1>
+            <p style="text-align: center;">เปรียบเทียบโมเดลความปลอดภัย</p>
+        </div>
+
+        <div class="slide">
+            <h2>Security Model Comparison</h2>
+            <div style="display: flex; justify-content: center; align-items: center; flex: 1; overflow: hidden; margin-top: 10px;">
+                <img src="images/user_privilege_and_comparison-Windows-vs-Linux-Security.png" 
+                     class="slide-img" 
+                     style="max-height: 90%; width: auto;" 
+                     alt="Comparison Table"
+                     onclick="openLightbox(this.src)">
+            </div>
+            <div class="img-caption"><i class="fas fa-search-plus"></i> คลิกเพื่อขยาย</div>
+        </div>
+
+        <div class="slide">
+            <h2>Key Differences</h2>
+            <div class="grid">
+                <div class="card">
+                    <h3><i class="fab fa-windows"></i> Windows</h3>
+                    <ul>
+                        <li><strong>Users:</strong> Local or Active Directory (AD)</li>
+                        <li><strong>Permissions:</strong> ACL (Access Control Lists) ซับซ้อนและละเอียด</li>
+                        <li><strong>Firewall:</strong> Windows Defender Firewall (GUI)</li>
+                        <li><strong>Updates:</strong> Windows Update (บังคับรีสตาร์ทบ่อย)</li>
+                    </ul>
                 </div>
-                <div id="fw-tabs" class="mt-4">
-                    <div id="linux-fw" class="tab-content">
-                        <p>UFW (Uncomplicated Firewall) เป็นเครื่องมือที่ช่วยให้การจัดการ Firewall ใน Linux ง่ายขึ้น</p>
-                        <div class="code-block">
-<pre><code># เปิดใช้งาน UFW
-sudo ufw enable
+                <div class="card">
+                    <h3><i class="fab fa-linux"></i> Linux</h3>
+                    <ul>
+                        <li><strong>Users:</strong> <code>/etc/passwd</code>, LDAP</li>
+                        <li><strong>Permissions:</strong> rwx bits (Simple) + SELinux (Advanced)</li>
+                        <li><strong>Firewall:</strong> iptables, ufw, firewalld (CLI)</li>
+                        <li><strong>Updates:</strong> Package Manager (apt, yum) อัปเดตได้โดยไม่ต้องรีบูต (ส่วนใหญ่)</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
 
-# อนุญาตการเชื่อมต่อ SSH (port 22)
+        <div class="slide">
+            <h2>💻 Try It: Terminal Simulation</h2>
+            <p>ลองพิมพ์คำสั่งจัดการ User บน Linux (เช่น <code>sudo useradd john</code>)</p>
+            <div class="terminal">
+                <div class="terminal-output" id="term-out">
+Welcome to Linux Secure Shell
+Type 'help' for available commands.
+                </div>
+                <div class="terminal-input-line">
+                    <span class="prompt">student@server:~$</span>
+                    <input type="text" class="cmd-input" id="term-in" autofocus placeholder="Type command here...">
+                </div>
+            </div>
+        </div>
+
+        <div class="slide center-text">
+            <h1 style="text-align: center; margin-top: 100px;">PART 5: OS HARDENING</h1>
+            <p style="text-align: center;">การเสริมความแข็งแกร่งให้ระบบ</p>
+            <div class="highlight-box" style="display: inline-block; margin-top: 30px;">
+                "Default Installation is NOT Secure Installation"
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>OS Hardening Workflow</h2>
+            <div style="display: flex; justify-content: center; align-items: center; flex: 1; overflow: hidden; margin-top: 10px;">
+                <img src="images/aaa_framework_and_hardening_workflow-OS-Hardening-Workflow.png" 
+                     class="slide-img" 
+                     style="max-height: 90%; width: auto;" 
+                     alt="Hardening Workflow"
+                     onclick="openLightbox(this.src)">
+            </div>
+            <div class="img-caption"><i class="fas fa-search-plus"></i> คลิกเพื่อขยาย</div>
+        </div>
+
+        <div class="slide">
+            <h2>1. Disable Unnecessary Services</h2>
+            <p>"ปิดประตูที่ไม่ได้ใช้ เพื่อลดช่องทางเข้าของโจร (Attack Surface)"</p>
+            <div class="grid">
+                <div class="card">
+                    <h3><i class="fab fa-windows"></i> Windows to Disable</h3>
+                    <ul>
+                        <li>Remote Registry</li>
+                        <li>Print Spooler (ถ้าไม่ใช่เครื่อง Print Server)</li>
+                        <li>Telnet (ห้ามใช้เด็ดขาด!)</li>
+                        <li>Xbox Live Services (บน Server)</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h3><i class="fab fa-linux"></i> Linux to Disable</h3>
+                    <ul>
+                        <li>CUPS (Printing Service)</li>
+                        <li>FTP (ใช้ SFTP แทน)</li>
+                        <li>Telnet / RSH</li>
+                        <li>Avahi-daemon (ถ้าไม่ใช้ mDNS)</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>2. Configure Firewall</h2>
+            <div class="grid">
+                <div>
+                    <div class="highlight-box">
+                        <h3>✅ Strategy: Default Deny</h3>
+                        <p>1. ปิดกั้นการเชื่อมต่อขาเข้า (Inbound) <strong>ทั้งหมด</strong> ก่อน</p>
+                        <p>2. อนุญาต (Allow) เฉพาะพอร์ตที่จำเป็นต้องใช้จริงๆ</p>
+                    </div>
+                    <p>เช่น Web Server: Allow 80, 443 และ SSH 22 (เฉพาะ IP แอดมิน)</p>
+                </div>
+                <div class="code-block">
+# Ubuntu UFW (Uncomplicated Firewall)
+
+# 1. Deny all incoming
+sudo ufw default deny incoming
+
+# 2. Allow outgoing
+sudo ufw default allow outgoing
+
+# 3. Allow SSH (Don't lock yourself out!)
 sudo ufw allow ssh
 
-# อนุญาตการเชื่อมต่อ HTTP (port 80)
-sudo ufw allow 80/tcp
-
-# ปฏิเสธการเชื่อมต่อ Telnet (port 23)
-sudo ufw deny 23/tcp
-
-# ดูกฎทั้งหมด
-sudo ufw status verbose</code></pre>
-                        </div>
-                    </div>
-                    <div id="win-fw" class="tab-content">
-                        <p>สามารถจัดการผ่าน PowerShell เพื่อความรวดเร็วและทำ Automation</p>
-                        <div class="code-block">
-<pre><code># (PowerShell) ตรวจสอบสถานะ Firewall ของทุก Profile
-Get-NetFirewallProfile
-
-# สร้างกฎใหม่เพื่ออนุญาตการเชื่อมต่อขาเข้าที่ Port 8080
-New-NetFirewallRule -DisplayName "Allow Port 8080" -Direction Inbound -Protocol TCP -LocalPort 8080 -Action Allow
-
-# สร้างกฎใหม่เพื่ออนุญาตให้โปรแกรมเฉพาะผ่าน Firewall
-New-NetFirewallRule -DisplayName "Allow App" -Direction Inbound -Program "C:\app.exe" -Action Allow</code></pre>
-                        </div>
-                    </div>
+# 4. Turn on
+sudo ufw enable
                 </div>
             </div>
+        </div>
 
-            <div class="card mb-8">
-                <h3 class="text-2xl font-bold text-slate-800 mb-4">🛡️ การป้องกันเพิ่มเติม</h3>
-                <div class="space-y-4">
-                    <details><summary>System Monitoring & Logging (การตรวจสอบและบันทึก Log)</summary><div class="p-4 bg-white border rounded-b-lg">
-                        <p>การตรวจสอบ Log อย่างสม่ำเสมอเป็นสิ่งสำคัญในการตรวจจับกิจกรรมที่น่าสงสัยและการบุกรุก</p>
-                        <p><strong>Linux:</strong> <code>/var/log/auth.log</code> (การยืนยันตัวตน), <code>/var/log/syslog</code> (เหตุการณ์ระบบ), <code>journalctl</code> (Systemd logs)</p>
-                        <p><strong>Windows:</strong> Event Viewer (โดยเฉพาะ Security Log)</p>
-                    </div></details>
-                    <details><summary>System Updates & Patch Management (การอัปเดตและจัดการแพตช์)</summary><div class="p-4 bg-white border rounded-b-lg">
-                        <p>หนึ่งในวิธีป้องกันที่ง่ายและมีประสิทธิภาพที่สุดคือการอัปเดตระบบและซอฟต์แวร์ให้เป็นเวอร์ชันล่าสุดเสมอ เพื่อปิดช่องโหว่ที่ทราบแล้ว</p>
-                        <p><strong>Linux:</strong> <code>sudo apt update && sudo apt upgrade</code></p>
-                        <p><strong>Windows:</strong> ใช้ Windows Update และตั้งค่าให้อัปเดต Security updates โดยอัตโนมัติ</p>
-                    </div></details>
-                    <details><summary>Encryption & Data Protection (การเข้ารหัสและปกป้องข้อมูล)</summary><div class="p-4 bg-white border rounded-b-lg">
-                        <p>การเข้ารหัสข้อมูลช่วยปกป้องข้อมูลแม้ว่าผู้โจมตีจะเข้าถึงไฟล์ได้</p>
-                        <p><strong>Linux:</strong> GPG (File encryption), LUKS (Disk encryption)</p>
-                        <p><strong>Windows:</strong> BitLocker (Full disk encryption), EFS (File/Folder encryption)</p>
-                    </div></details>
-                    <details><summary>Backup & Recovery (การสำรองและกู้คืนข้อมูล)</summary><div class="p-4 bg-white border rounded-b-lg">
-                        <p>การสำรองข้อมูลอย่างสม่ำเสมอเป็นปราการด่านสุดท้ายที่ช่วยให้กู้คืนระบบกลับมาได้หลังเกิดเหตุการณ์ร้ายแรง เช่น Ransomware</p>
-                        <h4 class="font-semibold mt-2">หลักการ 3-2-1 Rule:</h4>
-                        <ul class="list-disc list-inside">
-                            <li>มีข้อมูลสำรอง <strong>3</strong> ชุด</li>
-                            <li>เก็บไว้ในสื่อ <strong>2</strong> ชนิดที่แตกต่างกัน</li>
-                            <li>มี <strong>1</strong> ชุดที่เก็บไว้นอกสถานที่ (Offsite)</li>
+        <div class="slide">
+            <h2>🧪 Lab 1: OS Hardening Exercise</h2>
+            <div class="grid">
+                <div class="card" style="display: flex; flex-direction: column; justify-content: center; align-items: center;">
+                    <i class="fas fa-flask fa-4x" style="color: var(--primary); margin-bottom: 20px;"></i>
+                    <h3>Mission</h3>
+                    <p>ทำความสะอาดและล็อกประตู VM จำลอง</p>
+                </div>
+                <div>
+                    <h3>Checklist:</h3>
+                    <ul>
+                        <li><input type="checkbox" checked disabled> <strong>User Mgmt:</strong> สร้าง User แยก Admin/Standard</li>
+                        <li><input type="checkbox" checked disabled> <strong>Password:</strong> ตั้ง Policy ให้ยาก (12+ chars)</li>
+                        <li><input type="checkbox" checked disabled> <strong>Services:</strong> ปิด Service ที่ไม่จำเป็น</li>
+                        <li><input type="checkbox" checked disabled> <strong>Firewall:</strong> ตั้ง Default Deny</li>
+                        <li><input type="checkbox" checked disabled> <strong>SSH (Linux):</strong> ปิด Root Login</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2><i class="fas fa-bug"></i> Case Study: WannaCry (2017)</h2>
+            <div class="grid">
+                <div>
+                    <h3>What happened?</h3>
+                    <p>Ransomware เรียกค่าไถ่ที่แพร่กระจายไปทั่วโลก 200,000+ เครื่อง</p>
+                    <div class="card danger-box">
+                        <h3>Root Cause:</h3>
+                        <ul>
+                            <li>ช่องโหว่ใน <strong>SMBv1 Protocol</strong> (Service เก่าที่ควรปิด)</li>
+                            <li>Windows ออก Patch แล้ว แต่คน <strong>ไม่อัปเดต</strong> (Unpatched OS)</li>
                         </ul>
-                    </div></details>
+                    </div>
+                </div>
+                <div style="background: #a00; color: #fff; padding: 20px; border-radius: 8px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;">
+                    <i class="fas fa-lock fa-3x" style="margin-bottom: 20px;"></i>
+                    <h2>Ooops, your files have been encrypted!</h2>
+                    <p>Send $300 in Bitcoin</p>
                 </div>
             </div>
-        </section>
+        </div>
 
-        <!-- Lab & Case Studies -->
-        <section id="lab" class="mb-16">
-            <h2 class="section-title">LAB & Case Studies</h2>
-            
-            <div class="card mb-8">
-                <h3 class="text-2xl font-bold text-slate-800 mb-4">📊 Case Studies: การประยุกต์ใช้ในโลกจริง</h3>
-                <div class="space-y-6">
-                    <!-- Case Study 1 -->
-                    <div class="p-4 border rounded-lg bg-slate-50">
-                        <h4 class="font-bold text-lg text-slate-800">Case 1: บริษัทพัฒนาซอฟต์แวร์ขนาดกลาง</h4>
-                        <p class="mt-2"><strong>สถานการณ์:</strong> บริษัทมีนักพัฒนา 50 คน ใช้ Linux servers สำหรับ Staging/Production และ Windows workstations สำหรับพัฒนาซอฟต์แวร์ พบว่านักพัฒนาหลายคนใช้ `sudo` โดยไม่มีการจำกัด, นโยบายรหัสผ่านหละหลวม (เช่น 'password123'), และไม่มีการใช้ MFA ในการเข้าถึง Git repository หรือ VPN ของบริษัท</p>
-                        <p class="mt-2"><strong>ผลกระทบ:</strong> หากบัญชีนักพัฒนาถูกขโมย (ผ่าน Phishing หรือ Malware) ผู้โจมตีสามารถเข้าถึง Source Code, แทรกโค้ดอันตรายลงในผลิตภัณฑ์, หรือใช้สิทธิ์ `sudo` บนเซิร์ฟเวอร์เพื่อเข้าถึงฐานข้อมูลลูกค้า ทำให้เกิดข้อมูลรั่วไหล, เสียหายต่อชื่อเสียง, และอาจถูกฟ้องร้องได้</p>
-                        <p class="mt-2"><strong>แนวทางการแก้ไข:</strong>
-                            <ul class="list-disc list-inside ml-4">
-                                <li><strong>จำกัดสิทธิ์ Sudo:</strong> แก้ไขไฟล์ `/etc/sudoers` เพื่อให้สิทธิ์นักพัฒนาเฉพาะคำสั่งที่จำเป็น (เช่น restart web server) แต่ไม่อนุญาตให้แก้ไขไฟล์ระบบ</li>
-                                <li><strong>บังคับใช้นโยบายรหัสผ่าน:</strong> ตั้งค่า Group Policy ใน Windows และ PAM ใน Linux ให้บังคับใช้รหัสผ่านที่ซับซ้อนและมีวันหมดอายุ</li>
-                                <li><strong>ใช้ MFA:</strong> บังคับใช้ MFA สำหรับการเข้าถึง Git, VPN, และ SSH ทุกครั้ง</li>
-                                <li><strong>Centralized Logging:</strong> ติดตั้งระบบรวบรวม Log เช่น ELK Stack เพื่อตรวจสอบกิจกรรมที่น่าสงสัยและตั้งค่าการแจ้งเตือน</li>
-                            </ul>
-                        </p>
-                    </div>
-                    <!-- Case Study 2 -->
-                    <div class="p-4 border rounded-lg bg-slate-50">
-                        <h4 class="font-bold text-lg text-slate-800">Case 2: Startup ด้าน FinTech</h4>
-                        <p class="mt-2"><strong>สถานการณ์:</strong> Startup ที่พัฒนาระบบบน Microservices บน Kubernetes และต้องจัดการข้อมูลทางการเงินที่ละเอียดอ่อนของลูกค้า ทำให้ต้องปฏิบัติตามมาตรฐานความปลอดภัย เช่น PCI DSS และ GDPR พนักงานส่วนใหญ่ทำงานจากระยะไกล (Remote Work)</p>
-                        <p class="mt-2"><strong>ผลกระทบ:</strong> การไม่ปฏิบัติตามข้อกำหนดอาจนำไปสู่ค่าปรับมหาศาล, การถูกเพิกถอนใบอนุญาต, และการสูญเสียความเชื่อมั่นจากลูกค้าซึ่งเป็นสิ่งสำคัญที่สุดในธุรกิจ FinTech การเข้าถึงที่ไม่ปลอดภัยจากพนักงานที่ทำงานระยะไกลเป็นจุดเสี่ยงที่ใหญ่ที่สุด</p>
-                        <p class="mt-2"><strong>แนวทางการแก้ไข:</strong>
-                            <ul class="list-disc list-inside ml-4">
-                                <li><strong>Role-Based Access Control (RBAC):</strong> กำหนดสิทธิ์ใน Kubernetes อย่างเข้มงวดตามบทบาทหน้าที่ เพื่อให้แต่ละ service หรือ developer เข้าถึงได้เฉพาะสิ่งที่จำเป็น</li>
-                                <li><strong>Container Security:</strong> นำเครื่องมือสแกนหาช่องโหว่ใน Container Image (เช่น Trivy, Clair) เข้าไปใน CI/CD pipeline</li>
-                                <li><strong>Data Encryption:</strong> เข้ารหัสข้อมูลทั้งหมด ทั้งในขณะจัดเก็บ (at rest) ด้วย LUKS บน persistent volumes และในขณะส่ง (in transit) ด้วย mTLS ระหว่าง services</li>
-                                <li><strong>Secure Remote Access:</strong> กำหนดให้พนักงานทุกคนต้องเชื่อมต่อผ่าน VPN ที่มีการยืนยันตัวตนด้วย MFA ก่อนเข้าถึงระบบภายใน</li>
-                                <li><strong>Regular Audits:</strong> จ้างบริษัทภายนอกเพื่อทำการทดสอบเจาะระบบ (Penetration Testing) และตรวจสอบการปฏิบัติตามข้อกำหนดอย่างสม่ำเสมอ</li>
-                            </ul>
-                        </p>
-                    </div>
+        <div class="slide">
+            <h2><i class="fas fa-network-wired"></i> Case Study: SolarWinds (2020)</h2>
+            <div class="grid">
+                <div>
+                    <h3>Supply Chain Attack</h3>
+                    <p>แฮกเกอร์ฝัง Backdoor ในตัว <strong>"Software Update"</strong> ของ SolarWinds Orion</p>
+                    <p>องค์กรกว่า 18,000 แห่ง (รวม Pentagon) โดนเจาะเพราะ "เชื่อใจ" การอัปเดต</p>
+                </div>
+                <div>
+                    <h3>Lessons for OS Security:</h3>
+                    <ul>
+                        <li><strong>Least Privilege:</strong> แม้แต่ Software Monitor ก็ไม่ควรได้สิทธิ์สูงเกินไป</li>
+                        <li><strong>Egress Filtering:</strong> Firewall ควรบล็อกการเชื่อมต่อขาออก (Outbound) ไปหา Server แฮกเกอร์ด้วย</li>
+                    </ul>
                 </div>
             </div>
+        </div>
 
-            <div class="card mb-8">
-                 <a href="https://github.com/se-rmutl/ENGSE214/blob/main/Lectures/lec4/lab.md" target="_blank" rel="noopener" class="mb-4 md:mb-0">
-                <h3 class="text-2xl font-bold text-slate-800 mb-4">📝 LAB Assignment: ตั้งค่าความปลอดภัยระบบ (ดูรายละเอียด)</h3>
-                </a>
-                <p>ให้นักศึกษาเลือกทำ Lab 1 หรือ Lab 2 บน Virtual Machine (เช่น Ubuntu Server และ Windows Server/10) และจัดทำรายงานสรุปผลการตั้งค่า</p>
-                <div class="grid md:grid-cols-2 gap-6 mt-4">
-                    <div class="p-4 bg-slate-50 rounded-lg">
-                        <h4 class="font-bold text-lg">Lab 1: Linux Security Configuration</h4>
-                        <p class="font-semibold mt-2">ขั้นตอนการปฏิบัติ:</p>
-                        <ol class="list-decimal list-inside ml-4 space-y-1">
-                            <li><strong>User Management:</strong> สร้างผู้ใช้ 2 คน: `admin` (อยู่ในกลุ่ม `sudo`) และ `dev` (ผู้ใช้มาตรฐาน)</li>
-                            <li><strong>Sudoers:</strong> ตั้งค่าให้ `dev` สามารถรันคำสั่ง `sudo systemctl restart nginx` ได้เท่านั้น โดยไม่ต้องใส่รหัสผ่าน</li>
-                            <li><strong>SSH Hardening:</strong> แก้ไขไฟล์ `/etc/ssh/sshd_config` เพื่อปิดการล็อกอินด้วย `root` และปิดการยืนยันตัวตนด้วยรหัสผ่าน (อนุญาตเฉพาะ Key-based)</li>
-                            <li><strong>Firewall (UFW):</strong> ตั้งค่า Firewall ให้ปฏิเสธการเชื่อมต่อขาเข้าทั้งหมดเป็นค่าเริ่มต้น และอนุญาตเฉพาะ SSH (port 22), HTTP (port 80), และ HTTPS (port 443)</li>
-                            <li><strong>Log Monitoring:</strong> ใช้คำสั่ง `grep` หรือ `journalctl` เพื่อค้นหาการพยายามล็อกอินที่ล้มเหลวใน `/var/log/auth.log`</li>
-                        </ol>
-                         <p class="font-semibold mt-2">ผลลัพธ์ที่คาดหวัง:</p>
-                        <p>เซิร์ฟเวอร์ Linux ที่มีการแบ่งแยกสิทธิ์ชัดเจน, ลดพื้นผิวการโจมตีผ่าน SSH, และมีการควบคุมการเข้าถึงเครือข่ายพื้นฐาน</p>
-                    </div>
-                    <div class="p-4 bg-slate-50 rounded-lg">
-                        <h4 class="font-bold text-lg">Lab 2: Windows Security Hardening</h4>
-                        <p class="font-semibold mt-2">ขั้นตอนการปฏิบัติ:</p>
-                        <ol class="list-decimal list-inside ml-4 space-y-1">
-                             <li><strong>User Management:</strong> สร้างผู้ใช้ 2 คน: `CorpAdmin` (อยู่ในกลุ่ม `Administrators`) และ `StandardUser` (อยู่ในกลุ่ม `Users`)</li>
-                            <li><strong>Local Security Policy:</strong> เข้าไปที่ `secpol.msc` และตั้งค่า Password Policy (ความยาวขั้นต่ำ 12, ต้องซับซ้อน) และ Account Lockout Policy (ล็อกหลังจากพยายามผิด 5 ครั้ง)</li>
-                            <li><strong>UAC:</strong> ตรวจสอบว่า UAC ถูกตั้งค่าไว้ที่ระดับ Default (Notify when apps try to make changes)</li>
-                            <li><strong>Windows Defender Firewall:</strong> สร้างกฎ Inbound Rule ใหม่เพื่อ Block การเชื่อมต่อ RDP (port 3389) จากทุก IP ยกเว้น IP ของเครื่องคุณเอง</li>
-                            <li><strong>Event Viewer:</strong> เปิด Event Viewer และสร้าง Custom View เพื่อกรองดูเฉพาะ Event ID `4625` (An account failed to log on) ใน Security Log</li>
-                        </ol>
-                        <p class="font-semibold mt-2">ผลลัพธ์ที่คาดหวัง:</p>
-                        <p>เครื่อง Windows ที่มีนโยบายความปลอดภัยรัดกุม, ป้องกันการโจมตีแบบ Brute-force, และมีการควบคุมการเข้าถึงจากระยะไกล</p>
-                    </div>
+        <div class="slide">
+            <h2>📚 Standards & Benchmarks</h2>
+            <p>ไม่ต้องเดาเองว่าจะปิดอะไร ให้ทำตามมาตรฐานโลก</p>
+            <div class="grid">
+                <div class="card">
+                    <h3>CIS Benchmarks</h3>
+                    <p>คู่มือ Hardening ที่ละเอียดที่สุด (มีเป็นเล่ม PDF แจกฟรี)</p>
+                    <p>มีสำหรับ Windows 10/11, Server, Ubuntu, CentOS, Docker ฯลฯ</p>
+                    <a href="#" style="color: var(--primary);">cisecurity.org</a>
                 </div>
-                 <div class="mt-6 p-4 bg-green-50 rounded-lg">
-                    <h4 class="font-bold text-lg text-green-800">รูปแบบการส่งงาน (Deliverables)</h4>
-                    <p>จัดทำรายงาน (PDF) ประกอบด้วย: 1. สรุปขั้นตอนการดำเนินงาน, 2. ภาพหน้าจอ (Screenshots) ของการตั้งค่าแต่ละขั้นตอนพร้อมคำอธิบาย, 3. Security Checklist ที่แสดงสถานะก่อนและหลังทำ Lab, 4. สรุปปัญหาที่พบและข้อเสนอแนะเพิ่มเติม</p>
+                <div class="card">
+                    <h3>NIST Cybersecurity Framework</h3>
+                    <p>Identify -> Protect -> Detect -> Respond -> Recover</p>
+                    <p>มาตรฐานหลักที่ใช้ในองค์กรและภาครัฐ</p>
                 </div>
             </div>
-        </section>
+        </div>
 
-    </main>
+        <div class="slide">
+            <h2>🚀 Career Path</h2>
+            <p>ใครชอบเรื่องนี้ ไปทางไหนได้บ้าง?</p>
+            <div class="grid-3">
+                <div class="card">
+                    <i class="fas fa-server fa-2x" style="color: var(--primary); margin-bottom: 10px;"></i>
+                    <h3>SysAdmin / DevOps</h3>
+                    <p>ดูแล Server ให้ทำงานได้และปลอดภัย (เงินเดือน: 30k - 80k)</p>
+                </div>
+                <div class="card">
+                    <i class="fas fa-shield-virus fa-2x" style="color: var(--accent); margin-bottom: 10px;"></i>
+                    <h3>Security Engineer</h3>
+                    <p>ออกแบบและติดตั้งระบบป้องกัน Firewall, EDR (เงินเดือน: 50k - 100k+)</p>
+                </div>
+                <div class="card">
+                    <i class="fas fa-user-ninja fa-2x" style="color: var(--alert); margin-bottom: 10px;"></i>
+                    <h3>Pentester</h3>
+                    <p>แฮกเกอร์สายขาว เจาะระบบเพื่อหาช่องโหว่ (เงินเดือน: 50k - 150k+)</p>
+                </div>
+            </div>
+        </div>
 
-    <footer class="bg-slate-800 text-white text-center p-4 mt-8">
-        <p>&copy; 2025 - สัปดาห์ที่ 4: การรักษาความปลอดภัยของระบบปฏิบัติการ. ENGSE214, Happy & Secure Coding!</p>
-    </footer>
+        <div class="slide">
+            <h2>📝 Summary Week 4</h2>
+            <div class="grid">
+                <div>
+                    <ul>
+                        <li><i class="fas fa-check" style="color: var(--accent);"></i> <strong>OS คือหัวใจ:</strong> ถ้า OS ไม่รอด App ก็ไม่รอด</li>
+                        <li><i class="fas fa-check" style="color: var(--accent);"></i> <strong>AAA Framework:</strong> ยืนยันตัวตน -> กำหนดสิทธิ์ -> บันทึก</li>
+                        <li><i class="fas fa-check" style="color: var(--accent);"></i> <strong>Least Privilege:</strong> ให้สิทธิ์น้อยที่สุดเท่าที่จำเป็น</li>
+                        <li><i class="fas fa-check" style="color: var(--accent);"></i> <strong>Hardening:</strong> ปิด Service, เปิด Firewall, อัปเดต Patch</li>
+                        <li><i class="fas fa-check" style="color: var(--accent);"></i> <strong>Default Deny:</strong> บล็อกทุกอย่างก่อนเสมอ</li>
+                    </ul>
+                </div>
+                <div class="card highlight-box" style="text-align: center;">
+                    <h3>Next Step:</h3>
+                    <p>Lab 1: OS Hardening</p>
+                    <p><em>(ทำบน VM ห้ามทำบนเครื่องจริงถ้ายังไม่ชัวร์!)</em></p>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>🔮 Next Week: Network Security</h2>
+            <p>เมื่อเครื่องเราแข็งแกร่งแล้ว... มาดูถนนที่เชื่อมต่อโลกกันบ้าง</p>
+            <div class="grid-3" style="text-align: center; margin-top: 50px;">
+                <div class="card">
+                    <i class="fas fa-network-wired fa-3x"></i>
+                    <h3>TCP/IP & OSI</h3>
+                </div>
+                <div class="card">
+                    <i class="fas fa-fire fa-3x" style="color: var(--alert);"></i>
+                    <h3>Network Firewall</h3>
+                </div>
+                <div class="card">
+                    <i class="fas fa-microscope fa-3x" style="color: var(--primary);"></i>
+                    <h3>Packet Sniffing (Wireshark)</h3>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>🔗 Useful Links & Resources</h2>
+            <div class="grid">
+                <div class="card">
+                    <h3>News & Updates</h3>
+                    <ul>
+                        <li><a href="#" style="color: var(--primary);">The Hacker News</a></li>
+                        <li><a href="#" style="color: var(--primary);">Bleeping Computer</a></li>
+                        <li><a href="#" style="color: var(--primary);">OWASP.org</a></li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h3>Tools</h3>
+                    <ul>
+                        <li><strong>Nmap:</strong> Network Scanner</li>
+                        <li><strong>Wireshark:</strong> Packet Analyzer</li>
+                        <li><strong>VirtualBox:</strong> VM for Lab</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide center-text">
+            <h1 style="margin-top: 100px;">Q & A</h1>
+            <p style="font-size: 2em;">Any Questions?</p>
+            <div style="margin-top: 50px;">
+                <i class="fab fa-github fa-2x" style="margin: 0 20px;"></i>
+                <i class="fab fa-linkedin fa-2x" style="margin: 0 20px;"></i>
+                <i class="fas fa-envelope fa-2x" style="margin: 0 20px;"></i>
+            </div>
+            <p style="margin-top: 20px; color: var(--text-muted);">instructor@university.ac.th</p>
+        </div>
+
+    </div>
+        
+    <div id="lightbox" class="lightbox" onclick="closeLightbox()">
+        <img id="lightbox-img" src="" alt="Full Screen Image">
+    </div>
+
+    <div id="controls">
+        <div class="btn" onclick="toggleTheme()" title="Toggle Theme"><i class="fas fa-adjust"></i></div>
+        <div class="btn" onclick="toggleFullscreen()" title="Fullscreen"><i class="fas fa-expand"></i></div>
+        <div class="btn" onclick="prevSlide()" title="Previous"><i class="fas fa-chevron-left"></i></div>
+        <div class="btn" onclick="nextSlide()" title="Next"><i class="fas fa-chevron-right"></i></div>
+    </div>
 
     <script>
-        // JavaScript for tab functionality
-        function showTab(event, tabId, containerId) {
-            const container = document.getElementById(containerId);
-            const tabContents = container.querySelectorAll('.tab-content');
-            tabContents.forEach(content => {
-                content.style.display = 'none';
-            });
+        // Slide Logic
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slide');
+        const progress = document.getElementById('progress');
+        const pageIndicator = document.getElementById('page-indicator');
 
-            const tabButtons = container.parentElement.querySelectorAll('.tab-button');
-            tabButtons.forEach(button => {
-                button.classList.remove('active');
-            });
+        function showSlide(index) {
+            slides[currentSlide].classList.remove('active');
+            
+            if (index >= slides.length) currentSlide = 0;
+            else if (index < 0) currentSlide = slides.length - 1;
+            else currentSlide = index;
 
-            document.getElementById(tabId).style.display = 'block';
-            event.currentTarget.classList.add('active');
+            slides[currentSlide].classList.add('active');
+            
+            // Update Progress
+            const pct = ((currentSlide + 1) / slides.length) * 100;
+            progress.style.width = pct + '%';
+            pageIndicator.innerText = (currentSlide + 1).toString().padStart(2, '0') + ' / ' + slides.length;
         }
 
-        // Initialize first tab for all tab containers
-        document.addEventListener('DOMContentLoaded', function() {
-            const tabContainers = document.querySelectorAll('.tabs-container');
-            tabContainers.forEach(container => {
-                const firstButton = container.querySelector('.tab-button');
-                if (firstButton) {
-                    firstButton.click();
-                }
-            });
-        });
-    </script>
+        function nextSlide() { showSlide(currentSlide + 1); }
+        function prevSlide() { showSlide(currentSlide - 1); }
 
+        document.addEventListener('keydown', (e) => {
+            if(e.key === 'ArrowRight' || e.key === ' ') nextSlide();
+            if(e.key === 'ArrowLeft') prevSlide();
+        });
+
+        // Interactive chmod
+        function calcChmod() {
+            const u = (document.getElementById('ur').checked ? 4 : 0) + (document.getElementById('uw').checked ? 2 : 0) + (document.getElementById('ux').checked ? 1 : 0);
+            const g = (document.getElementById('gr').checked ? 4 : 0) + (document.getElementById('gw').checked ? 2 : 0) + (document.getElementById('gx').checked ? 1 : 0);
+            const o = (document.getElementById('or').checked ? 4 : 0) + (document.getElementById('ow').checked ? 2 : 0) + (document.getElementById('ox').checked ? 1 : 0);
+            
+            const res = "" + u + g + o;
+            document.getElementById('chmod-result').innerText = res;
+            document.getElementById('chmod-cmd').innerText = `chmod ${res} filename`;
+
+            const warning = document.getElementById('chmod-warning');
+            if(res === '777') warning.innerText = "⚠ DANGER: Insecure Permission!";
+            else warning.innerText = "";
+        }
+
+        // Terminal Simulation
+        const termIn = document.getElementById('term-in');
+        const termOut = document.getElementById('term-out');
+
+        termIn.addEventListener('keydown', (e) => {
+            if(e.key === 'Enter') {
+                const cmd = termIn.value.trim();
+                termOut.innerHTML += `\n<span class="prompt">student@server:~$</span> ${cmd}`;
+                
+                if(cmd === 'help') {
+                    termOut.innerHTML += `\nAvailable commands: sudo, whoami, chmod, clear`;
+                } else if(cmd.startsWith('sudo')) {
+                    termOut.innerHTML += `\n[sudo] password for student: \nSuccess!`;
+                } else if(cmd === 'whoami') {
+                    termOut.innerHTML += `\nstudent`;
+                } else if(cmd === 'clear') {
+                    termOut.innerHTML = 'Welcome to Linux Secure Shell\nType \'help\' for available commands.';
+                } else if(cmd !== '') {
+                    termOut.innerHTML += `\ncommand not found: ${cmd}`;
+                }
+                
+                termIn.value = '';
+                termOut.scrollTop = termOut.scrollHeight;
+            }
+        });
+
+        // Lightbox Logic
+        const lightbox = document.getElementById('lightbox');
+        const lightboxImg = document.getElementById('lightbox-img');
+
+        function openLightbox(src) {
+            lightboxImg.src = src;
+            lightbox.style.display = 'flex';
+            // Slight delay to allow display:flex to apply before adding opacity
+            setTimeout(() => {
+                lightbox.classList.add('show');
+            }, 10);
+        }
+
+        function closeLightbox() {
+            lightbox.classList.remove('show');
+            setTimeout(() => {
+                lightbox.style.display = 'none';
+                lightboxImg.src = '';
+            }, 300); // Wait for transition
+        }
+
+        // Theme & Fullscreen
+        function toggleTheme() {
+            document.body.classList.toggle('light-mode');
+        }
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+            else if (document.exitFullscreen) document.exitFullscreen();
+        }
+
+        // Init
+        showSlide(0);
+    </script>
 </body>
 </html>

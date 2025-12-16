@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz 4: OS Security & Hardening</title>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+    <style>
+        :root {
+            --bg-color: #050a14;
+            --panel-color: #0f172a;
+            --primary-color: #00f0ff; /* Neon Cyan */
+            --accent-color: #00ff9d; /* Neon Green */
+            --error-color: #ff0055;
+            --text-color: #e2e8f0;
+            --text-muted: #94a3b8;
+            --border-color: rgba(0, 240, 255, 0.2);
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Sarabun', sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(0, 240, 255, 0.05) 0%, transparent 20%),
+                radial-gradient(circle at 90% 80%, rgba(0, 255, 157, 0.05) 0%, transparent 20%);
+        }
+
+        .container {
+            width: 100%;
+            max-width: 800px;
+            padding: 2rem;
+            margin: 2rem auto;
+        }
+
+        /* Card Styles */
+        .card {
+            background: var(--panel-color);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: 0 0 20px rgba(0, 240, 255, 0.1);
+            backdrop-filter: blur(10px);
+            margin-bottom: 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 4px;
+            background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
+        }
+
+        h1, h2, h3 {
+            font-family: 'JetBrains Mono', monospace; /* Tech feel */
+            margin-top: 0;
+            color: var(--primary-color);
+            text-shadow: 0 0 10px rgba(0, 240, 255, 0.3);
+        }
+
+        /* Inputs */
+        .input-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--text-muted);
+            font-size: 1.1rem;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: #fff;
+            font-size: 1.1rem;
+            font-family: 'Sarabun', sans-serif;
+            box-sizing: border-box;
+            transition: 0.3s;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 10px rgba(0, 255, 157, 0.2);
+        }
+
+        /* Buttons */
+        .btn {
+            background: linear-gradient(135deg, var(--primary-color), #00a8ff);
+            color: #000;
+            border: none;
+            padding: 12px 30px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            width: 100%;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 240, 255, 0.4);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            border: 1px solid var(--accent-color);
+            color: var(--accent-color);
+            margin-top: 1rem;
+        }
+        
+        .btn-secondary:hover {
+            background: rgba(0, 255, 157, 0.1);
+        }
+
+        /* Quiz Section */
+        .question-box {
+            margin-bottom: 2rem;
+            padding-bottom: 2rem;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .question-text {
+            font-size: 1.3rem;
+            margin-bottom: 1rem;
+            font-weight: 600;
+        }
+
+        .question-num {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+            display: block;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .options-grid {
+            display: grid;
+            gap: 10px;
+        }
+
+        .option-label {
+            display: flex;
+            align-items: center;
+            padding: 12px 15px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid transparent;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .option-label:hover {
+            background: rgba(255,255,255,0.1);
+        }
+
+        input[type="radio"] {
+            margin-right: 15px;
+            accent-color: var(--accent-color);
+            transform: scale(1.2);
+        }
+
+        input[type="radio"]:checked + span {
+            color: var(--accent-color);
+            font-weight: bold;
+        }
+
+        /* Results */
+        .result-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .score-circle {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            border: 5px solid var(--accent-color);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            margin: 0 auto 1rem;
+            background: rgba(0, 255, 157, 0.05);
+            box-shadow: 0 0 30px rgba(0, 255, 157, 0.2);
+        }
+
+        .score-num {
+            font-size: 3.5rem;
+            font-weight: 800;
+            color: var(--accent-color);
+            line-height: 1;
+        }
+
+        .score-total {
+            font-size: 1.2rem;
+            color: var(--text-muted);
+        }
+
+        .feedback-text {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+            color: var(--primary-color);
+        }
+
+        .student-info-display {
+            background: rgba(255,255,255,0.05);
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+            text-align: center;
+            font-family: 'JetBrains Mono', monospace;
+            border: 1px dashed var(--text-muted);
+        }
+
+        /* Review Section */
+        .review-item {
+            background: rgba(0,0,0,0.2);
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            border-left: 4px solid #555;
+        }
+
+        .review-item.correct { border-left-color: var(--accent-color); }
+        .review-item.wrong { border-left-color: var(--error-color); }
+
+        .answer-status {
+            font-weight: bold;
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+        }
+
+        .status-correct { color: #000; background: var(--accent-color); }
+        .status-wrong { color: #fff; background: var(--error-color); }
+
+        .correct-ans-text {
+            color: var(--accent-color);
+            font-size: 0.95rem;
+            margin-top: 5px;
+        }
+
+        /* Screen States */
+        .screen { display: none; opacity: 0; transition: opacity 0.5s; }
+        .screen.active { display: block; opacity: 1; }
+
+        /* Animation */
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-up { animation: fadeIn 0.5s ease forwards; }
+
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div id="intro-screen" class="screen active card animate-up">
+            <div style="text-align: center; margin-bottom: 2rem;">
+                <i class="fas fa-shield-virus fa-4x" style="color: var(--primary-color); margin-bottom: 1rem;"></i>
+                <h1>ENGSE214 Quiz 4</h1>
+                <h3>OS Security & Hardening</h3>
+                <p style="color: var(--text-muted);">แบบทดสอบเก็บคะแนนสัปดาห์ที่ 4 (20 ข้อ)</p>
+            </div>
+
+            <form id="login-form">
+                <div class="input-group">
+                    <label><i class="fas fa-user"></i> ชื่อ-นามสกุล</label>
+                    <input type="text" id="student-name" placeholder="กรอกชื่อ-นามสกุล..." required>
+                </div>
+                <div class="input-group">
+                    <label><i class="fas fa-id-card"></i> รหัสนักศึกษา</label>
+                    <input type="text" id="student-id" placeholder="กรอกรหัสนักศึกษา..." required>
+                </div>
+                <button type="submit" class="btn">เริ่มทำแบบทดสอบ <i class="fas fa-arrow-right"></i></button>
+            </form>
+        </div>
+
+        <div id="quiz-screen" class="screen card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 1rem;">
+                <div style="font-family: 'JetBrains Mono'; color: var(--primary-color);">ENGSE214 Week 4</div>
+                <div id="progress-text" style="color: var(--text-muted);">Question 1/20</div>
+            </div>
+
+            <form id="quiz-form">
+                <div id="questions-container">
+                    </div>
+                <button type="submit" class="btn">ส่งคำตอบ <i class="fas fa-check-circle"></i></button>
+            </form>
+        </div>
+
+        <div id="result-screen" class="screen card">
+            <div id="capture-area" style="background: var(--panel-color); padding: 20px; border-radius: 10px;">
+                <div class="result-header">
+                    <h2 style="margin-bottom: 5px;">ผลการทดสอบ Quiz 4</h2>
+                    <p style="color: var(--text-muted); font-size: 0.9rem;">Week 4: OS Security & Hardening</p>
+                </div>
+
+                <div class="student-info-display">
+                    <div id="display-name">Name: -</div>
+                    <div id="display-id">ID: -</div>
+                    <div id="display-date">Date: -</div>
+                </div>
+
+                <div class="score-circle">
+                    <span class="score-num" id="final-score">0</span>
+                    <span class="score-total">/ 20</span>
+                </div>
+
+                <div style="text-align: center; margin-bottom: 2rem;">
+                    <div class="feedback-text" id="feedback-msg">Excellent!</div>
+                    <p style="color: var(--text-muted);">คะแนนของคุณถูกบันทึกแล้ว</p>
+                </div>
+
+                <div id="review-container">
+                    </div>
+            </div>
+
+            <div style="margin-top: 2rem; display: flex; gap: 1rem; flex-direction: column;">
+                <button onclick="downloadImage()" class="btn"><i class="fas fa-camera"></i> บันทึกผลสอบเป็นรูปภาพ</button>
+                <button onclick="location.reload()" class="btn btn-secondary"><i class="fas fa-redo"></i> ทำข้อสอบใหม่อีกครั้ง</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Database of Questions (Based on Lecture 4)
+        const questionBank = [
+            {
+                q: "หลักการ 'Defense in Depth' หมายถึงอะไร?",
+                options: [
+                    "การป้องกันโดยเน้นที่ Firewall เพียงอย่างเดียว",
+                    "การสร้างเกราะป้องกันหลายชั้น ไม่พึ่งพาเพียงจุดเดียว",
+                    "การโจมตีระบบให้ลึกที่สุดเท่าที่จะทำได้",
+                    "การสำรองข้อมูลไว้ในที่ปลอดภัย"
+                ],
+                a: 1 // Index of correct answer
+            },
+            {
+                q: "ในบริบทของ OS Security, 'Integrity' (ความถูกต้องครบถ้วน) หมายถึงอะไร?",
+                options: [
+                    "การป้องกันไม่ให้ไฟล์ระบบถูกแก้ไขโดยไม่ได้รับอนุญาต",
+                    "การป้องกันไม่ให้คนอื่นอ่านไฟล์เงินเดือน",
+                    "การทำให้ระบบทำงานได้ตลอดเวลาไม่ล่ม",
+                    "การเข้ารหัสข้อมูลก่อนส่งผ่านเครือข่าย"
+                ],
+                a: 0
+            },
+            {
+                q: "AAA Framework ประกอบด้วยอะไรบ้าง?",
+                options: [
+                    "Availability, Authorization, Accounting",
+                    "Authentication, Authorization, Accounting",
+                    "Authentication, Accessibility, Auditing",
+                    "Admin, Access, Audit"
+                ],
+                a: 1
+            },
+            {
+                q: "รหัสผ่านในข้อใดถือว่ามีความแข็งแกร่งมากที่สุด (Strongest)?",
+                options: [
+                    "P@ssw0rd123",
+                    "12345678",
+                    "Correct-Horse-Battery-Staple-2024!",
+                    "admin@1234"
+                ],
+                a: 2
+            },
+            {
+                q: "การใช้ลายนิ้วมือ (Fingerprint) จัดเป็นการยืนยันตัวตนประเภทใด?",
+                options: [
+                    "Something you know",
+                    "Something you have",
+                    "Something you are",
+                    "Something you do"
+                ],
+                a: 2
+            },
+            {
+                q: "ใน Linux Permissions, ค่าตัวเลขของสิทธิ์ 'Read' (อ่าน) คือเท่าไหร่?",
+                options: [
+                    "1",
+                    "2",
+                    "4",
+                    "7"
+                ],
+                a: 2
+            },
+            {
+                q: "หลักการ 'Least Privilege' คืออะไร?",
+                options: [
+                    "ให้สิทธิ์ผู้ใช้ทุกคนเป็น Admin เพื่อความสะดวก",
+                    "ให้สิทธิ์เท่าที่จำเป็นในการทำงานเท่านั้น",
+                    "การให้สิทธิ์น้อยที่สุดเพื่อไม่ให้ทำงานได้",
+                    "การบล็อกผู้ใช้ทุกคนออกจากระบบ"
+                ],
+                a: 1
+            },
+            {
+                q: "ทำไมการใช้คำสั่ง 'sudo' ถึงดีกว่า 'su' ใน Linux?",
+                options: [
+                    "sudo พิมพ์ง่ายกว่า",
+                    "sudo มีการบันทึก Log และให้สิทธิ์เฉพาะคำสั่งได้",
+                    "sudo ไม่ต้องใช้รหัสผ่านเลย",
+                    "sudo ทำให้เครื่องทำงานเร็วขึ้น"
+                ],
+                a: 1
+            },
+            {
+                q: "User Account Control (UAC) ใน Windows มีหน้าที่หลักคืออะไร?",
+                options: [
+                    "ป้องกันไวรัสเข้าเครื่อง",
+                    "ป้องกันโปรแกรมทำการเปลี่ยนแปลงระบบโดยไม่ได้รับอนุญาตจากผู้ใช้",
+                    "ทำให้เปิดโปรแกรมเร็วขึ้น",
+                    "ใช้สำหรับสร้างบัญชีผู้ใช้ใหม่"
+                ],
+                a: 1
+            },
+            {
+                q: "บัญชีผู้ดูแลระบบสูงสุดใน Linux เรียกว่าอะไร?",
+                options: [
+                    "Administrator",
+                    "SuperAdmin",
+                    "root",
+                    "system"
+                ],
+                a: 2
+            },
+            {
+                q: "OS Hardening คืออะไร?",
+                options: [
+                    "การทำให้ Hardware ของเครื่องทนทานขึ้น",
+                    "กระบวนการปรับแต่ง OS ให้มีความปลอดภัยสูงขึ้นและลดพื้นที่โจมตี",
+                    "การลงโปรแกรม Antivirus",
+                    "การโอเวอร์คล็อก CPU ให้แรงขึ้น"
+                ],
+                a: 1
+            },
+            {
+                q: "Service ใดใน Windows ที่มักถูกแนะนำให้ปิด (Disable) เพื่อความปลอดภัย?",
+                options: [
+                    "Windows Update",
+                    "Remote Registry",
+                    "Windows Defender",
+                    "DHCP Client"
+                ],
+                a: 1
+            },
+            {
+                q: "ใน Linux หากเราไม่ได้ใช้เครื่องพิมพ์ ควรปิด Service ใด?",
+                options: [
+                    "SSH",
+                    "CUPS",
+                    "Cron",
+                    "Apache"
+                ],
+                a: 1
+            },
+            {
+                q: "กลยุทธ์ Firewall แบบใดปลอดภัยที่สุด?",
+                options: [
+                    "Default Allow (อนุญาตทั้งหมด บล็อกเฉพาะตัวร้าย)",
+                    "Default Deny (บล็อกทั้งหมด อนุญาตเฉพาะที่จำเป็น)",
+                    "Allow All (เปิดทุกพอร์ต)",
+                    "Disable Firewall (ปิดไฟร์วอลล์)"
+                ],
+                a: 1
+            },
+            {
+                q: "Port มาตรฐานสำหรับการเชื่อมต่อ SSH คือพอร์ตใด?",
+                options: [
+                    "21",
+                    "22",
+                    "80",
+                    "443"
+                ],
+                a: 1
+            },
+            {
+                q: "WannaCry Ransomware โจมตีผ่านช่องโหว่ของโปรโตคอลใด?",
+                options: [
+                    "HTTP",
+                    "SMBv1",
+                    "FTP",
+                    "RDP"
+                ],
+                a: 1
+            },
+            {
+                q: "การโจมตี SolarWinds (2020) จัดเป็นการโจมตีประเภทใด?",
+                options: [
+                    "Phishing Attack",
+                    "DDoS Attack",
+                    "Supply Chain Attack",
+                    "Brute Force Attack"
+                ],
+                a: 2
+            },
+            {
+                q: "ไฟล์ใดใน Linux ที่เก็บข้อมูลผู้ใช้ (User Information) แต่อาจเปิดเผยได้?",
+                options: [
+                    "/etc/shadow",
+                    "/etc/passwd",
+                    "/etc/group",
+                    "/var/log/auth.log"
+                ],
+                a: 1
+            },
+            {
+                q: "ทำไมเราจึงควร Update Patch ของ OS อย่างสม่ำเสมอ?",
+                options: [
+                    "เพื่อให้หน้าตา UI สวยขึ้น",
+                    "เพื่อปิดช่องโหว่ความปลอดภัยที่ถูกค้นพบ",
+                    "เพื่อให้กินพื้นที่ Harddisk น้อยลง",
+                    "เพื่อรีเซ็ตค่าเครื่องใหม่"
+                ],
+                a: 1
+            },
+            {
+                q: "การเปลี่ยน Port SSH จาก 22 เป็น 2222 เพียงอย่างเดียว ถือเป็นวิธีป้องกันที่ดีที่สุดหรือไม่?",
+                options: [
+                    "ใช่ เพราะ Hacker จะหาไม่เจอแน่นอน",
+                    "ไม่ เป็นเพียง Security by Obscurity ควรใช้ Key Authentication ร่วมด้วย",
+                    "ใช่ เพราะ Port 2222 ปลอดภัยกว่า",
+                    "ไม่ เพราะ Port 2222 ใช้งานไม่ได้"
+                ],
+                a: 1
+            }
+        ];
+
+        // State
+        let shuffledQuestions = [];
+        let userScore = 0;
+
+        // Utilities
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        // Logic
+        document.getElementById('login-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const name = document.getElementById('student-name').value;
+            const id = document.getElementById('student-id').value;
+
+            if(name && id) {
+                document.getElementById('display-name').textContent = "Name: " + name;
+                document.getElementById('display-id').textContent = "ID: " + id;
+                document.getElementById('display-date').textContent = "Date: " + new Date().toLocaleString('th-TH');
+                
+                startQuiz();
+            }
+        });
+
+        function startQuiz() {
+            // Prepare questions
+            // Clone and shuffle questions
+            shuffledQuestions = shuffleArray([...questionBank]); // Shuffle questions order
+            
+            // Generate HTML
+            const container = document.getElementById('questions-container');
+            container.innerHTML = '';
+
+            shuffledQuestions.forEach((item, index) => {
+                // Shuffle options indices [0, 1, 2, 3]
+                let optionIndices = [0, 1, 2, 3];
+                shuffleArray(optionIndices);
+
+                let optionsHTML = '';
+                optionIndices.forEach(optIndex => {
+                    optionsHTML += `
+                        <label class="option-label">
+                            <input type="radio" name="q${index}" value="${optIndex}">
+                            <span>${item.options[optIndex]}</span>
+                        </label>
+                    `;
+                });
+
+                const qHTML = `
+                    <div class="question-box">
+                        <span class="question-num">Question ${index + 1}</span>
+                        <div class="question-text">${item.q}</div>
+                        <div class="options-grid">
+                            ${optionsHTML}
+                        </div>
+                    </div>
+                `;
+                container.innerHTML += qHTML;
+                
+                // Store shuffled mapping to verify answer later
+                item.shuffledOptionIndices = optionIndices; 
+            });
+
+            // Switch Screen
+            document.getElementById('intro-screen').classList.remove('active');
+            setTimeout(() => {
+                document.getElementById('intro-screen').style.display = 'none';
+                document.getElementById('quiz-screen').style.display = 'block';
+                setTimeout(() => document.getElementById('quiz-screen').classList.add('active'), 50);
+            }, 500);
+            
+            window.scrollTo(0,0);
+        }
+
+        document.getElementById('quiz-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Calculate Score
+            let score = 0;
+            const reviewContainer = document.getElementById('review-container');
+            reviewContainer.innerHTML = '<h3>เฉลยและข้อที่ควรปรับปรุง</h3>';
+            let hasWrong = false;
+
+            const formData = new FormData(document.getElementById('quiz-form'));
+
+            shuffledQuestions.forEach((item, index) => {
+                const selectedVal = formData.get(`q${index}`);
+                // selectedVal is the index in the original options array because we shuffled indices but value is from loop
+                // Wait, value="${optIndex}" in HTML above is the index in original options array.
+                // So if user selects value "2", it corresponds to item.options[2].
+                
+                const isCorrect = selectedVal == item.a;
+
+                if (isCorrect) {
+                    score++;
+                } else {
+                    hasWrong = true;
+                    // Render Review Item
+                    const userAnswerText = selectedVal ? item.options[selectedVal] : "ไม่ได้ตอบ";
+                    const correctAnswerText = item.options[item.a];
+                    
+                    const reviewHTML = `
+                        <div class="review-item wrong">
+                            <div style="font-weight:bold; margin-bottom:5px;">ข้อที่ ${index + 1}: ${item.q}</div>
+                            <div style="font-size:0.9rem; color:#ffcccc;">ตอบ: ${userAnswerText} <span class="answer-status status-wrong">ผิด</span></div>
+                            <div class="correct-ans-text"><i class="fas fa-check"></i> เฉลย: ${correctAnswerText}</div>
+                        </div>
+                    `;
+                    reviewContainer.innerHTML += reviewHTML;
+                }
+            });
+
+            if(!hasWrong) {
+                reviewContainer.innerHTML += '<div style="text-align:center; color:var(--accent-color);">สุดยอด! คุณทำถูกทุกข้อ</div>';
+            }
+
+            userScore = score;
+            document.getElementById('final-score').textContent = score;
+
+            // Feedback Message
+            const feedback = document.getElementById('feedback-msg');
+            if(score >= 18) { feedback.textContent = "Excellent! (ยอดเยี่ยม)"; feedback.style.color = "#00ff9d"; }
+            else if(score >= 15) { feedback.textContent = "Very Good (ดีมาก)"; feedback.style.color = "#00f0ff"; }
+            else if(score >= 10) { feedback.textContent = "Fair (พอใช้)"; feedback.style.color = "#ffdd00"; }
+            else { feedback.textContent = "Try Again (พยายามใหม่นะ)"; feedback.style.color = "#ff0055"; }
+
+            // Switch Screen
+            document.getElementById('quiz-screen').classList.remove('active');
+            setTimeout(() => {
+                document.getElementById('quiz-screen').style.display = 'none';
+                document.getElementById('result-screen').style.display = 'block';
+                setTimeout(() => document.getElementById('result-screen').classList.add('active'), 50);
+            }, 500);
+            
+            window.scrollTo(0,0);
+        });
+
+        // Capture Function
+        function downloadImage() {
+            const captureArea = document.getElementById('capture-area');
+            
+            // Use html2canvas
+            html2canvas(captureArea, {
+                backgroundColor: "#0f172a", // Match card color
+                scale: 2 // High resolution
+            }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = `Quiz4_Result_${document.getElementById('student-id').value}.png`;
+                link.href = canvas.toDataURL();
+                link.click();
+            });
+        }
+    </script>
+</body>
+</html>
