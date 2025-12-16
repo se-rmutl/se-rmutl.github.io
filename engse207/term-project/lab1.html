@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ENGSE207: Software Architecture Project</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&family=Sarabun:wght@300;400;600&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-dark: #0f172a;
+            --bg-card: #1e293b;
+            --primary: #3b82f6;
+            --accent: #06b6d4;
+            --purple: #8b5cf6;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: #334155;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Sarabun', 'Inter', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        /* Slide Layout */
+        #app {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: radial-gradient(circle at top right, #1e1b4b, transparent 40%),
+                        radial-gradient(circle at bottom left, #0f172a, transparent 40%);
+        }
+
+        .slide {
+            position: absolute;
+            width: 85%;
+            height: 85%;
+            opacity: 0;
+            transform: scale(0.95) translateY(20px);
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .slide.active {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+            pointer-events: all;
+            z-index: 10;
+        }
+
+        /* Typography */
+        h1 { font-size: 3rem; font-weight: 800; letter-spacing: -1px; margin-bottom: 1rem; background: linear-gradient(to right, #60a5fa, #c084fc); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        h2 { font-size: 2.2rem; font-weight: 700; color: var(--text-main); margin-bottom: 2rem; border-left: 6px solid var(--accent); padding-left: 20px; }
+        h3 { font-size: 1.4rem; color: var(--accent); margin-bottom: 1rem; display: flex; align-items: center; gap: 10px; }
+        p, li { font-size: 1.1rem; line-height: 1.7; color: #cbd5e1; }
+        
+        /* Components */
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; height: 100%; }
+        .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+        
+        .card {
+            background: rgba(30, 41, 59, 0.7);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            transition: transform 0.3s ease;
+        }
+        .card:hover { transform: translateY(-5px); border-color: var(--primary); }
+
+        .tag {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 99px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+        .tag.w3 { background: rgba(245, 158, 11, 0.2); color: var(--warning); }
+        .tag.w4 { background: rgba(139, 92, 246, 0.2); color: var(--purple); }
+        .tag.w5 { background: rgba(6, 182, 212, 0.2); color: var(--accent); }
+
+        /* Code Blocks */
+        pre {
+            background: #0b1120;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            border: 1px solid #334155;
+            overflow-x: auto;
+            color: #e2e8f0;
+        }
+        .hl-keyword { color: #c678dd; }
+        .hl-func { color: #61afef; }
+        .hl-str { color: #98c379; }
+        .hl-comment { color: #5c6370; font-style: italic; }
+
+        /* Diagrams (CSS Only) */
+        .diagram-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+            background: rgba(0,0,0,0.2);
+            border-radius: 16px;
+            position: relative;
+        }
+
+        /* 3-Tier Diagram */
+        .tier-stack { display: flex; flex-direction: column; gap: 15px; align-items: center; width: 100%; }
+        .tier-box {
+            width: 80%;
+            padding: 15px;
+            text-align: center;
+            border: 2px solid;
+            border-radius: 8px;
+            background: var(--bg-card);
+            position: relative;
+        }
+        .arrow-down::after { content: '↓'; font-size: 24px; color: var(--text-muted); }
+
+        /* Controls */
+        .controls {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            display: flex;
+            gap: 15px;
+            z-index: 100;
+        }
+        .btn {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+        }
+        .btn:hover { background: var(--primary); border-color: var(--primary); }
+
+        /* Progress */
+        .progress-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 4px;
+            background: linear-gradient(to right, var(--primary), var(--purple));
+            width: 0%;
+            transition: width 0.3s;
+            z-index: 100;
+        }
+
+        .slide-number {
+            position: fixed;
+            bottom: 30px;
+            left: 30px;
+            font-family: 'JetBrains Mono';
+            color: var(--text-muted);
+            opacity: 0.5;
+        }
+        
+        /* List Styling */
+        ul.feature-list { list-style: none; }
+        ul.feature-list li { margin-bottom: 12px; padding-left: 25px; position: relative; }
+        ul.feature-list li::before { 
+            content: '▹'; position: absolute; left: 0; color: var(--accent); 
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="progress-bar" id="progress"></div>
+    <div class="slide-number" id="slideNum">01 / 10</div>
+
+    <div id="app">
+
+        <div class="slide active">
+            <div style="text-align: center; max-width: 800px; margin: 0 auto;">
+                <div style="margin-bottom: 20px;">
+                    <span class="tag w3">Week 3</span>
+                    <span class="tag w4">Week 4</span>
+                    <span class="tag w5">Week 5</span>
+                </div>
+                <h1>ENGSE207: Software Architecture</h1>
+                <h2 style="border: none; padding: 0; font-weight: 300; color: var(--text-muted);">Term Project Roadmap: จาก Monolith สู่ Scalable System</h2>
+                
+                <div class="grid-3" style="margin-top: 60px; text-align: left;">
+                    <div class="card" style="border-top: 4px solid var(--warning);">
+                        <h3><i class="fas fa-box"></i> Monolith</h3>
+                        <p>Week 3: รวมทุกอย่างในที่เดียว เริ่มต้นง่าย แต่แก้ยาก</p>
+                    </div>
+                    <div class="card" style="border-top: 4px solid var(--purple);">
+                        <h3><i class="fas fa-layer-group"></i> Layered</h3>
+                        <p>Week 4: แยกส่วน Presentation, Logic, Data</p>
+                    </div>
+                    <div class="card" style="border-top: 4px solid var(--accent);">
+                        <h3><i class="fas fa-network-wired"></i> Client-Server</h3>
+                        <p>Week 5: แยกเครื่อง Deploy บน VM จริง</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>🎯 Project Overview: Task Board System</h2>
+            <div class="grid-2">
+                <div>
+                    <p style="font-size: 1.2rem; margin-bottom: 20px;">
+                        เราจะพัฒนาระบบ <strong>"Kanban Board"</strong> (คล้าย Trello) เพียงระบบเดียวตลอดเทอม แต่เราจะ <strong>Refactor</strong> โครงสร้างสถาปัตยกรรมไปเรื่อยๆ
+                    </p>
+                    <div class="card">
+                        <h3>Tech Stack</h3>
+                        <ul class="feature-list">
+                            <li><strong>Frontend:</strong> HTML5, CSS3, Vanilla JS (Single Page style)</li>
+                            <li><strong>Backend:</strong> Node.js + Express</li>
+                            <li><strong>Database:</strong> SQLite (ไฟล์เดียว ง่ายต่อการย้าย)</li>
+                            <li><strong>Environment:</strong> Localhost ➔ Virtual Machine (Ubuntu)</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="diagram-container">
+                    <div style="width: 90%; background: #fff; height: 300px; border-radius: 8px; overflow: hidden; display: flex; flex-direction: column;">
+                        <div style="background: var(--primary); height: 40px; display: flex; align-items: center; padding: 0 15px;">
+                            <div style="width: 10px; height: 10px; background: #ef4444; border-radius: 50%; margin-right: 5px;"></div>
+                            <div style="width: 10px; height: 10px; background: #f59e0b; border-radius: 50%; margin-right: 5px;"></div>
+                        </div>
+                        <div style="display: flex; gap: 10px; padding: 15px; background: #f1f5f9; flex: 1;">
+                            <div style="flex: 1; background: #e2e8f0; border-radius: 4px; padding: 10px;">
+                                <div style="font-weight: bold; color: #334155; margin-bottom: 5px;">To Do</div>
+                                <div style="background: white; padding: 8px; border-radius: 4px; margin-bottom: 5px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); color: #333; font-size: 0.8rem;">Design DB</div>
+                            </div>
+                            <div style="flex: 1; background: #e2e8f0; border-radius: 4px; padding: 10px;">
+                                <div style="font-weight: bold; color: #334155; margin-bottom: 5px;">Doing</div>
+                                <div style="background: white; padding: 8px; border-radius: 4px; margin-bottom: 5px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); color: #333; font-size: 0.8rem;">Refactor Code</div>
+                            </div>
+                            <div style="flex: 1; background: #e2e8f0; border-radius: 4px; padding: 10px;">
+                                <div style="font-weight: bold; color: #334155; margin-bottom: 5px;">Done</div>
+                                <div style="background: white; padding: 8px; border-radius: 4px; margin-bottom: 5px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); color: #333; font-size: 0.8rem;">Setup Repo</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>🔙 Week 3 Recap: The "Monolith"</h2>
+            <div class="grid-2">
+                <div>
+                    <span class="tag w3">Completed</span>
+                    <p>ใน Week 3 เราสร้างระบบแบบ <strong>All-in-One</strong></p>
+                    <ul class="feature-list" style="margin-top: 20px;">
+                        <li>Logic ทุกอย่างอยู่ใน <code>server.js</code></li>
+                        <li>Database connection ปนกับ Route</li>
+                        <li>Validation ปนกับ Query</li>
+                    </ul>
+                    <div class="card" style="margin-top: 20px; border: 1px solid var(--danger);">
+                        <h3 style="color: var(--danger);"><i class="fas fa-exclamation-triangle"></i> Pain Points</h3>
+                        <p>1. ไฟล์ยาวมาก (Spaghetti Code)<br>
+                           2. จะแก้ SQL ต้องไประวังไม่ให้กระทบ HTTP Response<br>
+                           3. ทดสอบ (Unit Test) ไม่ได้เลย</p>
+                    </div>
+                </div>
+                <div class="diagram-container">
+                    <div style="width: 250px; height: 250px; border: 3px solid var(--warning); border-radius: 8px; display: flex; flex-direction: column; justify-content: center; align-items: center; background: var(--bg-card); position: relative;">
+                        <i class="fas fa-server fa-3x" style="color: var(--warning); margin-bottom: 15px;"></i>
+                        <strong>SERVER.JS</strong>
+                        <div style="font-size: 0.8rem; margin-top: 10px; color: var(--text-muted);">
+                            Routing + Validation +<br>Business Logic + DB Access
+                        </div>
+                        <div style="position: absolute; top: -15px; background: var(--bg-dark); padding: 0 10px; color: var(--warning);">Tight Coupling</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>🏛️ Week 4: Layered Architecture</h2>
+            <div class="grid-2">
+                <div class="diagram-container">
+                    <div class="tier-stack">
+                        <div class="tier-box" style="border-color: var(--primary);">
+                            <i class="fas fa-globe"></i> <strong>Controller (Presentation)</strong>
+                            <div style="font-size: 0.8rem; color: #94a3b8;">รับ Request / ส่ง JSON</div>
+                        </div>
+                        <div class="arrow-down"></div>
+                        <div class="tier-box" style="border-color: var(--purple);">
+                            <i class="fas fa-cogs"></i> <strong>Service (Business Logic)</strong>
+                            <div style="font-size: 0.8rem; color: #94a3b8;">กฎเกณฑ์ / การคำนวณ</div>
+                        </div>
+                        <div class="arrow-down"></div>
+                        <div class="tier-box" style="border-color: var(--success);">
+                            <i class="fas fa-database"></i> <strong>Repository (Data Access)</strong>
+                            <div style="font-size: 0.8rem; color: #94a3b8;">SQL Query / DB Connection</div>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <span class="tag w4">Current Lab</span>
+                    <h3>Why Refactor? (Separation of Concerns)</h3>
+                    <p>เราจะแยก Code ออกเป็นชั้นๆ เพื่อให้:</p>
+                    <ul class="feature-list">
+                        <li><strong>Maintainable:</strong> แก้ SQL ที่ Repo ไม่กระทบ Controller</li>
+                        <li><strong>Testable:</strong> สามารถ Test Service โดย Mock Repo ได้</li>
+                        <li><strong>Readable:</strong> Code สั้นลง อ่านง่ายขึ้น</li>
+                    </ul>
+                    <div class="card" style="margin-top: 20px;">
+                        <h4 style="color: var(--text-main); margin-bottom: 10px;">Lab Goal</h4>
+                        <p style="font-size: 0.9rem;">นักศึกษาต้องสร้าง Folder <code>/src/controllers</code>, <code>/src/services</code>, <code>/src/repositories</code> แล้วย้าย Code จาก Week 3 ลงไปให้ถูกที่</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>📂 Week 4: Code Structure Guideline</h2>
+            <div class="grid-2">
+                <div style="font-size: 0.9rem;">
+                    <h3>Project Structure</h3>
+                    <pre style="height: 400px; overflow-y: auto;">
+project-root/
+├── database/
+│   └── tasks.db
+├── src/
+│   ├── <span class="hl-str">controllers/</span>
+│   │   └── taskController.js  <span class="hl-comment">// req, res logic</span>
+│   ├── <span class="hl-str">services/</span>
+│   │   └── taskService.js     <span class="hl-comment">// if status == 'Done'...</span>
+│   ├── <span class="hl-str">repositories/</span>
+│   │   └── taskRepository.js  <span class="hl-comment">// db.run('INSERT...')</span>
+│   └── <span class="hl-str">models/</span>
+│       └── taskModel.js
+├── server.js <span class="hl-comment">// เหลือแค่ Route Mapping</span>
+└── package.json</pre>
+                </div>
+                <div>
+                    <h3>ตัวอย่าง Code (Controller)</h3>
+                    <pre>
+<span class="hl-keyword">const</span> taskService = require(<span class="hl-str">'../services/taskService'</span>);
+
+<span class="hl-keyword">exports</span>.createTask = <span class="hl-keyword">async</span> (req, res) => {
+  <span class="hl-keyword">try</span> {
+    <span class="hl-comment">// Controller ไม่รู้เรื่อง SQL รู้แค่รับของ</span>
+    <span class="hl-keyword">const</span> newTask = <span class="hl-keyword">await</span> taskService.createNewTask(req.body);
+    res.status(201).json(newTask);
+  } <span class="hl-keyword">catch</span> (err) {
+    res.status(400).json({ error: err.message });
+  }
+};</pre>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>🖥️ Week 5: Client-Server Architecture</h2>
+            <div class="grid-2">
+                <div>
+                    <span class="tag w5">Next Week</span>
+                    <h3>Concept: Physical Separation</h3>
+                    <p>ในโลกความเป็นจริง Database/Backend ไม่ได้รันบนเครื่อง User เราจำลองสถานการณ์จริงโดย:</p>
+                    <ul class="feature-list" style="margin-top: 20px;">
+                        <li><strong>Host Machine (เครื่องเรา):</strong> รัน Frontend (Web Browser)</li>
+                        <li><strong>Virtual Machine (Ubuntu):</strong> รัน Backend (API + DB)</li>
+                    </ul>
+                    <div class="card" style="margin-top: 20px;">
+                        <h3><i class="fas fa-plug"></i> Networking Challenges</h3>
+                        <p>นักศึกษาต้องเรียนรู้เรื่อง <strong>IP Address</strong>, <strong>Port Forwarding</strong>, และ <strong>CORS Policy</strong> (เพราะ Domain ต่างกัน)</p>
+                    </div>
+                </div>
+                <div class="diagram-container" style="flex-direction: row; gap: 30px;">
+                    <div style="text-align: center;">
+                        <i class="fas fa-laptop fa-4x" style="color: var(--text-main);"></i>
+                        <div style="margin-top: 10px;">Host (Client)</div>
+                        <div class="tag" style="background: #334155;">192.168.1.10</div>
+                        <div style="font-size: 0.8rem; color: var(--accent); margin-top: 5px;">Frontend UI</div>
+                    </div>
+                    
+                    <div style="display: flex; flex-direction: column; align-items: center; width: 150px;">
+                        <div style="color: var(--success); font-size: 0.8rem;">JSON / HTTP</div>
+                        <div style="height: 2px; width: 100%; background: var(--text-muted); position: relative;">
+                            <i class="fas fa-exchange-alt" style="position: absolute; left: 50%; top: -8px; transform: translateX(-50%); background: var(--bg-card); padding: 0 5px;"></i>
+                        </div>
+                    </div>
+
+                    <div style="text-align: center;">
+                        <i class="fas fa-server fa-4x" style="color: var(--primary);"></i>
+                        <div style="margin-top: 10px;">VM (Ubuntu)</div>
+                        <div class="tag" style="background: #334155;">192.168.1.50</div>
+                        <div style="font-size: 0.8rem; color: var(--primary); margin-top: 5px;">Node API + DB</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>🛠️ Week 5 Lab: Infrastructure Setup</h2>
+            <p style="margin-bottom: 30px;">เราจะขยับจาก "Coder" เป็น "DevOps Engineer" เบื้องต้น</p>
+            
+            <div class="grid-3">
+                <div class="card">
+                    <i class="fas fa-box-open fa-2x" style="color: var(--accent); margin-bottom: 15px;"></i>
+                    <h3>1. VirtualBox</h3>
+                    <p>ติดตั้ง Ubuntu Server 22.04 LTS (No GUI) เพื่อจำลอง Server จริงที่ประหยัดทรัพยากร</p>
+                </div>
+                <div class="card">
+                    <i class="fas fa-terminal fa-2x" style="color: var(--success); margin-bottom: 15px;"></i>
+                    <h3>2. SSH & Linux</h3>
+                    <p>Remote เข้าไปจัดการ Server ผ่าน Command Line (CLI) ฝึกใช้คำสั่ง <code>ls</code>, <code>cd</code>, <code>nano</code>, <code>apt</code></p>
+                </div>
+                <div class="card">
+                    <i class="fas fa-tasks fa-2x" style="color: var(--purple); margin-bottom: 15px;"></i>
+                    <h3>3. PM2</h3>
+                    <p>Process Manager สำหรับ Node.js ช่วยให้ Server รันตลอดเวลา (Auto-restart) แม้เราจะปิด Terminal</p>
+                </div>
+            </div>
+
+            <div style="margin-top: 40px; padding: 20px; background: rgba(16, 185, 129, 0.1); border: 1px solid var(--success); border-radius: 8px;">
+                <strong>💡 Guideline:</strong> ต้อง Set Network Adapter ของ VM เป็น <code>Bridged Adapter</code> เพื่อให้ VM ได้รับ IP ในวงเดียวกับเครื่อง Host
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>⚙️ Week 5: Configuration Details</h2>
+            <div class="grid-2">
+                <div>
+                    <h3>1. Backend Config (บน VM)</h3>
+                    <p>ต้องเปิดรับ Request จากภายนอก (CORS)</p>
+                    <pre>
+<span class="hl-comment">// server.js</span>
+<span class="hl-keyword">const</span> cors = require(<span class="hl-str">'cors'</span>);
+app.use(cors()); <span class="hl-comment">// Allow All Origin</span>
+
+<span class="hl-comment">// Listen 0.0.0.0 เพื่อรับ connection ทุกทิศทาง</span>
+app.listen(3000, <span class="hl-str">'0.0.0.0'</span>, () => ...);</pre>
+                </div>
+                <div>
+                    <h3>2. Frontend Config (บน Host)</h3>
+                    <p>เปลี่ยน URL จาก localhost เป็น IP ของ VM</p>
+                    <pre>
+<span class="hl-comment">// config.js หรือ const ใน frontend</span>
+<span class="hl-keyword">const</span> API_URL = <span class="hl-str">'http://192.168.1.50:3000/api'</span>;
+
+<span class="hl-keyword">fetch</span>(`${API_URL}/tasks`)
+  .then(res => res.json())
+  ...</pre>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>📝 Lab Evaluation Criteria</h2>
+            <div class="grid-3">
+                <div class="card" style="border-top: 4px solid var(--warning);">
+                    <h3>Week 3 (10%)</h3>
+                    <ul class="feature-list" style="font-size: 0.9rem;">
+                        <li>[ ] Setup Project & Git</li>
+                        <li>[ ] CRUD ทำงานได้ถูกต้อง</li>
+                        <li>[ ] มี Database Schema (tasks table)</li>
+                    </ul>
+                </div>
+                <div class="card" style="border-top: 4px solid var(--purple);">
+                    <h3>Week 4 (15%)</h3>
+                    <ul class="feature-list" style="font-size: 0.9rem;">
+                        <li>[ ] Folder Structure ถูกต้อง (Controller/Service/Repo)</li>
+                        <li>[ ] ไม่มี Logic ใน Route/Controller</li>
+                        <li>[ ] Code Clean & Readable</li>
+                    </ul>
+                </div>
+                <div class="card" style="border-top: 4px solid var(--accent);">
+                    <h3>Week 5 (15%)</h3>
+                    <ul class="feature-list" style="font-size: 0.9rem;">
+                        <li>[ ] VM รัน Ubuntu ได้</li>
+                        <li>[ ] SSH เข้า Server ได้</li>
+                        <li>[ ] ใช้ PM2 รัน Backend</li>
+                        <li>[ ] Frontend (Host) คุยกับ Backend (VM) รู้เรื่อง</li>
+                    </ul>
+                </div>
+            </div>
+            <div style="margin-top: 30px; text-align: center; color: var(--text-muted);">
+                * ส่งงานผ่าน Git Repository (Capture หน้าจอผลลัพธ์ใส่ Readme)
+            </div>
+        </div>
+
+        <div class="slide">
+            <div style="text-align: center; max-width: 700px; margin: 0 auto;">
+                <h1 style="font-size: 4rem; margin-bottom: 20px;">Ready to Code?</h1>
+                <p style="font-size: 1.5rem; color: var(--text-main);">
+                    "Software Architecture ไม่ใช่แค่การวาดรูป <br>แต่คือการจัดระเบียบความคิดและโครงสร้างให้รองรับอนาคต"
+                </p>
+                
+                <div style="margin-top: 60px; display: flex; justify-content: center; gap: 20px;">
+                    <button class="btn" style="background: var(--primary);" onclick="goToSlide(3)">
+                        <i class="fas fa-code"></i> เริ่มทำ Lab Week 4
+                    </button>
+                    <button class="btn" style="background: var(--bg-card);" onclick="goToSlide(5)">
+                        <i class="fas fa-server"></i> ดู Lab Week 5
+                    </button>
+                </div>
+
+                <div style="margin-top: 50px; opacity: 0.6;">
+                    <p>ENGSE207 | Computer Engineering</p>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="controls">
+        <button class="btn" onclick="prevSlide()"><i class="fas fa-chevron-left"></i></button>
+        <button class="btn" onclick="nextSlide()"><i class="fas fa-chevron-right"></i></button>
+    </div>
+
+    <script>
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slide');
+        const progressBar = document.getElementById('progress');
+        const slideNumDisplay = document.getElementById('slideNum');
+
+        function updateSlide() {
+            slides.forEach((slide, index) => {
+                slide.classList.remove('active');
+                if (index === currentSlide) {
+                    slide.classList.add('active');
+                }
+            });
+            
+            // Progress Bar
+            const percentage = ((currentSlide + 1) / slides.length) * 100;
+            progressBar.style.width = percentage + '%';
+            
+            // Number Display
+            slideNumDisplay.textContent = `0${currentSlide + 1} / ${slides.length}`;
+        }
+
+        function nextSlide() {
+            if (currentSlide < slides.length - 1) {
+                currentSlide++;
+                updateSlide();
+            }
+        }
+
+        function prevSlide() {
+            if (currentSlide > 0) {
+                currentSlide--;
+                updateSlide();
+            }
+        }
+
+        function goToSlide(index) {
+            currentSlide = index;
+            updateSlide();
+        }
+
+        // Keyboard Navigation
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'ArrowDown') nextSlide();
+            if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') prevSlide();
+        });
+
+        // Initialize
+        updateSlide();
+    </script>
+</body>
+</html>
