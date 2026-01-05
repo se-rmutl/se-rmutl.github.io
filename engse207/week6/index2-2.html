@@ -1,0 +1,1651 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+  <title>ENGSE207 Week 6: Architectural Design Process & ADD-Lite</title>
+
+  <!-- Reveal.js (same baseline as index1-2.html) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/5.0.4/reset.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/5.0.4/reveal.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/5.0.4/theme/black.min.css" id="reveal-theme">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" id="hljs-theme">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      /* --- base like index1-2 --- */
+      --primary-bg:#1e1e2e;
+      --glass-bg:rgba(255,255,255,.06);
+      --glass-border:rgba(255,255,255,.12);
+      --accent:#00d2ff;
+      --accent2:#3a7bd5;
+      --accent-gradient:linear-gradient(90deg,var(--accent) 0%, var(--accent2) 100%);
+      --text:#e7e7ef;
+      --muted:#a6a6bf;
+      --success:#00b09b;
+      --warning:#f7971e;
+      --danger:#ff5f6d;
+
+      --base-font-size:32px; /* projector-friendly */
+      --radius:18px;
+      --shadow:0 10px 34px rgba(0,0,0,.35);
+    }
+
+    body{
+      font-family:'Prompt',sans-serif !important;
+      background: radial-gradient(circle at 10% 5%, rgba(58,123,213,.22), transparent 55%),
+                  radial-gradient(circle at 90% 15%, rgba(0,210,255,.18), transparent 50%),
+                  radial-gradient(circle at 30% 90%, rgba(255,95,109,.14), transparent 50%),
+                  var(--primary-bg);
+      color: var(--text);
+    }
+    .reveal{ font-family:'Prompt',sans-serif !important; font-size: var(--base-font-size); }
+    .reveal h1,.reveal h2,.reveal h3{ font-weight:800; text-transform:none; letter-spacing:-.6px; }
+    .reveal h1{ font-size:2.35em; background:var(--accent-gradient); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+    .reveal h2{ font-size:1.7em; margin-bottom:.6em; }
+    .reveal h3{ font-size:1.25em; color:var(--accent); }
+    .reveal p, .reveal li { line-height:1.25; }
+    .small{ font-size:.8em; }
+    .xs{ font-size:.7em; }
+    .muted{ color:var(--muted); }
+    .text-left{ text-align:left; }
+    .text-center{ text-align:center; }
+    .pill{
+      display:inline-flex; align-items:center; gap:.45em;
+      border:1px solid var(--glass-border);
+      padding:.25em .6em; border-radius:999px;
+      background:rgba(255,255,255,.05);
+      font-size:.75em;
+    }
+
+    /* --- header controls (same concept as index1-2) --- */
+    .header-bar{
+      position:fixed; inset:0 0 auto 0;
+      display:flex; justify-content:space-between; align-items:center;
+      padding: 12px 18px;
+      background: rgba(30,30,46,.72);
+      border-bottom:1px solid var(--glass-border);
+      backdrop-filter: blur(10px);
+      z-index: 2000;
+    }
+    .header-title{
+      font-weight:700; font-size:.95rem;
+      background:var(--accent-gradient);
+      -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+      display:flex; align-items:center; gap:10px;
+    }
+    .header-title .tag{
+      font-size:.72rem;
+      padding:.2rem .45rem;
+      border:1px solid var(--glass-border);
+      border-radius:999px;
+      background:rgba(255,255,255,.05);
+      color:var(--text);
+      -webkit-text-fill-color:initial;
+    }
+    .ui-controls{ display:flex; gap:8px; align-items:center; }
+    .ui-controls button{
+      background:transparent;
+      border:1px solid var(--glass-border);
+      color:var(--text);
+      padding:6px 10px;
+      border-radius:10px;
+      cursor:pointer;
+      font-family:'Prompt',sans-serif;
+      font-size:.85rem;
+      transition: all .2s;
+      display:inline-flex; align-items:center; gap:6px;
+    }
+    .ui-controls button:hover{
+      border-color: var(--accent);
+      box-shadow: 0 0 14px rgba(0,210,255,.18);
+      transform: translateY(-1px);
+    }
+    .kbd{
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size:.72em;
+      border:1px solid var(--glass-border);
+      padding:.18em .45em;
+      border-radius:8px;
+      background:rgba(255,255,255,.04);
+      color:var(--muted);
+      margin-left:.35em;
+    }
+
+    /* layout */
+    .glass{
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius);
+      padding: 26px;
+      box-shadow: var(--shadow);
+    }
+    .grid-2{ display:grid; grid-template-columns: 1fr 1fr; gap: 22px; align-items:stretch; }
+    .grid-3{ display:grid; grid-template-columns: 1fr 1fr 1fr; gap: 18px; align-items:stretch; }
+    .grid-2-1{ display:grid; grid-template-columns: 1.4fr .9fr; gap: 22px; align-items:stretch; }
+    .card{
+      background: linear-gradient(145deg, rgba(255,255,255,.06), rgba(0,0,0,.08));
+      border:1px solid var(--glass-border);
+      border-radius: var(--radius);
+      padding: 22px;
+      box-shadow: 0 8px 26px rgba(0,0,0,.25);
+      position:relative;
+      overflow:hidden;
+    }
+    .card:before{
+      content:"";
+      position:absolute; inset:-2px;
+      background: radial-gradient(circle at 20% 20%, rgba(0,210,255,.22), transparent 45%),
+                  radial-gradient(circle at 90% 30%, rgba(255,95,109,.14), transparent 45%);
+      pointer-events:none;
+      opacity:.55;
+    }
+    .card > * { position:relative; }
+    .badge{
+      display:inline-block;
+      padding:.22em .62em;
+      border-radius:999px;
+      font-size:.72em;
+      border:1px solid var(--glass-border);
+      background:rgba(255,255,255,.05);
+      color: var(--muted);
+    }
+    .accent-bar{ height:6px; width: 120px; margin: 16px auto 0; border-radius: 999px; background: var(--accent-gradient); }
+
+    /* flow */
+    .flow{ display:flex; gap: 12px; align-items:stretch; justify-content:center; flex-wrap:wrap; }
+    .flow .step{
+      width: 240px;
+      border-radius: 16px;
+      border: 1px solid rgba(0,210,255,.35);
+      background: rgba(0,0,0,.18);
+      padding: 16px 14px;
+      box-shadow: 0 10px 24px rgba(0,0,0,.25);
+    }
+    .step .icon{ font-size: 1.6em; }
+    .step .t{ font-weight:800; color: var(--accent); margin-top: 4px; }
+    .step .d{ font-size:.78em; color: var(--muted); margin-top: 6px; }
+    .flow .arrow{
+      font-size: 1.4em;
+      opacity:.75;
+      align-self:center;
+      animation: pulse 1.8s ease-in-out infinite;
+      margin: 0 2px;
+    }
+    @keyframes pulse { 0%{opacity:.3} 50%{opacity:1} 100%{opacity:.3} }
+
+    /* tables */
+    table{ width:100%; border-collapse: collapse; font-size:.78em; }
+    th, td{ border:1px solid rgba(255,255,255,.12); padding:10px 10px; }
+    th{ background: rgba(0,0,0,.2); color: var(--text); font-weight:800; }
+    td{ background: rgba(255,255,255,.03); }
+    .stars{ letter-spacing: .08em; }
+
+    /* diagram / image placeholders */
+    .diagram-box{
+      width: 92%;
+      height: 520px;
+      margin: 0 auto;
+      border:2px dashed rgba(255,255,255,.18);
+      border-radius: 16px;
+      background: rgba(0,0,0,.18);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      position:relative;
+      overflow:hidden;
+    }
+    .diagram-box img{
+      max-width:100%;
+      max-height:100%;
+      object-fit:contain;
+      cursor: zoom-in;
+      filter: drop-shadow(0 12px 26px rgba(0,0,0,.35));
+    }
+    .diagram-label{
+      position:absolute;
+      bottom:10px;
+      right:12px;
+      font-size:.68em;
+      color:var(--muted);
+      padding:6px 10px;
+      background: rgba(0,0,0,.68);
+      border-radius:10px;
+      border:1px solid rgba(255,255,255,.10);
+    }
+    .diagram-hint{
+      position:absolute;
+      top:10px;
+      left:12px;
+      font-size:.68em;
+      color:var(--muted);
+      padding:6px 10px;
+      background: rgba(0,0,0,.55);
+      border-radius:10px;
+      border:1px solid rgba(255,255,255,.10);
+    }
+
+    /* modal */
+    .img-modal{
+      position:fixed;
+      inset:0;
+      background: rgba(0,0,0,.82);
+      display:none;
+      align-items:center;
+      justify-content:center;
+      z-index: 5000;
+      padding: 28px;
+    }
+    .img-modal.open{ display:flex; }
+    .img-modal img{
+      max-width: 95vw;
+      max-height: 92vh;
+      object-fit:contain;
+      cursor: zoom-out;
+      border-radius: 14px;
+      border:1px solid rgba(255,255,255,.18);
+      background: rgba(0,0,0,.25);
+    }
+    .img-modal .caption{
+      position: fixed;
+      bottom: 18px;
+      left: 18px;
+      right: 18px;
+      text-align:center;
+      color: rgba(255,255,255,.85);
+      font-size:.8em;
+    }
+
+    /* simulation */
+    .sim{
+      background: linear-gradient(145deg, rgba(255,255,255,.05), rgba(0,0,0,.20));
+      border:1px solid rgba(255,255,255,.12);
+      border-radius: var(--radius);
+      padding: 20px;
+    }
+    .sim .opt{
+      display:flex; align-items:center; gap: 12px;
+      padding: 10px 12px;
+      border-radius: 14px;
+      margin: 10px 0;
+      background: rgba(255,255,255,.04);
+      border: 1px solid rgba(255,255,255,.08);
+      cursor:pointer;
+    }
+    .sim .opt:hover{ border-color: rgba(0,210,255,.30); }
+    input[type="checkbox"], input[type="range"]{ accent-color: var(--accent); transform: scale(1.15); }
+    .sim-result{
+      margin-top: 14px;
+      padding: 12px 14px;
+      border-radius: 14px;
+      border:1px solid rgba(255,255,255,.14);
+      min-height: 62px;
+      display:flex; align-items:center; justify-content:center;
+      text-align:center;
+      font-weight: 800;
+    }
+    .btn-primary{
+      margin-top: 10px;
+      background: var(--accent-gradient);
+      border: none;
+      padding: 10px 16px;
+      border-radius: 14px;
+      color: #061018;
+      font-weight: 800;
+      cursor:pointer;
+      box-shadow: 0 10px 26px rgba(0,210,255,.18);
+    }
+    .btn-primary:hover{ transform: translateY(-1px); }
+
+    /* light theme */
+    body.light{
+      --primary-bg:#f5f7fa;
+      --glass-bg:rgba(255,255,255,.76);
+      --glass-border:rgba(0,0,0,.12);
+      --text:#223042;
+      --muted:#546376;
+      --accent:#2980b9;
+      --accent2:#6dd5fa;
+    }
+    body.light .header-bar{ background: rgba(245,247,250,.86); }
+    body.light .diagram-box{ background: rgba(255,255,255,.55); }
+    body.light th, body.light td{ border-color: rgba(0,0,0,.12); }
+    body.light th{ background: rgba(0,0,0,.04); }
+    body.light td{ background: rgba(255,255,255,.70); }
+  </style>
+</head>
+
+<body>
+  <div class="header-bar">
+    <div class="header-title">
+      ENGSE207: Software Architecture
+      <span class="tag">Week 6 • ADD‑Lite</span>
+    </div>
+    <div class="ui-controls">
+      <button onclick="changeFont(-2)" title="ลดขนาดตัวอักษร"><span>🔎</span> A-</button>
+      <button onclick="changeFont(2)" title="เพิ่มขนาดตัวอักษร"><span>🔍</span> A+</button>
+      <button id="themeBtn" onclick="toggleTheme()" title="สลับโหมดสว่าง/มืด">🌗 Dark</button>
+      <button onclick="toggleFull()" title="เต็มจอ">⛶ Full</button>
+    </div>
+  </div>
+
+  <div class="img-modal" id="imgModal" onclick="closeModal()">
+    <img id="modalImg" alt="expanded">
+    <div class="caption" id="modalCap">คลิกเพื่อปิด</div>
+  </div>
+
+  <div class="reveal">
+    <div class="slides">
+
+      <!-- 1 -->
+      <section>
+        <div class="glass" style="padding: 54px;">
+          <div class="pill">WEEK 6 • Architectural Design Process • ADD‑Lite</div>
+          <h1 style="margin-top:.25em;">ออกแบบสถาปัตยกรรมแบบมีเหตุผล</h1>
+          <p class="muted">Requirements → Drivers → Candidate Architectures → Trade‑offs → ADR</p>
+          <div class="accent-bar"></div>
+          <div class="grid-2" style="margin-top:28px;">
+            <div class="card text-left">
+              <div class="badge">เป้าหมาย 2 ชั่วโมง</div>
+              <ul class="small">
+                <li>เห็นขั้นตอนออกแบบ “จากโจทย์” ไป “สถาปัตยกรรม”</li>
+                <li>เลือก Style/Pattern ตาม Drivers & Scenarios</li>
+                <li>เริ่มต้นบันทึกการตัดสินใจด้วย ADR ฉบับแรก</li>
+              </ul>
+            </div>
+            <div class="card text-left">
+              <div class="badge">Quote</div>
+              <p style="margin:.25em 0 0;"><em>“Architecture is about the important stuff… whatever that is.”</em></p>
+              <p class="xs muted" style="margin:.4em 0 0;">— Ralph Johnson</p>
+              <div style="margin-top:14px" class="xs muted">
+                Tips: กด <span class="kbd">F</span> หรือปุ่ม <b>Full</b> เพื่อเต็มจอ • กด <span class="kbd">Esc</span> เพื่อออก
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 2 -->
+      <section>
+        <h2>Agenda (2 ชั่วโมง)</h2>
+        <div class="grid-2">
+          <div class="glass text-left">
+            <h3 style="margin-top:0">Part A • Lecture</h3>
+            <ol class="small">
+              <li>ทบทวน Week 5 (C4 & Views)</li>
+              <li>Architectural Design Process</li>
+              <li>Quality Attributes & Scenarios</li>
+              <li>ADD & ADD‑Lite (5 Steps)</li>
+              <li>Trade‑offs + Decision Matrix</li>
+              <li>ADR: บันทึกการตัดสินใจ</li>
+            </ol>
+          </div>
+          <div class="glass text-left">
+            <h3 style="margin-top:0">Part B • Workshop Preview</h3>
+            <ol class="small">
+              <li>เลือก QA Scenarios สำคัญของ Task Board</li>
+              <li>เสนอ Candidate Architectures ≥ 2 แบบ</li>
+              <li>เปรียบเทียบข้อดี‑ข้อเสีย แล้วเลือกแนวทางหลักเทอมโปรเจกต์</li>
+              <li>เขียน ADR‑001 ของทีม</li>
+            </ol>
+            <div class="pill" style="margin-top:10px;">Deliverables: QA Scenarios + Candidates + Comparison + ADR‑001</div>
+          </div>
+        </div>
+      </section>
+
+
+      <!-- CLO -->
+      <section>
+        <h2>CLO ที่เกี่ยวข้อง (Week 6)</h2>
+        <div class="glass text-left">
+          <div class="grid-2">
+            <div class="card text-left">
+              <div class="badge">Knowledge / Cognitive</div>
+              <ul class="small">
+                <li><b>CLO3 (K)</b> — เข้าใจ Quality Attributes & Scenarios</li>
+                <li><b>CLO5 (C)</b> — วิเคราะห์ Architectural Drivers</li>
+                <li><b>CLO6 (C)</b> — ประเมิน Trade‑offs และเหตุผลเชิงสถาปัตยกรรม</li>
+              </ul>
+            </div>
+            <div class="card text-left">
+              <div class="badge">Practical / Attitude</div>
+              <ul class="small">
+                <li><b>CLO7 (P/C)</b> — ออกแบบสถาปัตยกรรมระดับสูง (Candidate Architectures)</li>
+                <li><b>CLO8 (A/P)</b> — สื่อสาร/ทำงานเป็นทีม ผ่าน Workshop + ADR</li>
+              </ul>
+              <div class="pill" style="margin-top:10px;">Evidence: QA Scenarios + Decision Matrix + ADR‑001</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+
+      <!-- 3 -->
+      <section>
+        <h2>ทบทวนสัปดาห์ที่แล้ว (Week 5)</h2>
+        <div class="glass text-left">
+          <div class="grid-2">
+            <div>
+              <h3 style="margin-top:0">C4 Model = “ภาษากลาง”</h3>
+              <ul class="small">
+                <li><b>Context</b> — ระบบอยู่ตรงไหนในโลก</li>
+                <li><b>Container</b> — มี Web/API/DB อะไรบ้าง</li>
+                <li><b>Component</b> — ไส้ในระดับโมดูล</li>
+              </ul>
+            </div>
+            <div>
+              <h3 style="margin-top:0">Views & Viewpoints</h3>
+              <ul class="small">
+                <li>เลือกมุมมองให้เหมาะกับ Stakeholders</li>
+                <li>ทำให้ “คนละทีม” คุยกันรู้เรื่อง</li>
+              </ul>
+            </div>
+          </div>
+          <div class="card" style="margin-top:14px;">
+            <b style="color:var(--accent)">Bridge:</b> Week 5 = <b>สื่อสารสิ่งที่คิด</b> • Week 6 = <b>คิดอย่างไรให้มีเหตุผล</b>
+          </div>
+        </div>
+      </section>
+
+      <!-- 4 -->
+      <section>
+        <h2>ทำไมต้องมี “Process”?</h2>
+        <div class="grid-2">
+          <div class="card text-left">
+            <div class="badge">ถ้าไม่มี</div>
+            <ul class="small">
+              <li>เลือก Tech ก่อน แล้วค่อย “หาข้ออ้าง” ตามหลัง</li>
+              <li>แก้ Performance / Security ไม่ทันเมื่อระบบโต</li>
+              <li>ลงเอยเป็น <b>Big Ball of Mud</b></li>
+            </ul>
+          </div>
+          <div class="card text-left">
+            <div class="badge">ถ้ามี</div>
+            <ul class="small">
+              <li>ทุกการตัดสินใจมี “หลักฐาน” รองรับ</li>
+              <li>คุมความเสี่ยง + ลด Technical Debt</li>
+              <li>สื่อสารกับทีมได้ชัดเจน (และย้อนดูได้)</li>
+            </ul>
+          </div>
+        </div>
+        <div class="glass" style="margin-top:16px;">
+          <span class="pill">Key idea</span>
+          <div style="margin-top:10px"><b>Architecture</b> ไม่ใช่ “โค้ดสวย” แต่คือ “การตัดสินใจสำคัญ” ที่กระทบคุณภาพระบบ</div>
+        </div>
+      </section>
+
+      <section>
+  <h2>ทำไมสถาปัตยกรรม “คุ้ม” ตั้งแต่ต้น?</h2>
+  <div class="grid-2">
+    <div class="card text-left">
+      <div class="badge">Cost of Change (แนวคิด)</div>
+      <p class="small muted">แก้ “โครงสร้าง” ยิ่งช้า ยิ่งแพง (เวลา/ความเสี่ยง/ภาพลักษณ์)</p>
+      <div class="flow">
+        <div class="step">
+          <div class="pill">Design</div>
+          <div class="stars" title="~1x">
+            <span>★</span><span class="muted">★</span><span class="muted">★</span><span class="muted">★</span><span class="muted">★</span>
+          </div>
+          <div class="caption">แก้ได้เร็ว</div>
+        </div>
+        <div class="step">
+          <div class="pill">Dev</div>
+          <div class="stars" title="~5x">
+            <span>★</span><span>★</span><span>★</span><span class="muted">★</span><span class="muted">★</span>
+          </div>
+          <div class="caption">เริ่มมี ripple effect</div>
+        </div>
+        <div class="step">
+          <div class="pill">Prod</div>
+          <div class="stars" title="~20x+">
+            <span>★</span><span>★</span><span>★</span><span>★</span><span>★</span>
+          </div>
+          <div class="caption">มี downtime / hotfix</div>
+        </div>
+      </div>
+      <p class="small"><b>Key idea:</b> สัปดาห์นี้เรา “ซื้อประกัน” ด้วย Process + ADR</p>
+    </div>
+    <div class="card text-left">
+      <div class="badge">ตัวอย่างในชีวิตจริง</div>
+      <ul class="small">
+        <li><b>เลือก DB/Schema ไม่เหมาะ</b> → แก้ทีหลังต้อง migration ใหญ่</li>
+        <li><b>เลือก Monolith/Service boundary ไม่ดี</b> → กลายเป็น “Distributed Monolith”</li>
+        <li><b>ไม่มี ADR</b> → ทีมใหม่ถาม “ทำไมทำแบบนี้?” แล้วเปลี่ยนผิดจุด</li>
+      </ul>
+      <div class="card" style="margin-top:10px;">
+        <div class="badge">คำถามชวนคิด</div>
+        <p class="small">ถ้าอีก 6 สัปดาห์คุณรู้ว่า “ต้องรองรับผู้ใช้ 10 เท่า” — สิ่งที่เลือกวันนี้จะช่วยหรือทำให้พัง?</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+
+      <!-- 5 -->
+      <section>
+        <h2>Architectural Design Process</h2>
+        <div class="flow">
+          <div class="step fragment fade-up">
+            <div class="icon">🧾</div>
+            <div class="t">1) Requirements</div>
+            <div class="d">Functional + Quality + Constraints</div>
+          </div>
+          <div class="arrow fragment fade-up">➜</div>
+          <div class="step fragment fade-up">
+            <div class="icon">🎯</div>
+            <div class="t">2) Drivers</div>
+            <div class="d">เลือก “สิ่งสำคัญที่สุด”</div>
+          </div>
+          <div class="arrow fragment fade-up">➜</div>
+          <div class="step fragment fade-up">
+            <div class="icon">🧩</div>
+            <div class="t">3) Candidates</div>
+            <div class="d">สถาปัตยกรรม 2–3 แบบ</div>
+          </div>
+          <div class="arrow fragment fade-up">➜</div>
+          <div class="step fragment fade-up">
+            <div class="icon">⚖️</div>
+            <div class="t">4) Trade‑offs</div>
+            <div class="d">เทียบข้อดี‑ข้อเสีย</div>
+          </div>
+          <div class="arrow fragment fade-up">➜</div>
+          <div class="step fragment fade-up">
+            <div class="icon">📝</div>
+            <div class="t">5) Document</div>
+            <div class="d">Diagrams + ADR</div>
+          </div>
+        </div>
+        <p class="xs muted">กระบวนการนี้ “วนซ้ำ” ได้เมื่อ requirements/constraints เปลี่ยน</p>
+      </section>
+
+      <!-- 6 -->
+      <section>
+        <h2>Top‑Down vs Bottom‑Up</h2>
+        <div class="grid-2">
+          <div class="glass text-left">
+            <h3 style="margin-top:0">Top‑Down</h3>
+            <p class="small muted">เริ่มจากภาพใหญ่ → แตกย่อย</p>
+            <ul class="small">
+              <li>ออกแบบ Quality Attributes ได้ตั้งแต่ต้น</li>
+              <li>สื่อสารกับ Stakeholders ง่าย</li>
+              <li class="muted">แต่เสี่ยงพลาดรายละเอียดเทคนิค</li>
+            </ul>
+          </div>
+          <div class="glass text-left">
+            <h3 style="margin-top:0">Bottom‑Up</h3>
+            <p class="small muted">เริ่มจากชิ้นส่วน → รวมเป็นระบบ</p>
+            <ul class="small">
+              <li>เริ่มทำ Prototype ได้เร็ว</li>
+              <li>ได้ Components ใช้ซ้ำได้</li>
+              <li class="muted">แต่เสี่ยงไม่ตอบ QA เมื่อรวมระบบ</li>
+            </ul>
+          </div>
+        </div>
+        <div class="card" style="margin-top:14px;">
+          <b>Hybrid ที่ใช้จริง:</b> กำหนดภาพใหญ่ก่อน (Top‑Down) → ทดลอง/ยืนยันด้วย Prototype (Bottom‑Up)
+        </div>
+      </section>
+
+      <!-- 7 -->
+      <section>
+        <h2>Architectural Drivers คืออะไร?</h2>
+        <div class="grid-3">
+          <div class="card text-left">
+            <div class="badge">Functional</div>
+            <h3 style="margin:.35em 0 0;">สิ่งที่ระบบต้องทำ</h3>
+            <ul class="small">
+              <li>Primary Use Cases</li>
+              <li>Business Rules หลัก</li>
+              <li>Flows ที่เกิดบ่อย/สำคัญ</li>
+            </ul>
+          </div>
+          <div class="card text-left">
+            <div class="badge">Quality Attributes</div>
+            <h3 style="margin:.35em 0 0;">ระบบต้อง “ดีแค่ไหน”</h3>
+            <ul class="small">
+              <li>Performance / Scalability</li>
+              <li>Availability / Security</li>
+              <li>Modifiability / Deployability</li>
+            </ul>
+          </div>
+          <div class="card text-left">
+            <div class="badge">Constraints</div>
+            <h3 style="margin:.35em 0 0;">ข้อจำกัดจริง</h3>
+            <ul class="small">
+              <li>เวลา/งบ/ทีม/ทักษะ</li>
+              <li>เทคโนโลยีบังคับ</li>
+              <li>ข้อกฎหมาย/มาตรฐาน</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- 8 -->
+      <section>
+        <h2>ตัวอย่าง Drivers: Task Board System</h2>
+        <div class="grid-2">
+          <div class="glass text-left">
+            <h3 style="margin-top:0">Functional (Core)</h3>
+            <ul class="small">
+              <li>สร้าง/แก้ไข/ย้าย Task</li>
+              <li>จัดการ Board/Column</li>
+              <li>มอบหมาย + แจ้งเตือน</li>
+              <li>Real‑time collaboration</li>
+            </ul>
+          </div>
+          <div class="glass text-left">
+            <h3 style="margin-top:0">Constraints</h3>
+            <ul class="small">
+              <li>เวลาเทอมโปรเจกต์จำกัด</li>
+              <li>ทีม Junior‑Mid (ทักษะ DevOps จำกัด)</li>
+              <li>ต้อง Deploy/ทดสอบได้จริง</li>
+            </ul>
+          </div>
+        </div>
+        <div class="card text-left" style="margin-top:14px;">
+          <b style="color:var(--accent)">คำถามชวนคิด:</b>
+          ถ้าเราบอกว่า “รองรับ 10,000 users” แต่ทีมมี 5 คน เวลา 3 เดือน… เราจะ “เลือกอะไร” และ “ยอมเสียอะไร”?
+        </div>
+      </section>
+
+      <!-- 9 -->
+      <section>
+        <h2>Quality Attribute Scenario</h2>
+        <div class="grid-2-1">
+          <div class="glass text-left">
+            <h3 style="margin-top:0">Template (ง่ายและใช้ได้จริง)</h3>
+            <div class="small">
+              <p><b>Source</b> ใครทำ?</p>
+              <p><b>Stimulus/Event</b> เกิดอะไร?</p>
+              <p><b>Environment</b> อยู่ในสภาวะไหน?</p>
+              <p><b>Artifact</b> กระทบส่วนไหน?</p>
+              <p><b>Response</b> ระบบต้องทำอะไร?</p>
+              <p><b>Response Measure</b> วัดผลยังไง?</p>
+            </div>
+          </div>
+          <div class="card text-left">
+            <div class="badge">Example: Availability</div>
+            <div class="xs muted" style="margin-top:10px;">Source: ผู้ใช้ทั่วไป</div>
+            <div class="xs muted">Event: API Server ล่ม</div>
+            <div class="xs muted">Env: ช่วงเวลาทำงานปกติ</div>
+            <div class="xs muted">Artifact: Task Service</div>
+            <div class="xs muted">Response: ระบบสลับไป instance สำรอง</div>
+            <div class="xs muted"><b>Measure:</b> กลับมาทำงานภายใน 30s, ข้อมูลไม่สูญหาย</div>
+          </div>
+        </div>
+      </section>
+
+      <section>
+  <h2>Scenario Writing Clinic</h2>
+  <div class="grid-2">
+    <div class="card text-left">
+      <div class="badge">❌ ตัวอย่างที่ “กว้างไป”</div>
+      <ul class="small">
+        <li>“ระบบต้องเร็ว”</li>
+        <li>“ระบบต้องปลอดภัย”</li>
+        <li>“ต้องรองรับผู้ใช้เยอะ ๆ”</li>
+      </ul>
+      <p class="small muted">ปัญหา: วัดไม่ได้ → ออกแบบ/ทดสอบไม่ได้ → โต้เถียงไม่จบ</p>
+    </div>
+    <div class="card text-left">
+      <div class="badge">✅ ตัวอย่างที่ “ใช้ตัดสินใจได้จริง”</div>
+      <ul class="small">
+        <li><b>Stimulus:</b> ผู้ใช้ 200 คนเปิด Board พร้อมกัน (peak)</li>
+        <li><b>Env:</b> อินเทอร์เน็ตมือถือ, DB อยู่ VM เดียว</li>
+        <li><b>Response:</b> ระบบโหลดรายการ task + summary</li>
+        <li><b>Measure:</b> p95 &lt; 2s และ error &lt; 1%</li>
+      </ul>
+      <div class="card" style="margin-top:10px;">
+        <div class="badge">Tip</div>
+        <p class="small">เริ่มจาก 3 scenario: <b>Performance / Security / Modifiability</b> ก่อน</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+
+      <!-- 10 -->
+      <section>
+        <h2>ADD: Attribute‑Driven Design</h2>
+        <div class="glass text-left">
+          <p><b>ใจความ:</b> ออกแบบจาก “คุณภาพที่ต้องการ” ไม่ใช่เลือกเทคโนโลยีก่อน</p>
+          <div class="grid-2" style="margin-top:12px;">
+            <div class="card text-left">
+              <div class="badge">Functional</div>
+              <p class="small">กำหนด “รูปทรงของโค้ด”</p>
+              <div class="pill">เช่น CRUD, Workflow</div>
+            </div>
+            <div class="card text-left">
+              <div class="badge">Quality Attributes</div>
+              <p class="small">กำหนด “สถาปัตยกรรม”</p>
+              <div class="pill">เช่น Caching, Redundancy, API Gateway</div>
+            </div>
+          </div>
+        </div>
+        <p class="xs muted">หลักคิด: ถ้าอยาก “เร็ว” ต้องออกแบบให้เร็วตั้งแต่แรก (แก้ทีหลังแพงกว่า)</p>
+      </section>
+
+      <section>
+  <h2>Style vs Pattern vs Tactic vs Tech</h2>
+  <div class="grid-3">
+    <div class="card text-left">
+      <div class="badge">🏛️ Architectural Style</div>
+      <p class="small">โครงสร้างระดับ “ภาพใหญ่” ของระบบ</p>
+      <p class="small"><span class="pill">Layered</span> <span class="pill">Client‑Server</span> <span class="pill">Microservices</span></p>
+      <p class="small muted">ตอบคำถาม: ระบบ “จัดรูปแบบ” ยังไง?</p>
+    </div>
+    <div class="card text-left">
+      <div class="badge">🧩 Pattern</div>
+      <p class="small">แนวทางแก้ปัญหาที่เจอบ่อย (reusable)</p>
+      <p class="small"><span class="pill">API Gateway</span> <span class="pill">CQRS</span> <span class="pill">Circuit Breaker</span></p>
+      <p class="small muted">ตอบคำถาม: แก้ปัญหานี้ “มักใช้แบบไหน”?</p>
+    </div>
+    <div class="card text-left">
+      <div class="badge">🎯 Tactic</div>
+      <p class="small">กลยุทธ์จิ๋ว ๆ เพื่อ QA เฉพาะด้าน</p>
+      <p class="small"><span class="pill">Caching</span> <span class="pill">Retry</span> <span class="pill">Timeout</span></p>
+      <p class="small muted">ตอบคำถาม: ทำให้ “ดีขึ้น” ด้วยอะไร?</p>
+    </div>
+  </div>
+
+  <div class="card text-left" style="margin-top:14px;">
+    <div class="badge">💻 Technology</div>
+    <p class="small">เครื่องมือ/ภาษาที่เลือกใช้ (Node.js, PostgreSQL, Redis)</p>
+    <p class="small muted"><b>คำเตือน:</b> อย่าเริ่มจาก Tech ก่อน Drivers — แต่ใช้ Tech เพื่อ “ทำให้ Decision เป็นจริง”</p>
+  </div>
+</section>
+
+
+
+      <!-- 11 -->
+      <section>
+        <h2>Trade‑offs คือของจริง</h2>
+        <div class="grid-2">
+          <div class="card text-left">
+            <div class="badge">Performance ↔ Security</div>
+            <p class="small">Encrypt ทุกอย่าง = ปลอดภัยขึ้น แต่ช้าลง</p>
+            <p class="xs muted">หาสมดุล: เข้ารหัสเฉพาะข้อมูลสำคัญ + ใช้ cache อย่างระวัง</p>
+          </div>
+          <div class="card text-left">
+            <div class="badge">Scalability ↔ Complexity</div>
+            <p class="small">Microservices scale ง่าย แต่ระบบซับซ้อนขึ้น</p>
+            <p class="xs muted">ถ้าทีมยังไม่พร้อม → เลือก Modular Monolith ก่อน</p>
+          </div>
+        </div>
+        <div class="card text-left" style="margin-top:14px;">
+          <b style="color:var(--warning)">Rule:</b> ทุก Decision มี “ราคาที่ต้องจ่าย” → ต้องจดไว้ใน ADR
+        </div>
+      </section>
+
+      <section>
+  <h2>Tactics Toolbox (QA → Tactics)</h2>
+  <div class="grid-2">
+    <div class="card text-left">
+      <div class="badge">⚡ Performance</div>
+      <ul class="small">
+        <li>Caching / CDN</li>
+        <li>Pagination + Indexing</li>
+        <li>Async processing (queue)</li>
+      </ul>
+      <div class="badge" style="margin-top:10px;">📈 Scalability</div>
+      <ul class="small">
+        <li>Stateless services</li>
+        <li>Horizontal scaling + Load balancer</li>
+        <li>Sharding / Partitioning</li>
+      </ul>
+    </div>
+    <div class="card text-left">
+      <div class="badge">🛡️ Availability</div>
+      <ul class="small">
+        <li>Redundancy + Health checks</li>
+        <li>Timeout + Retry + Circuit breaker</li>
+        <li>Graceful degradation</li>
+      </ul>
+      <div class="badge" style="margin-top:10px;">🔒 Security</div>
+      <ul class="small">
+        <li>AuthN/AuthZ (RBAC)</li>
+        <li>Input validation + rate limiting</li>
+        <li>Encrypt in transit/at rest</li>
+      </ul>
+    </div>
+  </div>
+  <div class="card text-left" style="margin-top:14px;">
+    <div class="badge">🔧 Modifiability</div>
+    <p class="small">Separation of concerns, clear boundaries, dependency rules, feature toggles</p>
+    <p class="small muted">ADD‑Lite = เลือก “กลยุทธ์” ให้ตรง scenario ไม่ใช่ใส่ทุกอย่าง</p>
+  </div>
+</section>
+
+
+
+      <!-- 12 -->
+      <section>
+        <h2>ADD‑Lite (เวอร์ชันที่เหมาะกับเทอมโปรเจกต์)</h2>
+        <div class="flow">
+          <div class="step fragment fade-up">
+            <div class="icon">📥</div><div class="t">1) Inputs</div><div class="d">Reqs + Constraints</div>
+          </div>
+          <div class="arrow fragment fade-up">➜</div>
+          <div class="step fragment fade-up">
+            <div class="icon">🎯</div><div class="t">2) Drivers</div><div class="d">Top 3–5 QA</div>
+          </div>
+          <div class="arrow fragment fade-up">➜</div>
+          <div class="step fragment fade-up">
+            <div class="icon">🧠</div><div class="t">3) Concepts</div><div class="d">Patterns + Tactics</div>
+          </div>
+          <div class="arrow fragment fade-up">➜</div>
+          <div class="step fragment fade-up">
+            <div class="icon">🏗️</div><div class="t">4) Candidates</div><div class="d">2+ Architectures</div>
+          </div>
+          <div class="arrow fragment fade-up">➜</div>
+          <div class="step fragment fade-up">
+            <div class="icon">📝</div><div class="t">5) ADR</div><div class="d">Record decision</div>
+          </div>
+        </div>
+        <p class="xs muted">เราจะใช้ ADD‑Lite ใน Workshop วันนี้เพื่อเลือกแนวทางหลักของ Task Board</p>
+      </section>
+
+      <!-- 13 -->
+      <section>
+        <h2>Diagram 1: ADD‑Lite Process (Draw.io)</h2>
+        <div class="diagram-box" data-img="images/week6_diagram1_process.png" data-cap="ADD‑Lite Process (export from week6_diagram1_process.drawio)">
+          <div class="diagram-hint">วางรูปภายหลัง: export .drawio → PNG แล้วใส่ไว้ที่ <b>images/week6_diagram1_process.png</b></div>
+          <div class="diagram-label">Placeholder: week6_diagram1_process.drawio</div>
+        </div>
+      </section>
+
+      <!-- 14 -->
+      <section>
+        <h2>Step 1: Review Inputs</h2>
+        <div class="grid-2">
+          <div class="glass text-left">
+            <h3 style="margin-top:0">Checklist</h3>
+            <ul class="small">
+              <li>Functional Requirements (User stories หลัก)</li>
+              <li>Quality Attributes ที่ “ต้องมี”</li>
+              <li>Constraints: เวลา/งบ/ทีม/เทคโนโลยี</li>
+              <li>Assumptions (สิ่งที่คิดว่าเป็นจริง)</li>
+            </ul>
+          </div>
+          <div class="card text-left">
+            <div class="badge">Pitfall</div>
+            <p class="small"><b>อย่าเริ่มจาก Tech Stack</b> จนลืม QA</p>
+            <p class="xs muted">เช่น “จะใช้ Microservices เพราะเท่” = anti‑pattern</p>
+            <div style="margin-top:12px" class="pill">ถามให้ชัด: <b>Why?</b> และ <b>Measure?</b></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 15 -->
+      <section>
+        <h2>Step 2: Choose Drivers</h2>
+        <div class="grid-2">
+          <div class="glass text-left">
+            <h3 style="margin-top:0">เทคนิคจัดลำดับ</h3>
+            <ul class="small">
+              <li><b>MoSCoW</b>: Must / Should / Could / Won’t</li>
+              <li>เลือก <b>Top 3–5</b> เท่านั้น เพื่อกัน over‑engineering</li>
+              <li>เขียน QA Scenarios ให้ “วัดผลได้”</li>
+            </ul>
+          </div>
+          <div class="card text-left">
+            <div class="badge">Example Drivers</div>
+            <ul class="small">
+              <li>Scalability: 10k concurrent users</li>
+              <li>Performance: p95 &lt; 500ms</li>
+              <li>Availability: 99.9%</li>
+              <li>Security: AuthN/AuthZ + OWASP basics</li>
+              <li>Modifiability: เพิ่มฟีเจอร์ได้ไม่พังทั้งระบบ</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- 16 -->
+      <section>
+        <h2>🎮 Mini‑Simulation #1</h2>
+        <p class="small muted">สถานการณ์: ทำ Task Board เทอมโปรเจกต์ • ทีม 5 คน • เวลาจำกัด • อยาก “ปล่อยของให้ทัน”</p>
+        <div class="sim text-left" style="max-width: 980px; margin: 0 auto;">
+          <div class="pill">เลือก 3 Drivers สำคัญที่สุด</div>
+
+          <label class="opt"><input type="checkbox" class="drv" value="speed">🚀 Time‑to‑Market (ทำให้เสร็จ/ทดสอบได้จริง)</label>
+          <label class="opt"><input type="checkbox" class="drv" value="mod">🧱 Modifiability (แก้/เพิ่มฟีเจอร์ได้เร็ว)</label>
+          <label class="opt"><input type="checkbox" class="drv" value="perf">⚡ Performance (p95 &lt; 500ms)</label>
+          <label class="opt"><input type="checkbox" class="drv" value="scale">📈 Scalability (รองรับผู้ใช้โตขึ้น)</label>
+          <label class="opt"><input type="checkbox" class="drv" value="secure">🔒 Security (Auth, RBAC, OWASP)</label>
+
+          <button class="btn-primary" onclick="simDrivers()">ตรวจสอบคำตอบ</button>
+          <div class="sim-result" id="sim1">เลือกให้ครบ 3 ข้อ แล้วกดตรวจสอบ</div>
+        </div>
+      </section>
+
+      <!-- 17 -->
+      <section>
+        <h2>Step 3: จาก Drivers สู่ Design Concepts</h2>
+        <div class="grid-2">
+          <div class="card text-left">
+            <div class="badge">Architectural Pattern</div>
+            <p class="small">โครงสร้างใหญ่ (แม่พิมพ์)</p>
+            <ul class="small">
+              <li>Layered / Monolith</li>
+              <li>Modular Monolith</li>
+              <li>Microservices</li>
+              <li>Event‑Driven</li>
+            </ul>
+          </div>
+          <div class="card text-left">
+            <div class="badge">Architectural Tactic</div>
+            <p class="small">กลยุทธ์เฉพาะ QA</p>
+            <ul class="small">
+              <li>Caching (Performance)</li>
+              <li>Redundancy/Failover (Availability)</li>
+              <li>Rate limit + AuthZ (Security)</li>
+              <li>Async Queue (Resilience)</li>
+            </ul>
+          </div>
+        </div>
+        <p class="xs muted">Pattern = “โครง” • Tactic = “เคล็ดลับที่ฝังในโครง”</p>
+      </section>
+
+      <!-- 18 -->
+      <section>
+        <h2>Infographic: QA → Patterns (Concept)</h2>
+        <div class="glass">
+          <div class="grid-3">
+            <div class="card text-left">
+              <div class="badge">Performance</div>
+              <ul class="small">
+                <li>Caching</li><li>Read Replicas</li><li>CQRS</li>
+              </ul>
+            </div>
+            <div class="card text-left">
+              <div class="badge">Scalability</div>
+              <ul class="small">
+                <li>Horizontal Scaling</li><li>Microservices</li><li>Sharding</li>
+              </ul>
+            </div>
+            <div class="card text-left">
+              <div class="badge">Availability</div>
+              <ul class="small">
+                <li>Redundancy</li><li>Failover</li><li>Circuit Breaker</li>
+              </ul>
+            </div>
+          </div>
+          <div class="card text-left" style="margin-top:14px;">
+            <b style="color:var(--accent)">Remember:</b> Pattern เดียวกันตอบ QA ได้หลายตัว (เช่น Microservices → Scalability + Modifiability)
+          </div>
+        </div>
+      </section>
+
+      <!-- 19 -->
+      <section>
+        <h2>Diagram 2: QA → Tactics → Components (Draw.io)</h2>
+        <div class="diagram-box" data-img="images/week6_diagram2_add_lite.png" data-cap="QA to Tactics to Components (export from week6_diagram2_add_lite.drawio)">
+          <div class="diagram-hint">วางรูปภายหลัง: export → PNG ที่ <b>images/week6_diagram2_add_lite.png</b></div>
+          <div class="diagram-label">Placeholder: week6_diagram2_add_lite.drawio</div>
+        </div>
+      </section>
+
+      <!-- 20 -->
+      <section>
+        <h2>Step 4: Candidate Architectures (อย่างน้อย 2 แบบ)</h2>
+        <div class="grid-2">
+          <div class="card text-left">
+            <div class="badge">Candidate A</div>
+            <h3 style="margin:.25em 0 0;">Layered Monolith + WebSocket</h3>
+            <ul class="small">
+              <li>Deploy ง่าย (1 service)</li>
+              <li>เหมาะทีม Junior</li>
+              <li>Performance ดี (ไม่มี network hop)</li>
+            </ul>
+            <div class="pill">Risk: scale ทั้งก้อน</div>
+          </div>
+          <div class="card text-left">
+            <div class="badge">Candidate B</div>
+            <h3 style="margin:.25em 0 0;">Microservices + Event‑Driven</h3>
+            <ul class="small">
+              <li>Scale แยก service</li>
+              <li>Fault isolation ดี</li>
+              <li>Deploy แยกส่วนได้</li>
+            </ul>
+            <div class="pill">Risk: complexity + DevOps</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 21 -->
+      <section>
+        <h2>Candidate C (ทางสายกลาง)</h2>
+        <div class="glass text-left">
+          <div class="grid-2">
+            <div>
+              <h3 style="margin-top:0">Modular Monolith</h3>
+              <ul class="small">
+                <li>โค้ดแยกเป็น Modules (User/Board/Task/Notify)</li>
+                <li>ยัง deploy เป็นก้อนเดียว แต่ “ขอบเขตชัด”</li>
+                <li>พร้อมแตกเป็น microservices ภายหลัง</li>
+              </ul>
+            </div>
+            <div class="card">
+              <div class="badge">Heuristic</div>
+              <div class="small text-left">
+                ถ้า <b>ทีม/เวลา</b> จำกัด → เริ่ม Modular Monolith<br>
+                ถ้า <b>scale จริง ๆ</b> และมี DevOps → microservices<br>
+                ถ้า <b>MVP</b> ต้องเร็วที่สุด → monolith
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section>
+  <h2>Anti‑patterns ที่เจอบ่อย (ในโปรเจกต์นักศึกษา)</h2>
+  <div class="grid-3">
+    <div class="card text-left">
+      <div class="badge">🧟 Distributed Monolith</div>
+      <p class="small">แยก services แต่ยังต้อง deploy พร้อมกัน</p>
+      <p class="small muted">สัญญาณ: call กันถี่ / shared DB / version lockstep</p>
+    </div>
+    <div class="card text-left">
+      <div class="badge">🧱 Big Ball of Mud</div>
+      <p class="small">ไม่มี boundary ชัด → แก้ทีหนึ่งกระทบทั้งระบบ</p>
+      <p class="small muted">สัญญาณ: module วนเรียกกัน, folder ปนกัน</p>
+    </div>
+    <div class="card text-left">
+      <div class="badge">📦 Over‑engineering</div>
+      <p class="small">ใส่ทุกอย่างตั้งแต่วันแรก</p>
+      <p class="small muted">สัญญาณ: infra เยอะ แต่ feature ยังไม่ครบ</p>
+    </div>
+  </div>
+  <div class="card text-left" style="margin-top:14px;">
+    <div class="badge">Fix เร็ว ๆ</div>
+    <p class="small">เริ่มจาก Modular Monolith ที่ boundary ชัด + ADR ชัด → ค่อย evolve</p>
+  </div>
+</section>
+
+
+
+      <!-- 22 -->
+      <section>
+        <h2>Decision Matrix (ช่วยคุยให้เป็นระบบ)</h2>
+        <div class="glass text-left">
+          <table>
+            <thead>
+              <tr>
+                <th>Criteria</th>
+                <th>Monolith</th>
+                <th>Microservices</th>
+                <th>Modular Monolith</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Scalability</td>
+                <td class="stars">⭐⭐</td>
+                <td class="stars">⭐⭐⭐⭐⭐</td>
+                <td class="stars">⭐⭐⭐</td>
+              </tr>
+              <tr>
+                <td>Development Speed</td>
+                <td class="stars">⭐⭐⭐⭐⭐</td>
+                <td class="stars">⭐⭐</td>
+                <td class="stars">⭐⭐⭐⭐</td>
+              </tr>
+              <tr>
+                <td>Complexity</td>
+                <td class="stars">⭐⭐</td>
+                <td class="stars">⭐⭐⭐⭐⭐</td>
+                <td class="stars">⭐⭐⭐</td>
+              </tr>
+              <tr>
+                <td>Cost</td>
+                <td class="stars">⭐⭐⭐⭐⭐</td>
+                <td class="stars">⭐⭐</td>
+                <td class="stars">⭐⭐⭐⭐</td>
+              </tr>
+              <tr>
+                <td>Future Flexibility</td>
+                <td class="stars">⭐⭐</td>
+                <td class="stars">⭐⭐⭐⭐⭐</td>
+                <td class="stars">⭐⭐⭐⭐</td>
+              </tr>
+            </tbody>
+          </table>
+          <p class="xs muted" style="margin-top:10px;">ตัวเลขเป็น “เครื่องมือคุย” ไม่ใช่คำตอบสุดท้าย — ต้องดู Context ของทีม</p>
+        </div>
+      </section>
+
+      <section>
+  <h2>Evaluate แบบเบา ๆ แต่ได้ผล</h2>
+  <div class="grid-3">
+    <div class="card text-left">
+      <div class="badge">1) Scenario Walkthrough</div>
+      <p class="small">เดินทีละ scenario บน diagram</p>
+      <ul class="small">
+        <li>จุดคอขวดอยู่ตรงไหน?</li>
+        <li>ล้มแล้วกระทบอะไรบ้าง?</li>
+        <li>มาตรการรับมือ (tactics) อยู่ไหน?</li>
+      </ul>
+    </div>
+    <div class="card text-left">
+      <div class="badge">2) Prototype / Spike</div>
+      <p class="small">ทำ “ส่วนเสี่ยง” ให้เห็นจริง</p>
+      <ul class="small">
+        <li>ลอง WebSocket 500 connections</li>
+        <li>ลอง query หนัก + index</li>
+        <li>วัด p95 / error</li>
+      </ul>
+    </div>
+    <div class="card text-left">
+      <div class="badge">3) Risk Register</div>
+      <p class="small">จดความเสี่ยง + mitigation</p>
+      <ul class="small">
+        <li>Latency ระหว่าง services</li>
+        <li>Data consistency</li>
+        <li>Deployment complexity</li>
+      </ul>
+    </div>
+  </div>
+  <p class="small muted" style="margin-top:10px;">ผลลัพธ์ที่ดี: “เลือกได้” พร้อมเหตุผล + แผนลดความเสี่ยง</p>
+</section>
+
+
+
+      <!-- 23 -->
+      <section>
+        <h2>Diagram 3: Candidate Comparison (Draw.io)</h2>
+        <div class="diagram-box" data-img="images/week6_diagram3_comparison.png" data-cap="Compare Candidates (export from week6_diagram3_comparison.drawio)">
+          <div class="diagram-hint">วางรูปภายหลัง: export → PNG ที่ <b>images/week6_diagram3_comparison.png</b></div>
+          <div class="diagram-label">Placeholder: week6_diagram3_comparison.drawio</div>
+        </div>
+      </section>
+
+      <!-- 24 -->
+      <section>
+        <h2>🎚️ Mini‑Simulation #2: The Architect’s Dilemma</h2>
+        <p class="small muted">ลองปรับสมดุล แล้วดูว่า “คำแนะนำ” เปลี่ยนอย่างไร</p>
+        <div class="sim" style="max-width: 980px; margin: 0 auto;">
+          <div class="small">
+            <div style="margin:8px 0 6px; display:flex; justify-content:space-between;"><span class="muted">ช้า</span><b>Speed Requirement</b><span class="muted">เร็ว</span></div>
+            <input type="range" id="rSpeed" min="1" max="100" value="55" style="width:100%" oninput="simTradeoff()">
+            <div style="margin:14px 0 6px; display:flex; justify-content:space-between;"><span class="muted">น้อย</span><b>Scale Requirement</b><span class="muted">มหาศาล</span></div>
+            <input type="range" id="rScale" min="1" max="100" value="45" style="width:100%" oninput="simTradeoff()">
+            <div style="margin:14px 0 6px; display:flex; justify-content:space-between;"><span class="muted">งบเยอะ</span><b>Budget Constraint</b><span class="muted">งบน้อย</span></div>
+            <input type="range" id="rCost" min="1" max="100" value="65" style="width:100%" oninput="simTradeoff()">
+          </div>
+          <div class="sim-result" id="sim2">ปรับ Slider เพื่อดูผลลัพธ์…</div>
+        </div>
+      </section>
+
+      <!-- 25 -->
+      <section>
+        <h2>Step 5: Document = ADR</h2>
+        <div class="grid-2">
+          <div class="glass text-left">
+            <h3 style="margin-top:0">ADR คืออะไร?</h3>
+            <ul class="small">
+              <li>บันทึก “การตัดสินใจสำคัญ” พร้อมเหตุผล</li>
+              <li>ช่วยให้ทีมใหม่/อนาคตตอบได้ว่า “ทำไมถึงออกแบบแบบนี้?”</li>
+              <li>ทำให้ Architecture เป็น “ความรู้ของทีม” ไม่ใช่ของคนเดียว</li>
+            </ul>
+            <div class="pill">Think: Knowledge Management + Traceability</div>
+          </div>
+          <div class="card text-left">
+            <div class="badge">ADR Structure</div>
+            <ol class="small">
+              <li><b>Title</b> + ADR‑xxx</li>
+              <li><b>Status</b> Proposed / Accepted / Deprecated</li>
+              <li><b>Context</b> ปัญหา/แรงจูงใจ</li>
+              <li><b>Decision</b> เลือกอะไร</li>
+              <li><b>Consequences</b> Pros / Cons / Risks</li>
+            </ol>
+          </div>
+        </div>
+      </section>
+
+      <!-- 26 -->
+      <section>
+        <h2>ADR Template (Markdown)</h2>
+        <div class="glass text-left">
+<pre><code class="markdown"># ADR-001: เลือกสถาปัตยกรรมหลักของ Task Board
+
+## Status
+Proposed | Accepted | Deprecated | Superseded
+
+## Context
+- ทำไมต้องตัดสินใจเรื่องนี้?
+- Drivers ที่สำคัญที่สุด (Top 3–5)
+- Constraints (เวลา/งบ/ทีม/เทคโนโลยี)
+
+## Decision
+- เราเลือก: [Monolith | Modular Monolith | Microservices]
+- Patterns/Tactics ที่ใช้: [...]
+- Boundary/Modules/Services: [...]
+
+## Consequences
+### ✅ Positive
+- ...
+
+### ❌ Negative
+- ... (Mitigation: ...)
+
+### ⚠️ Risks
+- Risk / Impact / Probability / Mitigation
+
+## Alternatives Considered
+- Option A: ... (why not)
+- Option B: ... (why not)
+</code></pre>
+          <div class="xs muted">Tip: ADR ที่ดี “สั้นแต่ครบ” (Context → Decision → Consequences) และวัดผลได้</div>
+        </div>
+      </section>
+
+      <section>
+  <h2>ADR Hygiene (เขียนแล้วต้อง “อยู่รอด”)</h2>
+  <div class="grid-2">
+    <div class="card text-left">
+      <div class="badge">Lifecycle</div>
+      <ul class="small">
+        <li><b>Proposed</b> → คุย/รีวิว</li>
+        <li><b>Accepted</b> → ทำตามแผน</li>
+        <li><b>Superseded</b> → มี ADR ใหม่มาแทน</li>
+        <li><b>Deprecated</b> → ไม่แนะนำ/เลิกใช้</li>
+      </ul>
+      <p class="small muted">ADR คือ “living document” ไม่ใช่รายงานส่งแล้วจบ</p>
+    </div>
+    <div class="card text-left">
+      <div class="badge">Best Practices</div>
+      <ul class="small">
+        <li>เขียน <b>สั้น</b> แต่ชัด: 1 หน้า/ADR</li>
+        <li>ใส่ link ไป PR/Issue/Diagram</li>
+        <li>กำหนด owner + วันที่ review</li>
+        <li>ยอมรับ trade‑offs แบบตรงไปตรงมา</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+
+
+      <!-- 27 -->
+      <section>
+        <h2>Workshop (ADD‑Lite) — Task Board</h2>
+        <div class="grid-2">
+          <div class="card text-left">
+            <div class="badge">Step 1–2</div>
+            <h3 style="margin:.25em 0 0;">เลือก QA Scenarios</h3>
+            <ul class="small">
+              <li>อย่างน้อย 5 scenarios</li>
+              <li>เลือก Top 3 เป็น Drivers</li>
+              <li>ต้องมี Measure (เช่น p95 &lt; 500ms)</li>
+            </ul>
+          </div>
+          <div class="card text-left">
+            <div class="badge">Step 3–5</div>
+            <h3 style="margin:.25em 0 0;">Candidates + Compare + ADR</h3>
+            <ul class="small">
+              <li>เสนอ 2 architectures (A,B)</li>
+              <li>ทำตาราง trade‑offs</li>
+              <li>สรุปเลือกแนวทางหลัก และเขียน ADR‑001</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- 28 -->
+      <section>
+        <h2>Workshop Output Checklist</h2>
+        <div class="glass text-left">
+          <div class="grid-2">
+            <div>
+              <h3 style="margin-top:0">Artifacts ที่ต้องส่ง</h3>
+              <ul class="small">
+                <li>QA Scenarios (≥ 5) + Top Drivers (3)</li>
+                <li>Candidate Architectures (≥ 2)</li>
+                <li>Comparison Table + สรุป Trade‑offs</li>
+                <li><b>ADR‑001</b> (ทีมละ 1 ฉบับ)</li>
+              </ul>
+            </div>
+            <div>
+              <h3 style="margin-top:0">เกณฑ์ให้คะแนน (แนวทาง)</h3>
+              <ul class="small">
+                <li>Scenarios วัดผลได้ + มีเหตุผล</li>
+                <li>Candidate แตกต่าง “พอ” ให้เกิด trade‑offs</li>
+                <li>เลือกแนวทางสอดคล้อง Constraints</li>
+                <li>ADR เขียนชัด (Context/Decision/Consequences)</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 29 -->
+      <section>
+        <h2>Common Mistakes (แล้วจะแก้ยังไง)</h2>
+        <div class="grid-3">
+          <div class="card text-left">
+            <div class="badge">Mistake</div>
+            <p class="small"><b>QA ไม่วัดผล</b><br><span class="muted">“ระบบต้องเร็ว”</span></p>
+            <p class="xs muted">Fix: ใส่ p95, throughput, RTO/RPO</p>
+          </div>
+          <div class="card text-left">
+            <div class="badge">Mistake</div>
+            <p class="small"><b>เลือกแบบเดียว</b><br><span class="muted">ไม่มี comparison</span></p>
+            <p class="xs muted">Fix: ทำ 2 candidates เสมอ</p>
+          </div>
+          <div class="card text-left">
+            <div class="badge">Mistake</div>
+            <p class="small"><b>Over‑engineering</b><br><span class="muted">Microservices ตั้งแต่วันแรก</span></p>
+            <p class="xs muted">Fix: ดู team/ops skill + timeline</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- 30 -->
+      <section>
+        <h2>Real‑World Mindset</h2>
+        <div class="glass text-left">
+          <div class="grid-2">
+            <div>
+              <h3 style="margin-top:0">“Good Enough” Architecture</h3>
+              <ul class="small">
+                <li>ตอบ Drivers ที่สำคัญที่สุด</li>
+                <li>อยู่ใน Constraints ของทีม</li>
+                <li>พัฒนา/ทดสอบ/Deploy ได้จริง</li>
+              </ul>
+            </div>
+            <div>
+              <h3 style="margin-top:0">Evolutionary Architecture</h3>
+              <ul class="small">
+                <li>เริ่มง่าย แล้วค่อยแตกเมื่อมีเหตุผล</li>
+                <li>ADR ทำให้ “เปลี่ยนอย่างมีร่องรอย”</li>
+                <li>Prototype เพื่อพิสูจน์ความเสี่ยง</li>
+              </ul>
+            </div>
+          </div>
+          <div class="pill" style="margin-top:10px;">Architect = คนที่รู้ว่า “อะไรสำคัญ” และ “อะไรยังไม่ต้องทำ”</div>
+        </div>
+      </section>
+
+      <!-- 31 -->
+      <section>
+        <h2>Resources (อ่านเพิ่ม)</h2>
+        <div class="grid-2">
+          <div class="glass text-left">
+            <h3 style="margin-top:0">ADD / Quality Attributes</h3>
+            <ul class="small">
+              <li>SEI: Attribute‑Driven Design (ADD)</li>
+              <li>Quality Attribute Scenarios (stimulus/response)</li>
+              <li>Software Architecture in Practice (Bass/Clements/Kazman)</li>
+            </ul>
+          </div>
+          <div class="glass text-left">
+            <h3 style="margin-top:0">ADR</h3>
+            <ul class="small">
+              <li>adr.github.io (ADR format)</li>
+              <li>Lightweight Architecture Decision Records (Michael Nygard)</li>
+              <li>ใช้ ADR ใน repo ของเทอมโปรเจกต์</li>
+            </ul>
+          </div>
+        </div>
+        <p class="xs muted">หมายเหตุ: ในสไลด์นี้ไม่ใส่ลิงก์แบบคลิกเพื่อเลี่ยง URL ยาว — อาจารย์สามารถแปะใน LMS เพิ่มได้</p>
+      </section>
+
+      <!-- 32 -->
+      <section>
+        <h2>สรุป (Key Takeaways)</h2>
+        <div class="grid-2">
+          <div class="card text-left">
+            <div class="badge">Process</div>
+            <p class="small"><b>Requirements → Drivers → Candidates → Trade‑offs → ADR</b></p>
+            <p class="xs muted">คิดแบบมีเหตุผล ไม่ใช่เดา</p>
+          </div>
+          <div class="card text-left">
+            <div class="badge">Quality First</div>
+            <p class="small"><b>Quality Attributes</b> เป็นตัวกำหนด architecture</p>
+            <p class="xs muted">Functional เป็นตัวกำหนด “ฟีเจอร์”</p>
+          </div>
+          <div class="card text-left">
+            <div class="badge">Trade‑offs</div>
+            <p class="small">ไม่มี best architecture — มีแต่ “เหมาะกับบริบท”</p>
+          </div>
+          <div class="card text-left">
+            <div class="badge">ADR</div>
+            <p class="small">บันทึกเหตุผลเสมอ เพื่อทีมและอนาคต</p>
+          </div>
+        </div>
+      </section>
+
+      <section>
+  <h2>Exit Ticket (5 นาที)</h2>
+  <div class="card text-left">
+    <div class="badge">ตอบสั้น ๆ คนละ 1 บรรทัด</div>
+    <ol class="small">
+      <li>Scenario ที่สำคัญสุดของทีมคุณคืออะไร (วัดได้)?</li>
+      <li>Drivers 3 ตัวแรกของ Task Board คืออะไร?</li>
+      <li>Candidate A vs B ต่างกัน “ประเด็นเดียว” ที่สุดคืออะไร?</li>
+      <li>Trade‑off ที่ทีมยอมรับคืออะไร (และ mitigation)?</li>
+      <li>ADR‑001 จะเขียนหัวข้ออะไรบ้าง (3 หัวข้อหลัก)?</li>
+    </ol>
+  </div>
+  <p class="small muted" style="margin-top:10px;">ส่ง Exit Ticket = เช็คความเข้าใจ + ช่วยทีมทำ ADR ได้เร็วขึ้น</p>
+</section>
+
+
+
+      <!-- 33 -->
+      <section>
+        <h2>สัปดาห์ถัดไป (Week 7)</h2>
+        <div class="glass">
+          <h3 style="margin-top:0">Cloud Architecture & Containerization</h3>
+          <div class="grid-2 text-left" style="margin-top:16px;">
+            <div class="card">
+              <div class="badge">Concept</div>
+              <ul class="small">
+                <li>IaaS / PaaS / SaaS</li>
+                <li>12‑Factor App</li>
+                <li>Cloud Design Patterns</li>
+              </ul>
+            </div>
+            <div class="card">
+              <div class="badge">Lab Preview</div>
+              <ul class="small">
+                <li>Dockerize service แรกของ Task Board</li>
+                <li>วางแผน Deploy + Env config</li>
+                <li>เชื่อมโยงกับ QA: deployability / scalability</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 34 -->
+      <section>
+        <div class="glass" style="padding: 56px;">
+          <h1>Q &amp; A</h1>
+          <p class="muted">เทคโนโลยีเปลี่ยนทุกวัน… แต่ “วิธีคิดแบบสถาปนิก” อยู่ได้ยาว</p>
+          <div class="accent-bar"></div>
+          <p class="xs muted" style="margin-top:14px;">(กด <span class="kbd">?</span> เพื่อดูคีย์ลัดของ Reveal.js)</p>
+        </div>
+      </section>
+
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/5.0.4/reveal.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/5.0.4/plugin/highlight/highlight.min.js"></script>
+
+  <script>
+    // Reveal init
+    Reveal.initialize({
+      hash: true,
+      center: true,
+      transition: 'convex',
+      backgroundTransition: 'fade',
+      slideNumber: 'c/t',
+      plugins: [ RevealHighlight ]
+    });
+
+    // --- image placeholders loader + modal ---
+    function wireDiagramBoxes(){
+      document.querySelectorAll('.diagram-box').forEach(box=>{
+        const src = box.getAttribute('data-img');
+        const cap = box.getAttribute('data-cap') || src || '';
+        if(!src) return;
+        const img = new Image();
+        img.src = src;
+        img.alt = cap;
+        img.onload = () => {
+          box.innerHTML = '';
+          box.appendChild(img);
+          const hint = document.createElement('div');
+          hint.className = 'diagram-hint';
+          hint.innerHTML = 'คลิกเพื่อขยาย';
+          box.appendChild(hint);
+
+          const label = document.createElement('div');
+          label.className = 'diagram-label';
+          label.textContent = cap;
+          box.appendChild(label);
+
+          img.addEventListener('click', (e)=> {
+            e.stopPropagation();
+            openModal(src, cap);
+          });
+        };
+        img.onerror = () => {
+          // keep placeholder text
+        };
+      });
+    }
+
+    function openModal(src, caption){
+      const modal = document.getElementById('imgModal');
+      const img = document.getElementById('modalImg');
+      const cap = document.getElementById('modalCap');
+      img.src = src;
+      cap.textContent = caption + " • คลิกเพื่อปิด";
+      modal.classList.add('open');
+    }
+    function closeModal(){
+      document.getElementById('imgModal').classList.remove('open');
+    }
+
+    // --- UI controls ---
+    function changeFont(delta){
+      const root = document.documentElement;
+      const current = parseInt(getComputedStyle(root).getPropertyValue('--base-font-size')) || 32;
+      const next = Math.max(20, Math.min(44, current + delta));
+      root.style.setProperty('--base-font-size', next + 'px');
+    }
+
+    function toggleTheme(){
+      const body = document.body;
+      const btn = document.getElementById('themeBtn');
+      body.classList.toggle('light');
+
+      const revealTheme = document.getElementById('reveal-theme');
+      const hlTheme = document.getElementById('hljs-theme');
+
+      if(body.classList.contains('light')){
+        revealTheme.href = "https://cdnjs.cloudflare.com/ajax/libs/reveal.js/5.0.4/theme/white.min.css";
+        hlTheme.href = "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-light.min.css";
+        btn.textContent = "🌗 Light";
+      } else {
+        revealTheme.href = "https://cdnjs.cloudflare.com/ajax/libs/reveal.js/5.0.4/theme/black.min.css";
+        hlTheme.href = "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css";
+        btn.textContent = "🌗 Dark";
+      }
+    }
+
+    function toggleFull(){
+      if(!document.fullscreenElement){
+        document.documentElement.requestFullscreen();
+      } else {
+        document.exitFullscreen && document.exitFullscreen();
+      }
+    }
+
+    // --- Simulation #1 (Drivers) ---
+    function simDrivers(){
+      const checked = Array.from(document.querySelectorAll('.drv:checked')).map(x=>x.value);
+      const out = document.getElementById('sim1');
+
+      if(checked.length !== 3){
+        out.style.color = "var(--warning)";
+        out.style.borderColor = "var(--warning)";
+        out.textContent = "⚠️ กรุณาเลือกให้ครบ 3 ข้อ";
+        return;
+      }
+
+      const has = (v)=>checked.includes(v);
+
+      // recommended for course project
+      if(has('speed') && has('mod') && (has('secure') || has('perf'))){
+        out.style.color = "var(--success)";
+        out.style.borderColor = "var(--success)";
+        out.textContent = "✅ เหมาะมากสำหรับเทอมโปรเจกต์: เน้นปล่อยของให้ทัน + ปรับแก้ง่าย + คุมความเสี่ยง (เลือก Monolith/Modular Monolith ก่อน แล้วค่อย evolve)";
+        return;
+      }
+
+      if(has('scale') && !has('speed')){
+        out.style.color = "var(--warning)";
+        out.style.borderColor = "var(--warning)";
+        out.textContent = "🤔 ระวังโฟกัส Scale มากไป: ถ้าเวลา/ทีมจำกัด อาจทำให้ส่งงานไม่ทัน (แนะนำทำ Candidate แบบ Modular Monolith เป็น baseline)";
+        return;
+      }
+
+      if(has('scale') && has('perf') && has('secure')){
+        out.style.color = "var(--danger)";
+        out.style.borderColor = "var(--danger)";
+        out.textContent = "⚠️ Over‑engineering alert: ต้องการ Scale+Perf+Security สูงพร้อมกัน → complexity สูงมาก (ต้องมี DevOps/Infra พร้อม)";
+        return;
+      }
+
+      out.style.color = "var(--text)";
+      out.style.borderColor = "rgba(255,255,255,.14)";
+      out.textContent = "👍 เป็นชุด Drivers ที่เป็นไปได้ แต่ควรเขียน QA Scenarios ให้ชัด และทำ comparison อย่างตรงไปตรงมา";
+    }
+
+    // --- Simulation #2 (Trade-offs) ---
+    function simTradeoff(){
+      const speed = parseInt(document.getElementById('rSpeed').value);
+      const scale = parseInt(document.getElementById('rScale').value);
+      const cost  = parseInt(document.getElementById('rCost').value); // สูง = งบน้อย
+
+      const out = document.getElementById('sim2');
+
+      let msg = "⚖️ อยู่ในช่วงกลางๆ ต้องดูปัจจัยอื่นเพิ่ม (ทีม/ops skill/ความเสี่ยง)";
+      let color = "var(--muted)";
+
+      if(scale > 80 && cost > 70){
+        msg = "🚨 Mission Impossible: ต้องการ Scale สูงมาก แต่งบน้อยมาก → เสี่ยงสูง (แนะนำลด scope หรือใช้ managed/serverless บางส่วน)";
+        color = "var(--danger)";
+      } else if(speed > 70 && cost > 55 && scale < 60){
+        msg = "📦 แนะนำ: Modular Monolith / Layered Monolith (เร็ว ประหยัด ส่งงานทัน และยังมีโครงสร้างดี)";
+        color = "var(--success)";
+      } else if(scale > 70 && cost < 45){
+        msg = "☁️ แนะนำ: Microservices (หรืออย่างน้อย service split) บน Cloud + Auto‑scaling (มีงบพอรับ complexity)";
+        color = "var(--accent)";
+      } else if(scale > 65 && speed > 60 && cost < 55){
+        msg = "🚀 ทางเลือกกลาง: Modular Monolith + Queue + Cache (คุม complexity แต่เริ่มรองรับ scale ได้)";
+        color = "var(--accent)";
+      }
+
+      out.style.color = color;
+      out.style.borderColor = color;
+      out.textContent = msg;
+    }
+
+    // run once
+    wireDiagramBoxes();
+    simTradeoff();
+  </script>
+</body>
+</html>

@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="th" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Week 6: Architectural Design Process & ADD-Lite | ENGSE207</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Fira+Code&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* Modern Tech Theme - Dark Mode (Default) */
+            --bg-primary: #0d1117;
+            --bg-secondary: #161b22;
+            --text-primary: #c9d1d9;
+            --text-secondary: #8b949e;
+            --accent-color: #58a6ff;
+            --accent-hover: #79c0ff;
+            --border-color: #30363d;
+            --code-bg: #1f2428;
+            --success-color: #3fb950;
+            --warning-color: #d29922;
+            --slide-shadow: 0 0 20px rgba(0,0,0,0.5);
+            --font-base-size: 16px;
+            --slide-padding: 4rem 5rem;
+        }
+
+        [data-theme="light"] {
+            /* Modern Tech Theme - Light Mode */
+            --bg-primary: #ffffff;
+            --bg-secondary: #f6f8fa;
+            --text-primary: #24292f;
+            --text-secondary: #57606a;
+            --accent-color: #0969da;
+            --accent-hover: #218bff;
+            --border-color: #d0d7de;
+            --code-bg: #f6f8fa;
+            --success-color: #1a7f37;
+            --warning-color: #9a6700;
+            --slide-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        /* 16:9 Aspect Ratio Container */
+        #slide-container {
+            position: relative;
+            width: 90vw;
+            max-width: 1600px; /* Increased for better FHD experience */
+            aspect-ratio: 16 / 9;
+            background-color: var(--bg-secondary);
+            border-radius: 12px;
+            box-shadow: var(--slide-shadow);
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+        }
+
+        /* Slide Content Structure */
+        .slide {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            padding: var(--slide-padding);
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.4s ease-in-out, visibility 0.4s;
+            display: flex;
+            flex-direction: column;
+            font-size: var(--font-base-size);
+            overflow-y: auto; /* Allow scrolling for dense slides */
+        }
+
+        .slide.active {
+            opacity: 1;
+            visibility: visible;
+            z-index: 1;
+        }
+
+        /* Typography & Content Styling */
+        h1 { font-size: 3.2em; margin-bottom: 0.8rem; color: var(--accent-color); line-height: 1.1; }
+        h2 { font-size: 2.4em; margin-bottom: 1.2rem; color: var(--text-primary); border-bottom: 2px solid var(--border-color); padding-bottom: 0.5rem; }
+        h3 { font-size: 1.8em; margin-top: 1.2rem; margin-bottom: 0.8rem; color: var(--accent-color); }
+        p, li { font-size: 1.3em; line-height: 1.5; margin-bottom: 0.8rem; color: var(--text-secondary); }
+        ul, ol { padding-left: 2rem; }
+        li { margin-bottom: 0.6rem; }
+        strong { color: var(--text-primary); font-weight: 700; }
+        .en { display: block; font-size: 0.9em; opacity: 0.8; margin-top: -0.5rem; margin-bottom: 1rem; font-style: italic;}
+
+        .quote-box {
+            border-left: 5px solid var(--accent-color);
+            padding: 1.5rem 2rem;
+            font-style: italic;
+            margin: 1.5rem 0;
+            background: linear-gradient(90deg, var(--code-bg) 0%, transparent 100%);
+            border-radius: 0 8px 8px 0;
+        }
+        .quote-box p { font-size: 1.5em; color: var(--text-primary); margin-bottom: 0; }
+
+        /* Diagram & Infographic Placeholders */
+        .diagram-placeholder {
+            width: 100%;
+            height: 450px;
+            background-color: var(--code-bg);
+            border: 2px dashed var(--border-color);
+            border-radius: 12px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            color: var(--text-secondary);
+            margin: 1.5rem 0;
+            padding: 1rem;
+            text-align: center;
+        }
+        .diagram-placeholder svg { width: 64px; height: 64px; margin-bottom: 1rem; opacity: 0.5; }
+        .diagram-caption { font-size: 1em; margin-top: 0.5rem; color: var(--text-primary); }
+
+        /* Concept Cards */
+        .concept-card-container { display: flex; gap: 1.5rem; margin-top: 1.5rem; flex-wrap: wrap; }
+        .concept-card {
+            flex: 1 1 200px;
+            background-color: var(--bg-primary);
+            padding: 1.5rem;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            text-align: left;
+        }
+        .concept-card h4 { color: var(--accent-color); font-size: 1.4em; margin-bottom: 0.8rem; }
+        .concept-card p { font-size: 1.1em; margin-bottom: 0; }
+
+        /* Simulation/Interactive Element Styles */
+        .simulation-container {
+            background-color: var(--bg-primary);
+            padding: 2rem;
+            border-radius: 12px;
+            border: 1px solid var(--accent-color);
+            margin-top: 2rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .sim-options { display: flex; gap: 1rem; margin-top: 1.5rem; flex-wrap: wrap; }
+        .sim-btn {
+            flex: 1 1 250px;
+            padding: 1rem;
+            background-color: var(--bg-secondary);
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 600;
+            font-size: 1.1em;
+            text-align: left;
+        }
+        .sim-btn:hover { border-color: var(--accent-color); background-color: var(--code-bg); transform: translateY(-2px); }
+        .sim-feedback {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 1.2em;
+            display: none;
+        }
+        .sim-feedback.success { background-color: rgba(63, 185, 80, 0.1); color: var(--success-color); border: 1px solid var(--success-color); display: block;}
+        .sim-feedback.warning { background-color: rgba(210, 153, 34, 0.1); color: var(--warning-color); border: 1px solid var(--warning-color); display: block;}
+
+        /* Slide Counter */
+        #slide-counter {
+            position: absolute;
+            bottom: 1.5rem;
+            right: 2.5rem;
+            font-family: 'Fira Code', monospace;
+            color: var(--text-secondary);
+            font-size: 1.2rem;
+            background-color: var(--bg-primary);
+            padding: 0.3rem 0.6rem;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+        }
+
+        /* Controls UI */
+        #controls {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 10px;
+            background-color: var(--bg-secondary);
+            padding: 8px 16px;
+            border-radius: 30px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+            border: 1px solid var(--border-color);
+            z-index: 100;
+        }
+        .control-btn {
+            background: none;
+            border: none;
+            color: var(--text-primary);
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 50%;
+            transition: background-color 0.2s, color 0.2s, transform 0.1s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .control-btn:hover { background-color: var(--border-color); color: var(--accent-color); }
+        .control-btn:active { transform: scale(0.95); }
+        .control-btn svg { width: 24px; height: 24px; }
+        .separator { width: 1px; background-color: var(--border-color); margin: 0 5px; height: 24px; align-self: center;}
+
+        /* Responsive adjustments */
+        @media (max-width: 1280px) {
+            :root { --font-base-size: 14px; --slide-padding: 3rem 3.5rem; }
+            #slide-container { width: 95vw; }
+             .diagram-placeholder { height: 350px; }
+        }
+        @media (max-width: 768px) {
+             :root { --font-base-size: 12px; --slide-padding: 2rem 2rem; }
+             #controls { bottom: 10px; padding: 6px 12px; }
+             .control-btn svg { width: 20px; height: 20px; }
+             h1 { font-size: 2.5em; } h2 { font-size: 2em; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="slide-container">
+        <section class="slide active">
+            <div style="display: flex; flex-direction: column; justify-content: center; height: 100%;">
+                <h3>ENGSE207: Software Architecture</h3>
+                <h1>กระบวนการออกแบบสถาปัตยกรรม &<br>การออกแบบที่ขับเคลื่อนด้วยคุณลักษณะ (ADD-Lite)</h1>
+                <span class="en">Architectural Design Process & Attribute-Driven Design (ADD-Lite)</span>
+                <p style="font-size: 1.6em; color: var(--accent-color); margin-top: 2rem;">เอกสารประกอบการเรียน สัปดาห์ที่ 6</p>
+                <p style="margin-top: 1rem;">โดย ผู้เชี่ยวชาญด้านวิศวกรรมซอฟต์แวร์และสถาปัตยกรรม</p>
+            </div>
+        </section>
+
+        <section class="slide">
+            <h2>ยินดีต้อนรับสู่งานของ "สถาปนิก"</h2>
+            <span class="en">Welcome to the Architect's Work</span>
+            <p>ในฐานะ Full-Stack Engineer และ Architect ผมขอบอกว่า: การเขียนโค้ดเป็นเพียง 30% ของงานเท่านั้น</p>
+            <div class="quote-box">
+                <p>"ข้อแตกต่างระหว่าง Coder และ Engineer คือความสามารถในการออกแบบระบบที่ทนทานต่อการเปลี่ยนแปลง, ขยายตัวได้อย่างสง่างาม, และตอบโจทย์ทางธุรกิจที่เหนือกว่าแค่ 'มันทำงานได้'"</p>
+            </div>
+            <p>วันนี้ เราจะเปลี่ยนจาก <strong>"ระบบต้องทำอะไร" (What - Requirements)</strong> ไปสู่ <strong>"ระบบจะมีโครงสร้างอย่างไร" (How - Architecture)</strong> เพื่อให้ทำงานได้ดี</p>
+        </section>
+
+        <section class="slide">
+            <h2>วัตถุประสงค์การเรียนรู้ (Learning Objectives)</h2>
+            <ul>
+                <li>เข้าใจพื้นฐานของ <strong>กระบวนการออกแบบสถาปัตยกรรมซอฟต์แวร์ (Architectural Design Process)</strong></li>
+                <li>ประยุกต์ใช้หลักการ <strong>การคิดเชิงออกแบบ (Design Thinking)</strong> กับงานสถาปัตยกรรม</li>
+                <li>เข้าใจบทบาทของ <strong>คุณลักษณะคุณภาพ (Quality Attributes / NFRs)</strong> ในฐานะตัวขับเคลื่อนสถาปัตยกรรม (Architectural Drivers)</li>
+                <li>เข้าใจและสามารถใช้วิธีการ <strong>Attribute-Driven Design (ADD-Lite)</strong> ได้</li>
+                <li>เรียนรู้วิธีการเลือก <strong>กลยุทธ์ทางสถาปัตยกรรม (Architectural Tactics)</strong> อย่างเป็นระบบเพื่อตอบสนองต่อ Drivers</li>
+            </ul>
+        </section>
+
+        <section class="slide">
+            <h2>เราอยู่ที่ไหนในวงจรการพัฒนาระบบ (SDLC)?</h2>
+            <span class="en">Where Are We in the SDLC?</span>
+            <p>การออกแบบสถาปัตยกรรมอยู่ระหว่าง วิศวกรรมความต้องการ (Requirements Engineering) และ การออกแบบรายละเอียด/การลงมือสร้าง (Detailed Design/Implementation)</p>
+            
+            <div class="diagram-placeholder" style="height: 300px;">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
+                </svg>
+                <p><strong>[Placeholder สำหรับแผนภาพ SDLC]</strong><br>แสดงการไหลจาก: Requirements -> <strong>Architecture</strong> -> Construction<br><em>(อ้างอิงไฟล์: week6_diagram1_process.drawio - ส่วนบน)</em></p>
+            </div>
+            <p>นี่คือระยะที่มีการตัดสินใจที่มีเดิมพันสูง ซึ่งหากต้องแก้ไขในภายหลังจะมีค่าใช้จ่ายที่แพงมาก</p>
+        </section>
+
+         <section class="slide">
+            <h2>การออกแบบสถาปัตยกรรมคืออะไร?</h2>
+            <span class="en">What is Architectural Design?</span>
+            <p>มันคือกระบวนการตัดสินใจที่ต้องรักษาสมดุลระหว่างความต้องการที่ขัดแย้งกัน</p>
+            <ul>
+                <li>ไม่ใช่แค่การเลือกว่าจะใช้ "React หรือ Angular", "Node.js หรือ Python"</li>
+                <li>แต่เป็นเรื่องของการจัดวางโครงสร้างระบบเพื่อตอบสนอง <strong>ข้อกำหนดคุณลักษณะคุณภาพ (Quality Attribute Requirements - QARs)</strong> เช่น ประสิทธิภาพ (Performance), ความปลอดภัย (Security), และการปรับเปลี่ยนได้ง่าย (Modifiability)</li>
+                <li>ผลลัพธ์ที่ได้คือ <strong>เอกสารสถาปัตยกรรมซอฟต์แวร์ (SAD)</strong> ซึ่งประกอบด้วยมุมมองต่างๆ (Module, C&C, Allocation Views)</li>
+            </ul>
+            <strong>ในอุดมคติ การออกแบบคือกระบวนการทำซ้ำ (Iterative) ไม่ใช่การทำครั้งเดียวจบแบบ "Big Bang"</strong>
+        </section>
+
+        <section class="slide">
+            <h2>การประยุกต์ใช้ Design Thinking</h2>
+            <span class="en">Applying Design Thinking Principles</span>
+            <p>สถาปัตยกรรมสมัยใหม่ยืมหลักการมาจาก Design Thinking อย่างมาก:</p>
+            <div class="concept-card-container">
+                <div class="concept-card">
+                    <h4>1. เข้าใจ/เห็นอกเห็นใจ (Understand/Empathize)</h4>
+                    <p>ผู้มีส่วนได้ส่วนเสียคือใคร? ข้อจำกัดและตัวขับเคลื่อนที่ *แท้จริง* ของพวกเขาคืออะไร?</p>
+                </div>
+                <div class="concept-card">
+                    <h4>2. สำรวจ/สร้างไอเดีย (Explore/Ideate)</h4>
+                    <p>อย่าเพิ่งกระโดดไปที่ทางออกแรก ระดมสมองหากลยุทธ์และรูปแบบต่างๆ (Patterns & Tactics) ส่งเสริมความหลากหลายทางความคิด</p>
+                </div>
+                <div class="concept-card">
+                    <h4>3. สร้าง/ทำต้นแบบ (Make/Prototype)</h4>
+                    <p>ร่างมุมมองต่างๆ (Sketch views), สร้าง Proof-of-Concepts (PoCs), ทำให้การออกแบบเป็นรูปธรรม</p>
+                </div>
+                <div class="concept-card">
+                    <h4>4. ประเมิน/ทดสอบ (Evaluate/Test)</h4>
+                    <p>วิเคราะห์ข้อดีข้อเสีย (Trade-offs) มันตอบโจทย์ QARs หรือไม่? (เช่น การทำ ATAM ในภายหลัง)</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="slide">
+            <h2>กิจกรรมหลักในการออกแบบ (Key Design Activities)</h2>
+            <p>สถาปนิกใช้เวลาไปกับการทำสิ่งเหล่านี้:</p>
+            <ul>
+                <li><strong>การตัดสินใจ (Making decisions):</strong> การเลือกเฟรมเวิร์ก, รูปแบบ (Patterns), และโครงสร้าง</li>
+                <li><strong>การรักษาสมดุลของแรงกดดัน (Balancing forces):</strong> ชั่งน้ำหนักระหว่าง ประสิทธิภาพ vs. ต้นทุน, หรือ ความปลอดภัย vs. การใช้งานง่าย (Usability)</li>
+                <li><strong>การตอบสนองต่อ Drivers (Satisfying Drivers):</strong> ทำให้มั่นใจว่าเป้าหมายหลักทางธุรกิจและทางเทคนิคจะสำเร็จ</li>
+                <li><strong>การสร้างนามธรรม (Abstraction):</strong> ซ่อนความซับซ้อนเพื่อให้ระบบเข้าใจได้ง่ายขึ้น</li>
+            </ul>
+            <p><em>"ถ้าคุณไม่ได้กำลังชั่งน้ำหนักข้อดีข้อเสีย (Trade-offs) คุณก็ไม่ได้กำลังทำงานสถาปัตยกรรม"</em></p>
+        </section>
+
+        <section class="slide">
+            <h2>ตัวขับเคลื่อนสถาปัตยกรรม: ข้อมูลนำเข้า</h2>
+            <span class="en">Architectural Drivers: The Inputs</span>
+            <p>Drivers คือแรงที่กำหนดรูปร่างของสถาปัตยกรรม หาก Requirement ข้อไหนไม่ส่งผลต่อโครงสร้าง มันก็ไม่ใช่ Architectural Driver</p>
+            <ul>
+                <li><strong>ข้อกำหนดด้านการทำงาน (Functional Requirements):</strong> สิ่งหลักๆ ที่ระบบต้องทำ (เช่น "ประมวลผลการชำระเงิน")</li>
+                <li><strong>สถานการณ์คุณลักษณะคุณภาพ (Quality Attribute Scenarios / NFRs):</strong> ระบบต้องทำงานได้ดีแค่ไหน (เช่น "ประมวลผลการชำระเงินภายใน < 2 วินาที ในช่วงโหลดสูงสุด") <em>สิ่งเหล่านี้มักจะเป็น Driver ที่สำคัญที่สุด</em></li>
+                <li><strong>ข้อจำกัด (Constraints):</strong> ข้อจำกัดที่ไม่สามารถต่อรองได้ (เช่น "ต้องใช้ฐานข้อมูล Oracle ที่มีอยู่", "ต้องปฏิบัติตามกฎหมาย PDPA/GDPR")</li>
+            </ul>
+        </section>
+
+        <section class="slide">
+            <h2>ความท้าทาย: เราจะดำเนินการอย่างไร?</h2>
+            <span class="en">The Challenge: How do we proceed?</span>
+            <p>เรามีกองความต้องการอยู่ตรงหน้า และมีกระดานไวท์บอร์ดที่ว่างเปล่า เราจะเปลี่ยนสิ่งหนึ่งให้เป็นอีกสิ่งหนึ่งอย่างเป็นระบบได้อย่างไร โดยไม่ต้องพึ่งพาแค่ "ความรู้สึก"?</p>
+            <br>
+            <h3>เราต้องการ "วิธีการ" (Method)</h3>
+            <p>การออกแบบตามอำเภอใจ (Ad-hoc design) นำไปสู่ "สถาปัตยกรรมโดยบังเอิญ" (Accidental Architecture) ซึ่งเปราะบางและดูแลรักษายาก</p>
+            <p>เราต้องการแนวทางที่มีโครงสร้างชัดเจน เช่น <strong>Attribute-Driven Design (ADD)</strong></p>
+        </section>
+
+        <section class="slide">
+            <h2>Attribute-Driven Design (ADD) คืออะไร?</h2>
+            <p>ADD คือวิธีการออกแบบสถาปัตยกรรมซอฟต์แวร์ที่เป็นระบบ เป็นขั้นเป็นตอน พัฒนาโดย SEI (Software Engineering Institute)</p>
+            <div class="quote-box">
+                <p>"ADD มีพื้นฐานอยู่บนหลักการที่ว่า สถาปัตยกรรมถูกกำหนดรูปร่างโดยข้อกำหนดคุณลักษณะคุณภาพ (Quality Attribute requirements / Drivers) เป็นหลัก"</p>
+            </div>
+            <p>มันวาง <strong>คุณลักษณะคุณภาพ</strong> (เช่น Performance, Security, Availability) ไว้ที่ศูนย์กลางของกระบวนการออกแบบ แทนที่จะเน้นแค่ฟังก์ชันการทำงานเพียงอย่างเดียว</p>
+        </section>
+
+        <section class="slide">
+            <h2>ทำไมต้องใช้ ADD? (Why Use ADD?)</h2>
+            <ul>
+                <li><strong>เป็นระบบและทำซ้ำได้ (Systematic & Reproducible):</strong> มีแผนงานที่ชัดเจน ลดการพึ่งพาความสามารถเฉพาะตัวของบุคคล (Heroics)</li>
+                <li><strong>โฟกัสในสิ่งที่สำคัญ (Focuses on What Matters):</strong> จัดลำดับความสำคัญของความต้องการด้านคุณภาพที่มีความเสี่ยงสูงและมีผลกระทบสูง</li>
+                <li><strong>มีเอกสารเหตุผลประกอบ (Documented Rationale):</strong> บังคับให้คุณบันทึกว่า *ทำไม* คุณถึงเลือกรูปแบบหรือเทคโนโลยีนั้นๆ (สำคัญมากสำหรับทีมในอนาคต)</li>
+                <li><strong>ลดความเสี่ยงตั้งแต่เนิ่นๆ (Early Risk Mitigation):</strong> จัดการกับ Trade-offs ที่ยากลำบากตั้งแต่ช่วงต้นของวงจรการพัฒนา</li>
+            </ul>
+        </section>
+
+        <section class="slide">
+            <h2>ADD vs. ADD-Lite</h2>
+            <p>Full ADD (ADD 3.0) มีความครอบคลุม เหมาะสำหรับระบบองค์กรขนาดใหญ่และซับซ้อน สำหรับหลักสูตรนี้และโครงการแบบ Agile ส่วนใหญ่ เราจะใช้ <strong>ADD-Lite</strong></p>
+            <br>
+            <div class="concept-card-container">
+                <div class="concept-card" style="border-color: var(--text-secondary);">
+                    <h4>Full ADD</h4>
+                    <p>เป็นทางการมากกว่า, มีเอกสารมากมาย, ขั้นตอนเคร่งครัด อาจดูหนักเกินไป (Heavyweight)</p>
+                </div>
+                <div class="concept-card" style="border-color: var(--accent-color); background-color: rgba(88, 166, 255, 0.1);">
+                    <h4>ADD-Lite</h4>
+                    <p>กระชับ, ทำซ้ำได้ (Iterative), โฟกัสที่วงรอบการตัดสินใจหลัก เหมาะสมกับ Agile/Scrum มากกว่า</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="slide">
+            <h2>กลไกหลัก: จาก Drivers สู่ Tactics</h2>
+            <span class="en">The Core Mechanism: Drivers -> Tactics</span>
+            <p>ADD ทำงานอย่างไร? มันเชื่อมโยง *ปัญหา* (Driver) เข้ากับ *ทางแก้* (Tactic)</p>
+            <ul>
+                <li><strong>Driver (Quality Attribute Scenario):</strong> "ระบบต้องยังคงใช้งานได้หากเซิร์ฟเวอร์ DB ล่ม" (เป้าหมายด้าน Availability)</li>
+                <li><strong>Architectural Tactic (กลยุทธ์ทางสถาปัตยกรรม):</strong> การตัดสินใจออกแบบขั้นพื้นฐานที่ช่วยปรับปรุงคุณลักษณะคุณภาพเฉพาะด้าน
+                    <ul>
+                        <li><em>ตัวอย่าง Tactic สำหรับ Availability: "Active-Passive Redundancy" (การทำซ้ำแบบแอคทีฟ-พาสซีฟ)</em></li>
+                    </ul>
+                </li>
+            </ul>
+            <p>Tactics คือส่วนประกอบย่อยของ Patterns (รูปแบบ) Patterns คือชุดของ tactics ที่รวมกัน</p>
+        </section>
+
+        <section class="slide">
+            <h2>ภาพรวมกระบวนการ ADD-Lite (Process Loop)</h2>
+            <p>ADD-Lite เป็นกระบวนการทำซ้ำ (Iterative) เราออกแบบเล็กน้อย, ประเมิน, แล้วทำซ้ำ</p>
+
+            <div class="diagram-placeholder">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                <p><strong>[Placeholder สำหรับแผนภาพวงจร ADD-Lite]</strong><br>แสดงขั้นตอนการทำซ้ำ: Inputs -> Select Drivers -> Choose Tactics -> Instantiate -> Analyze -> Repeat<br><em>(อ้างอิงไฟล์: week6_diagram2_add_lite.drawio)</em></p>
+            </div>
+        </section>
+
+        <section class="slide">
+            <h3>ขั้นตอนที่ 1: ทบทวนข้อมูลนำเข้า</h3>
+            <span class="en">Step 1: Review Inputs</span>
+            <p>ก่อนเริ่มรอบการทำงาน (Iteration) ต้องมั่นใจว่าคุณมีข้อมูลที่จำเป็นครบถ้วน</p>
+            <ul>
+                <li><strong>เป้าหมายของระบบคืออะไร?</strong> (Mission statement)</li>
+                <li><strong>ข้อจำกัดคืออะไร?</strong> (ข้อจำกัดด้าน Tech stack, งบประมาณ, เวลา, การปฏิบัติตามกฎระเบียบ)</li>
+                <li><strong>ข้อกำหนดด้านการทำงานคืออะไร?</strong> (User stories, Use cases หลักๆ)</li>
+                <li><strong>สถานการณ์คุณลักษณะคุณภาพคืออะไร?</strong> (NFRs ที่เฉพาะเจาะจงและวัดผลได้)</li>
+            </ul>
+            <p><em>หากข้อมูลเหล่านี้ขาดหายไปหรือคลุมเครือ ให้หยุดและทำความเข้าใจกับผู้มีส่วนได้ส่วนเสียให้ชัดเจนก่อน!</em></p>
+        </section>
+
+        <section class="slide">
+            <h3>ขั้นตอนที่ 2: กำหนดเป้าหมายของรอบการทำงาน</h3>
+            <span class="en">Step 2: Establish Iteration Goal</span>
+            <p>คุณไม่สามารถออกแบบทั้งระบบได้ในคราวเดียว เลือก "ไฟ" กองใหญ่ที่สุดที่จะดับก่อน</p>
+            <ol>
+                <li><strong>เลือก Architectural Drivers:</strong> เลือกสถานการณ์คุณลักษณะคุณภาพที่มีความสำคัญสูงสุด 3-5 ข้อ ที่จะกำหนดรูปร่างของโครงสร้างมากที่สุด (เช่น ความปลอดภัยสูงมาก, การขยายตัวแบบสุดขีด)</li>
+                <li>Drivers เหล่านี้จะกลายเป็นเป้าหมายสำหรับรอบการออกแบบนี้</li>
+            </ol>
+            <p><em>ตัวอย่าง: "ในรอบนี้ เราจะโฟกัสเฉพาะการรักษาความปลอดภัยของข้อมูลผู้ใช้ และการทำให้ล็อกอินได้ภายในเสี้ยววินาที"</em></p>
+        </section>
+
+        <section class="slide">
+            <h3>ขั้นตอนที่ 3: เลือกองค์ประกอบที่จะปรับปรุง</h3>
+            <span class="en">Step 3: Choose Elements to Refine</span>
+            <p>เราจะใช้การตัดสินใจเหล่านี้กับส่วนไหนของระบบ? กำหนดขอบเขต (Scope)</p>
+            <ul>
+                <li>เรากำลังออกแบบทั้งระบบตั้งแต่เริ่มต้นหรือไม่? (Greenfield)</li>
+                <li>เรากำลังออกแบบระบบย่อยเฉพาะส่วนใหม่ เช่น ระบบการชำระเงิน หรือไม่? (Brownfield)</li>
+                <li>เรากำลังลงรายละเอียดในองค์ประกอบเฉพาะที่ระบุไว้ในรอบก่อนหน้าหรือไม่?</li>
+            </ul>
+            <p>ขั้นตอนนี้กำหนดบริบทสำหรับการตัดสินใจออกแบบของคุณ</p>
+        </section>
+
+        <section class="slide">
+            <h3>ขั้นตอนที่ 4: เลือกแนวคิดการออกแบบ (สำคัญมาก!)</h3>
+            <span class="en">Step 4: Choose Design Concepts (Crucial!)</span>
+            <p>นี่คือจุดที่ "เวทมนตร์" เกิดขึ้น เลือกเครื่องมือเพื่อแก้ปัญหา Drivers ที่ระบุในขั้นตอนที่ 2</p>
+            <ul>
+                <li><strong>ระบุ Architectural Tactics:</strong> ดูที่ Driver ของคุณ (เช่น "High Availability") ค้นหา Tactics ที่ตอบโจทย์ (เช่น "Heartbeat", "Redundancy", "Graceful Degradation")</li>
+                <li><strong>ระบุ Architectural Patterns:</strong> ค้นหารูปแบบระดับสูงที่นำ Tactics เหล่านี้ไปใช้ (เช่น "Microservices", "Layered Architecture", "Broker Pattern")</li>
+            </ul>
+            <p>ทำการตัดสินใจเบื้องต้นโดยพิจารณาจาก Trade-offs ที่มีอยู่ในแนวคิดเหล่านี้</p>
+        </section>
+
+         <section class="slide">
+            <h2>แบบจำลอง: การเลือก Tactic (Simulation)</h2>
+            <p><strong>สถานการณ์ (Scenario Driver):</strong> เว็บไซต์ E-commerce ต้องการ <strong>ประสิทธิภาพการอ่านข้อมูลที่สูงมาก (High Read Performance)</strong> สำหรับแคตตาล็อกสินค้าในช่วงลดราคา Black Friday ข้อมูลมีการเปลี่ยนแปลงไม่บ่อยนัก</p>
+            <p>Architectural Tactic ใดที่เหมาะสมที่สุดในการเป็นโซลูชันหลัก?</p>
+
+            <div class="simulation-container">
+                <h3>เลือก Tactic:</h3>
+                <div class="sim-options">
+                    <button class="sim-btn" onclick="checkSim('A', this)">A) เพิ่มระดับ Database Transaction Isolation Level ให้สูงขึ้น</button>
+                    <button class="sim-btn" onclick="checkSim('B', this)">B) ใช้ Read-Through Caching Layer (เช่น Redis) คั่นกลาง</button>
+                    <button class="sim-btn" onclick="checkSim('C', this)">C) เปลี่ยนไปใช้ฐานข้อมูลแบบ Blockchain</button>
+                </div>
+                <div id="sim-feedback" class="sim-feedback"></div>
+            </div>
+        </section>
+
+        <section class="slide">
+            <h3>ขั้นตอนที่ 5: สร้างอินสแตนซ์ของแนวคิด</h3>
+            <span class="en">Step 5: Instantiate Architectural Concepts</span>
+            <p>เปลี่ยน "แนวคิด" ที่เป็นนามธรรมให้เป็นความจริงที่เป็นรูปธรรมสำหรับโครงการของคุณ</p>
+            <ul>
+                <li>คุณเลือก "Caching Tactic"? -> <strong>Instantiate:</strong> "เราจะใช้ Redis เวอร์ชัน 6.x รันบน AWS instance ขนาด t3.medium, แคช JSON blobs ของสินค้า โดยมี TTL 1 ชั่วโมง"</li>
+                <li>คุณเลือก "Layered Pattern"? -> <strong>Instantiate:</strong> กำหนดเลเยอร์ที่ชัดเจน: Presentation (React), Business Logic (Node/Express), Data Access (Prisma ORM)</li>
+            </ul>
+            <p>ทำการตัดสินใจเลือกเทคโนโลยีจริงๆ ในขั้นตอนนี้</p>
+        </section>
+
+        <section class="slide">
+            <h3>ขั้นตอนที่ 6: ร่างมุมมองสถาปัตยกรรม</h3>
+            <span class="en">Step 6: Sketch Architectural Views</span>
+            <p>แสดงภาพการ Instantiate นั้น อย่าแค่พูดถึงมัน ให้วาดมันออกมา</p>
+            <p>สร้างภาพร่างคร่าวๆ ของมุมมองสถาปัตยกรรมที่เกี่ยวข้องตามที่คุณเพิ่งตัดสินใจ:</p>
+            <ul>
+                <li><strong>Module View:</strong> แสดงโครงสร้างโค้ดและเลเยอร์</li>
+                <li><strong>Component & Connector (C&C) View:</strong> แสดงส่วนประกอบขณะรันไทม์ (เซิร์ฟเวอร์, DBs) และวิธีการสื่อสาร (HTTP, Messaging)</li>
+                <li><strong>Allocation View:</strong> แสดงว่าส่วนประกอบต่างๆ ถูกนำไปรันบนฮาร์ดแวร์/คลาวด์ที่ไหน</li>
+            </ul>
+            <p><em>ภาพร่างเหล่านี้ยังไม่ต้องเป็น UML ที่สมบูรณ์แบบ แค่ภาพร่างบนกระดานไวท์บอร์ดก็ใช้ได้!</em></p>
+        </section>
+
+        <section class="slide">
+            <h2>แผนภาพกระบวนการและการเปรียบเทียบ</h2>
+            <span class="en">Process Flow & Comparison Diagrams</span>
+            
+            <div style="display: flex; gap: 2rem; height: 80%;">
+                <div class="diagram-placeholder" style="flex: 1; height: auto;">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                    </svg>
+                    <p><strong>[Placeholder 1: Architectural Design Process]</strong><br>แผนภาพแสดงกระบวนการออกแบบโดยรวมและการไหลของข้อมูล<br><em>(อ้างอิง: week6_diagram1_process.drawio)</em></p>
+                </div>
+                <div class="diagram-placeholder" style="flex: 1; height: auto;">
+                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                    <p><strong>[Placeholder 2: Comparison of Approaches]</strong><br>แผนภาพเปรียบเทียบวิธีการออกแบบต่างๆ<br><em>(อ้างอิง: week6_diagram3_comparison.drawio)</em></p>
+                </div>
+            </div>
+        </section>
+
+
+        <section class="slide">
+            <h3>ขั้นตอนที่ 7: วิเคราะห์ผลลัพธ์</h3>
+            <span class="en">Step 7: Analyze Results</span>
+            <p>ทบทวนการออกแบบที่คุณเพิ่งร่างขึ้น คุณทำสำเร็จหรือไม่?</p>
+            <ul>
+                <li><strong>ตรวจสอบกับ Drivers:</strong> การออกแบบนี้ตอบสนอง Drivers ที่มีความสำคัญสูงจากขั้นตอนที่ 2 ได้จริงหรือไม่?</li>
+                <li><strong>ระบุ Trade-offs:</strong> "เราได้ Performance โดยการใช้ Caching แต่ตอนนี้เรามีปัญหา 'ข้อมูลเก่า' (Stale data) ซึ่งกระทบต่อ Consistency"</li>
+                <li><strong>ระบุ Interfaces/Components ใหม่:</strong> การออกแบบนี้สร้างสิ่งใหม่ที่จำเป็นต้องลงรายละเอียดเพิ่มเติมหรือไม่?</li>
+            </ul>
+            <p>ถ้าพอใจ ให้ไปสู่รอบถัดไป ถ้าไม่ ให้คิดทบทวน Tactics ของคุณใหม่ (กลับไปขั้นตอนที่ 4)</p>
+        </section>
+
+        <section class="slide">
+            <h2>ตัวอย่างการใช้งานจริง: ระบบธนาคาร</h2>
+            <span class="en">Practical Example: Banking System Backend</span>
+            <p>ลองมาประยุกต์ใช้กับระบบ Backend ของธนาคารสมมติที่ออกแบบด้วย Node.js</p>
+            <p><strong>ขั้นตอนที่ 1: ข้อมูลนำเข้า (โดยย่อ):</strong></p>
+            <ul>
+                <li>เป้าหมาย: ปรับปรุงระบบ Core Banking Backend ให้ทันสมัย</li>
+                <li>ข้อจำกัด: ต้องใช้ Node.js/Express สำหรับบริการภายใน</li>
+                <li><strong>Driver 1 (Security):</strong> ข้อมูล PII ทั้งหมดต้องถูกเข้ารหัสทั้งขณะจัดเก็บ (at rest) และขณะส่ง (in transit)</li>
+                <li><strong>Driver 2 (Availability):</strong> ระบบต้องสามารถรองรับการล่มของเซิร์ฟเวอร์เดี่ยวได้โดยไม่มี Downtime ในช่วงเวลาทำการ</li>
+            </ul>
+        </section>
+
+        <section class="slide">
+            <h2>ตัวอย่าง: รอบที่ 1 - เป้าหมาย & กลยุทธ์</h2>
+            <span class="en">Example: Iteration 1 Goal & Tactics</span>
+            <p><strong>ขั้นตอนที่ 2 เป้าหมาย:</strong> จัดการกับ Security และ Availability ที่มีความสำคัญสูง</p>
+            <br>
+            <p><strong>ขั้นตอนที่ 4 เลือก Tactics:</strong></p>
+            <ul>
+                <li><em>สำหรับ Security Driver:</em> Tactic -> <strong>Encrypt Data</strong> (ที่ระดับแอปพลิเคชันก่อนบันทึกลง DB) และ <strong>TLS/SSL Everywhere</strong></li>
+                <li><em>สำหรับ Availability Driver:</em> Tactic -> <strong>Active-Passive Redundancy</strong> (สำหรับ DB) และ <strong>Load Balancing with Stateless Services</strong> (สำหรับ Node API)</li>
+            </ul>
+        </section>
+
+        <section class="slide">
+            <h2>ตัวอย่าง: การสร้างอินสแตนซ์ & การร่างภาพ (ขั้นตอนที่ 5 & 6)</h2>
+            <span class="en">Example: Instantiation & Sketching (Steps 5 & 6)</span>
+            <p><strong>ขั้นตอนที่ 5 Instantiate:</strong></p>
+            <ul>
+                <li>ใช้ Nginx เป็น Load Balancer ทำหน้าที่สิ้นสุด SSL (SSL Termination)</li>
+                <li>รัน Node.js Express App (แบบ Stateless) จำนวน 3 replicas ใน Docker containers</li>
+                <li>ใช้ PostgreSQL ร่วมกับ pgpool-II เพื่อทำ Active-Passive failover</li>
+            </ul>
+            
+             <div class="diagram-placeholder" style="height: 280px;">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                </svg>
+                <p><strong>[Placeholder สำหรับภาพร่าง C&C View ของระบบธนาคาร]</strong><br>แสดง: Users -> Nginx LB (SSL) -> Node Apps (x3) -> Primary/Replica DBs<br><em>(อ้างอิงตัวอย่างใน: week6_diagram2_add_lite.drawio)</em></p>
+            </div>
+        </section>
+
+        <section class="slide">
+            <h2>ความเป็นจริงของการออกแบบสถาปัตยกรรม</h2>
+            <span class="en">The Reality of Architectural Design</span>
+            <p>มันดูเรียบร้อยในสไลด์ แต่ในความเป็นจริง:</p>
+            <ul>
+                <li>คุณมักจะค้นพบข้อจำกัดใหม่ๆ กลางคัน</li>
+                <li>ผู้มีส่วนได้ส่วนเสียอาจเปลี่ยนใจเรื่องลำดับความสำคัญของ Driver</li>
+                <li>เทคโนโลยีที่เลือกอาจทำงานไม่ได้ตามที่โฆษณาไว้ในระหว่างการ Instantiate</li>
+            </ul>
+            <p><strong>ADD-Lite ยอมรับการเปลี่ยนแปลงนี้ผ่านการทำซ้ำ (Iteration)</strong> อย่ากลัวที่จะย้อนกลับไปขั้นตอนก่อนหน้า</p>
+        </section>
+
+         <section class="slide">
+            <h2>รูปแบบสถาปัตยกรรม vs. กระบวนการ ADD</h2>
+            <span class="en">Architectural Styles (Patterns) vs. ADD Process</span>
+            <p>อย่าสับสนระหว่าง "Styles/Patterns" กับ "Process (ADD)"</p>
+            <ul>
+                <li><strong>Styles (เช่น Microservices, Monolith, Event-Driven):</strong> คือโซลูชันสำเร็จรูปสำหรับปัญหาที่พบบ่อย</li>
+                <li><strong>ADD (The Process):</strong> คือวิธีการที่คุณใช้ในการ *ตัดสินใจ* ว่า Style ไหน (หรือการผสมผสานของ Styles ไหน) ที่เหมาะสมกับ Drivers เฉพาะของคุณ</li>
+            </ul>
+            <p>ADD ช่วยให้คุณหลีกเลี่ยง "Resume-Driven Development" (การเลือก Style เพียงเพราะมันกำลังเป็นที่นิยม)</p>
+        </section>
+
+        <section class="slide">
+            <h2>ทำไมสิ่งนี้ถึงสำคัญต่ออาชีพของคุณ</h2>
+            <span class="en">Why This Matters for Your Career</span>
+            <p>ในฐานะ Junior Engineer คุณเป็นผู้ "นำไปใช้" (Implement) Tactics ที่คนอื่นเลือกมา</p>
+            <p><strong>ในฐานะ Senior Engineer หรือ Architect "คุณ" คือผู้เลือก Tactics เหล่านั้น</strong></p>
+            <div class="quote-box" style="border-color: var(--success-color); background: linear-gradient(90deg, rgba(63, 185, 80, 0.1) 0%, transparent 100%);">
+                <p>มูลค่าของคุณจะเพิ่มขึ้นแบบทวีคูณ เมื่อคุณสามารถมองปัญหาทางธุรกิจที่คลุมเครือ และวางโครงสร้างโซลูชันทางเทคนิคที่รักษาสมดุลระหว่าง ต้นทุน, เวลา, ประสิทธิภาพ, และความปลอดภัยได้</p>
+            </div>
+            <p>การเชี่ยวชาญกระบวนการอย่าง ADD คือสะพานเชื่อมไปสู่ระดับถัดไปนั้น</p>
+        </section>
+
+        <section class="slide">
+            <h2>สรุปแนวคิดหลัก (Summary of Key Concepts)</h2>
+            <ul>
+                <li><strong>สถาปัตยกรรมคือสะพานเชื่อม:</strong> เชื่อมโยง Requirements ไปสู่ Code Implementation</li>
+                <li><strong>Drivers คือกุญแจสำคัญ:</strong> Quality Attribute Scenarios (NFRs) ขับเคลื่อนสถาปัตยกรรมมากกว่าฟังก์ชันการทำงาน</li>
+                <li><strong>Trade-offs เป็นสิ่งที่หลีกเลี่ยงไม่ได้:</strong> ทุกการตัดสินใจมีข้อดีและข้อเสีย ต้องยอมรับและจัดการมัน</li>
+                <li><strong>ADD-Lite คือเครื่องมือนำทาง:</strong> ให้กระบวนการที่เป็นระบบและทำซ้ำได้ เพื่อเปลี่ยน Drivers ให้เป็น Tactics และการออกแบบที่เป็นรูปธรรม</li>
+                <li><strong>จดบันทึกเหตุผล (Rationale):</strong> เอกสารที่สำคัญที่สุดคือ "ทำไม" คุณถึงตัดสินใจแบบนั้น</li>
+            </ul>
+        </section>
+
+        <section class="slide">
+            <h2>คำถาม & ขั้นตอนต่อไป (Q&A & Next Steps)</h2>
+            <p><strong>สำหรับสัปดาห์หน้า:</strong> เราจะเจาะลึกเรื่อง "การประเมินสถาปัตยกรรม" (Architectural Evaluation) โดยใช้วิธี ATAM (Architecture Tradeoff Analysis Method)</p>
+            <br>
+            <div style="text-align: center; margin-top: 2rem;">
+                <h3>มีคำถามไหมครับ?</h3>
+                <p>Feel free to ask any questions.</p>
+            </div>
+        </section>
+
+    </div>
+
+    <div id="slide-counter">1 / 31</div>
+
+    <div id="controls">
+        <button class="control-btn" id="prev-btn" title="Previous Slide">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
+        </button>
+        <button class="control-btn" id="next-btn" title="Next Slide">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
+        </button>
+        <div class="separator"></div>
+        <button class="control-btn" id="font-decrease" title="Decrease Font Size">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4" /></svg>
+        </button>
+        <button class="control-btn" id="font-increase" title="Increase Font Size">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
+        </button>
+        <div class="separator"></div>
+        <button class="control-btn" id="theme-toggle" title="Toggle Theme">
+            <svg id="sun-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M12 8a4 4 0 100 8 4 4 0 000-8z" /></svg>
+             <svg id="moon-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="display: none;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>
+        </button>
+         <button class="control-btn" id="fullscreen-toggle" title="Toggle Fullscreen">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" /></svg>
+        </button>
+    </div>
+
+    <script>
+        // State Variables
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slide');
+        const totalSlides = slides.length;
+        const slideCounter = document.getElementById('slide-counter');
+        let currentFontSize = 16;
+        let isDarkMode = true;
+
+        // DOM Elements based on IDs defined in HTML
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const fontDecBtn = document.getElementById('font-decrease');
+        const fontIncBtn = document.getElementById('font-increase');
+        const themeToggleBtn = document.getElementById('theme-toggle');
+        const fullscreenToggleBtn = document.getElementById('fullscreen-toggle');
+        const sunIcon = document.getElementById('sun-icon');
+        const moonIcon = document.getElementById('moon-icon');
+        const root = document.documentElement;
+        const slideContainer = document.getElementById('slide-container');
+
+        // Navigation Function
+        function showSlide(index) {
+            slides[currentSlide].classList.remove('active');
+            currentSlide = (index + totalSlides) % totalSlides;
+            slides[currentSlide].classList.add('active');
+            slideCounter.textContent = `${currentSlide + 1} / ${totalSlides}`;
+        }
+
+        // Event Listeners for Navigation
+        prevBtn.addEventListener('click', () => showSlide(currentSlide - 1));
+        nextBtn.addEventListener('click', () => showSlide(currentSlide + 1));
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowLeft' || e.key === 'p') showSlide(currentSlide - 1);
+            else if (e.key === 'ArrowRight' || e.key === 'n') showSlide(currentSlide + 1);
+        });
+
+        // Font Size Adjustment
+        fontDecBtn.addEventListener('click', () => {
+            currentFontSize = Math.max(12, currentFontSize - 1);
+            root.style.setProperty('--font-base-size', `${currentFontSize}px`);
+        });
+        fontIncBtn.addEventListener('click', () => {
+            currentFontSize = Math.min(24, currentFontSize + 1);
+            root.style.setProperty('--font-base-size', `${currentFontSize}px`);
+        });
+
+        // Theme Toggle
+        themeToggleBtn.addEventListener('click', () => {
+            isDarkMode = !isDarkMode;
+            root.setAttribute('data-theme', isDarkMode ? 'dark' : 'light');
+            sunIcon.style.display = isDarkMode ? 'block' : 'none';
+            moonIcon.style.display = isDarkMode ? 'none' : 'block';
+        });
+
+        // Fullscreen Toggle
+        fullscreenToggleBtn.addEventListener('click', () => {
+            if (!document.fullscreenElement) {
+                slideContainer.requestFullscreen().catch(err => {
+                    alert(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
+                });
+            } else {
+                document.exitFullscreen();
+            }
+        });
+
+        // Simulation Logic
+        function checkSim(choice, btnElement) {
+            const feedback = document.getElementById('sim-feedback');
+            // Reset all buttons styles
+            const allBtns = document.querySelectorAll('.sim-btn');
+            allBtns.forEach(btn => {
+                btn.style.borderColor = 'var(--border-color)';
+                btn.style.backgroundColor = 'var(--bg-secondary)';
+            });
+
+            feedback.className = 'sim-feedback'; // Reset classes
+
+            if (choice === 'B') {
+                feedback.textContent = "B) ถูกต้อง! Caching เป็น Tactic คลาสสิกสำหรับสถานการณ์ที่เน้นการอ่านสูงและมีการเขียนต่ำ มันช่วยเสิร์ฟข้อมูลจากหน่วยความจำที่รวดเร็ว ลดภาระของฐานข้อมูลหลัก";
+                feedback.classList.add('success');
+                btnElement.style.borderColor = 'var(--success-color)';
+                btnElement.style.backgroundColor = 'rgba(63, 185, 80, 0.1)';
+            } else if (choice === 'A') {
+                feedback.textContent = "A) ไม่ถูกต้อง การเพิ่ม Isolation Level ช่วยเรื่องความถูกต้องของข้อมูล (Consistency) แต่บ่อยครั้งจะ *ลด* ประสิทธิภาพการอ่านลงเนื่องจากการล็อกข้อมูล (Locking)";
+                feedback.classList.add('warning');
+                btnElement.style.borderColor = 'var(--warning-color)';
+            } else if (choice === 'C') {
+                 feedback.textContent = "C) ไม่ถูกต้อง โดยทั่วไป Blockchain ทำงานช้ากว่าฐานข้อมูลแบบดั้งเดิมมากทั้งในการอ่านและเขียน จุดประสงค์หลักคือการกระจายความน่าเชื่อถือ (Decentralized Trust) ไม่ใช่ประสิทธิภาพ";
+                 feedback.classList.add('warning');
+                 btnElement.style.borderColor = 'var(--warning-color)';
+            }
+        }
+
+        // Initialize
+        showSlide(0);
+    </script>
+</body>
+</html>

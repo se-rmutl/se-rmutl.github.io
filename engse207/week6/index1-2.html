@@ -1,0 +1,750 @@
+<!doctype html>
+<html lang="th">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+    <title>ENGSE207 Week 6: Architectural Design Process (ADD-Lite)</title>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/5.0.4/reset.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/5.0.4/reveal.min.css">
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/5.0.4/theme/black.min.css" id="theme">
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:ital,wght@0,300;0,400;0,600;0,700;1,300&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            /* Color Palette - Modern Tech */
+            --primary-bg: #1e1e2e;
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --accent-color: #00d2ff;
+            --accent-gradient: linear-gradient(90deg, #00d2ff 0%, #3a7bd5 100%);
+            --text-main: #e0e0e0;
+            --text-muted: #a0a0a0;
+            --success: #00b09b;
+            --warning: #f7971e;
+            --danger: #ff5f6d;
+            --base-font-size: 28px;
+        }
+
+        body {
+            font-family: 'Prompt', sans-serif !important;
+            background-color: var(--primary-bg);
+            color: var(--text-main);
+        }
+
+        .reveal {
+            font-family: 'Prompt', sans-serif !important;
+            font-size: var(--base-font-size);
+        }
+
+        /* --- UI Controls --- */
+        .header-bar {
+            position: fixed;
+            top: 0; left: 0; width: 100%;
+            padding: 15px 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 1000;
+            background: rgba(30, 30, 46, 0.8);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--glass-border);
+        }
+        
+        .header-title {
+            font-weight: 600;
+            font-size: 1rem;
+            background: var(--accent-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .ui-controls button {
+            background: transparent;
+            border: 1px solid var(--glass-border);
+            color: var(--text-main);
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-left: 5px;
+            font-family: 'Prompt', sans-serif;
+            font-size: 0.8rem;
+            transition: all 0.3s;
+        }
+
+        .ui-controls button:hover {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 10px rgba(0, 210, 255, 0.2);
+        }
+
+        /* --- Typography & Layout --- */
+        .reveal h1, .reveal h2, .reveal h3 {
+            font-family: 'Prompt', sans-serif;
+            font-weight: 700;
+            text-transform: none;
+            letter-spacing: -0.5px;
+        }
+
+        .reveal h1 { font-size: 2.5em; background: var(--accent-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .reveal h2 { font-size: 1.8em; color: var(--text-main); margin-bottom: 30px; }
+        .reveal h3 { font-size: 1.3em; color: var(--accent-color); }
+        
+        .glass-panel {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 30px;
+            backdrop-filter: blur(5px);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+            margin: 20px 0;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            align-items: center;
+        }
+
+        .text-left { text-align: left; }
+        .text-center { text-align: center; }
+        .small { font-size: 0.8em; opacity: 0.8; }
+
+        /* --- Infographics & Visuals --- */
+        .flow-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 40px 0;
+        }
+        
+        .flow-step {
+            background: linear-gradient(145deg, #2a2a3d, #1e1e2e);
+            border: 1px solid var(--accent-color);
+            border-radius: 12px;
+            padding: 20px;
+            width: 18%;
+            text-align: center;
+            position: relative;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            transition: transform 0.3s;
+        }
+        
+        .flow-step:hover { transform: translateY(-5px); }
+        
+        .flow-step h4 { font-size: 0.9em; margin: 0; color: var(--accent-color); }
+        .flow-step p { font-size: 0.6em; margin-top: 5px; opacity: 0.8; }
+
+        .flow-arrow {
+            font-size: 1.5em;
+            color: var(--text-muted);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 0.3; }
+            50% { opacity: 1; }
+            100% { opacity: 0.3; }
+        }
+
+        /* --- Draw.io Placeholders --- */
+        .diagram-box {
+            width: 90%;
+            height: 550px;
+            margin: 0 auto;
+            border: 2px dashed var(--glass-border);
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: rgba(0,0,0,0.2);
+            position: relative;
+        }
+        
+        .diagram-box img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+        
+        .diagram-label {
+            position: absolute;
+            bottom: 10px;
+            right: 15px;
+            font-size: 0.7em;
+            color: var(--text-muted);
+            background: rgba(0,0,0,0.7);
+            padding: 5px 10px;
+            border-radius: 4px;
+        }
+
+        /* --- Simulation UI --- */
+        .sim-panel {
+            background: linear-gradient(145deg, #232334, #1b1b29);
+            border-radius: 15px;
+            padding: 25px;
+            border: 1px solid var(--glass-border);
+        }
+        
+        .sim-option {
+            display: flex;
+            align-items: center;
+            margin: 10px 0;
+            padding: 10px;
+            background: rgba(255,255,255,0.03);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .sim-option:hover { background: rgba(255,255,255,0.08); }
+        
+        input[type="checkbox"], input[type="range"] {
+            accent-color: var(--accent-color);
+            transform: scale(1.2);
+            margin-right: 15px;
+        }
+
+        .range-wrap { margin: 20px 0; }
+        .range-label { display: flex; justify-content: space-between; font-size: 0.8em; margin-bottom: 5px; }
+
+        /* --- Code Block --- */
+        .code-window {
+            background: #282c34;
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            overflow: hidden;
+            text-align: left;
+        }
+        .code-header {
+            background: #21252b;
+            padding: 10px 15px;
+            display: flex;
+            gap: 6px;
+        }
+        .dot { width: 12px; height: 12px; border-radius: 50%; }
+        .red { background: #ff5f56; } .yellow { background: #ffbd2e; } .green { background: #27c93f; }
+
+        /* Light Theme Overrides */
+        body.light-theme {
+            --primary-bg: #f5f7fa;
+            --glass-bg: rgba(255, 255, 255, 0.7);
+            --glass-border: rgba(0, 0, 0, 0.1);
+            --text-main: #2c3e50;
+            --text-muted: #636e72;
+            --accent-color: #2980b9;
+        }
+        
+        body.light-theme .header-bar { background: rgba(245, 247, 250, 0.9); }
+        body.light-theme .ui-controls button { border-color: #cbd5e0; color: #2c3e50; }
+        body.light-theme .flow-step { background: #fff; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        body.light-theme .sim-panel { background: #fff; box-shadow: 0 5px 20px rgba(0,0,0,0.05); }
+
+    </style>
+</head>
+
+<body>
+
+    <div class="header-bar">
+        <div class="header-title">ENGSE207: Software Architecture</div>
+        <div class="ui-controls">
+            <button onclick="changeFontSize(-2)">A-</button>
+            <button onclick="changeFontSize(2)">A+</button>
+            <button id="theme-btn" onclick="toggleTheme()">🌗 Dark</button>
+            <button onclick="toggleFullScreen()">⛶ Full</button>
+        </div>
+    </div>
+
+    <div class="reveal">
+        <div class="slides">
+
+            <section>
+                <div class="glass-panel" style="padding: 50px;">
+                    <h3 style="letter-spacing: 2px; font-size: 1rem; margin-bottom: 0;">WEEK 6</h3>
+                    <h1>Architectural Design Process & ADD-Lite</h1>
+                    <div style="height: 4px; width: 100px; background: var(--accent-gradient); margin: 20px auto;"></div>
+                    <p style="color: var(--text-muted);">อาจารย์ผู้สอน: นายธนิต เกตุแก้ว</p>
+                    
+                    <div style="margin-top: 40px; font-style: italic; opacity: 0.8;">
+                        "Architecture is about the important stuff.<br>Whatever that is."
+                        <br><span style="font-size: 0.7em;">— Ralph Johnson</span>
+                    </div>
+                </div>
+            </section>
+
+            <section>
+                <h2>ทำไมต้องเรียนเรื่องนี้?</h2>
+                <div class="grid-2">
+                    <div class="glass-panel text-left fragment fade-up">
+                        <h3 style="margin-top:0;">🛑 The Problem</h3>
+                        <p>ถ้าไม่มีกระบวนการออกแบบที่ชัดเจน...</p>
+                        <ul>
+                            <li>ใช้การ "เดา" (Guesswork)</li>
+                            <li>ระบบกลายเป็น "Big Ball of Mud"</li>
+                            <li>แก้ปัญหา Performance/Security ไม่ได้เมื่อระบบโตขึ้น</li>
+                        </ul>
+                    </div>
+                    <div class="glass-panel text-left fragment fade-up">
+                        <h3 style="margin-top:0; color: var(--success);">✅ The Solution (ADD-Lite)</h3>
+                        <p>เปลี่ยนคุณจาก <strong>Coder</strong> เป็น <strong>Architect</strong></p>
+                        <ul>
+                            <li>คิดอย่างเป็นระบบ (Systematic Thinking)</li>
+                            <li>มีเหตุผลรองรับทุกการตัดสินใจ</li>
+                            <li>ออกแบบเพื่ออนาคต</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <section>
+                <h3>วัตถุประสงค์การเรียนรู้ (CLOs)</h3>
+                <div class="text-left" style="font-size: 0.9em; max-width: 800px; margin: 0 auto;">
+                    <div class="fragment fade-right" style="margin-bottom: 20px;">
+                        <strong>🎯 1.1 กระบวนการออกแบบ</strong>
+                        <ul class="small">
+                            <li>เข้าใจขั้นตอน ADD-Lite ตั้งแต่ Requirement จนได้ Design</li>
+                            <li>แยกแยะ Functional vs Quality Attributes ได้</li>
+                        </ul>
+                    </div>
+                    <div class="fragment fade-right" style="margin-bottom: 20px;">
+                        <strong>🛠️ 1.2 จาก Drivers สู่ Design</strong>
+                        <ul class="small">
+                            <li>เลือก Patterns หรือ Tactics มาตอบโจทย์ QA Scenarios ได้</li>
+                        </ul>
+                    </div>
+                    <div class="fragment fade-right">
+                        <strong>⚖️ 1.3 การตัดสินใจ (Decision)</strong>
+                        <ul class="small">
+                            <li>วิเคราะห์ Trade-offs ของทางเลือกต่างๆ</li>
+                            <li>เขียนบันทึกการตัดสินใจ (ADR) ได้</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <section>
+                <h2>ทบทวนสัปดาห์ที่แล้ว: C4 Model</h2>
+                <p class="small">สัปดาห์ที่ 5 เราเรียนเรื่อง <strong>"การวาด" (Communicating)</strong></p>
+                <div class="flow-container" style="justify-content: center; gap: 20px;">
+                    <div class="flow-step" style="width: 25%;">
+                        <h4>Context (C1)</h4>
+                        <p>ระบบอยู่ตรงไหนในโลก</p>
+                    </div>
+                    <div class="flow-step" style="width: 25%;">
+                        <h4>Container (C2)</h4>
+                        <p>มีแอปฯ อะไรบ้าง (Web, API)</p>
+                    </div>
+                    <div class="flow-step" style="width: 25%;">
+                        <h4>Component (C3)</h4>
+                        <p>ไส้ในทำงานยังไง</p>
+                    </div>
+                </div>
+                <div class="fragment glass-panel" style="margin-top: 30px;">
+                    <strong style="color: var(--accent-color);">จุดเชื่อมโยง:</strong><br>
+                    สัปดาห์ที่แล้วคือ "วาดสิ่งที่คิด"<br>
+                    สัปดาห์นี้คือ <strong>"คิดว่าจะวาดอะไร" (The Reasoning)</strong>
+                </div>
+            </section>
+
+            <section>
+                <h2>1.1 กระบวนการออกแบบสถาปัตยกรรม</h2>
+                <div class="glass-panel">
+                    <h3>Attribute-Driven Design (ADD)</h3>
+                    <p>กระบวนการออกแบบที่ขับเคลื่อนด้วย <strong>"คุณภาพของระบบ"</strong> (Quality Attributes) ไม่ใช่แค่ฟังก์ชันการทำงาน</p>
+                </div>
+                <div class="grid-2" style="margin-top: 20px;">
+                    <div class="text-left">
+                        <h4 style="color: #bbb;">Functional Req.</h4>
+                        <p class="small">"ระบบทำอะไรได้"</p>
+                        <p class="small" style="opacity: 0.6;">Ex: บันทึกข้อมูลลูกค้า</p>
+                        <div style="background: #444; height: 4px; width: 100%;"></div>
+                        <p class="small">กำหนด: <strong>Shape of Code</strong></p>
+                    </div>
+                    <div class="text-left">
+                        <h4 style="color: var(--accent-color);">Quality Attributes</h4>
+                        <p class="small">"ระบบดีแค่ไหน"</p>
+                        <p class="small" style="opacity: 0.6;">Ex: ค้นหาใน 0.1 วินาที</p>
+                        <div style="background: var(--accent-color); height: 4px; width: 100%;"></div>
+                        <p class="small">กำหนด: <strong>Architecture</strong></p>
+                    </div>
+                </div>
+            </section>
+
+            <section>
+                <h3>The ADD-Lite Process (5 Steps)</h3>
+                <div class="flow-container">
+                    <div class="flow-step fragment fade-up" data-fragment-index="1">
+                        <div style="font-size: 2em;">📋</div>
+                        <h4>1. Inputs</h4>
+                        <p>Reqs & Constraints</p>
+                    </div>
+                    <div class="flow-arrow fragment fade-up" data-fragment-index="2">➜</div>
+                    <div class="flow-step fragment fade-up" data-fragment-index="2">
+                        <div style="font-size: 2em;">🎯</div>
+                        <h4>2. Drivers</h4>
+                        <p>Select Top QA</p>
+                    </div>
+                    <div class="flow-arrow fragment fade-up" data-fragment-index="3">➜</div>
+                    <div class="flow-step fragment fade-up" data-fragment-index="3">
+                        <div style="font-size: 2em;">🧩</div>
+                        <h4>3. Elements</h4>
+                        <p>Patterns & Tactics</p>
+                    </div>
+                    <div class="flow-arrow fragment fade-up" data-fragment-index="4">➜</div>
+                    <div class="flow-step fragment fade-up" data-fragment-index="4">
+                        <div style="font-size: 2em;">✍️</div>
+                        <h4>4. Verify</h4>
+                        <p>Sketch Design</p>
+                    </div>
+                </div>
+                <div class="diagram-box fragment">
+                    <p style="color: var(--text-muted);">[Placeholder for: week6_diagram1_process.drawio]</p>
+                    <p class="small">วางรูปภาพ Diagram กระบวนการละเอียดที่นี่</p>
+                </div>
+            </section>
+
+            <section>
+                <h3>Step 1: Review Inputs</h3>
+                <div class="grid-2">
+                    <div class="glass-panel text-left">
+                        <h4>Functional Requirements</h4>
+                        <p class="small">User Stories หลักที่ระบบต้องทำได้</p>
+                    </div>
+                    <div class="glass-panel text-left">
+                        <h4>Constraints (ข้อจำกัด)</h4>
+                        <ul class="small">
+                            <li>💰 งบประมาณ</li>
+                            <li>⏰ เวลา (Deadline)</li>
+                            <li>🛠️ Tech Stack (ต้องใช้ Java, Cloud)</li>
+                            <li>👥 Skill ของทีม</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <section>
+                <h3>Step 2: Choose Drivers</h3>
+                <p>เราทำทุกอย่างให้ Perfect ไม่ได้ ต้องเลือก <strong>Top 3-5 Goals</strong></p>
+                <div class="code-window" style="max-width: 800px; margin: 20px auto;">
+                    <div class="code-header">
+                        <div class="dot red"></div><div class="dot yellow"></div><div class="dot green"></div>
+                    </div>
+                    <div style="padding: 20px; font-family: monospace; font-size: 0.8em; color: #abb2bf;">
+                        <span style="color: #c678dd;">Scenario:</span> Availability Driver<br><br>
+                        <span style="color: #e06c75;">Source:</span> ใช้งานปกติ<br>
+                        <span style="color: #d19a66;">Event:</span> Server หลักพัง<br>
+                        <span style="color: #98c379;">Response:</span> ระบบต้องกลับมาทำงานได้<br>
+                        <span style="color: #61afef;">Measure:</span> ภายใน 30 วินาที ข้อมูลไม่หาย
+                    </div>
+                </div>
+            </section>
+
+            <section>
+                <h3>🎮 Simulation: เลือก Drivers สำหรับ Startup</h3>
+                <p class="small">สถานการณ์: สร้าง App ส่งอาหารน้องใหม่, งบจำกัด, ทีมเล็ก, ต้องปล่อยของเร็ว</p>
+                
+                <div class="sim-panel text-left" style="max-width: 700px; margin: 0 auto;">
+                    <p class="small" style="margin-bottom: 15px;">เลือก 3 ข้อที่สำคัญที่สุดสำหรับ MVP:</p>
+                    <div class="sim-option"><input type="checkbox" id="d1" value="Speed"> Time-to-market (เสร็จใน 2 เดือน)</div>
+                    <div class="sim-option"><input type="checkbox" id="d2" value="Scale"> Extreme Scalability (รองรับ 10 ล้านคน)</div>
+                    <div class="sim-option"><input type="checkbox" id="d3" value="Modify"> Modifiability (ปรับแก้ง่ายตาม Feedback)</div>
+                    <div class="sim-option"><input type="checkbox" id="d4" value="Secure"> Military Grade Security</div>
+                    <div class="sim-option"><input type="checkbox" id="d5" value="Cost"> Low Cost (Server ถูกที่สุด)</div>
+                    
+                    <button onclick="checkDriverSim()" style="margin-top: 15px; background: var(--accent-color); border: none; padding: 10px 20px; border-radius: 5px; color: white; cursor: pointer;">ตรวจสอบคำตอบ</button>
+                    <div id="sim1-result" style="margin-top: 15px; font-weight: bold;"></div>
+                </div>
+            </section>
+
+            <section>
+                <h2>1.2 แปลง Drivers สู่ Design Concepts</h2>
+                <h3>Step 3: Choose Elements</h3>
+                <div class="grid-2">
+                    <div class="glass-panel fragment fade-right">
+                        <h4>1. Architectural Patterns</h4>
+                        <p class="small">โครงสร้างใหญ่ (แม่พิมพ์)</p>
+                        <ul class="small text-left">
+                            <li>Microservices</li>
+                            <li>Monolith</li>
+                            <li>Layered</li>
+                        </ul>
+                    </div>
+                    <div class="glass-panel fragment fade-left">
+                        <h4>2. Architectural Tactics</h4>
+                        <p class="small">กลยุทธ์เฉพาะจุด (QA)</p>
+                        <ul class="small text-left">
+                            <li>Caching (Performance)</li>
+                            <li>Redundancy (Availability)</li>
+                            <li>AuthN/AuthZ (Security)</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <section>
+                <h3>Diagram: จาก QA สู่ Tactics</h3>
+                <div class="diagram-box">
+                    <p style="color: var(--text-muted);">[Placeholder for: week6_diagram2_add_lite.drawio]</p>
+                    <p class="small">ภาพแสดงการเชื่อมโยง QA -> Tactic -> Component</p>
+                    <div class="diagram-label">Figure 2: Drivers to Concepts</div>
+                </div>
+            </section>
+
+            <section>
+                <h3>💡 Mental Model ตัวอย่าง</h3>
+                <div class="text-left" style="max-width: 900px; margin: 0 auto;">
+                    <p><strong>โจทย์:</strong> "คนเข้า 10,000 คนพร้อมกันช่วง Flash Sale" (Scalability)</p>
+                    
+                    <div class="glass-panel fragment" style="border-left: 5px solid var(--accent-color);">
+                        <strong>Step 1 (Pattern):</strong> เลือก <em>Microservices</em> <br>
+                        <span class="small">แยก Service "สั่งซื้อ" ออกมาเพื่อให้ขยายได้อิสระ</span>
+                    </div>
+                    
+                    <div class="glass-panel fragment" style="border-left: 5px solid var(--success);">
+                        <strong>Step 2 (Tactic - Performance):</strong> ใช้ <em>Caching (Redis)</em> <br>
+                        <span class="small">เก็บข้อมูลสินค้า ลด Load Database</span>
+                    </div>
+
+                    <div class="glass-panel fragment" style="border-left: 5px solid var(--warning);">
+                        <strong>Step 3 (Tactic - Resilience):</strong> ใช้ <em>Async Messaging (Queue)</em> <br>
+                        <span class="small">รับคำสั่งซื้อเข้าคิวก่อน เพื่อไม่ให้ระบบล่มทันที</span>
+                    </div>
+                </div>
+            </section>
+
+            <section>
+                <h2>1.3 การตัดสินใจ (Trade-offs & ADR)</h2>
+                <h3>Step 4 & 5: Instantiate & Verify</h3>
+                
+                <div class="glass-panel" style="background: rgba(247, 151, 30, 0.1); border-color: var(--warning);">
+                    <h3 style="color: var(--warning); margin: 0;">⚠️ No Silver Bullet</h3>
+                    <p>ไม่มี Architecture ที่ดีที่สุด มีแต่ <strong>"เหมาะสมที่สุด"</strong><br>ทุกการตัดสินใจคือการแลกเปลี่ยน (Trade-off)</p>
+                </div>
+            </section>
+
+            <section>
+                <h3>ตัวอย่างการเปรียบเทียบ (Task Board System)</h3>
+                <div class="diagram-box" style="height: 400px;">
+                     <p style="color: var(--text-muted);">[Placeholder for: week6_diagram3_comparison.drawio]</p>
+                    <p class="small">ตารางเปรียบเทียบ Monolith vs Microservices</p>
+                    <div class="diagram-label">Figure 3: Candidate Comparison</div>
+                </div>
+                <div class="grid-2 small" style="margin-top: 20px;">
+                    <div style="color: var(--success);">✅ Monolith ชนะ (MVP, ทีมเล็ก)</div>
+                    <div style="color: var(--danger);">❌ Microservices แพ้ (Over-engineering)</div>
+                </div>
+            </section>
+
+            <section>
+                <h3>⚖️ Simulation: The Architect's Dilemma</h3>
+                <p class="small">ลองปรับสมดุลดูว่าผลลัพธ์จะเป็นอย่างไร</p>
+                
+                <div class="sim-panel" style="max-width: 800px; margin: 0 auto;">
+                    <div class="range-wrap">
+                        <div class="range-label"><span>ช้า</span><span>Speed Requirement</span><span>เร็ว</span></div>
+                        <input type="range" id="speedRange" min="1" max="100" value="50" style="width: 100%;" oninput="updateSim2()">
+                    </div>
+                    
+                    <div class="range-wrap">
+                        <div class="range-label"><span>น้อย</span><span>Scale Requirement</span><span>มหาศาล</span></div>
+                        <input type="range" id="scaleRange" min="1" max="100" value="50" style="width: 100%;" oninput="updateSim2()">
+                    </div>
+
+                    <div class="range-wrap">
+                        <div class="range-label"><span>รวยมาก</span><span>Budget Constraint (ความจำกัดงบ)</span><span>จนมาก</span></div>
+                        <input type="range" id="costRange" min="1" max="100" value="50" style="width: 100%;" oninput="updateSim2()">
+                    </div>
+
+                    <div id="sim2-result" class="glass-panel" style="margin-top: 20px; text-align: center; font-weight: bold; min-height: 80px; display: flex; align-items: center; justify-content: center;">
+                        ปรับ Slider เพื่อดูผลลัพธ์...
+                    </div>
+                </div>
+            </section>
+
+            <section>
+                <h2>ADR (Architecture Decision Record)</h2>
+                <p>เมื่อตัดสินใจแล้ว ต้องจดบันทึก!</p>
+                <div class="grid-2">
+                    <div class="text-left">
+                        <h4>โครงสร้าง ADR</h4>
+                        <ol class="small">
+                            <li><strong>Title:</strong> ชื่อเรื่อง</li>
+                            <li><strong>Status:</strong> Accepted/Proposed</li>
+                            <li><strong>Context:</strong> ปัญหาคืออะไร ("Why")</li>
+                            <li><strong>Decision:</strong> เลือกอะไร ("What")</li>
+                            <li><strong>Consequences:</strong> <span style="color:var(--success)">Pros</span> & <span style="color:var(--danger)">Cons</span></li>
+                        </ol>
+                    </div>
+                    <div class="code-window">
+                        <div class="code-header"><div class="dot red"></div><div class="dot yellow"></div><div class="dot green"></div></div>
+                        <pre style="margin: 0;"><code class="markdown" style="font-size: 0.7em;"># ADR-001: Use Modular Monolith
+
+## Context
+ทีมมี 5 คน, เวลา 3 เดือน, งบจำกัด
+
+## Decision
+เลือก Modular Monolith (Node.js)
+
+## Consequences
+✅ Pros: Setup เร็ว, Deploy ง่าย
+❌ Cons: Scale ยากในอนาคต (ยอมรับได้)
+</code></pre>
+                    </div>
+                </div>
+            </section>
+
+            <section>
+                <h2>สรุปบทเรียน (Key Takeaways)</h2>
+                <div class="grid-2">
+                    <div class="glass-panel fragment fade-up">
+                        <h4>🧠 Systematic Design</h4>
+                        <p class="small">เลิกวาดตามใจ ใช้วิธี ADD-Lite<br>(Driver -> Concept -> Design)</p>
+                    </div>
+                    <div class="glass-panel fragment fade-up">
+                        <h4>⚖️ Trade-offs</h4>
+                        <p class="small">ไม่มี Best Practice ตลอดกาล<br>มีแต่สิ่งที่คุ้มค่าที่สุดในบริบทนั้น</p>
+                    </div>
+                    <div class="glass-panel fragment fade-up">
+                        <h4>📝 ADR</h4>
+                        <p class="small">บันทึกเหตุผลเสมอ<br>เพื่อตัวคุณเองและทีมในอนาคต</p>
+                    </div>
+                    <div class="glass-panel fragment fade-up">
+                        <h4>🚀 Quality First</h4>
+                        <p class="small">QA (Drivers) คือตัวกำหนดสถาปัตยกรรม<br>ไม่ใช่ Functional Req.</p>
+                    </div>
+                </div>
+            </section>
+
+            <section>
+                <h3>🔮 สัปดาห์ถัดไป (Week 7)</h3>
+                <h2 style="color: var(--accent-color);">Cloud Architecture & Containerization</h2>
+                <p>นำ Design จากวันนี้ ไปวางแผน Deploy บน Cloud จริง</p>
+                <ul class="text-left" style="display: inline-block;">
+                    <li>IaaS vs PaaS vs SaaS</li>
+                    <li>Docker & Kubernetes ช่วย Architect ได้อย่างไร?</li>
+                    <li>Cloud Design Patterns</li>
+                </ul>
+            </section>
+
+            <section>
+                <h1>Q & A</h1>
+                <p>อย่าหยุดเรียนรู้ เทคโนโลยีเปลี่ยนทุกวัน<br>แต่หลักการออกแบบที่ดีจะอยู่ตลอดไป</p>
+            </section>
+
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/5.0.4/reveal.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/5.0.4/plugin/highlight/highlight.min.js"></script>
+    
+    <script>
+        // Initialize Reveal
+        Reveal.initialize({
+            hash: true,
+            center: true,
+            transition: 'convex', // none/fade/slide/convex/concave/zoom
+            backgroundTransition: 'fade',
+            plugins: [ RevealHighlight ]
+        });
+
+        // --- Logic: Simulation 1 (Drivers) ---
+        function checkDriverSim() {
+            const d1 = document.getElementById('d1').checked;
+            const d2 = document.getElementById('d2').checked;
+            const d3 = document.getElementById('d3').checked;
+            const d4 = document.getElementById('d4').checked;
+            const d5 = document.getElementById('d5').checked;
+            const result = document.getElementById('sim1-result');
+            
+            let count = 0;
+            if(d1) count++; if(d2) count++; if(d3) count++; if(d4) count++; if(d5) count++;
+
+            if (count !== 3) {
+                result.innerHTML = "⚠️ กรุณาเลือกให้ครบ 3 ข้อครับ";
+                result.style.color = "var(--warning)";
+                return;
+            }
+
+            if (d1 && d3 && d5) {
+                result.innerHTML = "✅ ยอดเยี่ยม! (Lean Startup) เน้นเร็ว ปรับตัวง่าย ประหยัด เหมาะกับเฟสแรก";
+                result.style.color = "var(--success)";
+            } else if (d2 || d4) {
+                result.innerHTML = "🤔 ระวัง Over-engineering! Scale 10 ล้านคน หรือ Military Security อาจเร็วไปสำหรับ MVP";
+                result.style.color = "var(--warning)";
+            } else {
+                result.innerHTML = "👍 เป็นทางเลือกที่เป็นไปได้ แต่อย่าลืมพิจารณาข้อจำกัดเรื่องทีมและเวลา";
+                result.style.color = "var(--text-main)";
+            }
+        }
+
+        // --- Logic: Simulation 2 (Trade-off) ---
+        function updateSim2() {
+            const speed = parseInt(document.getElementById('speedRange').value);
+            const scale = parseInt(document.getElementById('scaleRange').value);
+            const cost = parseInt(document.getElementById('costRange').value); // High value = High constraint (Low budget)
+            const res = document.getElementById('sim2-result');
+
+            let text = "";
+            let color = "";
+
+            if (scale > 80 && cost > 80) {
+                text = "🚀 Mission Impossible! ต้องการ Scale สูงมาก แต่งบน้อยมาก -> ต้องใช้ Serverless หรือออกแบบซับซ้อน (High Risk)";
+                color = "var(--danger)";
+            } else if (speed > 70 && cost > 50 && scale < 60) {
+                text = "📦 แนะนำ: Modular Monolith (เร็ว ประหยัด เหมาะกับเริ่มต้น)";
+                color = "var(--success)";
+            } else if (scale > 70 && cost < 40) {
+                text = "☁️ แนะนำ: Microservices on Cloud (มีงบ จ่ายเพื่อแลก Scale)";
+                color = "var(--accent-color)";
+            } else {
+                text = "⚖️ อยู่ในช่วงกลางๆ ต้องวิเคราะห์ปัจจัยอื่นเพิ่มเติม";
+                color = "var(--text-muted)";
+            }
+            
+            res.innerHTML = text;
+            res.style.color = color;
+            res.style.borderColor = color;
+        }
+
+        // --- Logic: UI Controls ---
+        function changeFontSize(val) {
+            let root = document.documentElement;
+            let current = parseInt(getComputedStyle(root).getPropertyValue('--base-font-size'));
+            root.style.setProperty('--base-font-size', (current + val) + "px");
+        }
+
+        function toggleTheme() {
+            let body = document.body;
+            let btn = document.getElementById('theme-btn');
+            body.classList.toggle('light-theme');
+            
+            if (body.classList.contains('light-theme')) {
+                document.getElementById('theme').href = "https://cdnjs.cloudflare.com/ajax/libs/reveal.js/5.0.4/theme/white.min.css";
+                btn.innerHTML = "🌗 Light";
+            } else {
+                document.getElementById('theme').href = "https://cdnjs.cloudflare.com/ajax/libs/reveal.js/5.0.4/theme/black.min.css";
+                btn.innerHTML = "🌗 Dark";
+            }
+        }
+
+        function toggleFullScreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+            }
+        }
+    </script>
+</body>
+</html>

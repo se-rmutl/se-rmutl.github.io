@@ -1,0 +1,685 @@
+<!doctype html>
+<html lang="th">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+    <title>ENGSE207 Week 6: Architectural Design Process (ADD-Lite)</title>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/5.0.4/reset.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/5.0.4/reveal.min.css">
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/5.0.4/theme/black.min.css" id="theme">
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            /* Color Palette - Modern Tech Deep Blue/Purple */
+            --primary-bg: #0f172a; /* Deep Slate */
+            --glass-bg: rgba(30, 41, 59, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --accent-cyan: #22d3ee;
+            --accent-purple: #a855f7;
+            --accent-gradient: linear-gradient(135deg, #22d3ee 0%, #a855f7 100%);
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+            --success: #4ade80;
+            --warning: #fbbf24;
+            --danger: #f87171;
+            --base-font-size: 26px;
+        }
+
+        body {
+            font-family: 'Prompt', sans-serif !important;
+            background-color: var(--primary-bg);
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(34, 211, 238, 0.15) 0%, transparent 20%),
+                radial-gradient(circle at 90% 80%, rgba(168, 85, 247, 0.15) 0%, transparent 20%);
+            color: var(--text-main);
+        }
+
+        .reveal {
+            font-family: 'Prompt', sans-serif !important;
+            font-size: var(--base-font-size);
+        }
+
+        /* --- UI Controls --- */
+        .header-bar {
+            position: fixed;
+            top: 0; left: 0; width: 100%;
+            padding: 15px 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 1000;
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--glass-border);
+        }
+        
+        .header-title {
+            font-weight: 600;
+            font-size: 1rem;
+            background: var(--accent-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .ui-controls button {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--glass-border);
+            color: var(--text-muted);
+            padding: 6px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-left: 8px;
+            font-family: 'Prompt', sans-serif;
+            font-size: 0.8rem;
+            transition: all 0.3s;
+        }
+
+        .ui-controls button:hover {
+            color: var(--text-main);
+            border-color: var(--accent-cyan);
+            background: rgba(34, 211, 238, 0.1);
+        }
+
+        /* --- Glass Panels & Cards --- */
+        .glass-panel {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 40px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.5);
+            margin: 20px 0;
+            transition: transform 0.3s ease;
+        }
+
+        .glass-panel:hover {
+            border-color: rgba(255,255,255,0.2);
+        }
+
+        .reveal h1, .reveal h2, .reveal h3 {
+            font-family: 'Prompt', sans-serif;
+            font-weight: 700;
+            text-transform: none;
+            letter-spacing: -0.02em;
+        }
+
+        .reveal h1 { 
+            font-size: 2.8em; 
+            background: var(--accent-gradient); 
+            -webkit-background-clip: text; 
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 20px;
+        }
+        
+        .reveal h2 { font-size: 2em; color: var(--text-main); margin-bottom: 30px; }
+        .reveal h3 { font-size: 1.4em; color: var(--accent-cyan); }
+        .reveal p, .reveal li { line-height: 1.6; color: var(--text-muted); }
+        .reveal strong { color: var(--text-main); font-weight: 600; }
+        .reveal em { color: var(--accent-purple); font-style: normal; }
+
+        /* --- Grid Layouts --- */
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: center; }
+        .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 30px; }
+
+        .text-left { text-align: left; }
+        .small { font-size: 0.8em; }
+
+        /* --- Infographic Process Flow --- */
+        .process-flow {
+            display: flex;
+            justify-content: space-between;
+            margin: 50px 0;
+            position: relative;
+        }
+        
+        .process-step {
+            flex: 1;
+            margin: 0 10px;
+            padding: 20px 10px;
+            background: linear-gradient(180deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .process-step.active {
+            border-color: var(--accent-purple);
+            box-shadow: 0 0 20px rgba(168, 85, 247, 0.2);
+        }
+
+        .step-num {
+            background: var(--primary-bg);
+            border: 2px solid var(--accent-cyan);
+            color: var(--accent-cyan);
+            width: 40px; height: 40px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 15px auto;
+            font-weight: bold;
+        }
+
+        /* --- Reasoning Challenge Styles --- */
+        .challenge-card {
+            background: linear-gradient(135deg, rgba(30,41,59,0.9) 0%, rgba(15,23,42,0.95) 100%);
+            border-left: 5px solid var(--accent-purple);
+            padding: 30px;
+            border-radius: 0 16px 16px 0;
+            text-align: left;
+            margin: 20px auto;
+        }
+
+        .question-box {
+            color: var(--text-main);
+            font-size: 1.2em;
+            margin-bottom: 20px;
+        }
+
+        .answer-box {
+            background: rgba(74, 222, 128, 0.1);
+            border: 1px solid var(--success);
+            padding: 20px;
+            border-radius: 12px;
+            color: var(--success);
+            display: none; /* Hidden by default */
+            margin-top: 20px;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .answer-box.visible { display: block; }
+
+        .reveal-btn {
+            background: var(--accent-gradient);
+            border: none;
+            padding: 10px 24px;
+            color: white;
+            border-radius: 30px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.9em;
+            margin-top: 10px;
+        }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* --- Diagram Placeholders --- */
+        .diagram-container {
+            width: 100%;
+            height: 500px;
+            border: 2px dashed var(--glass-border);
+            border-radius: 16px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: rgba(0,0,0,0.2);
+            position: relative;
+        }
+
+        .diagram-container img {
+            max-width: 95%; max-height: 95%; object-fit: contain;
+        }
+
+        .diagram-label {
+            position: absolute; bottom: 15px; right: 15px;
+            background: rgba(0,0,0,0.7); padding: 5px 12px;
+            border-radius: 20px; font-size: 0.7em; color: var(--text-muted);
+        }
+
+        /* Light Theme overrides if needed */
+        body.light-theme {
+            --primary-bg: #f8fafc;
+            --glass-bg: rgba(255, 255, 255, 0.8);
+            --glass-border: rgba(0, 0, 0, 0.1);
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="header-bar">
+        <div class="header-title">ENGSE207: Software Architecture</div>
+        <div class="ui-controls">
+            <button onclick="changeFontSize(-2)">A-</button>
+            <button onclick="changeFontSize(2)">A+</button>
+            <button id="theme-btn" onclick="toggleTheme()">🌗 Theme</button>
+            <button onclick="toggleFullScreen()">⛶ Full</button>
+        </div>
+    </div>
+
+    <div class="reveal">
+        <div class="slides">
+
+            <section>
+                <div class="glass-panel" style="padding: 60px;">
+                    <div style="font-size: 1.2rem; color: var(--accent-cyan); letter-spacing: 3px; margin-bottom: 10px;">WEEK 6</div>
+                    <h1>Architectural Design Process & ADD-Lite</h1>
+                    <div style="width: 80px; height: 5px; background: var(--accent-gradient); margin: 30px auto; border-radius: 5px;"></div>
+                    <p>กระบวนการออกแบบสถาปัตยกรรมและ Attribute-Driven Design</p>
+                    <p style="font-size: 0.8em; margin-top: 40px; opacity: 0.6;">อาจารย์ผู้สอน: นายธนิต เกตุแก้ว</p>
+                </div>
+            </section>
+
+            <section>
+                <h2>ทำไมเราต้องมี "กระบวนการ" ออกแบบ?</h2>
+                <div class="grid-2">
+                    <div class="glass-panel text-left fragment fade-up">
+                        <h3 style="color: var(--danger);">🛑 The Guesswork</h3>
+                        <p>ถ้าวาด Diagram ตามใจชอบ:</p>
+                        <ul>
+                            <li>ไม่มีเหตุผลรองรับ (Why did we choose this?)</li>
+                            <li>แก้ปัญหา Performance ไม่ได้จริง</li>
+                            <li>ทีมงงว่าทำไมถึงตัดสินใจแบบนี้</li>
+                        </ul>
+                    </div>
+                    <div class="glass-panel text-left fragment fade-up">
+                        <h3 style="color: var(--success);">✅ The Engineered Way</h3>
+                        <p>ADD-Lite ช่วยให้:</p>
+                        <ul>
+                            <li><strong>Systematic:</strong> คิดเป็นขั้นเป็นตอน</li>
+                            <li><strong>Driven by Quality:</strong> ออกแบบจาก "ความต้องการคุณภาพ"</li>
+                            <li><strong>Traceable:</strong> ย้อนกลับมาดูเหตุผลได้</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <section>
+                <h3>วัตถุประสงค์การเรียนรู้ (CLOs)</h3>
+                <div class="glass-panel text-left small">
+                    <div class="grid-3">
+                        <div>
+                            <h4 style="color: var(--accent-cyan);">1. Process</h4>
+                            <p>เข้าใจขั้นตอน ADD-Lite ตั้งแต่ Req. จนได้ Design</p>
+                        </div>
+                        <div>
+                            <h4 style="color: var(--accent-purple);">2. Drivers to Design</h4>
+                            <p>แปลง Quality Attributes ให้เป็น Architecture Patterns</p>
+                        </div>
+                        <div>
+                            <h4 style="color: var(--warning);">3. Decisions</h4>
+                            <p>วิเคราะห์ Trade-offs และเขียน ADR บันทึกผล</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section>
+                <h2>ทบทวน: The C4 Model (Week 5)</h2>
+                <p>สัปดาห์ที่แล้วเราเรียนเรื่อง <strong>"การวาด" (Communicating)</strong></p>
+                <div class="process-flow">
+                    <div class="process-step">
+                        <div class="step-num">C1</div>
+                        <p><strong>Context</strong><br>ระบบอยู่ตรงไหนในโลก</p>
+                    </div>
+                    <div class="process-step">
+                        <div class="step-num">C2</div>
+                        <p><strong>Container</strong><br>มี Server/App อะไรบ้าง</p>
+                    </div>
+                    <div class="process-step">
+                        <div class="step-num">C3</div>
+                        <p><strong>Component</strong><br>ไส้ในทำงานยังไง</p>
+                    </div>
+                </div>
+                <div class="glass-panel fragment">
+                    <p>สัปดาห์นี้เราจะเรียนวิธี <strong>"คิด" (Reasoning)</strong> ว่า...<br> <em style="font-size:1.2em">"ทำไมต้องวาด Container แบบนี้? ทำไมต้องใช้ Database ตัวนี้?"</em></p>
+                </div>
+            </section>
+
+            <section>
+                <h2>1.1 Architectural Design Process</h2>
+                <p>เราจะใช้วิธี <strong>ADD-Lite (Attribute-Driven Design Lite)</strong></p>
+                <div class="diagram-container">
+                    <p style="color: var(--text-muted); text-align: center;">
+                        [Insert Image: week6_diagram1_process.drawio]<br>
+                        แผนภาพแสดง 5 ขั้นตอน: Inputs -> Drivers -> Candidates -> Evaluate -> Document
+                    </p>
+                    <div class="diagram-label">Figure 1: ADD-Lite Process</div>
+                </div>
+            </section>
+
+            <section>
+                <h3>Step 1: Identify Drivers</h3>
+                <p>สิ่งที่ "ขับเคลื่อน" สถาปัตยกรรม ไม่ได้มีแค่ฟีเจอร์</p>
+                <div class="grid-2">
+                    <div class="text-left">
+                        <h4 style="color: var(--text-muted);">1. Functional Requirements</h4>
+                        <p class="small">ระบบ "ทำอะไร" (Features)</p>
+                        <div style="border-bottom: 2px solid var(--text-muted); margin: 10px 0;"></div>
+                        <h4 style="color: var(--accent-cyan);">2. Quality Attributes (QA)</h4>
+                        <p class="small">ระบบ "ดีแค่ไหน" (เร็ว, ปลอดภัย, รองรับคนเยอะ)</p>
+                        <p style="color: var(--accent-cyan);">*นี่คือพระเอกของ ADD*</p>
+                    </div>
+                    <div class="text-left">
+                        <h4 style="color: var(--warning);">3. Constraints</h4>
+                        <p class="small">ข้อจำกัด (งบ, เวลา, ทีม, Tech Stack)</p>
+                        <div style="border-bottom: 2px solid var(--text-muted); margin: 10px 0;"></div>
+                        <h4 style="color: var(--text-muted);">4. Assumptions</h4>
+                        <p class="small">สมมติฐานที่เราคาดเดา</p>
+                    </div>
+                </div>
+            </section>
+
+            <section>
+                <h3>Quality Attribute Scenarios</h3>
+                <p>อย่าพูดลอยๆ ว่า "ขอระบบเร็วๆ" ต้องระบุให้ชัดเจน</p>
+                <div class="glass-panel text-left" style="border-left: 5px solid var(--success);">
+                    <h4>✅ Good Scenario Structure</h4>
+                    <ul class="small">
+                        <li><strong>Source:</strong> User (จำนวน 10,000 คน)</li>
+                        <li><strong>Stimulus:</strong> เข้าใช้งานช่วง Flash Sale</li>
+                        <li><strong>Artifact:</strong> หน้า Product Page</li>
+                        <li><strong>Response:</strong> โหลดข้อมูลเสร็จ</li>
+                        <li><strong>Measure:</strong> ภายใน 2 วินาที (95th percentile)</li>
+                    </ul>
+                </div>
+            </section>
+
+            <section>
+                <h3>Step 2 & 3: Candidates & Patterns</h3>
+                <p>แปลง Drivers ให้เป็น Architecture Patterns</p>
+                <div class="diagram-container" style="height: 450px;">
+                    <p style="color: var(--text-muted); text-align: center;">
+                        [Insert Image: week6_diagram2_add_lite.drawio]<br>
+                        แผนภาพแสดง Mapping จาก QA -> Tactics -> Architecture Elements
+                    </p>
+                    <div class="diagram-label">Figure 2: Drivers to Concepts</div>
+                </div>
+            </section>
+
+            <section>
+                <h3>ตัวอย่างการเลือก Pattern</h3>
+                <div class="grid-3 small">
+                    <div class="glass-panel">
+                        <h4>Driver: Scalability</h4>
+                        <p>ต้องรองรับ User 1 ล้านคน</p>
+                        <hr style="opacity: 0.2;">
+                        <p><strong>Pattern:</strong><br>Microservices + Load Balancer</p>
+                    </div>
+                    <div class="glass-panel">
+                        <h4>Driver: Time-to-Market</h4>
+                        <p>ต้องเสร็จใน 2 เดือน</p>
+                        <hr style="opacity: 0.2;">
+                        <p><strong>Pattern:</strong><br>Modular Monolith</p>
+                    </div>
+                    <div class="glass-panel">
+                        <h4>Driver: Availability</h4>
+                        <p>ห้ามล่ม (99.99%)</p>
+                        <hr style="opacity: 0.2;">
+                        <p><strong>Pattern:</strong><br>Active-Active Failover</p>
+                    </div>
+                </div>
+            </section>
+
+            <section>
+                <h2>Step 4: Evaluate Trade-offs</h2>
+                <h3 style="color: var(--warning);">"There is no Silver Bullet"</h3>
+                <p>ทุกการตัดสินใจมีราคาที่ต้องจ่าย</p>
+                <div class="diagram-container">
+                    <p style="color: var(--text-muted); text-align: center;">
+                        [Insert Image: week6_diagram3_comparison.drawio]<br>
+                        ตารางเปรียบเทียบ Candidate A vs B (Pros/Cons)
+                    </p>
+                    <div class="diagram-label">Figure 3: Architecture Comparison</div>
+                </div>
+            </section>
+
+            <section>
+                <h3>Step 5: Document (ADR)</h3>
+                <p>เมื่อเลือกแล้ว ต้องบันทึกด้วย <strong>Architecture Decision Record</strong></p>
+                <div class="glass-panel text-left small" style="font-family: monospace;">
+                    <span style="color: var(--text-muted);"># ADR-001: Use Modular Monolith</span><br><br>
+                    <strong>Context:</strong> ทีมมี 5 คน, เวลา 3 เดือน, งบจำกัด<br>
+                    <strong>Decision:</strong> เลือก Modular Monolith (Node.js)<br>
+                    <strong>Consequences:</strong><br>
+                    <span style="color: var(--success);">+ Setup เร็ว, Deploy ง่าย</span><br>
+                    <span style="color: var(--danger);">- Scale ยากในอนาคต (ยอมรับได้ในเฟสนี้)</span>
+                </div>
+            </section>
+
+            <section data-background-gradient="linear-gradient(to bottom, #0f172a, #1e1b4b)">
+                <h1>Design Reasoning Challenge</h1>
+                <h3>ฝึกคิดแบบ Architect: "Flash Sale System"</h3>
+                <p>เราจะลองออกแบบระบบจริงไปพร้อมๆ กัน ทีละขั้นตอน</p>
+                <p class="small" style="opacity: 0.7;">(10 Slides)</p>
+            </section>
+
+            <section>
+                <h3>1. The Context (โจทย์)</h3>
+                <div class="glass-panel text-left">
+                    <p>คุณได้รับมอบหมายให้ออกแบบระบบ <strong>"Flash Sale"</strong> สำหรับเว็บ E-Commerce</p>
+                    <ul>
+                        <li><strong>สินค้า:</strong> iPhone 15 ราคา 99 บาท (มีแค่ 100 เครื่อง)</li>
+                        <li><strong>ผู้ใช้งาน:</strong> คาดว่าจะมีคนรอกด <strong>100,000 คน</strong> พร้อมกันตอน 12.00 น.</li>
+                        <li><strong>ทีมงาน:</strong> มีเวลา 1 เดือน, ทีม Backend 3 คน</li>
+                        <li><strong>เป้าหมาย:</strong> ระบบห้ามล่ม, ไม่ขายเกิน (Over-sell)</li>
+                    </ul>
+                </div>
+            </section>
+
+            <section>
+                <h3>2. Identify Drivers</h3>
+                <div class="challenge-card">
+                    <div class="question-box">
+                        🤔 <strong>คำถาม:</strong> จากโจทย์นี้ อะไรคือ <strong>Architectural Drivers</strong> ที่สำคัญที่สุด 2 อันดับแรก? (Quality Attributes)
+                    </div>
+                    <button class="reveal-btn" onclick="reveal('ans-drivers')">เฉลยแนวคิด</button>
+                    <div id="ans-drivers" class="answer-box">
+                        <p><strong>1. Scalability (Extreme):</strong> ต้องรองรับ Traffic พุ่งสูง (Spike) แบบ 100x ในเวลาสั้นๆ</p>
+                        <p><strong>2. Data Consistency:</strong> สำคัญมาก ห้ามขายเกิน (Over-sell) เด็ดขาด เพราะมีของแค่ 100 ชิ้น</p>
+                    </div>
+                </div>
+            </section>
+
+            <section>
+                <h3>3. Define Scenario</h3>
+                <p>เราต้องทำให้คำว่า "Scalability" วัดผลได้</p>
+                <div class="challenge-card">
+                    <div class="question-box">
+                        🤔 <strong>คำถาม:</strong> ลองเขียน Response Measure สำหรับเหตุการณ์ "คนแห่เข้ามากดซื้อตอนเที่ยงตรง"
+                    </div>
+                    <button class="reveal-btn" onclick="reveal('ans-scenario')">เฉลยแนวคิด</button>
+                    <div id="ans-scenario" class="answer-box">
+                        <p><strong>Scenario:</strong> เมื่อมี Request เข้ามา 100,000 req/sec ณ เวลา 12:00:00</p>
+                        <p><strong>Response Measure:</strong> ระบบต้องตอบสนอง (Success หรือ Sold out) ภายใน <strong>2 วินาที</strong> โดย Error Rate < 0.1%</p>
+                    </div>
+                </div>
+            </section>
+
+            <section>
+                <h3>4. Candidate Architectures</h3>
+                <p>ทีมเสนอมา 2 แบบ ช่วยกันวิเคราะห์หน่อยครับ</p>
+                <div class="grid-2 small">
+                    <div class="glass-panel">
+                        <h4 style="color: var(--accent-cyan);">Option A: Strong Consistency</h4>
+                        <p>ใช้ Relational DB (PostgreSQL) + Row Lock</p>
+                        <p><em>"ล็อคแถวสินค้าไว้ ใครมาก่อนได้ก่อน ปลอดภัยสุดๆ"</em></p>
+                    </div>
+                    <div class="glass-panel">
+                        <h4 style="color: var(--accent-purple);">Option B: Async / Eventual</h4>
+                        <p>ใช้ Redis Queue + Async Worker</p>
+                        <p><em>"รับคำสั่งซื้อลงคิวก่อน แล้วค่อยๆ ตัดสต็อกทีหลัง"</em></p>
+                    </div>
+                </div>
+            </section>
+
+            <section>
+                <h3>5. Trade-off Analysis</h3>
+                <div class="challenge-card">
+                    <div class="question-box">
+                        🤔 <strong>คำถาม:</strong> ถ้าเราเลือก <strong>Option A (Database Lock)</strong> จะเกิดปัญหาอะไรขึ้นกับ User 100,000 คน?
+                    </div>
+                    <button class="reveal-btn" onclick="reveal('ans-tradeoff1')">เฉลยแนวคิด</button>
+                    <div id="ans-tradeoff1" class="answer-box">
+                        <p style="color: var(--danger);">💀 <strong>Database Dead/Slow:</strong></p>
+                        <p>การ Lock Row 1 แถว สำหรับ 100,000 requests จะทำให้ Database ทำงานเป็น Sequential (ทีละคน) คนหลังๆ จะ Timeout หรือระบบล่มไปเลย (Connection Pool เต็ม)</p>
+                    </div>
+                </div>
+            </section>
+
+            <section>
+                <h3>6. Trade-off Analysis (Cont.)</h3>
+                <div class="challenge-card">
+                    <div class="question-box">
+                        🤔 <strong>คำถาม:</strong> แล้วถ้าเลือก <strong>Option B (Redis Queue)</strong> ข้อเสียคืออะไร?
+                    </div>
+                    <button class="reveal-btn" onclick="reveal('ans-tradeoff2')">เฉลยแนวคิด</button>
+                    <div id="ans-tradeoff2" class="answer-box">
+                        <p style="color: var(--warning);">⚠️ <strong>User Experience (UX):</strong></p>
+                        <p>User จะไม่รู้ผลทันที (Eventual Consistency) อาจเห็นว่า "กำลังดำเนินการ" แล้วมารู้ทีหลังว่า "ไม่ได้ของ" แต่ระบบจะไม่ล่ม และรองรับ Traffic ได้มหาศาล</p>
+                    </div>
+                </div>
+            </section>
+
+            <section>
+                <h3>7. Making the Decision</h3>
+                <p>กลับไปที่ Driver หลัก: <strong>System must not crash (Availability)</strong> & <strong>100k Users (Scalability)</strong></p>
+                <div class="glass-panel text-left fragment">
+                    <h4>🏆 Winner: Option B (Redis Queue)</h4>
+                    <p>เพราะ Option A มีความเสี่ยงสูงมากที่ระบบจะล่ม (Availability Risk) ซึ่งยอมรับไม่ได้ในงาน Flash Sale</p>
+                </div>
+            </section>
+
+            <section>
+                <h3>8. The Final Design</h3>
+                <p>โครงสร้างของระบบจะเป็นดังนี้:</p>
+                <div class="process-flow small">
+                    <div class="process-step">
+                        <div class="step-num">1</div>
+                        User กดซื้อ
+                    </div>
+                    <div style="align-self:center;">➜</div>
+                    <div class="process-step">
+                        <div class="step-num">2</div>
+                        <strong>Redis</strong><br>รับ Request ลง Queue (เร็วมาก)
+                    </div>
+                    <div style="align-self:center;">➜</div>
+                    <div class="process-step">
+                        <div class="step-num">3</div>
+                        <strong>Worker</strong><br>ดึง Queue มาตัด Stock ทีละรายการ
+                    </div>
+                </div>
+            </section>
+
+            <section>
+                <h3>9. Documenting (ADR)</h3>
+                <div class="code-window glass-panel text-left small" style="font-family: monospace;">
+                    <strong>Decision:</strong> Use Redis Queue for Flash Sale<br><br>
+                    <strong>Rationale:</strong><br>
+                    - Direct DB lock cannot handle 100k concurrent reqs.<br>
+                    - Redis handles high throughput with low latency.<br><br>
+                    <strong>Consequences:</strong><br>
+                    - UX ต้องเปลี่ยนเป็น Async (แสดงสถานะ "รอผล")<br>
+                    - ต้องเพิ่ม Worker Service มา process queue
+                </div>
+            </section>
+
+            <section>
+                <h3>10. บทสรุปจากเคสนี้</h3>
+                <ul>
+                    <li class="fragment">Architecture ไม่ใช่แค่เลือกเครื่องมือ (Redis vs SQL)</li>
+                    <li class="fragment">แต่คือการเข้าใจ <strong>Behavior</strong> ของระบบภายใต้ Load</li>
+                    <li class="fragment">การเลือก Architecture คือการเลือก <strong>"ปัญหาที่คุณยอมรับได้"</strong> (ยอมรับ UX ที่ซับซ้อนขึ้น เพื่อแลกกับ ระบบไม่ล่ม)</li>
+                </ul>
+            </section>
+
+            <section>
+                <h2>สรุปบทเรียนวันนี้</h2>
+                <div class="grid-2">
+                    <div class="glass-panel">
+                        <h4>🧠 Process</h4>
+                        <p>Drivers -> Scenarios -> Candidates -> Trade-offs -> Decision</p>
+                    </div>
+                    <div class="glass-panel">
+                        <h4>📝 Output</h4>
+                        <p>C4 Diagrams + ADR (หลักฐานการตัดสินใจ)</p>
+                    </div>
+                </div>
+            </section>
+
+            <section>
+                <h3>🔮 สัปดาห์หน้า (Week 7)</h3>
+                <h2>Cloud Architecture & Containerization</h2>
+                <p>เมื่อได้ Design แล้ว จะเอามันไปรันบน Cloud ยังไง?</p>
+                <ul>
+                    <li>Docker & Kubernetes</li>
+                    <li>Scalability on Cloud (Auto-scaling)</li>
+                    <li>Managed Services vs Self-hosted</li>
+                </ul>
+            </section>
+
+            <section>
+                <h1>Q & A</h1>
+                <p>ขอบคุณที่ตั้งใจเรียนครับ</p>
+            </section>
+
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/5.0.4/reveal.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/5.0.4/plugin/highlight/highlight.min.js"></script>
+    
+    <script>
+        Reveal.initialize({
+            hash: true,
+            center: true,
+            transition: 'convex',
+            backgroundTransition: 'fade',
+            plugins: [ RevealHighlight ]
+        });
+
+        // Toggle Theme Logic
+        function toggleTheme() {
+            const body = document.body;
+            body.classList.toggle('light-theme');
+            const btn = document.getElementById('theme-btn');
+            
+            if(body.classList.contains('light-theme')) {
+                document.getElementById('theme').href = "https://cdnjs.cloudflare.com/ajax/libs/reveal.js/5.0.4/theme/white.min.css";
+                btn.innerText = "🌗 Dark";
+                document.documentElement.style.setProperty('--primary-bg', '#f8fafc');
+                document.documentElement.style.setProperty('--text-main', '#1e293b');
+            } else {
+                document.getElementById('theme').href = "https://cdnjs.cloudflare.com/ajax/libs/reveal.js/5.0.4/theme/black.min.css";
+                btn.innerText = "🌗 Light";
+                document.documentElement.style.setProperty('--primary-bg', '#0f172a');
+                document.documentElement.style.setProperty('--text-main', '#f1f5f9');
+            }
+        }
+
+        // Font Size Logic
+        function changeFontSize(val) {
+            let root = document.documentElement;
+            let current = parseInt(getComputedStyle(root).getPropertyValue('--base-font-size'));
+            root.style.setProperty('--base-font-size', (current + val) + "px");
+        }
+
+        function toggleFullScreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+            }
+        }
+
+        // Reveal Answer Logic
+        function reveal(id) {
+            document.getElementById(id).classList.add('visible');
+        }
+    </script>
+</body>
+</html>
