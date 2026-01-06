@@ -1,0 +1,1298 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Week 5: Network Security - ENGSE214 (SOC Edition)</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@300;400;600;700&family=IBM+Plex+Mono:wght@400;600&family=Sarabun:wght@300;400;600&display=swap"
+        rel="stylesheet">
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            /* SOC Theme Colors */
+            --bg-color: #050a14;
+            --panel-bg: rgba(16, 28, 45, 0.85);
+            --text-main: #c9d1d9;
+            --text-highlight: #ffffff;
+            --accent-primary: #00f2ff;
+            /* Cyan Neon */
+            --accent-secondary: #0051ff;
+            /* Deep Blue */
+            --alert-color: #ff3333;
+            --success-color: #00ff9d;
+            --warning-color: #ffbf00;
+            --grid-line: rgba(0, 242, 255, 0.1);
+
+            --font-head: 'Chakra Petch', sans-serif;
+            --font-body: 'Sarabun', sans-serif;
+            --font-code: 'IBM Plex Mono', monospace;
+
+            --slide-width: 1600px;
+            --slide-height: 900px;
+        }
+
+        body.light-mode {
+            --bg-color: #f0f4f8;
+            --panel-bg: rgba(255, 255, 255, 0.95);
+            --text-main: #333333;
+            --text-highlight: #000000;
+            --accent-primary: #0056b3;
+            --grid-line: rgba(0, 0, 0, 0.05);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #000;
+            color: var(--text-main);
+            font-family: var(--font-body);
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-image:
+                linear-gradient(var(--grid-line) 1px, transparent 1px),
+                linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+            background-size: 50px 50px;
+        }
+
+        /* Slide Container */
+        #deck {
+            width: var(--slide-width);
+            height: var(--slide-height);
+            background: var(--bg-color);
+            position: relative;
+            box-shadow: 0 0 100px rgba(0, 242, 255, 0.15);
+            border: 1px solid rgba(0, 242, 255, 0.3);
+            overflow: hidden;
+            transform-origin: center center;
+        }
+
+        /* HUD Overlay */
+        .hud-top-left {
+            position: absolute;
+            top: 20px;
+            left: 30px;
+            font-family: var(--font-code);
+            color: var(--accent-primary);
+            font-size: 0.8rem;
+            z-index: 100;
+        }
+
+        .hud-top-right {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            font-family: var(--font-code);
+            color: var(--text-main);
+            font-size: 0.8rem;
+            z-index: 100;
+        }
+
+        .hud-bottom-bar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 5px;
+            background: rgba(255, 255, 255, 0.1);
+            z-index: 100;
+        }
+
+        .hud-progress {
+            height: 100%;
+            background: var(--accent-primary);
+            width: 0%;
+            transition: width 0.3s;
+            box-shadow: 0 0 10px var(--accent-primary);
+        }
+
+        /* Slide Content */
+        .slide {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            padding: 80px 100px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.4s ease, transform 0.4s ease;
+            transform: scale(1.02);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .slide.active {
+            opacity: 1;
+            pointer-events: all;
+            transform: scale(1);
+            z-index: 10;
+        }
+
+        /* Typography */
+        h1,
+        h2,
+        h3 {
+            font-family: var(--font-head);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        h1 {
+            font-size: 4rem;
+            color: var(--accent-primary);
+            margin-bottom: 1rem;
+            text-shadow: 0 0 20px rgba(0, 242, 255, 0.5);
+        }
+
+        h2 {
+            font-size: 2.5rem;
+            color: var(--text-highlight);
+            border-left: 5px solid var(--accent-primary);
+            padding-left: 20px;
+            margin-bottom: 2rem;
+        }
+
+        h3 {
+            font-size: 1.8rem;
+            color: var(--accent-primary);
+            margin-bottom: 1rem;
+            margin-top: 1rem;
+        }
+
+        p,
+        li {
+            font-size: 1.4rem;
+            line-height: 1.6;
+            margin-bottom: 1rem;
+        }
+
+        strong {
+            color: var(--accent-primary);
+        }
+
+        ul {
+            margin-left: 2rem;
+        }
+
+        /* Layouts */
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            height: 100%;
+        }
+
+        .grid-3 {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 30px;
+        }
+
+        .flex-center {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            height: 100%;
+        }
+
+        /* Components */
+        .card {
+            background: var(--panel-bg);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 30px;
+            border-radius: 4px;
+            backdrop-filter: blur(10px);
+            height: 100%;
+            position: relative;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--accent-primary), transparent);
+        }
+
+        .code-block {
+            background: #0d1117;
+            color: #e6edf3;
+            font-family: var(--font-code);
+            padding: 20px;
+            border-radius: 6px;
+            border: 1px solid #30363d;
+            font-size: 1.1rem;
+            white-space: pre-wrap;
+            position: relative;
+            margin: 1rem 0;
+            overflow-x: auto;
+        }
+
+        .code-block::before {
+            content: 'TERMINAL';
+            position: absolute;
+            top: 0;
+            right: 0;
+            background: #30363d;
+            color: #fff;
+            font-size: 0.7rem;
+            padding: 2px 8px;
+        }
+
+        .cmd {
+            color: var(--success-color);
+        }
+
+        .comment {
+            color: #8b949e;
+            font-style: italic;
+        }
+
+        /* Diagrams Placeholder Box */
+        .diagram-box {
+            width: 100%;
+            height: 100%;
+            min-height: 400px;
+            border: 2px dashed var(--accent-primary);
+            background: rgba(0, 242, 255, 0.05);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: var(--accent-primary);
+            margin: 1rem 0;
+            position: relative;
+        }
+
+        .diagram-box img {
+            max-width: 95%;
+            max-height: 95%;
+            object-fit: contain;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+        }
+
+        .diagram-label {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            background: var(--bg-color);
+            padding: 5px 10px;
+            border: 1px solid var(--accent-primary);
+            font-size: 0.9rem;
+        }
+
+        /* Controls */
+        #controls {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            background: rgba(0, 0, 0, 0.8);
+            border: 1px solid var(--accent-primary);
+            border-radius: 50px;
+            padding: 10px 20px;
+            display: flex;
+            gap: 15px;
+        }
+
+        .btn-ctrl {
+            background: none;
+            border: none;
+            color: #fff;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .btn-ctrl:hover {
+            color: var(--accent-primary);
+            text-shadow: 0 0 10px var(--accent-primary);
+        }
+
+        /* Animation */
+        .blink {
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            50% {
+                opacity: 0;
+            }
+        }
+
+        /* --- ใส่เพิ่มในส่วน <style> --- */
+
+        .zoomable-image {
+            max-width: 95%;
+            max-height: 85%;
+            cursor: zoom-in;
+            /* เปลี่ยนเมาส์เป็นรูปแว่นขยาย */
+            transition: all 0.3s ease;
+            object-fit: contain;
+        }
+
+        /* สถานะเมื่อรูปถูกขยาย (Zoomed) */
+        .zoomable-image.zoomed {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            max-width: none;
+            max-height: none;
+            background-color: rgba(0, 0, 0, 0.95);
+            /* พื้นหลังสีดำโปร่งแสง */
+            z-index: 9999;
+            /* ให้ลอยอยู่เหนือทุกอย่าง */
+            padding: 20px;
+            cursor: zoom-out;
+            /* เปลี่ยนเมาส์เป็นรูปย่อ */
+            box-sizing: border-box;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="deck">
+        <div class="hud-top-left">ENGSE214 :: CYBER SECURITY :: MODULE 05</div>
+        <div class="hud-top-right">SYS.STATUS: SECURE | <span id="clock">00:00:00</span></div>
+        <div class="hud-bottom-bar">
+            <div class="hud-progress" id="progressBar"></div>
+        </div>
+
+        <div class="slide active">
+            <div class="flex-center">
+                <div
+                    style="border: 2px solid var(--accent-primary); padding: 40px 80px; position: relative; background: rgba(0,0,0,0.5);">
+                    <span
+                        style="position: absolute; top: -15px; left: 20px; background: var(--bg-color); padding: 0 10px; color: var(--accent-primary);">WEEK
+                        05</span>
+                    <h1>Network Security & <br>Packet Filtering</h1>
+                    <p style="font-size: 1.8rem; color: var(--text-main);">ความมั่นคงปลอดภัยทางเครือข่ายพื้นฐาน</p>
+                    <div style="margin-top: 40px; display: flex; justify-content: center; gap: 40px;">
+                        <div><i class="fas fa-shield-alt fa-2x" style="color:var(--success-color)"></i><br>Defense</div>
+                        <div><i class="fas fa-network-wired fa-2x" style="color:var(--accent-primary)"></i><br>Network
+                        </div>
+                        <div><i class="fas fa-filter fa-2x" style="color:var(--warning-color)"></i><br>Filtering</div>
+                    </div>
+                </div>
+                <p style="margin-top: 50px; font-family: var(--font-code);">LECTURER: THANIT KETKAEW</p>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>📚 Review: Week 3 - Vulnerabilities</h2>
+            <div class="grid-2">
+                <div class="card">
+                    <h3><i class="fas fa-bug"></i> Core Concepts</h3>
+                    <ul>
+                        <li><strong>CVE/NVD:</strong> ฐานข้อมูลช่องโหว่สากล (Common Vulnerabilities and Exposures)</li>
+                        <li><strong>CVSS:</strong> ระบบคะแนนความรุนแรง (0.0 - 10.0)</li>
+                        <li><strong>Risk:</strong> Threat × Vulnerability × Impact</li>
+                    </ul>
+                </div>
+                <div class="card" style="display:flex; justify-content:center; align-items:center;">
+                    <div style="text-align:center;">
+                        <div style="font-size:5rem; color:var(--alert-color); font-weight:bold;">CVSS</div>
+                        <p>Score Metric</p>
+                        <div
+                            style="width:100%; height:20px; background:linear-gradient(90deg, green, yellow, red); border-radius:10px;">
+                        </div>
+                        <div style="display:flex; justify-content:space-between; font-size:0.8rem;">
+                            <span>Low</span><span>Critical</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>📚 Review: Week 4 - OS Security</h2>
+            <div class="grid-2">
+                <div class="card">
+                    <h3><i class="fas fa-desktop"></i> OS Hardening</h3>
+                    <ul>
+                        <li><strong>Access Control:</strong> Authentication & Authorization</li>
+                        <li><strong>Least Privilege:</strong> ให้สิทธิ์เท่าที่จำเป็น</li>
+                        <li><strong>Hardening Steps:</strong>
+                            <ul>
+                                <li>แยก User Admin/Normal</li>
+                                <li>Password Policy</li>
+                                <li>ปิด Service ที่ไม่ใช้</li>
+                            </ul>
+                        </li>
+                    </ul>
+                </div>
+                <div class="code-block" style="display:flex; align-items:center;">
+                    <div style="width:100%;">
+                        <span class="comment"># สัปดาห์ที่แล้ว: ป้องกันที่ Host (เครื่อง)</span><br>
+                        <span class="cmd">$ sudo ufw status</span><br>
+                        <span class="cmd">$ sudo passwd user1</span><br><br>
+                        <span class="comment"># สัปดาห์นี้: เราจะป้องกันที่ NETWORK (เครือข่าย)</span><br>
+                        <span style="color:var(--accent-primary)">>> CONNECTING TO GLOBAL NETWORK...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>🎯 Learning Objectives (CLO2-4)</h2>
+            <div class="card" style="padding: 50px;">
+                <ul style="font-size: 1.6rem; line-height: 2;">
+                    <li><i class="fas fa-check-circle" style="color:var(--success-color)"></i> อธิบายหลักการ
+                        <strong>Network Security</strong> พื้นฐานได้
+                    </li>
+                    <li><i class="fas fa-check-circle" style="color:var(--success-color)"></i> แยกความแตกต่าง
+                        <strong>Firewall, IDS, และ IPS</strong> ได้
+                    </li>
+                    <li><i class="fas fa-check-circle" style="color:var(--success-color)"></i> เข้าใจการทำงานของ
+                        <strong>VPN</strong> และ Tunneling
+                    </li>
+                    <li><i class="fas fa-check-circle" style="color:var(--success-color)"></i> ออกแบบ <strong>Network
+                            Segmentation</strong> และ DMZ เบื้องต้น</li>
+                    <li><i class="fas fa-check-circle" style="color:var(--success-color)"></i> ใช้
+                        <strong>Wireshark</strong> วิเคราะห์ packet พื้นฐาน
+                    </li>
+                    <li><i class="fas fa-check-circle" style="color:var(--success-color)"></i> สร้าง <strong>Firewall
+                            Rules</strong> บน Linux/Windows ได้</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>🌐 Part 1: Why Network Security?</h2>
+            <p>ในยุค <strong>Connected World</strong> อุปกรณ์ทุกอย่างเชื่อมต่อกัน ความปลอดภัยระดับเครื่อง (OS)
+                ไม่เพียงพอ</p>
+
+            <div class="diagram-box">
+                <img src="images/Week5_Diagram-Network_Security_Overview.png" alt="Network Security Overview" class="zoomable-image"
+                    onclick="this.classList.toggle('zoomed')">
+
+                <div class="diagram-label">
+                    Diagram 1: Network Security Overview (Click image to zoom)
+                </div>
+            </div>
+
+
+        </div>
+
+        <div class="slide">
+            <h2>🛡️ The 6 Layers of Network Security</h2>
+            <div
+                style="display:flex; flex-direction:column-reverse; gap:10px; height:80%; justify-content:center; align-items:center;">
+                <div style="width:600px; padding:15px; background:#4a148c; text-align:center; border:1px solid #fff;">6.
+                    Monitoring & Logging (SIEM)</div>
+                <div style="width:650px; padding:15px; background:#311b92; text-align:center; border:1px solid #fff;">5.
+                    Encryption (VPN, TLS)</div>
+                <div style="width:700px; padding:15px; background:#1a237e; text-align:center; border:1px solid #fff;">4.
+                    Threat Detection (Firewall, IDS/IPS)</div>
+                <div style="width:750px; padding:15px; background:#0d47a1; text-align:center; border:1px solid #fff;">3.
+                    Access Control (NAC, IAM)</div>
+                <div style="width:800px; padding:15px; background:#01579b; text-align:center; border:1px solid #fff;">2.
+                    Network Architecture (Segmentation, DMZ)</div>
+                <div style="width:850px; padding:15px; background:#006064; text-align:center; border:1px solid #fff;">1.
+                    Physical Security (Locks, CCTV)</div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>⚠️ Common Network Threats</h2>
+            <div class="grid-3">
+                <div class="card">
+                    <i class="fas fa-satellite-dish fa-3x" style="color:var(--warning-color); margin-bottom:20px;"></i>
+                    <h3>Sniffing</h3>
+                    <p>การดักจับข้อมูลที่ส่งผ่านเครือข่าย (เช่น ดัก Password plain text)</p>
+                </div>
+                <div class="card">
+                    <i class="fas fa-user-secret fa-3x" style="color:var(--alert-color); margin-bottom:20px;"></i>
+                    <h3>Man-in-the-Middle</h3>
+                    <p>การแทรกตัวระหว่างการสื่อสาร (เช่น Fake Wi-Fi)</p>
+                </div>
+                <div class="card">
+                    <i class="fas fa-bomb fa-3x" style="color:var(--alert-color); margin-bottom:20px;"></i>
+                    <h3>DDoS</h3>
+                    <p>Distributed Denial of Service: ถล่มระบบให้ล่มด้วย Traffic มหาศาล</p>
+                </div>
+                <div class="card">
+                    <i class="fas fa-door-open fa-3x" style="color:var(--accent-primary); margin-bottom:20px;"></i>
+                    <h3>Port Scanning</h3>
+                    <p>สแกนหา Service/Port ที่เปิดทิ้งไว้เพื่อหาช่องเข้า</p>
+                </div>
+                <div class="card">
+                    <i class="fas fa-cookie-bite fa-3x" style="color:var(--warning-color); margin-bottom:20px;"></i>
+                    <h3>Session Hijacking</h3>
+                    <p>ขโมย Session ID/Cookie เพื่อสวมรอยเป็นผู้ใช้</p>
+                </div>
+                <div class="card">
+                    <i class="fas fa-map-signs fa-3x" style="color:var(--accent-secondary); margin-bottom:20px;"></i>
+                    <h3>DNS Spoofing</h3>
+                    <p>ปลอมแปลง DNS เพื่อพาผู้ใช้ไปเว็บปลอม</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>🔥 Part 2: Firewall - กำแพงไฟ</h2>
+            <div class="grid-2">
+                <div>
+                    <p><strong>Firewall</strong> คืออุปกรณ์หรือซอฟต์แวร์ที่ทำหน้าที่:</p>
+                    <ul>
+                        <li>กรอง Traffic เข้า-ออกตามกฎ (Rules)</li>
+                        <li>Block การเชื่อมต่อที่ไม่พึงประสงค์</li>
+                        <li>Allow เฉพาะที่ปลอดภัย</li>
+                    </ul>
+                    <div class="card"
+                        style="margin-top:20px; background:rgba(255,0,0,0.1); border-color:var(--alert-color);">
+                        <h3><i class="fas fa-exclamation-triangle"></i> Default Policy</h3>
+                        <p>ควรตั้งเป็น <strong>DROP ALL (Whitelist)</strong> คือห้ามหมด แล้วอนุญาตเฉพาะที่จำเป็น</p>
+                    </div>
+                </div>
+                <div class="card"
+                    style="display:flex; align-items:center; justify-content:space-between; flex-direction:column; position:relative; overflow:hidden;">
+                    <div style="font-weight:bold; color:var(--alert-color);">INTERNET (BAD)</div>
+                    <div style="width:10px; height:100px; display:flex; gap:10px; flex-direction:column;">
+                        <div class="blink" style="width:20px; height:20px; background:red; border-radius:50%;"></div>
+                        <div class="blink"
+                            style="width:20px; height:20px; background:green; border-radius:50%; animation-delay:0.5s;">
+                        </div>
+                    </div>
+                    <div
+                        style="width:100%; height:20px; background:orange; text-align:center; color:black; font-weight:bold; z-index:2;">
+                        FIREWALL WALL</div>
+                    <div style="width:10px; height:100px;">
+                        <div class="blink"
+                            style="width:20px; height:20px; background:green; border-radius:50%; animation-delay:1.5s;">
+                        </div>
+                    </div>
+                    <div style="font-weight:bold; color:var(--success-color);">INTERNAL (SAFE)</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>🔥 Firewall Types Comparison</h2>
+
+            <div class="diagram-box">
+                <img src="images/Week5_Diagram-Firewall_Types.png" alt="Firewall Types Diagram" class="zoomable-image"
+                    onclick="this.classList.toggle('zoomed')">
+
+                <div class="diagram-label">
+                    Diagram 2: Firewall Types Comparison (Click image to zoom)
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>📋 รายละเอียดประเภท Firewall</h2>
+            <div class="grid-2">
+                <div class="card">
+                    <h3>1. Packet Filtering</h3>
+                    <p>ดูแค่ Header (Source IP, Dest IP, Port). เร็วแต่ไม่ฉลาด (Stateless).</p>
+                </div>
+                <div class="card">
+                    <h3>2. Stateful Inspection</h3>
+                    <p>จำสถานะ Connection (Stateful). รู้ว่าเป็น Packet ต่อเนื่องหรือเริ่มใหม่. ปลอดภัยกว่า.</p>
+                </div>
+                <div class="card">
+                    <h3>3. Application Layer (WAF)</h3>
+                    <p>ดูเนื้อหา (Payload) ระดับ Layer 7. กัน SQL Injection, XSS ได้.</p>
+                </div>
+                <div class="card">
+                    <h3>4. Next-Gen Firewall (NGFW)</h3>
+                    <p>รวมทุกอย่าง + IDS/IPS + Antivirus + AI/ML.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>🐧 Example: Linux UFW Rules</h2>
+            <p>Uncomplicated Firewall (Ubuntu/Debian)</p>
+            <div class="code-block">
+                <span class="cmd">sudo ufw status</span> <span class="comment"># ตรวจสอบสถานะ</span>
+                <span class="cmd">sudo ufw default deny incoming</span> <span class="comment"># ตั้งค่าเริ่มต้น:
+                    ห้ามเข้าทั้งหมด</span>
+                <span class="cmd">sudo ufw allow 22/tcp</span> <span class="comment"># อนุญาต SSH (ระวัง! ต้องเปิดก่อน
+                    enable)</span>
+                <span class="cmd">sudo ufw allow 80/tcp</span> <span class="comment"># อนุญาต Web HTTP</span>
+                <span class="cmd">sudo ufw allow 443/tcp</span> <span class="comment"># อนุญาต Web HTTPS</span>
+                <span class="cmd">sudo ufw delete allow 23/tcp</span> <span class="comment"># ลบกฎ Telnet
+                    (ไม่ปลอดภัย)</span>
+                <span class="cmd">sudo ufw enable</span> <span class="comment"># เปิดใช้งาน Firewall</span>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>🪟 Example: Windows Firewall (PowerShell)</h2>
+            <div class="code-block">
+                <span class="comment"># อนุญาต HTTP Inbound (Port 80)</span>
+                <span class="cmd">New-NetFirewallRule</span> -DisplayName "Allow HTTP" `
+                -Direction Inbound -LocalPort 80 `
+                -Protocol TCP -Action Allow
+
+                <span class="comment"># บล็อก Telnet (Port 23)</span>
+                <span class="cmd">New-NetFirewallRule</span> -DisplayName "Block Telnet" `
+                -Direction Inbound -LocalPort 23 `
+                -Protocol TCP -Action Block
+
+                <span class="comment"># ดู Rules ที่ทำงานอยู่</span>
+                <span class="cmd">Get-NetFirewallRule</span> | Where-Object {$_.Enabled -eq 'True'}
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>🤔 คำถามชวนคิด: Firewall</h2>
+            <div class="card" style="margin-bottom: 20px;">
+                <h3>Q1: ถ้าตั้ง Firewall "ALLOW ALL" จะเกิดอะไรขึ้น?</h3>
+                <p onclick="this.innerText='A: เหมือนมีกำแพงแต่เปิดประตูทิ้งไว้ทุกบาน = ไร้ประโยชน์! ต้อง Default Deny เท่านั้น'"
+                    style="cursor:pointer; color:var(--text-main); border:1px dashed var(--accent-primary); padding:10px;">
+                    👉 คลิกเพื่อดูคำตอบ</p>
+            </div>
+            <div class="card">
+                <h3>Q2: ปิด Port vs Firewall Block Port อันไหนดีกว่า?</h3>
+                <p onclick="this.innerText='A: ปิด Port (Service) ดีกว่า เพราะเป็นการลด Attack Surface จริงๆ แต่ Best Practice คือทำทั้งสองอย่าง (Defense in Depth)'"
+                    style="cursor:pointer; color:var(--text-main); border:1px dashed var(--accent-primary); padding:10px;">
+                    👉 คลิกเพื่อดูคำตอบ</p>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>🚨 Part 3: IDS vs IPS</h2>
+
+            <div class="diagram-box">
+                <img src="images/Week5_Diagram-IDS_vs_IPS.png" alt="IDS vs IPS Comparison" class="zoomable-image"
+                    onclick="this.classList.toggle('zoomed')">
+
+                <div class="diagram-label">
+                    Diagram 3: IDS vs IPS Comparison (Click image to zoom)
+                </div>
+            </div>
+
+            <div style="display:flex; justify-content:center; gap:50px; margin-top:20px;">
+                <div style="color:var(--warning-color)"><i class="fas fa-video"></i> IDS = กล้องวงจรปิด (Detect)</div>
+                <div style="color:var(--alert-color)"><i class="fas fa-shield-alt"></i> IPS = รปภ. (Detect + Block)
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>🔍 วิธีการตรวจจับ (Detection Methods)</h2>
+            <div class="grid-2">
+                <div class="card">
+                    <h3>1. Signature-based</h3>
+                    <p>ใช้ "ลายเซ็น" หรือ Pattern ที่รู้จัก (เหมือน Antivirus).</p>
+                    <div class="code-block" style="font-size:0.9rem;">
+                        alert tcp any any -> any 80 (content:"SELECT * FROM users"; msg:"SQL Injection Detect";)
+                    </div>
+                    <p><span style="color:var(--success-color)">ข้อดี:</span> เร็ว, แม่นยำกับภัยที่รู้จัก</p>
+                    <p><span style="color:var(--alert-color)">ข้อเสีย:</span> จับ Zero-day (ของใหม่) ไม่ได้</p>
+                </div>
+                <div class="card">
+                    <h3>2. Anomaly-based</h3>
+                    <p>เรียนรู้พฤติกรรม "ปกติ" (Baseline) แล้วหาความผิดปกติ.</p>
+                    <p><em>Example: ปกติ Upload 10MB วันนี้ Upload 50GB -> Alert!</em></p>
+                    <p><span style="color:var(--success-color)">ข้อดี:</span> จับ Zero-day ได้</p>
+                    <p><span style="color:var(--alert-color)">ข้อเสีย:</span> False Positive สูง (เตือนมั่ว)</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>🔐 Part 4: VPN (Virtual Private Network)</h2>
+            <p>สร้าง <strong>"อุโมงค์เข้ารหัส" (Encrypted Tunnel)</strong> ผ่าน Internet ที่ไม่ปลอดภัย</p>
+
+            <div class="diagram-box">
+                <img src="images/Week5_Diagram-VPN_Tunnel.png" alt="VPN Tunnel Concept" class="zoomable-image"
+                    onclick="this.classList.toggle('zoomed')">
+
+                <div class="diagram-label">
+                    Diagram 4: VPN Tunnel Concept (Click image to zoom)
+                </div>
+            </div>
+
+
+        </div>
+
+        <div class="slide">
+            <h2>📡 รูปแบบการใช้งาน VPN</h2>
+            <div class="grid-2">
+                <div class="card">
+                    <h3>🏠 Remote Access VPN</h3>
+                    <p>พนักงาน (Work from Home) เชื่อมต่อเข้าออฟฟิศ.</p>
+                    <p><em>Client Software -> VPN Gateway</em></p>
+                </div>
+                <div class="card">
+                    <h3>🏢 Site-to-Site VPN</h3>
+                    <p>เชื่อมต่อสาขา A กับ สาขา B เข้าด้วยกัน.</p>
+                    <p><em>Router A -> Internet -> Router B</em></p>
+                </div>
+            </div>
+            <div class="card" style="margin-top:20px;">
+                <h3>🌍 Consumer/Privacy VPN</h3>
+                <p>ใช้เพื่อซ่อน IP, Bypass Geo-block (ดู Netflix ตปท.), ป้องกัน ISP สอดแนม.</p>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>⚙️ VPN Protocols</h2>
+            <table style="width:100%; border-collapse:collapse; margin-top:20px; font-size:1.2rem;">
+                <tr style="background:var(--accent-primary); color:black;">
+                    <th style="padding:15px;">Protocol</th>
+                    <th>Security</th>
+                    <th>Speed</th>
+                    <th>Note</th>
+                </tr>
+                <tr style="border-bottom:1px solid rgba(255,255,255,0.2);">
+                    <td style="padding:15px;"><strong>OpenVPN</strong></td>
+                    <td style="color:var(--success-color)">High</td>
+                    <td>Medium</td>
+                    <td>มาตรฐานโลก, Open Source, เสถียรสุด</td>
+                </tr>
+                <tr style="border-bottom:1px solid rgba(255,255,255,0.2);">
+                    <td style="padding:15px;"><strong>WireGuard</strong></td>
+                    <td style="color:var(--success-color)">High</td>
+                    <td style="color:var(--success-color)">Very Fast</td>
+                    <td>เทคโนโลยีใหม่, Code น้อย, แนะนำให้ใช้</td>
+                </tr>
+                <tr style="border-bottom:1px solid rgba(255,255,255,0.2);">
+                    <td style="padding:15px;"><strong>IPsec/IKEv2</strong></td>
+                    <td>High</td>
+                    <td>Fast</td>
+                    <td>Native ใน Mobile Devices</td>
+                </tr>
+                <tr>
+                    <td style="padding:15px; text-decoration:line-through; color:gray;"><strong>PPTP</strong></td>
+                    <td style="color:var(--alert-color)">Low</td>
+                    <td>Fast</td>
+                    <td style="color:var(--alert-color)">ไม่ปลอดภัย! ถูกแฮกได้ง่าย ห้ามใช้</td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="slide">
+            <h2>⚠️ VPN ไม่ใช่ "โล่วิเศษ"</h2>
+            <div class="card"
+                style="border-color:var(--warning-color); text-align:center; display:flex; flex-direction:column; justify-content:center;">
+                <i class="fas fa-exclamation-triangle fa-5x"
+                    style="color:var(--warning-color); margin-bottom:30px;"></i>
+                <h3>สิ่งที่ VPN ทำไม่ได้:</h3>
+                <ul style="text-align:left; display:inline-block; margin:0 auto;">
+                    <li>❌ ไม่กัน Phishing (ถ้าคุณกรอกรหัสให้โจรเอง)</li>
+                    <li>❌ ไม่กัน Malware (ถ้าคุณดาวน์โหลดไฟล์เอง)</li>
+                    <li>❌ ไม่กัน HTTPS ปลายทาง (ถ้าเว็บไม่ใช้ HTTPS, VPN Server ก็เห็นข้อมูล)</li>
+                    <li>❌ Free VPN อาจขายข้อมูลของคุณเอง!</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>🏗️ Part 5: Network Segmentation</h2>
+            <p>หลักการ: "อย่าใส่ไข่ทุกฟองในตะกร้าใบเดียว" (Containment)</p>
+
+            <div class="diagram-box">
+                <img src="images/Week5_Diagram-Network_Segmentation.png" alt="Flat vs Segmented Network" class="zoomable-image"
+                    onclick="this.classList.toggle('zoomed')">
+
+                <div class="diagram-label">
+                    Diagram 6: Flat vs Segmented Network (Click image to zoom)
+                </div>
+            </div>
+
+        </div>
+
+        <div class="slide">
+            <h2>🚧 DMZ (Demilitarized Zone)</h2>
+            <div class="grid-2">
+                <div class="flex-center">
+                    <i class="fas fa-network-wired fa-5x" style="color:var(--accent-primary);"></i>
+                    <p style="margin-top:20px;">เขตกันชน (Buffer Zone) ระหว่าง Internet กับ Internal Network</p>
+                </div>
+                <div class="card">
+                    <h3>ทำไมต้องมี DMZ?</h3>
+                    <ul>
+                        <li><strong>Web Server:</strong> ต้องให้คนนอกเข้าได้ -> วางใน DMZ</li>
+                        <li><strong>Database:</strong> ห้ามคนนอกเข้าตรงๆ -> วางใน Internal</li>
+                        <li>ถ้า Web Server โดนแฮก -> Hacker ยังติดอยู่ใน DMZ เข้า Database ไม่ได้ทันที</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>🏗️ DMZ Architecture (3-Tier)</h2>
+
+            <div class="diagram-box">
+                <img src="images/Week5_Diagram-DMZ_Architecture.png" alt=" DMZ Architecture" class="zoomable-image"
+                    onclick="this.classList.toggle('zoomed')">
+
+                <div class="diagram-label">
+                    Diagram 5: DMZ Architecture (Click image to zoom)
+                </div>
+            </div>
+
+
+        </div>
+
+        <div class="slide">
+            <h2>🔀 VLAN (Virtual LAN)</h2>
+            <div class="grid-2">
+                <div class="card">
+                    <h3>Concept</h3>
+                    <p>การแบ่ง Switch ทางกายภาพ 1 ตัว ให้เสมือนเป็นหลายเครือข่าย</p>
+                    <ul>
+                        <li><span style="color:red">VLAN 10: Sales</span></li>
+                        <li><span style="color:blue">VLAN 20: Dev</span></li>
+                        <li><span style="color:green">VLAN 30: Guest</span></li>
+                    </ul>
+                    <p>แต่ละ VLAN คุยกันไม่ได้ ถ้าไม่ผ่าน Router/Firewall</p>
+                </div>
+                <div style="display:flex; justify-content:center; align-items:center;">
+                    <div
+                        style="width:300px; height:100px; background:#333; border:2px solid #666; display:grid; grid-template-columns:repeat(6, 1fr); padding:10px; gap:5px;">
+                        <div style="background:red; border-radius:3px;"></div>
+                        <div style="background:red; border-radius:3px;"></div>
+                        <div style="background:blue; border-radius:3px;"></div>
+                        <div style="background:blue; border-radius:3px;"></div>
+                        <div style="background:green; border-radius:3px;"></div>
+                        <div style="background:green; border-radius:3px;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>🔬 Part 6: Lab 2 - Packet Analysis</h2>
+            <div class="grid-2">
+                <div>
+                    <h3>Tool: Wireshark 🦈</h3>
+                    <ol>
+                        <li>เปิด Wireshark เลือก Interface (Wi-Fi)</li>
+                        <li>Start Capture</li>
+                        <li>เข้าเว็บ HTTP และ HTTPS</li>
+                        <li>Stop Capture</li>
+                        <li>Filter: <code>http</code> หรือ <code>tls</code></li>
+                    </ol>
+                </div>
+                <div class="card" style="text-align:center;">
+                    <i class="fas fa-search fa-4x" style="color:var(--accent-primary)"></i>
+                    <p>เราจะเห็นอะไรบ้าง?</p>
+                    <p style="color:var(--alert-color)">HTTP: เห็น Password ชัดเจน!</p>
+                    <p style="color:var(--success-color)">HTTPS: เห็นแต่ Encrypted Data</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>🖥️ SIMULATION: Network Sniffer</h2>
+            <div class="card" style="padding:0; overflow:hidden; display:flex; flex-direction:column;">
+                <div
+                    style="background:#ddd; color:#000; padding:5px; font-family:sans-serif; display:flex; justify-content:space-between;">
+                    <span>Wireshark Network Analyzer</span>
+                    <div>
+                        <button onclick="startSniffing()" style="cursor:pointer;">▶ Start</button>
+                        <button onclick="stopSniffing()" style="cursor:pointer;">⏹ Stop</button>
+                        <button onclick="clearSniffing()" style="cursor:pointer;">🗑 Clear</button>
+                    </div>
+                </div>
+                <div id="wireshark-window"
+                    style="background:#fff; color:#000; font-family:var(--font-code); font-size:0.8rem; overflow-y:auto; flex-grow:1; padding:5px;">
+                    <div
+                        style="display:grid; grid-template-columns: 50px 100px 150px 150px 80px 1fr; border-bottom:1px solid #ccc; font-weight:bold; background:#eee;">
+                        <div>No.</div>
+                        <div>Time</div>
+                        <div>Source</div>
+                        <div>Dest</div>
+                        <div>Proto</div>
+                        <div>Info</div>
+                    </div>
+                    <div id="packet-list"></div>
+                </div>
+            </div>
+            <script>
+                let sniffInterval;
+                const packetList = document.getElementById('packet-list');
+                let pktCount = 1;
+
+                function addPacket() {
+                    const protos = [
+                        { p: 'TCP', c: '#e3f2fd', i: '60322 > 443 [ACK] Seq=1 Ack=1 Win=65535 Len=0' },
+                        { p: 'TLSv1.2', c: '#f3e5f5', i: 'Application Data (Encrypted)' },
+                        { p: 'HTTP', c: '#e8f5e9', i: 'GET /login.php?user=admin&pass=123456 HTTP/1.1' },
+                        { p: 'DNS', c: '#fff3e0', i: 'Standard query 0x1234 A example.com' },
+                    ];
+                    const rand = protos[Math.floor(Math.random() * protos.length)];
+                    const row = document.createElement('div');
+                    row.style.display = 'grid';
+                    row.style.gridTemplateColumns = '50px 100px 150px 150px 80px 1fr';
+                    row.style.borderBottom = '1px solid #eee';
+                    row.style.background = rand.c;
+                    row.innerHTML = `<div>${pktCount++}</div><div>${(new Date()).toLocaleTimeString()}</div><div>192.168.1.10</div><div>203.0.113.5</div><div>${rand.p}</div><div>${rand.i}</div>`;
+                    packetList.prepend(row); // Newest on top
+                    if (packetList.children.length > 20) packetList.lastChild.remove();
+                }
+                function startSniffing() { if (!sniffInterval) sniffInterval = setInterval(addPacket, 800); }
+                function stopSniffing() { clearInterval(sniffInterval); sniffInterval = null; }
+                function clearSniffing() { packetList.innerHTML = ''; pktCount = 1; }
+            </script>
+        </div>
+
+        <div class="slide">
+            <h2>🔬 Part 6.2: Firewall Configuration Lab</h2>
+            <div class="grid-2">
+                <div>
+                    <h3>Assignment:</h3>
+                    <p>สร้าง Firewall Rules ดังนี้:</p>
+                    <ul>
+                        <li>1. Allow Web (HTTP/HTTPS)</li>
+                        <li>2. Allow SSH (เฉพาะ IP เรา)</li>
+                        <li>3. Block Telnet (23)</li>
+                        <li>4. Default Deny Others</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h3><i class="fas fa-terminal"></i> Try it yourself</h3>
+                    <p>ในหน้าถัดไปจะเป็น Terminal จำลอง ให้ลองพิมพ์คำสั่งดู</p>
+                    <p><code>sudo ufw status</code></p>
+                    <p><code>sudo ufw allow 80</code></p>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>🖥️ SIMULATION: Terminal</h2>
+            <div class="code-block" style="height:400px; display:flex; flex-direction:column;"
+                onclick="document.getElementById('cmdInput').focus()">
+                <div id="termOutput" style="flex-grow:1; overflow-y:auto;">
+                    <div style="color:#aaa;">Ubuntu 22.04 LTS (GNU/Linux 5.15.0-generic x86_64)</div>
+                    <div style="color:#aaa;">Type 'help' for available commands.</div>
+                    <br>
+                </div>
+                <div style="display:flex;">
+                    <span style="color:var(--success-color);">student@lab:~$</span>&nbsp;
+                    <input type="text" id="cmdInput"
+                        style="background:transparent; border:none; color:#fff; font-family:var(--font-code); flex-grow:1; outline:none;"
+                        autocomplete="off">
+                </div>
+            </div>
+            <script>
+                const cmdInput = document.getElementById('cmdInput');
+                const termOutput = document.getElementById('termOutput');
+
+                cmdInput.addEventListener('keydown', function (e) {
+                    if (e.key === 'Enter') {
+                        const cmd = this.value.trim();
+                        printLine(`student@lab:~$ ${cmd}`);
+                        processCommand(cmd);
+                        this.value = '';
+                        termOutput.scrollTop = termOutput.scrollHeight;
+                    }
+                });
+
+                function printLine(text, color = '#e6edf3') {
+                    const div = document.createElement('div');
+                    div.textContent = text;
+                    div.style.color = color;
+                    termOutput.appendChild(div);
+                }
+
+                function processCommand(cmd) {
+                    if (cmd === 'help') {
+                        printLine('Available commands: sudo ufw [status|enable|disable|allow|deny]');
+                    } else if (cmd === 'sudo ufw status') {
+                        printLine('Status: active');
+                        printLine('To                         Action      From');
+                        printLine('--                         ------      ----');
+                        printLine('22/tcp                     ALLOW       Anywhere');
+                        printLine('80/tcp                     ALLOW       Anywhere');
+                    } else if (cmd.startsWith('sudo ufw allow')) {
+                        printLine('Rule added');
+                        printLine('Rule added (v6)');
+                    } else if (cmd.startsWith('sudo ufw deny')) {
+                        printLine('Rule updated');
+                        printLine('Rule updated (v6)');
+                    } else if (cmd === 'clear') {
+                        termOutput.innerHTML = '';
+                    } else {
+                        printLine(`bash: ${cmd}: command not found`, '#ff5555');
+                    }
+                }
+            </script>
+        </div>
+
+        <div class="slide">
+            <h2>👥 Activity: Design Mini DMZ</h2>
+            <div class="card" style="border: 2px solid var(--accent-secondary);">
+                <h3>โจทย์: บริษัท SecureShop</h3>
+                <p>ต้องการสร้างระบบ E-Commerce ประกอบด้วย:</p>
+                <ol>
+                    <li><strong>Web Server</strong> (Public Access)</li>
+                    <li><strong>Application Server</strong> (Process Order)</li>
+                    <li><strong>Database Server</strong> (เก็บข้อมูลลูกค้า - ห้ามออกเน็ต)</li>
+                </ol>
+                <hr style="border-color:rgba(255,255,255,0.1); margin:20px 0;">
+                <h3>Deliverables (ส่งท้ายคาบ/การบ้าน):</h3>
+                <ul>
+                    <li>1. <strong>Network Diagram</strong> (ระบุ Zone: Internet, DMZ, Internal)</li>
+                    <li>2. <strong>Firewall Rules Table</strong> (ใครคุยกับใครได้บ้าง ที่ Port ไหน)</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>📊 Assessment & Quiz</h2>
+            <div class="grid-2">
+                <div>
+                    <h3>Quiz 5 Topics:</h3>
+                    <ul>
+                        <li>Firewall Types (Packet vs Stateful)</li>
+                        <li>IDS vs IPS Difference</li>
+                        <li>DMZ Concept</li>
+                        <li>VPN Protocols</li>
+                    </ul>
+                </div>
+                <div class="card flex-center">
+                    <h1>10</h1>
+                    <p>คะแนนเต็ม</p>
+                    <button
+                        style="padding:10px 20px; background:var(--accent-primary); border:none; cursor:pointer; margin-top:10px; font-weight:bold;">START
+                        QUIZ</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>🤔 Critical Thinking: Zero Trust</h2>
+            <div class="card">
+                <h3>Q: แนวคิด "Zero Trust" ต่างจาก Firewall ยุคเก่าอย่างไร?</h3>
+                <div class="grid-2" style="margin-top:20px;">
+                    <div style="background:rgba(255,0,0,0.1); padding:10px;">
+                        <h4>Old School (Castle & Moat)</h4>
+                        <p>เชื่อคนใน (Internal Trusted), กันคนนอก (External Blocked). ถ้าโจรเข้าได้ = จบ.</p>
+                    </div>
+                    <div style="background:rgba(0,255,0,0.1); padding:10px;">
+                        <h4>Zero Trust</h4>
+                        <p>"Never Trust, Always Verify". ไม่เชื่อใครเลย แม้จะอยู่ในเครือข่ายภายใน ต้อง Login/Verify
+                            ทุกครั้ง.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>🤔 Critical Thinking: VPN vs Proxy</h2>
+            <div class="grid-2">
+                <div class="card">
+                    <h3>VPN</h3>
+                    <ul>
+                        <li><i class="fas fa-lock" style="color:var(--success-color)"></i> Encrypt Traffic ทั้งหมด</li>
+                        <li>ระดับ OS (ทั้งเครื่อง)</li>
+                        <li>ใช้เพื่อความปลอดภัย + Privacy</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h3>Proxy</h3>
+                    <ul>
+                        <li><i class="fas fa-lock-open" style="color:var(--alert-color)"></i> ไม่ Encrypt (ส่วนใหญ่)
+                        </li>
+                        <li>ระดับ App (เช่น Browser)</li>
+                        <li>ใช้เพื่อเปลี่ยน IP / Bypass Web Block / Caching</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>🤔 Critical Thinking: Do we need WAF?</h2>
+            <h3>Q: มี Network Firewall แล้ว ต้องมี WAF ไหม?</h3>
+            <div class="card" style="margin-top:20px;">
+                <h3>A: ต้องมี! (Defense in Depth)</h3>
+                <p><strong>Network Firewall:</strong> บล็อก Port/IP แต่ไม่รู้วิธีกัน SQL Injection</p>
+                <p><strong>WAF:</strong> อ่าน HTTP Request รู้ว่านี่คือ SQL Injection แล้วบล็อกได้</p>
+                <p><em>เปรียบเทียบ: ยามหน้าหมู่บ้าน (Firewall) vs เครื่องสแกนอาวุธหน้าประตูงาน (WAF)</em></p>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>📝 Summary Week 5</h2>
+            <div class="grid-2">
+                <div class="card">
+                    <h3>Key Takeaways</h3>
+                    <ul>
+                        <li>✅ <strong>Defense in Depth:</strong> ป้องกันหลายชั้น (Firewall + IDS + VPN + DMZ)</li>
+                        <li>✅ <strong>Firewall:</strong> ต้อง Default Deny</li>
+                        <li>✅ <strong>IDS/IPS:</strong> กล้องวงจรปิด vs รปภ.</li>
+                        <li>✅ <strong>VPN:</strong> ไม่ใช่เวทมนตร์ แต่จำเป็นสำหรับ Public Wi-Fi</li>
+                        <li>✅ <strong>Segmentation:</strong> ลดความเสียหาย (Blast Radius)</li>
+                    </ul>
+                </div>
+                <div class="flex-center">
+                    <i class="fas fa-check-double fa-5x" style="color:var(--success-color)"></i>
+                    <h3 style="margin-top:20px;">SECURITY IS A PROCESS,<br>NOT A PRODUCT.</h3>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>🔮 Next Week: Cryptography</h2>
+            <div class="card" style="background: linear-gradient(45deg, #000, #111);">
+                <h3>Week 6: Cryptography Basics</h3>
+                <div class="grid-2">
+                    <ul>
+                        <li>🔐 Symmetric vs Asymmetric Encryption</li>
+                        <li>🔑 RSA, AES, ECC</li>
+                        <li>📜 Digital Signature & Certificates (PKI)</li>
+                        <li>#️⃣ Hashing & Password Storage</li>
+                    </ul>
+                    <div class="flex-center" style="font-family:var(--font-code); color:var(--success-color);">
+                        Plaintext -> [Cipher] -> Encrypted<br>
+                        "Hello" -> [AES-256] -> "x8s7d9f..."
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>💡 Security Tips for Students</h2>
+            <div class="grid-3">
+                <div class="card">
+                    <h3>1. Public Wi-Fi</h3>
+                    <p>อย่าทำธุรกรรมการเงินผ่าน Free Wi-Fi โดยไม่เปิด VPN</p>
+                </div>
+                <div class="card">
+                    <h3>2. Home Router</h3>
+                    <p>เปลี่ยน Default Password ของ Router ที่บ้านเดี๋ยวนี้!</p>
+                </div>
+                <div class="card">
+                    <h3>3. Updates</h3>
+                    <p>Update Firmware Router และ OS สม่ำเสมอ</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>📰 Stay Updated: Cyber Security News</h2>
+            <p>แหล่งข่าวที่ควรติดตามเพื่อทันโลก Cyber:</p>
+            <div class="grid-2">
+                <div class="card">
+                    <ul>
+                        <li><a href="https://thehackernews.com/" target="_blank"
+                                style="color:var(--accent-primary);">The Hacker News</a> - ข่าวอัปเดตรายวัน</li>
+                        <li><a href="https://www.bleepingcomputer.com/" target="_blank"
+                                style="color:var(--accent-primary);">BleepingComputer</a> - ข่าว Ransomware/Malware ลึกๆ
+                        </li>
+                        <li><a href="https://krebsonsecurity.com/" target="_blank"
+                                style="color:var(--accent-primary);">Krebs on Security</a> - ข่าวสืบสวนสอบสวน Cyber
+                            Crime</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <ul>
+                        <li><a href="https://www.thaicert.or.th/" target="_blank"
+                                style="color:var(--accent-primary);">ThaiCERT</a> -
+                            ศูนย์ประสานงานการรักษาความมั่นคงปลอดภัยฯ ไทย</li>
+                        <li><a href="https://owasp.org/" target="_blank" style="color:var(--accent-primary);">OWASP</a>
+                            - มาตรฐานความปลอดภัย Web App</li>
+                        <li><a href="https://map.lookingglasscyber.com/" target="_blank"
+                                style="color:var(--accent-primary);">Cyber Attack Map</a> - แผนที่โจมตีแบบ Real-time
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <div class="flex-center">
+                <h1>Thank You</h1>
+                <p>Q & A Session</p>
+                <div style="margin-top: 50px; font-size: 1.2rem; color: #888;">
+                    <p><i class="fas fa-envelope"></i> thanit@rmutl.ac.th</p>
+                    <p><i class="fas fa-school"></i> Software Engineering, RMUTL</p>
+                </div>
+                <div style="margin-top: 30px;">
+                    <button onclick="location.reload()"
+                        style="padding:10px 20px; border:1px solid var(--accent-primary); background:none; color:var(--accent-primary); cursor:pointer;">RESTART
+                        SYSTEM</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div id="controls">
+        <button class="btn-ctrl" onclick="changeSlide(-1)"><i class="fas fa-chevron-left"></i></button>
+        <button class="btn-ctrl" onclick="toggleTheme()"><i class="fas fa-adjust"></i></button>
+        <button class="btn-ctrl" onclick="toggleFullScreen()"><i class="fas fa-expand"></i></button>
+        <button class="btn-ctrl" onclick="changeSlide(1)"><i class="fas fa-chevron-right"></i></button>
+    </div>
+
+    <script>
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slide');
+        const progressBar = document.getElementById('progressBar');
+
+        // Init
+        updateSlide();
+        setInterval(updateClock, 1000);
+
+        function changeSlide(n) {
+            slides[currentSlide].classList.remove('active');
+            currentSlide = (currentSlide + n + slides.length) % slides.length;
+            slides[currentSlide].classList.add('active');
+            updateSlide();
+        }
+
+        function updateSlide() {
+            const progress = ((currentSlide + 1) / slides.length) * 100;
+            progressBar.style.width = progress + '%';
+        }
+
+        function toggleTheme() {
+            document.body.classList.toggle('light-mode');
+        }
+
+        function toggleFullScreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+            }
+        }
+
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('clock').innerText = now.toLocaleTimeString('en-US', { hour12: false });
+        }
+
+        // Keyboard Nav
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === ' ') changeSlide(1);
+            if (e.key === 'ArrowLeft') changeSlide(-1);
+        });
+
+       
+    </script>
+
+</body>
+
+</html>

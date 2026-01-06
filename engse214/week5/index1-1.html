@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Week 5: Network Security - ENGSE214</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Kanit:wght@300;400;600&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            /* Dark Theme (Default) */
+            --bg-color: #0d1117;
+            --text-color: #e6edf3;
+            --accent-color: #00f0ff; /* Cyan Cyberpunk */
+            --secondary-accent: #7d8590;
+            --code-bg: #161b22;
+            --danger-color: #ff4d4d;
+            --success-color: #00e676;
+            --slide-bg: #161b22;
+            --border-color: #30363d;
+            --font-main: 'Kanit', sans-serif;
+            --font-code: 'JetBrains Mono', monospace;
+            --font-scale: 1;
+        }
+
+        body.light-theme {
+            --bg-color: #ffffff;
+            --text-color: #24292f;
+            --accent-color: #0969da;
+            --secondary-accent: #57606a;
+            --code-bg: #f6f8fa;
+            --danger-color: #cf222e;
+            --success-color: #1a7f37;
+            --slide-bg: #ffffff;
+            --border-color: #d0d7de;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: var(--font-main);
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            height: 100vh;
+            overflow: hidden;
+            transition: background-color 0.3s, color 0.3s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Slide Container 16:9 Aspect Ratio */
+        #presentation-area {
+            width: 100%;
+            max-width: 1600px;
+            aspect-ratio: 16/9;
+            background-color: var(--slide-bg);
+            position: relative;
+            box-shadow: 0 0 50px rgba(0,0,0,0.5);
+            border: 1px solid var(--border-color);
+            overflow: hidden;
+        }
+
+        .slide {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            padding: 4rem 5rem;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.4s ease, transform 0.4s ease;
+            transform: scale(0.98);
+            display: flex;
+            flex-direction: column;
+            font-size: calc(1.5rem * var(--font-scale));
+        }
+
+        .slide.active {
+            opacity: 1;
+            visibility: visible;
+            transform: scale(1);
+            z-index: 10;
+        }
+
+        /* Typography */
+        h1, h2, h3 { color: var(--accent-color); margin-bottom: 1rem; line-height: 1.2; }
+        h1 { font-size: 3em; font-weight: 600; text-transform: uppercase; letter-spacing: 2px; }
+        h2 { font-size: 2.2em; border-bottom: 2px solid var(--border-color); padding-bottom: 0.5rem; }
+        h3 { font-size: 1.5em; color: var(--text-color); }
+        p, li { line-height: 1.6; margin-bottom: 0.8rem; }
+        strong { color: var(--accent-color); }
+        
+        ul { margin-left: 2rem; }
+        
+        .code-block {
+            background: var(--code-bg);
+            padding: 1rem;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            font-family: var(--font-code);
+            font-size: 0.8em;
+            overflow-x: auto;
+            margin: 1rem 0;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.2);
+        }
+
+        .highlight { color: var(--accent-color); }
+        .comment { color: var(--secondary-accent); font-style: italic; }
+        .danger { color: var(--danger-color); }
+        .success { color: var(--success-color); }
+
+        /* Diagrams Placeholder */
+        .diagram-placeholder {
+            width: 100%;
+            height: 400px;
+            background: rgba(125, 133, 144, 0.1);
+            border: 2px dashed var(--secondary-accent);
+            border-radius: 12px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            margin: 1rem 0;
+            color: var(--secondary-accent);
+            position: relative;
+        }
+        
+        .diagram-placeholder img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+
+        .tag {
+            font-size: 0.8em;
+            background: var(--accent-color);
+            color: var(--bg-color);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+
+        /* Simulation UI (Wireshark Mock) */
+        .sim-container {
+            border: 1px solid var(--border-color);
+            background: var(--bg-color);
+            font-family: var(--font-code);
+            font-size: 0.7em;
+            height: 300px;
+            overflow-y: auto;
+        }
+        .sim-header {
+            background: var(--border-color);
+            padding: 5px;
+            display: grid;
+            grid-template-columns: 1fr 2fr 2fr 1fr 4fr;
+            font-weight: bold;
+        }
+        .sim-row {
+            display: grid;
+            grid-template-columns: 1fr 2fr 2fr 1fr 4fr;
+            padding: 2px 5px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .sim-row:hover { background-color: rgba(0, 240, 255, 0.1); }
+        .protocol-tcp { color: #4facfe; }
+        .protocol-http { color: #00e676; }
+        .protocol-tls { color: #a18cd1; }
+
+        /* Controls */
+        #controls {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(13, 17, 23, 0.9);
+            border: 1px solid var(--border-color);
+            padding: 10px 20px;
+            border-radius: 30px;
+            display: flex;
+            gap: 15px;
+            z-index: 100;
+            backdrop-filter: blur(5px);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+        }
+
+        button {
+            background: none;
+            border: none;
+            color: var(--text-color);
+            cursor: pointer;
+            font-family: var(--font-code);
+            font-size: 1.2rem;
+            transition: color 0.2s;
+        }
+
+        button:hover { color: var(--accent-color); }
+        
+        .progress-bar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            height: 5px;
+            background: var(--accent-color);
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+        .slide-number {
+            position: absolute;
+            bottom: 20px;
+            right: 30px;
+            font-family: var(--font-code);
+            opacity: 0.5;
+            font-size: 0.8em;
+        }
+
+        /* 2-Column Layout */
+        .cols-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            height: 100%;
+        }
+        
+        .v-center {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        /* Specific Animations */
+        .blink { animation: blinker 1s linear infinite; }
+        @keyframes blinker { 50% { opacity: 0; } }
+
+    </style>
+</head>
+<body>
+
+    <div id="presentation-area">
+        <div class="progress-bar" id="progress"></div>
+
+        <div class="slide active v-center" style="text-align: center;">
+            <div style="font-family: var(--font-code); color: var(--accent-color); margin-bottom: 20px;">[ ENGSE214 - WEEK 05 ]</div>
+            <h1>Network Security & <br>Basic Packet Filtering</h1>
+            <h3 style="margin-top: 20px;">ความมั่นคงปลอดภัยทางไซเบอร์เบื้องต้น</h3>
+            <div style="margin-top: 50px; border-top: 1px solid var(--border-color); display: inline-block; padding-top: 20px;">
+                <p><strong>Lecturer:</strong> Thanit Ketkaew (Software Engineering)</p>
+                <p class="blink" style="color: var(--success-color);">System Status: ONLINE</p>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>📚 Review: Previous Weeks</h2>
+            <div class="cols-2">
+                <div>
+                    <h3>Week 3: Vulnerabilities</h3>
+                    <ul>
+                        <li><strong>CVE/NVD:</strong> ฐานข้อมูลช่องโหว่สากล</li>
+                        <li><strong>CVSS:</strong> คะแนนความรุนแรง (0-10)</li>
+                        <li><strong>Risk Eq:</strong> Threat × Vulnerability × Impact</li>
+                    </ul>
+                </div>
+                <div>
+                    <h3>Week 4: OS Security</h3>
+                    <ul>
+                        <li><strong>Access Control:</strong> AuthN / AuthZ</li>
+                        <li><strong>Least Privilege:</strong> ให้สิทธิ์เท่าที่จำเป็น</li>
+                        <li><strong>Hardening:</strong> Password Policy, ปิด Service</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="code-block" style="text-align: center; margin-top: 2rem;">
+                สัปดาห์ที่แล้ว: ป้องกัน <span style="color:var(--accent-color)">OS (Host)</span><br>
+                สัปดาห์นี้: ขยายไปที่ <span style="color:var(--danger-color)">NETWORK</span> 🌐
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>🎯 Learning Objectives (CLO2-4)</h2>
+            <ul style="font-size: 1.1em; line-height: 2;">
+                <li>✅ อธิบายหลักการ <strong>Network Security</strong> พื้นฐานได้</li>
+                <li>✅ แยกความแตกต่าง <strong>Firewall, IDS, IPS</strong> ได้</li>
+                <li>✅ เข้าใจการทำงานของ <strong>VPN</strong> และ Tunneling</li>
+                <li>✅ ออกแบบ <strong>Network Segmentation</strong> และ DMZ เบื้องต้น</li>
+                <li>✅ ใช้ <strong>Wireshark</strong> วิเคราะห์ packet พื้นฐาน</li>
+                <li>✅ สร้าง <strong>Firewall Rules</strong> บน Linux/Windows ได้</li>
+            </ul>
+        </div>
+
+        <div class="slide">
+            <h2>🌐 Part 1: Why Network Security?</h2>
+            <p>ในยุค <strong>Connected World</strong> ทุกอย่างเชื่อมต่อกันหมด ความเสี่ยงจึงไม่ได้อยู่ที่เครื่องคอมพิวเตอร์เพียงอย่างเดียว</p>
+            
+            <div class="diagram-placeholder">
+                <div style="position: absolute; top: 10px; left: 10px;" class="tag">Week5_Diagram1_Network_Security_Overview.drawio</div>
+                <p style="text-align: center;">[ ใส่รูป Diagram 1: Network Security Overview ที่นี่ ]<br><small>แสดงภาพรวม Internet -> Firewall -> Internal Network</small></p>
+            </div>
+            
+            <p style="text-align: center;"><strong>Problem:</strong> ข้อมูลวิ่งผ่านสาย/อากาศ → มีโอกาสถูกดักจับ (Sniffing) หรือแก้ไข (MitM)</p>
+        </div>
+
+        <div class="slide">
+            <h2>🛡️ Network Security Layers</h2>
+            <div class="cols-2">
+                <div class="v-center">
+                    <ul style="list-style: none;">
+                        <li style="margin-bottom: 15px;">🧱 <strong>1. Physical:</strong> ล็อกห้อง Server, กันเข้าถึงอุปกรณ์</li>
+                        <li style="margin-bottom: 15px;">🏗️ <strong>2. Architecture:</strong> Segmentation, DMZ</li>
+                        <li style="margin-bottom: 15px;">🔑 <strong>3. Access Control:</strong> ใครเข้าได้บ้าง?</li>
+                        <li style="margin-bottom: 15px;">🛡️ <strong>4. Active Defense:</strong> Firewall, IDS/IPS</li>
+                        <li style="margin-bottom: 15px;">🔐 <strong>5. Encryption:</strong> VPN, SSL/TLS</li>
+                        <li style="margin-bottom: 15px;">👁️ <strong>6. Monitoring:</strong> Logging, SIEM</li>
+                    </ul>
+                </div>
+                <div class="v-center">
+                    <div class="code-block">
+                        <span class="comment"># Conceptual Model</span><br>
+                        Security is like an onion.<br>
+                        It has <strong>LAYERS</strong>.<br><br>
+                        if (layer1_fail) {<br>
+                        &nbsp;&nbsp;layer2_protect();<br>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>⚠️ Common Network Threats</h2>
+            <table>
+                <thead style="background: var(--border-color);">
+                    <tr><th style="padding:10px; text-align:left;">Attack</th><th style="padding:10px; text-align:left;">Description</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td style="padding:10px;"><strong class="danger">Sniffing</strong></td><td>ดักจับข้อมูลที่ส่งผ่านเครือข่าย (เช่น Plain HTTP)</td></tr>
+                    <tr><td style="padding:10px;"><strong class="danger">Man-in-the-Middle</strong></td><td>แทรกตัวระหว่างการสื่อสาร (Fake Wi-Fi)</td></tr>
+                    <tr><td style="padding:10px;"><strong class="danger">DDoS</strong></td><td>ยิง Request ถล่มให้ระบบล่ม</td></tr>
+                    <tr><td style="padding:10px;"><strong class="danger">Port Scanning</strong></td><td>สแกนหาประตูบ้านที่เปิดทิ้งไว้</td></tr>
+                    <tr><td style="padding:10px;"><strong class="danger">Spoofing</strong></td><td>ปลอมแปลง IP หรือ DNS เพื่อหลอกลวง</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="slide">
+            <h2>🔥 Part 2: Firewall</h2>
+            <p><strong>Firewall</strong> คือ "ยาม" ที่ทำหน้าที่กรอง Traffic เข้า-ออก ตามกฎ (Rules)</p>
+            <div class="diagram-placeholder" style="height: 300px;">
+                <p></p>
+                <div style="display:flex; justify-content:space-around; width:80%; align-items:center;">
+                    <div style="text-align:center;">🔴 Bad Packet<br>Blocked</div>
+                    <div style="height:100px; width:10px; background:var(--danger-color);"></div>
+                    <div style="border: 2px solid var(--accent-color); padding: 20px;">FIREWALL</div>
+                    <div style="height:100px; width:10px; background:var(--success-color);"></div>
+                    <div style="text-align:center;">🟢 Good Packet<br>Allowed</div>
+                </div>
+            </div>
+            <p><strong>Default Policy:</strong> ควรเป็น <code>DROP ALL</code> แล้วอนุญาตเฉพาะที่จำเป็น (Whitelist)</p>
+        </div>
+
+        <div class="slide">
+            <h2>🔥 Firewall Types Comparison</h2>
+            <div class="diagram-placeholder">
+                <div style="position: absolute; top: 10px; left: 10px;" class="tag">Week5_Diagram2_Firewall_Types.drawio</div>
+                <p style="text-align: center;">[ ใส่รูป Diagram 2: Firewall Types Comparison ที่นี่ ]<br><small>Packet Filtering / Stateful / WAF / NGFW</small></p>
+            </div>
+            <ul>
+                <li><strong>Packet Filtering:</strong> ดูแค่ Header (IP/Port) - <em>เร็วแต่ไม่ฉลาด</em></li>
+                <li><strong>Stateful:</strong> จำสถานะ Connection - <em>รู้ว่าเป็น Session เดิมไหม</em></li>
+                <li><strong>Application (WAF):</strong> แกะดูเนื้อหาข้างใน - <em>กัน SQL Injection ได้</em></li>
+            </ul>
+        </div>
+
+        <div class="slide">
+            <h2>📝 ตัวอย่างกฎ Firewall (Simplified)</h2>
+            <p>หลักการ: <strong>Direction</strong> (In/Out) + <strong>Proto</strong> + <strong>Port</strong> + <strong>Action</strong></p>
+            
+            <div class="code-block">
+Rule 1: ALLOW TCP from ANY to 192.168.1.10 port 80   <span class="comment"># Web HTTP</span>
+Rule 2: ALLOW TCP from ANY to 192.168.1.10 port 443  <span class="comment"># Web HTTPS</span>
+Rule 3: ALLOW TCP from 10.0.0.5 to 192.168.1.10 port 22 <span class="comment"># Admin SSH</span>
+Rule 4: DENY ALL <span class="comment"># กฎสุดท้ายสำคัญที่สุด!</span>
+            </div>
+
+            <p class="blink" style="color: var(--danger-color); text-align: center;">ถ้าไม่มี Rule 4 จะเกิดอะไรขึ้น? (Open Door!)</p>
+        </div>
+
+        <div class="slide">
+            <h2>🐧 Lab Demo: Linux Firewall (ufw)</h2>
+            <p>Uncomplicated Firewall บน Ubuntu</p>
+            <div class="code-block">
+<span class="highlight">$ sudo ufw status</span>
+Status: inactive
+
+<span class="highlight">$ sudo ufw default deny incoming</span>
+Default incoming policy changed to 'deny'
+
+<span class="highlight">$ sudo ufw allow 22/tcp</span>  <span class="comment"># อย่าลืมเปิด SSH ก่อน enable!</span>
+Rules updated
+
+<span class="highlight">$ sudo ufw allow 80/tcp</span>
+Rules updated
+
+<span class="highlight">$ sudo ufw enable</span>
+Command may disrupt existing ssh connections. Proceed with operation (y|n)? y
+Firewall is active and enabled on system startup
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>🪟 Lab Demo: Windows Firewall (PowerShell)</h2>
+            <div class="code-block">
+<span class="comment"># อนุญาต HTTP Inbound</span>
+New-NetFirewallRule -DisplayName "Allow HTTP" `
+  -Direction Inbound -LocalPort 80 `
+  -Protocol TCP -Action Allow
+
+<span class="comment"># บล็อก Telnet (Port 23) เพราะไม่ปลอดภัย</span>
+New-NetFirewallRule -DisplayName "Block Telnet" `
+  -Direction Inbound -LocalPort 23 `
+  -Protocol TCP -Action Block
+
+<span class="comment"># ดู Rules ที่ Active</span>
+Get-NetFirewallRule | Where-Object {$_.Enabled -eq 'True'}
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>🚨 Part 3: IDS vs IPS</h2>
+            <div class="diagram-placeholder">
+                <div style="position: absolute; top: 10px; left: 10px;" class="tag">Week5_Diagram3_IDS_vs_IPS.drawio</div>
+                <p style="text-align: center;">[ ใส่รูป Diagram 3: IDS vs IPS Comparison ที่นี่ ]</p>
+            </div>
+            <div class="cols-2">
+                <div>
+                    <h3>IDS (Detection) 📹</h3>
+                    <ul>
+                        <li>เหมือน <strong>กล้องวงจรปิด</strong></li>
+                        <li>แจ้งเตือนเมื่อเจอโจร</li>
+                        <li><span class="danger">ไม่ Block เอง</span> (Passive)</li>
+                        <li>ไม่กระทบความเร็ว Network</li>
+                    </ul>
+                </div>
+                <div>
+                    <h3>IPS (Prevention) 🛡️</h3>
+                    <ul>
+                        <li>เหมือน <strong>รปภ. หน้าประตู</strong></li>
+                        <li>เจอโจรแล้ว <strong>จับโยนออกไปเลย</strong></li>
+                        <li><span class="success">Block ทันที</span> (Inline)</li>
+                        <li>ถ้า Config ผิด อาจบล็อก user ดีๆ ได้</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>🔍 วิธีการตรวจจับ (Detection Methods)</h2>
+            
+            <div style="margin-bottom: 20px;">
+                <h3>1. Signature-based (ลายเซ็น)</h3>
+                <p>เทียบ Pattern เหมือนโปรแกรมสแกนไวรัส. <br>
+                <em>เช่น: ถ้าเจอ packet เนื้อหา <code>SELECT * FROM users</code> ให้แจ้งเตือน SQLi</em></p>
+                <p class="danger">ข้อเสีย: จับ Zero-day (ของใหม่ที่ไม่รู้จัก) ไม่ได้</p>
+            </div>
+
+            <div>
+                <h3>2. Anomaly-based (พฤติกรรมผิดปกติ)</h3>
+                <p>เรียนรู้ "ความปกติ" (Baseline). <br>
+                <em>เช่น: ปกติ Server ส่งข้อมูล 10MB/วัน วันนี้ส่ง 50GB -> ผิดปกติ!</em></p>
+                <p class="success">ข้อดี: จับ Zero-day ได้</p>
+                <p class="danger">ข้อเสีย: False Positive เยอะ (เตือนมั่ว)</p>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>🔐 Part 4: VPN (Virtual Private Network)</h2>
+            <p>สร้าง <strong>"อุโมงค์เข้ารหัส" (Encrypted Tunnel)</strong> ผ่าน Internet ที่ไม่ปลอดภัย</p>
+            
+            <div class="diagram-placeholder">
+                <div style="position: absolute; top: 10px; left: 10px;" class="tag">Week5_Diagram4_VPN_Tunnel.drawio</div>
+                <p style="text-align: center;">[ ใส่รูป Diagram 4: VPN Tunnel Concept ที่นี่ ]<br><small>User -> [Tunnel] -> VPN Server -> Internet</small></p>
+            </div>
+
+            <p style="text-align: center;">
+                <strong>ISP/Hacker เห็น:</strong> <code>x8s#@!9d... (อ่านไม่ออก)</code><br>
+                <strong>VPN Server เห็น:</strong> <code>GET /index.html</code>
+            </p>
+        </div>
+
+        <div class="slide">
+            <h2>🤔 VPN Reality Check</h2>
+            <div class="cols-2">
+                <div>
+                    <h3>Protocols</h3>
+                    <ul>
+                        <li><strong>OpenVPN:</strong> มาตรฐาน ปลอดภัยสูง (SSL/TLS)</li>
+                        <li><strong>WireGuard:</strong> ใหม่ เร็ว โค้ดน้อย (Modern Choice)</li>
+                        <li><strong>IPsec:</strong> มาตรฐานองค์กร</li>
+                        <li><span style="text-decoration: line-through; color: gray;">PPTP</span>: เก่า ไม่ปลอดภัย ห้ามใช้!</li>
+                    </ul>
+                </div>
+                <div style="border: 1px solid var(--danger-color); padding: 20px; border-radius: 8px;">
+                    <h3>⚠️ WARNING</h3>
+                    <p>VPN ไม่ใช่ <strong>โล่วิเศษ</strong></p>
+                    <ul>
+                        <li>มันปกป้องแค่ traffic ระหว่าง <strong>คุณ -> VPN Server</strong></li>
+                        <li>ถ้าเว็บปลายทางเป็น HTTP (ไม่เข้ารหัส) VPN Server ก็เห็นข้อมูลคุณ</li>
+                        <li>ระวัง Free VPN! (ของฟรีไม่มีในโลก เขาอาจขายข้อมูลคุณ)</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>🏗️ Part 5: Network Segmentation</h2>
+            <p><strong>"อย่าใส่ไข่ทุกฟองในตะกร้าใบเดียว"</strong></p>
+            
+            <div class="diagram-placeholder">
+                <div style="position: absolute; top: 10px; left: 10px;" class="tag">Week5_Diagram6_Network_Segmentation.drawio</div>
+                <p style="text-align: center;">[ ใส่รูป Diagram 6: Flat vs Segmented Network ที่นี่ ]</p>
+            </div>
+
+            <p>ถ้า Network แบนราบ (Flat) -> เครื่องหนึ่งติดไวรัส -> แพร่กระจายทั่วบริษัท<br>
+            ถ้าแบ่งส่วน (Segmented) -> ไวรัสติดอยู่แค่ในโซนนั้น (Blast Radius reduction)</p>
+        </div>
+
+        <div class="slide">
+            <h2>🚧 DMZ (Demilitarized Zone)</h2>
+            <p>เขตปลอดทหาร (เขตกันชน) ระหว่าง Internet กับ Internal Network</p>
+            
+            <div class="diagram-placeholder">
+                <div style="position: absolute; top: 10px; left: 10px;" class="tag">Week5_Diagram5_DMZ_Architecture.drawio</div>
+                <p style="text-align: center;">[ ใส่รูป Diagram 5: DMZ Architecture ที่นี่ ]</p>
+            </div>
+            
+            <ul>
+                <li><strong>Public Facing (DMZ):</strong> Web Server, Email Gateways (ยอมให้คนนอกเข้า)</li>
+                <li><strong>Internal (Private):</strong> Database, HR Data (ห้ามคนนอกเข้าตรงๆ)</li>
+                <li>ถ้า Web Server โดนแฮก -> Hacker ยังติดอยู่ใน DMZ เข้าถึง Database ไม่ได้ทันที</li>
+            </ul>
+        </div>
+
+        <div class="slide">
+            <h2>🔬 Part 6: Lab 2 - Packet Analysis</h2>
+            <p>เราจะใช้ <strong>Wireshark</strong> เพื่อ "ดักฟัง" และวิเคราะห์ข้อมูลใน Network</p>
+            
+            <div class="cols-2">
+                <div>
+                    <h3>Steps:</h3>
+                    <ol>
+                        <li>เปิด Wireshark</li>
+                        <li>เลือก Interface (Wi-Fi/Eth)</li>
+                        <li>กด Start Capture 🦈</li>
+                        <li>เข้าเว็บ HTTP และ HTTPS</li>
+                        <li>Stop & Filter <code>http</code> หรือ <code>tls</code></li>
+                    </ol>
+                </div>
+                <div class="v-center">
+                   <p style="font-size: 2em; text-align: center;">🦈</p>
+                   <p style="text-align: center;">"Wireshark sees everything"</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>🖥️ Simulation: Wireshark View</h2>
+            <div style="margin-bottom: 10px;">
+                <button onclick="addPacket()" style="border:1px solid var(--accent-color); padding: 5px 10px; font-size: 0.8em;">+ Generate Traffic</button>
+                <button onclick="clearPackets()" style="border:1px solid var(--danger-color); padding: 5px 10px; font-size: 0.8em; color: var(--danger-color);">Clear</button>
+            </div>
+            
+            <div class="sim-container" id="packetList">
+                <div class="sim-header">
+                    <div>No.</div><div>Time</div><div>Source</div><div>Dest</div><div>Info</div>
+                </div>
+                </div>
+            
+            <div style="margin-top: 20px;">
+                <p><strong>Observation:</strong></p>
+                <ul>
+                    <li><span class="protocol-http">HTTP</span>: มองเห็นข้อมูลชัดเจน (GET /login.php?user=admin) ❌</li>
+                    <li><span class="protocol-tls">TLS (HTTPS)</span>: มองเห็นแค่ Application Data (Encrypted) ✅</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>👥 Activity: Design Mini DMZ</h2>
+            <p><strong>โจทย์:</strong> บริษัท E-Commerce ต้องการวางระบบ:</p>
+            <ul>
+                <li>1. Web Server (Public Access)</li>
+                <li>2. App Server (Process Order)</li>
+                <li>3. Database (Store Customer Data)</li>
+            </ul>
+            
+            <div class="code-block">
+                Output ที่ต้องการ:<br>
+                1. Diagram (วาดมือ หรือ draw.io)<br>
+                2. ตาราง Firewall Rules (ใครคุยกับใครได้บ้าง)<br>
+                3. ส่งท้ายคาบ หรือ สัปดาห์หน้า
+            </div>
+            
+            <p><em>Hint: Web Server ควรอยู่ที่ไหน? Database ควรอยู่ที่ไหน?</em></p>
+        </div>
+
+        <div class="slide">
+            <h2>🧠 Quick Quiz</h2>
+            <div style="font-size: 0.9em;">
+                <p><strong>Q1: Firewall แบบใด ป้องกัน SQL Injection ได้ดีที่สุด?</strong></p>
+                <button onclick="alert('ผิดครับ Packet Filtering ดูแค่ IP/Port ไม่เห็นเนื้อหา SQL')" style="display:block; margin: 5px; padding: 10px; width: 100%; text-align: left; border: 1px solid var(--border-color);">A. Packet Filtering</button>
+                <button onclick="alert('ถูกต้อง! WAF ทำงานที่ Layer 7 ตรวจสอบ Payload ได้')" style="display:block; margin: 5px; padding: 10px; width: 100%; text-align: left; border: 1px solid var(--accent-color);">B. Web Application Firewall (WAF)</button>
+                <button onclick="alert('ผิดครับ Stateful ดูแค่ Connection State')" style="display:block; margin: 5px; padding: 10px; width: 100%; text-align: left; border: 1px solid var(--border-color);">C. Stateful Inspection</button>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>🚀 Advanced: Zero Trust Network</h2>
+            <p>ยุคเก่า: "ข้างในเชื่อถือได้ ข้างนอกอันตราย" (Trust but Verify)<br>
+            ยุคใหม่: <strong>"ไม่เชื่อใครเลย" (Never Trust, Always Verify)</strong></p>
+
+            <div class="cols-2">
+                <div>
+                    <h3>Principles</h3>
+                    <ul>
+                        <li>Verify explicitly (ตรวจสอบทุก request)</li>
+                        <li>Least privilege access (ให้สิทธิ์น้อยที่สุด)</li>
+                        <li>Assume breach (คิดเสมอว่าระบบโดนเจาะแล้ว)</li>
+                    </ul>
+                </div>
+                <div class="v-center">
+                    <div style="text-align: center; border: 2px dashed var(--accent-color); padding: 20px;">
+                        Identity is the new Perimeter
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>📝 Summary Week 5</h2>
+            <div class="cols-2">
+                <div>
+                    <ul>
+                        <li>✅ <strong>Firewall:</strong> กรอง Packet (Packet Filter / WAF)</li>
+                        <li>✅ <strong>IDS/IPS:</strong> ตรวจจับและป้องกันผู้บุกรุก</li>
+                        <li>✅ <strong>VPN:</strong> เข้ารหัสข้อมูลเมื่อผ่าน Public Network</li>
+                        <li>✅ <strong>DMZ:</strong> โซนกันชน ปกป้อง Database</li>
+                        <li>✅ <strong>Defense in Depth:</strong> ป้องกันหลายชั้นดีที่สุด</li>
+                    </ul>
+                </div>
+                <div class="v-center">
+                    <p style="text-align: center; font-size: 1.5em; color: var(--accent-color);">
+                        "Security is a process,<br>not a product."
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>🔮 Next Week: Cryptography</h2>
+            <p>เราจะลงลึกเรื่องศาสตร์แห่งการเข้ารหัสลับ</p>
+            <ul>
+                <li>🔑 <strong>Symmetric vs Asymmetric:</strong> กุญแจดอกเดียว vs กุญแจคู่</li>
+                <li>#️⃣ <strong>Hashing:</strong> ทำไมรหัสผ่านถึงเก็บเป็น Hash?</li>
+                <li>📜 <strong>Digital Signature:</strong> ยืนยันตัวตนทางดิจิทัล</li>
+                <li>🌐 <strong>HTTPS/TLS:</strong> มันทำงานอย่างไร?</li>
+            </ul>
+            <p style="margin-top: 20px;"><em>Preparation: ลองเล่น Caesar Cipher มาก่อนล่วงหน้า</em></p>
+        </div>
+
+        <div class="slide v-center" style="text-align: center;">
+            <h1>Thank You</h1>
+            <p>Q & A</p>
+            <div style="margin-top: 30px; font-size: 0.8em; color: var(--secondary-accent);">
+                <p>📧 Email: thanit@rmutl.ac.th</p>
+                <p>Office Hours: Tue/Fri</p>
+            </div>
+            <div style="margin-top: 50px;">
+                <a href="#" style="color: var(--accent-color); text-decoration: none; margin: 0 10px;">[Download Slides]</a>
+                <a href="https://www.wireshark.org/" target="_blank" style="color: var(--accent-color); text-decoration: none; margin: 0 10px;">[Get Wireshark]</a>
+                <a href="https://map.lookingglasscyber.com/" target="_blank" style="color: var(--accent-color); text-decoration: none; margin: 0 10px;">[Live Cyber Attack Map]</a>
+            </div>
+        </div>
+
+    </div>
+
+    <div id="controls">
+        <button id="btn-prev" title="Previous">◀</button>
+        <div id="slide-counter" style="font-family: var(--font-code); display: flex; align-items: center; min-width: 60px; justify-content: center;">1 / 25</div>
+        <button id="btn-next" title="Next">▶</button>
+        <div style="width: 1px; background: var(--secondary-accent); margin: 0 10px;"></div>
+        <button id="btn-theme" title="Toggle Theme">🌓</button>
+        <button id="btn-font-dec" title="Smaller Font">A-</button>
+        <button id="btn-font-inc" title="Larger Font">A+</button>
+        <button id="btn-fullscreen" title="Fullscreen">⛶</button>
+    </div>
+
+    <script>
+        // --- Core Slide Logic ---
+        const slides = document.querySelectorAll('.slide');
+        const progressBar = document.getElementById('progress');
+        const counter = document.getElementById('slide-counter');
+        let currentSlide = 0;
+
+        function showSlide(index) {
+            slides.forEach((slide, i) => {
+                slide.classList.remove('active');
+                if (i === index) slide.classList.add('active');
+            });
+            currentSlide = index;
+            updateUI();
+        }
+
+        function nextSlide() {
+            if (currentSlide < slides.length - 1) {
+                showSlide(currentSlide + 1);
+            }
+        }
+
+        function prevSlide() {
+            if (currentSlide > 0) {
+                showSlide(currentSlide - 1);
+            }
+        }
+
+        function updateUI() {
+            // Update Counter
+            counter.innerText = `${currentSlide + 1} / ${slides.length}`;
+            // Update Progress Bar
+            const progress = ((currentSlide + 1) / slides.length) * 100;
+            progressBar.style.width = `${progress}%`;
+        }
+
+        // --- Controls Event Listeners ---
+        document.getElementById('btn-next').addEventListener('click', nextSlide);
+        document.getElementById('btn-prev').addEventListener('click', prevSlide);
+
+        // Keyboard Navigation
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === ' ') nextSlide();
+            if (e.key === 'ArrowLeft') prevSlide();
+        });
+
+        // Theme Toggle
+        const btnTheme = document.getElementById('btn-theme');
+        btnTheme.addEventListener('click', () => {
+            document.body.classList.toggle('light-theme');
+        });
+
+        // Fullscreen
+        const btnFullscreen = document.getElementById('btn-fullscreen');
+        const container = document.getElementById('presentation-area');
+        
+        btnFullscreen.addEventListener('click', () => {
+            if (!document.fullscreenElement) {
+                if(container.requestFullscreen) container.requestFullscreen();
+                else if(container.mozRequestFullScreen) container.mozRequestFullScreen();
+                else if(container.webkitRequestFullscreen) container.webkitRequestFullscreen();
+                else if(container.msRequestFullscreen) container.msRequestFullscreen();
+            } else {
+                if(document.exitFullscreen) document.exitFullscreen();
+            }
+        });
+
+        // Font Resizing
+        let fontScale = 1;
+        const root = document.documentElement;
+        
+        document.getElementById('btn-font-inc').addEventListener('click', () => {
+            if (fontScale < 1.5) {
+                fontScale += 0.1;
+                root.style.setProperty('--font-scale', fontScale);
+            }
+        });
+        
+        document.getElementById('btn-font-dec').addEventListener('click', () => {
+            if (fontScale > 0.8) {
+                fontScale -= 0.1;
+                root.style.setProperty('--font-scale', fontScale);
+            }
+        });
+
+        // --- Simulation Logic (Wireshark Mock) ---
+        let packetCount = 0;
+        const packetList = document.getElementById('packetList');
+        const protocols = [
+            { name: 'TCP', class: 'protocol-tcp', info: '60322 → 443 [ACK] Seq=1 Ack=1 Win=65535 Len=0' },
+            { name: 'TLSv1.2', class: 'protocol-tls', info: 'Application Data' },
+            { name: 'HTTP', class: 'protocol-http', info: 'GET /index.html HTTP/1.1' },
+            { name: 'DNS', class: 'protocol-tcp', info: 'Standard query 0x1234 A example.com' },
+            { name: 'ICMP', class: 'danger', info: 'Echo (ping) request id=0x0001 seq=1' }
+        ];
+
+        function addPacket() {
+            packetCount++;
+            const randProto = protocols[Math.floor(Math.random() * protocols.length)];
+            const time = (packetCount * 0.05 + Math.random() * 0.1).toFixed(6);
+            const src = `192.168.1.${Math.floor(Math.random()*255)}`;
+            const dst = `10.0.0.${Math.floor(Math.random()*255)}`;
+            
+            const div = document.createElement('div');
+            div.className = 'sim-row';
+            div.innerHTML = `
+                <div>${packetCount}</div>
+                <div>${time}</div>
+                <div>${src}</div>
+                <div>${dst}</div>
+                <div class="${randProto.class}">[${randProto.name}] ${randProto.info}</div>
+            `;
+            packetList.appendChild(div);
+            packetList.scrollTop = packetList.scrollHeight;
+        }
+        
+        function clearPackets() {
+            packetList.innerHTML = '<div class="sim-header"><div>No.</div><div>Time</div><div>Source</div><div>Dest</div><div>Info</div></div>';
+            packetCount = 0;
+        }
+
+        // Initialize first slide
+        showSlide(0);
+
+    </script>
+</body>
+</html>
