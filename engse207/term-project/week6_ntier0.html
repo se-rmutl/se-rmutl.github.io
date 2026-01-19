@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ENGSE207: Week 6 N-Tier Architecture</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#f0f9ff',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            900: '#0c4a6e',
+                        },
+                        accent: {
+                            purple: '#8b5cf6',
+                            green: '#10b981',
+                            pink: '#ec4899'
+                        },
+                        dark: {
+                            bg: '#0f172a',
+                            card: '#1e293b',
+                            border: '#334155'
+                        }
+                    },
+                    animation: {
+                        'float': 'float 6s ease-in-out infinite',
+                        'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-10px)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #0f172a;
+            color: #f8fafc;
+            overflow: hidden; /* Hide scrollbars for slide effect */
+        }
+        
+        .slide {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            transform: scale(0.95) translateY(20px);
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .slide.active {
+            opacity: 1;
+            visibility: visible;
+            transform: scale(1) translateY(0);
+            z-index: 10;
+        }
+
+        .slide.prev {
+            transform: translateY(-100%);
+            opacity: 0;
+        }
+
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .code-block {
+            font-family: 'JetBrains Mono', monospace;
+            background: #000;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            border-left: 4px solid #0ea5e9;
+        }
+
+        .progress-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            height: 6px;
+            background: linear-gradient(90deg, #0ea5e9, #8b5cf6);
+            transition: width 0.3s ease;
+            z-index: 50;
+        }
+
+        /* Architectural Diagram Styles */
+        .arch-diagram {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+        
+        .arch-node {
+            width: 140px;
+            height: 140px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-radius: 1rem;
+            font-weight: bold;
+            position: relative;
+            transition: transform 0.3s;
+        }
+        
+        .arch-node:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+        }
+
+        .arrow-right {
+            width: 50px;
+            height: 2px;
+            background: #475569;
+            position: relative;
+        }
+        .arrow-right::after {
+            content: '';
+            position: absolute;
+            right: 0;
+            top: -4px;
+            border-top: 5px solid transparent;
+            border-bottom: 5px solid transparent;
+            border-left: 8px solid #475569;
+        }
+
+        /* Custom Scrollbar for content */
+        .content-scroll {
+            overflow-y: auto;
+            max-height: 80vh;
+            padding-right: 1rem;
+        }
+        .content-scroll::-webkit-scrollbar {
+            width: 8px;
+        }
+        .content-scroll::-webkit-scrollbar-track {
+            background: #1e293b; 
+        }
+        .content-scroll::-webkit-scrollbar-thumb {
+            background: #475569; 
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body class="antialiased selection:bg-brand-500 selection:text-white">
+
+    <div id="progress" class="progress-bar" style="width: 0%"></div>
+
+    <div class="fixed top-0 left-0 w-full h-full overflow-hidden -z-10 pointer-events-none">
+        <div class="absolute top-[-10%] left-[-10%] w-96 h-96 bg-brand-600/20 rounded-full blur-[100px] animate-pulse-slow"></div>
+        <div class="absolute bottom-[-10%] right-[-10%] w-96 h-96 bg-accent-purple/20 rounded-full blur-[100px] animate-pulse-slow" style="animation-delay: 2s"></div>
+    </div>
+
+    <div class="fixed bottom-8 right-8 flex gap-4 z-50">
+        <button onclick="prevSlide()" class="p-3 rounded-full glass-panel hover:bg-brand-600/50 transition text-white border border-white/10 group">
+            <i data-lucide="chevron-left" class="w-6 h-6 group-hover:-translate-x-1 transition"></i>
+        </button>
+        <button onclick="nextSlide()" class="p-3 rounded-full glass-panel hover:bg-brand-600/50 transition text-white border border-white/10 group">
+            <i data-lucide="chevron-right" class="w-6 h-6 group-hover:translate-x-1 transition"></i>
+        </button>
+    </div>
+
+    <div class="fixed top-8 left-8 z-50 flex items-center gap-3 opacity-70">
+        <span class="font-mono text-sm text-brand-400">ENGSE207</span>
+        <span class="w-px h-4 bg-slate-600"></span>
+        <span class="text-sm font-semibold tracking-wide">SOFTWARE ARCHITECTURE</span>
+    </div>
+
+    <main id="slides-container" class="relative w-full h-full max-w-7xl mx-auto">
+
+        <section class="slide active">
+            <div class="text-center max-w-4xl">
+                <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-brand-500/10 border border-brand-500/20 text-brand-400 font-mono text-sm mb-6 animate-float">
+                    <span class="w-2 h-2 rounded-full bg-brand-500 animate-pulse"></span>
+                    Phase 2: Modern Architectures
+                </div>
+                <h1 class="text-6xl md:text-8xl font-extrabold tracking-tight mb-6 bg-clip-text text-transparent bg-gradient-to-r from-white via-brand-200 to-brand-500">
+                    N-Tier Architecture
+                </h1>
+                <p class="text-xl md:text-2xl text-slate-400 mb-10 max-w-2xl mx-auto leading-relaxed">
+                    Week 6: Scaling beyond the Monolith. <br>
+                    <span class="text-white">Physical Separation</span>, <span class="text-white">Reverse Proxy</span>, and <span class="text-white">Production Database</span>.
+                </p>
+                <div class="flex justify-center gap-6 text-sm font-mono text-slate-500">
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="server" class="w-4 h-4"></i> Single VM
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="shield" class="w-4 h-4"></i> Nginx & SSL
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="database" class="w-4 h-4"></i> PostgreSQL
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="slide">
+            <div class="w-full max-w-5xl content-scroll">
+                <h2 class="text-4xl font-bold mb-12 text-center"><span class="text-brand-500">The Journey:</span> From Basic to Modern</h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+                    <div class="glass-panel p-8 rounded-2xl border-l-4 border-l-slate-500 opacity-60 hover:opacity-100 transition duration-500">
+                        <div class="flex justify-between items-start mb-4">
+                            <h3 class="text-2xl font-bold text-slate-300">Phase 1: Foundation</h3>
+                            <span class="px-2 py-1 bg-green-500/20 text-green-400 text-xs rounded uppercase font-bold">Completed</span>
+                        </div>
+                        <ul class="space-y-4 font-mono text-sm text-slate-400">
+                            <li class="flex items-center gap-3">
+                                <div class="w-6 h-6 rounded bg-slate-800 flex items-center justify-center text-xs">W3</div>
+                                <span>Monolithic (SQLite, All-in-one)</span>
+                            </li>
+                            <li class="flex items-center gap-3">
+                                <div class="w-6 h-6 rounded bg-slate-800 flex items-center justify-center text-xs">W4</div>
+                                <span>Layered Arch (Separation of Concerns)</span>
+                            </li>
+                            <li class="flex items-center gap-3">
+                                <div class="w-6 h-6 rounded bg-slate-800 flex items-center justify-center text-xs">W5</div>
+                                <span>Client-Server (REST API, VM Intro)</span>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="glass-panel p-8 rounded-2xl border-l-4 border-l-brand-500 relative transform scale-105 shadow-2xl shadow-brand-500/10">
+                        <div class="absolute -top-3 -right-3">
+                            <span class="relative flex h-6 w-6">
+                                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-400 opacity-75"></span>
+                                <span class="relative inline-flex rounded-full h-6 w-6 bg-brand-500"></span>
+                            </span>
+                        </div>
+                        <div class="flex justify-between items-start mb-4">
+                            <h3 class="text-2xl font-bold text-white">Phase 2: Modern Arch</h3>
+                            <span class="px-2 py-1 bg-brand-500/20 text-brand-400 text-xs rounded uppercase font-bold">Current</span>
+                        </div>
+                        <p class="text-slate-400 mb-6 text-sm">Moving from "Logical Separation" to "Physical Separation" & Containerization concepts.</p>
+                        <ul class="space-y-4 font-mono text-sm text-white">
+                            <li class="flex items-center gap-3 p-2 bg-brand-500/10 rounded border border-brand-500/20">
+                                <div class="w-6 h-6 rounded bg-brand-600 flex items-center justify-center text-xs font-bold">W6</div>
+                                <span class="font-bold">N-Tier (Nginx, SSL, Postgres)</span>
+                            </li>
+                            <li class="flex items-center gap-3 opacity-50">
+                                <div class="w-6 h-6 rounded bg-slate-700 flex items-center justify-center text-xs">W7</div>
+                                <span>Event-Driven & Docker Compose</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="slide">
+            <div class="w-full max-w-6xl text-center">
+                <h2 class="text-4xl font-bold mb-4">What is <span class="text-transparent bg-clip-text bg-gradient-to-r from-brand-400 to-accent-purple">N-Tier Architecture?</span></h2>
+                <p class="text-slate-400 mb-12">Separating the system into distinct <strong>Physical Tiers</strong>. Each tier runs as its own process/service.</p>
+
+                <div class="arch-diagram flex-wrap">
+                    <div class="flex flex-col items-center">
+                        <div class="arch-node bg-slate-800 border border-slate-600">
+                            <i data-lucide="laptop" class="w-10 h-10 mb-2 text-slate-300"></i>
+                            <span class="text-sm text-slate-400">Client Tier</span>
+                            <span class="text-xs text-brand-400 font-mono mt-1">Browser</span>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col items-center gap-1">
+                        <span class="text-[10px] font-mono text-accent-green uppercase">HTTPS (443)</span>
+                        <div class="arrow-right w-16"></div>
+                    </div>
+
+                    <div class="flex flex-col items-center">
+                        <div class="arch-node bg-accent-green/10 border border-accent-green/30">
+                            <div class="absolute -top-3 px-2 py-0.5 bg-accent-green text-black text-[10px] font-bold rounded">Tier 1</div>
+                            <i data-lucide="shield-check" class="w-10 h-10 mb-2 text-accent-green"></i>
+                            <span class="text-sm text-white font-bold">Web Server</span>
+                            <span class="text-xs text-slate-400 font-mono mt-1">Nginx</span>
+                        </div>
+                        <div class="mt-2 text-[10px] text-slate-500 max-w-[120px]">SSL Termination<br>Static Files</div>
+                    </div>
+
+                    <div class="flex flex-col items-center gap-1">
+                        <span class="text-[10px] font-mono text-brand-400 uppercase">HTTP (3000)</span>
+                        <div class="arrow-right w-16"></div>
+                    </div>
+
+                    <div class="flex flex-col items-center">
+                        <div class="arch-node bg-brand-900/40 border border-brand-500/30">
+                            <div class="absolute -top-3 px-2 py-0.5 bg-brand-500 text-white text-[10px] font-bold rounded">Tier 2</div>
+                            <i data-lucide="cpu" class="w-10 h-10 mb-2 text-brand-400"></i>
+                            <span class="text-sm text-white font-bold">App Server</span>
+                            <span class="text-xs text-slate-400 font-mono mt-1">Node.js API</span>
+                        </div>
+                        <div class="mt-2 text-[10px] text-slate-500 max-w-[120px]">Business Logic<br>REST API</div>
+                    </div>
+
+                    <div class="flex flex-col items-center gap-1">
+                        <span class="text-[10px] font-mono text-accent-purple uppercase">TCP (5432)</span>
+                        <div class="arrow-right w-16"></div>
+                    </div>
+
+                    <div class="flex flex-col items-center">
+                        <div class="arch-node bg-accent-purple/10 border border-accent-purple/30">
+                            <div class="absolute -top-3 px-2 py-0.5 bg-accent-purple text-white text-[10px] font-bold rounded">Tier 3</div>
+                            <i data-lucide="database" class="w-10 h-10 mb-2 text-accent-purple"></i>
+                            <span class="text-sm text-white font-bold">Database</span>
+                            <span class="text-xs text-slate-400 font-mono mt-1">PostgreSQL</span>
+                        </div>
+                        <div class="mt-2 text-[10px] text-slate-500 max-w-[120px]">Persistent Data<br>ACID Compliant</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="slide">
+            <div class="w-full max-w-5xl content-scroll">
+                <div class="flex items-center gap-4 mb-8">
+                    <div class="p-3 bg-brand-600 rounded-lg">
+                        <i data-lucide="terminal" class="w-8 h-8 text-white"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-3xl font-bold">Week 6 Lab: The Mission</h2>
+                        <p class="text-slate-400">Transform your Task Board into a Production-Ready System</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="glass-panel p-6 rounded-xl hover:border-brand-500/50 transition group">
+                        <div class="flex items-center gap-3 mb-3">
+                            <span class="w-8 h-8 rounded-full bg-slate-700 text-white flex items-center justify-center font-bold group-hover:bg-brand-500 transition">1</span>
+                            <h3 class="font-bold text-lg">Migrate Database</h3>
+                        </div>
+                        <p class="text-sm text-slate-400 mb-3">Move from file-based SQLite to server-based <strong>PostgreSQL</strong>.</p>
+                        <div class="code-block text-xs">
+                            npm install pg<br>
+                            # Update .env config
+                        </div>
+                    </div>
+
+                    <div class="glass-panel p-6 rounded-xl hover:border-brand-500/50 transition group">
+                        <div class="flex items-center gap-3 mb-3">
+                            <span class="w-8 h-8 rounded-full bg-slate-700 text-white flex items-center justify-center font-bold group-hover:bg-brand-500 transition">2</span>
+                            <h3 class="font-bold text-lg">Setup Nginx Reverse Proxy</h3>
+                        </div>
+                        <p class="text-sm text-slate-400 mb-3">Install Nginx as the "Front Door". No more direct access to Node.js on port 3000.</p>
+                        <div class="code-block text-xs">
+                            location /api/ {<br>
+                            &nbsp;&nbsp;proxy_pass http://localhost:3000;<br>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="glass-panel p-6 rounded-xl hover:border-brand-500/50 transition group">
+                        <div class="flex items-center gap-3 mb-3">
+                            <span class="w-8 h-8 rounded-full bg-slate-700 text-white flex items-center justify-center font-bold group-hover:bg-brand-500 transition">3</span>
+                            <h3 class="font-bold text-lg">Implement HTTPS</h3>
+                        </div>
+                        <p class="text-sm text-slate-400 mb-3">Generate a Self-Signed SSL Certificate. Secure communication between Client and Web Server.</p>
+                        <div class="code-block text-xs">
+                            openssl req -x509 ...<br>
+                            listen 443 ssl;
+                        </div>
+                    </div>
+
+                    <div class="glass-panel p-6 rounded-xl hover:border-brand-500/50 transition group">
+                        <div class="flex items-center gap-3 mb-3">
+                            <span class="w-8 h-8 rounded-full bg-slate-700 text-white flex items-center justify-center font-bold group-hover:bg-brand-500 transition">4</span>
+                            <h3 class="font-bold text-lg">Analysis & C4 Models</h3>
+                        </div>
+                        <p class="text-sm text-slate-400 mb-3">Draw the Level 1 (Context) and Level 2 (Container) diagrams. Explain <em>Why</em> we did this.</p>
+                        <div class="flex gap-2 mt-2">
+                            <span class="text-xs bg-slate-700 px-2 py-1 rounded">Draw.io</span>
+                            <span class="text-xs bg-slate-700 px-2 py-1 rounded">Markdown</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="slide">
+            <div class="max-w-4xl w-full">
+                <h2 class="text-4xl font-bold mb-8 text-center">Think Like an Architect 🧠</h2>
+                
+                <div class="grid gap-6">
+                    <div class="glass-panel p-6 rounded-xl border-l-4 border-accent-pink">
+                        <h3 class="text-xl font-bold text-white mb-2 flex items-center gap-2">
+                            <i data-lucide="help-circle" class="text-accent-pink"></i> 
+                            Why replace SQLite?
+                        </h3>
+                        <p class="text-slate-300">SQLite locks the file during writes. In a real multi-user environment (N-Tier), we need a database engine like PostgreSQL that handles <strong>Concurrent Connections</strong>.</p>
+                    </div>
+
+                    <div class="glass-panel p-6 rounded-xl border-l-4 border-accent-green">
+                        <h3 class="text-xl font-bold text-white mb-2 flex items-center gap-2">
+                            <i data-lucide="help-circle" class="text-accent-green"></i> 
+                            Why use Nginx? Why not express.static?
+                        </h3>
+                        <p class="text-slate-300">Node.js is single-threaded and great for API logic, but bad at serving static files. Nginx is optimized for <strong>High Concurrency</strong> serving of HTML/CSS/Images and SSL termination.</p>
+                    </div>
+
+                    <div class="glass-panel p-6 rounded-xl border-l-4 border-brand-500">
+                        <h3 class="text-xl font-bold text-white mb-2 flex items-center gap-2">
+                            <i data-lucide="alert-triangle" class="text-brand-500"></i> 
+                            The Trade-off
+                        </h3>
+                        <p class="text-slate-300">
+                            <strong>Complexity vs. Scalability.</strong><br>
+                            We added 2 new infrastructure pieces (Nginx, Postgres). Setup is harder, but now we can scale each tier independently.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="slide">
+            <div class="text-center max-w-3xl">
+                <div class="mb-8 relative inline-block">
+                    <div class="absolute inset-0 bg-brand-500 blur-xl opacity-20 rounded-full animate-pulse"></div>
+                    <i data-lucide="rocket" class="w-24 h-24 text-white relative z-10 mx-auto"></i>
+                </div>
+                
+                <h2 class="text-5xl font-bold mb-6 text-white">Ready to Scale?</h2>
+                <p class="text-xl text-slate-400 mb-10">
+                    You have the plan. You have the VM. You have the code.<br>
+                    It's time to build a professional-grade infrastructure.
+                </p>
+
+                <div class="flex flex-col md:flex-row gap-4 justify-center">
+                    <a href="#" class="px-8 py-4 bg-brand-600 hover:bg-brand-500 text-white rounded-lg font-bold transition transform hover:-translate-y-1 shadow-lg shadow-brand-500/25 flex items-center justify-center gap-2">
+                        <i data-lucide="book-open"></i> Open Lab Guide
+                    </a>
+                    <a href="#" class="px-8 py-4 bg-slate-700 hover:bg-slate-600 text-white rounded-lg font-bold transition transform hover:-translate-y-1 flex items-center justify-center gap-2">
+                        <i data-lucide="download"></i> Download Starter Code
+                    </a>
+                </div>
+
+                <div class="mt-12 pt-8 border-t border-slate-800 text-sm text-slate-500 font-mono">
+                    <p>Next Week (Week 7): Event-Driven Architecture & RabbitMQ 🐇</p>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        // --- Logic Script ---
+        
+        // Initialize Icons
+        lucide.createIcons();
+
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slide');
+        const totalSlides = slides.length;
+        const progressBar = document.getElementById('progress');
+
+        function updateProgress() {
+            const progress = ((currentSlide + 1) / totalSlides) * 100;
+            progressBar.style.width = `${progress}%`;
+        }
+
+        function showSlide(index) {
+            // Bounds check
+            if (index < 0) index = 0;
+            if (index >= totalSlides) index = totalSlides - 1;
+            
+            currentSlide = index;
+
+            slides.forEach((slide, i) => {
+                slide.classList.remove('active', 'prev');
+                if (i === currentSlide) {
+                    slide.classList.add('active');
+                } else if (i < currentSlide) {
+                    slide.classList.add('prev');
+                }
+            });
+
+            updateProgress();
+        }
+
+        function nextSlide() {
+            showSlide(currentSlide + 1);
+        }
+
+        function prevSlide() {
+            showSlide(currentSlide - 1);
+        }
+
+        // Keyboard Navigation
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === ' ') {
+                nextSlide();
+            } else if (e.key === 'ArrowLeft') {
+                prevSlide();
+            }
+        });
+
+        // Initialize
+        updateProgress();
+
+    </script>
+</body>
+</html>

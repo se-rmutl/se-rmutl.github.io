@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ENGSE207: Week 6 Lab Overview</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/reset.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/reveal.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/theme/dracula.min.css">
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600&family=JetBrains+Mono:wght@400;700&display=swap');
+
+        :root {
+            --primary: #bd93f9;
+            --secondary: #50fa7b;
+            --accent: #ff79c6;
+            --bg-gradient: linear-gradient(135deg, #282a36 0%, #1a1c23 100%);
+        }
+
+        body { font-family: 'Prompt', sans-serif; }
+        .reveal { background: var(--bg-gradient); }
+        .reveal h1, .reveal h2, .reveal h3 { font-family: 'Prompt', sans-serif; text-transform: none; }
+        .reveal code { font-family: 'JetBrains Mono', monospace; color: var(--secondary); }
+        
+        /* Infographic Containers */
+        .architecture-diagram {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            margin-top: 30px;
+        }
+        
+        .tier-box {
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid var(--primary);
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            transition: transform 0.3s;
+            width: 200px;
+        }
+        
+        .tier-box:hover { transform: translateY(-10px); box-shadow: 0 10px 20px rgba(189, 147, 249, 0.2); }
+        .tier-icon { font-size: 3rem; margin-bottom: 15px; color: var(--accent); }
+        .arrow { font-size: 2rem; color: var(--secondary); animation: pulse 2s infinite; }
+
+        /* Highlight Boxes */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 30px;
+            border-left: 5px solid var(--secondary);
+        }
+
+        .alert-panel {
+            background: rgba(255, 85, 85, 0.1);
+            border-left: 5px solid #ff5555;
+            padding: 20px;
+            font-size: 0.8em;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 0.5; transform: translateX(0); }
+            50% { opacity: 1; transform: translateX(5px); }
+            100% { opacity: 0.5; transform: translateX(0); }
+        }
+
+        .step-badge {
+            background: var(--primary);
+            color: #282a36;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-right: 15px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="reveal">
+    <div class="slides">
+
+        <section>
+            <div style="font-size: 5rem; color: var(--primary); margin-bottom: 20px;">
+                <i class="fa-solid fa-layer-group"></i>
+            </div>
+            <h1>Week 6: N-Tier Architecture</h1>
+            <h3>Multi-Tier on Single VM</h3>
+            <p style="color: var(--secondary); font-size: 1.2rem;">ENGSE207 Software Architecture</p>
+            <div style="margin-top: 30px; font-size: 0.8rem; opacity: 0.7;">
+                By "ENGSE207" | Software Engineering
+            </div>
+        </section>
+
+        <section>
+            <h2>🎯 จุดประสงค์ของสัปดาห์นี้</h2>
+            <div class="glass-panel" style="text-align: left;">
+                <p class="fragment"><i class="fa-solid fa-check" style="color: var(--secondary);"></i> เปลี่ยนจาก Logical Layer เป็น <strong>Physical Tier</strong></p>
+                <p class="fragment"><i class="fa-solid fa-check" style="color: var(--secondary);"></i> อัปเกรด Database จาก SQLite เป็น <strong>PostgreSQL</strong></p>
+                <p class="fragment"><i class="fa-solid fa-check" style="color: var(--secondary);"></i> ใช้ <strong>Nginx</strong> เป็น Reverse Proxy & Web Server</p>
+                <p class="fragment"><i class="fa-solid fa-check" style="color: var(--secondary);"></i> เพิ่มความปลอดภัยด้วย <strong>HTTPS (SSL)</strong></p>
+                <p class="fragment"><i class="fa-solid fa-check" style="color: var(--secondary);"></i> <strong>สำคัญที่สุด:</strong> วิเคราะห์ Trade-offs ระหว่าง Week 5 vs Week 6</p>
+            </div>
+        </section>
+
+        <section>
+            <h3>🤔 ทำไมต้องเปลี่ยน? (Recap Week 5)</h3>
+            <p>สัปดาห์ที่แล้วเราทำ Client-Server แยก Process แล้ว แต่...</p>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 30px;">
+                <div class="alert-panel fragment">
+                    <h4><i class="fa-solid fa-triangle-exclamation"></i> SQLite Limitation</h4>
+                    <p>ไม่รองรับ Concurrent Write ที่สูง (Database Locked)</p>
+                </div>
+                <div class="alert-panel fragment">
+                    <h4><i class="fa-solid fa-user-secret"></i> Security Risk</h4>
+                    <p>HTTP ธรรมดา ข้อมูลถูกดักจับได้ง่าย (Sniffing)</p>
+                </div>
+                <div class="alert-panel fragment">
+                    <h4><i class="fa-solid fa-server"></i> Performance</h4>
+                    <p>Node.js ต้องทำงานหนัก ทั้ง Logic และ Static Files</p>
+                </div>
+                <div class="alert-panel fragment">
+                    <h4><i class="fa-solid fa-expand"></i> Scalability</h4>
+                    <p>ขยาย Database แยกจาก App ไม่ได้</p>
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <h3>💡 Concept: Tier vs Layer</h3>
+            <p>อย่าสับสนระหว่างสองคำนี้!</p>
+            <div class="architecture-diagram" style="align-items: stretch;">
+                <div class="tier-box" style="border-color: var(--accent);">
+                    <i class="fa-solid fa-code tier-icon"></i>
+                    <h4>Layer</h4>
+                    <p style="font-size: 0.7em;">Logical Separation</p>
+                    <p style="font-size: 0.6em; opacity: 0.8;">แยกใน Code (Controller, Service, Repository)</p>
+                </div>
+                <div style="font-size: 2rem;">🆚</div>
+                <div class="tier-box" style="border-color: var(--secondary);">
+                    <i class="fa-solid fa-server tier-icon" style="color: var(--secondary);"></i>
+                    <h4>Tier</h4>
+                    <p style="font-size: 0.7em;">Physical Separation</p>
+                    <p style="font-size: 0.6em; opacity: 0.8;">แยก Process/Network (Web Server, App Server, DB Server)</p>
+                </div>
+            </div>
+            <p class="fragment" style="margin-top: 20px; color: var(--primary);">Week 6 คือการทำ <strong>Physical Tiering</strong> บนเครื่องเดียว</p>
+        </section>
+
+        <section>
+            <h3>🏗️ Architecture Overview (Week 6)</h3>
+            <div class="architecture-diagram">
+                <div class="tier-box fragment" data-fragment-index="1">
+                    <i class="fa-brands fa-chrome tier-icon"></i>
+                    <h5>Client</h5>
+                    <small>Browser</small>
+                </div>
+                <div class="arrow fragment" data-fragment-index="2">➞</div>
+                <div class="tier-box fragment" data-fragment-index="2">
+                    <i class="fa-solid fa-shield-halved tier-icon" style="color: #ff5555;"></i>
+                    <h5>Tier 1</h5>
+                    <small>Nginx (HTTPS)</small>
+                </div>
+                <div class="arrow fragment" data-fragment-index="3">➞</div>
+                <div class="tier-box fragment" data-fragment-index="3">
+                    <i class="fa-brands fa-node tier-icon" style="color: #50fa7b;"></i>
+                    <h5>Tier 2</h5>
+                    <small>Node.js API</small>
+                </div>
+                <div class="arrow fragment" data-fragment-index="4">➞</div>
+                <div class="tier-box fragment" data-fragment-index="4">
+                    <i class="fa-solid fa-database tier-icon" style="color: #8be9fd;"></i>
+                    <h5>Tier 3</h5>
+                    <small>PostgreSQL</small>
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <h2>🚀 Let's Build This!</h2>
+            <p>ภาพรวมขั้นตอนการลงมือปฏิบัติ (Step-by-Step)</p>
+            <div style="font-size: 0.8em; opacity: 0.7;">(ห้ามข้ามขั้นตอน เพื่อป้องกัน Error)</div>
+        </section>
+
+        <section>
+            <h3><span class="step-badge">1</span>Design First (C4 Model)</h3>
+            <div style="display: flex; gap: 20px; align-items: center;">
+                <div style="flex: 1;">
+                    <i class="fa-solid fa-pencil" style="font-size: 5rem; color: var(--accent);"></i>
+                </div>
+                <div style="flex: 2; text-align: left;">
+                    <p>ก่อนเขียนโค้ด ต้องวาดแบบแปลน!</p>
+                    <ul>
+                        <li class="fragment"><strong>Context Diagram (C1):</strong> ระบบเราคุยกับใคร? (User)</li>
+                        <li class="fragment"><strong>Container Diagram (C2):</strong> ภายในระบบมีกล่องใหญ่อะไรบ้าง? (Nginx, Node, Postgres)</li>
+                    </ul>
+                    <p class="fragment" style="color: var(--secondary);">📌 <strong>Tip:</strong> ต้องระบุ Protocol (HTTP/TCP) และ Port ให้ชัดเจน</p>
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <h3><span class="step-badge">2</span>Database Tier (PostgreSQL)</h3>
+            <p>เปลี่ยนหัวใจของระบบจาก SQLite เป็น PostgreSQL</p>
+            <div class="glass-panel">
+                <div style="display: flex; justify-content: space-around;">
+                    <div style="text-align: center;">
+                        <i class="fa-solid fa-file-excel" style="font-size: 3rem; opacity: 0.5;"></i>
+                        <p><del>File Based</del></p>
+                    </div>
+                    <div style="font-size: 3rem;">➔</div>
+                    <div style="text-align: center;">
+                        <i class="fa-solid fa-server" style="font-size: 3rem; color: var(--primary);"></i>
+                        <p><strong>Server Based</strong></p>
+                    </div>
+                </div>
+                <ul style="font-size: 0.8em; margin-top: 20px;">
+                    <li>สร้าง User & Database ใหม่</li>
+                    <li>ออกแบบ Schema (Table Tasks) ที่มี Constraints</li>
+                    <li><strong>Challenge:</strong> การจัดการ Connection Pooling</li>
+                </ul>
+            </div>
+        </section>
+
+        <section>
+            <h3><span class="step-badge">3</span>Web Tier (Nginx Setup)</h3>
+            <p>ทำไมต้องใช้ Nginx?</p>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                <div class="fragment tier-box" style="width: auto;">
+                    <i class="fa-solid fa-route tier-icon"></i>
+                    <h5>Reverse Proxy</h5>
+                    <small>ซ่อน Backend Port 3000 ไม่ให้โลกภายนอกเห็น</small>
+                </div>
+                <div class="fragment tier-box" style="width: auto;">
+                    <i class="fa-solid fa-bolt tier-icon"></i>
+                    <h5>Static Files</h5>
+                    <small>Serve HTML/CSS/JS เร็วกว่า Node.js 10 เท่า</small>
+                </div>
+                <div class="fragment tier-box" style="width: auto;">
+                    <i class="fa-solid fa-lock tier-icon"></i>
+                    <h5>SSL Termination</h5>
+                    <small>จัดการเข้ารหัส HTTPS ที่จุดเดียว</small>
+                </div>
+                <div class="fragment tier-box" style="width: auto;">
+                    <i class="fa-solid fa-network-wired tier-icon"></i>
+                    <h5>Load Balancing</h5>
+                    <small>(อนาคต) กระจายโหลดได้</small>
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <h3><span class="step-badge">4</span>Backend Refactoring</h3>
+            <p>ปรับปรุง Node.js Express ให้เป็น Professional Grade</p>
+            <div style="text-align: left; margin-left: 10%;">
+                <p class="fragment">📦 <strong>Repository Pattern:</strong> แยก SQL Query ออกจาก Business Logic</p>
+                <p class="fragment">🛡️ <strong>Validation Middleware:</strong> ตรวจสอบข้อมูลก่อนลง DB</p>
+                <p class="fragment">⚙️ <strong>Environment Variables:</strong> ห้าม Hardcode DB Password!</p>
+                <p class="fragment">🔌 <strong>PostgreSQL Driver (`pg`):</strong> ใช้ Connection Pool แทน Single Connection</p>
+            </div>
+        </section>
+
+        <section>
+            <h3><span class="step-badge">5</span>Frontend Integration</h3>
+            <p>หน้าบ้านต้องคุยกับ "Reverse Proxy"</p>
+            <div class="glass-panel">
+                <p><strong>ความเปลี่ยนแปลง:</strong></p>
+                <p>Frontend จะไม่เรียก <code>http://localhost:3000</code> อีกต่อไป</p>
+                <p class="fragment" style="font-size: 1.5rem;">👇</p>
+                <p class="fragment" style="color: var(--secondary);">Frontend จะเรียก <code>/api/...</code> (Relative Path)</p>
+                <p class="fragment" style="font-size: 0.8em; opacity: 0.8;">Nginx จะเป็นคนพาไปหา Backend เอง</p>
+            </div>
+        </section>
+
+        <section>
+            <h3><span class="step-badge">6</span>Security: HTTPS</h3>
+            <p>สร้าง Self-Signed Certificate</p>
+            <div style="display: flex; align-items: center; justify-content: center; gap: 30px;">
+                <i class="fa-solid fa-key" style="font-size: 4rem; color: #f1fa8c;"></i>
+                <div style="text-align: left;">
+                    <p>เราจะจำลองว่าเป็น Production Server</p>
+                    <ul>
+                        <li>Generate Private Key</li>
+                        <li>Generate Certificate (.crt)</li>
+                        <li>Config Nginx ให้เปิด Port 443</li>
+                        <li>Force Redirect HTTP (80) -> HTTPS (443)</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <h3><span class="step-badge">7</span>Testing: The Truth</h3>
+            <p>การทดสอบต้องครอบคลุมทุก Layer</p>
+            <ul style="font-size: 0.9em;">
+                <li class="fragment"><strong>Tier 3 (DB):</strong> ลอง Query ผ่าน CLI <code>psql</code></li>
+                <li class="fragment"><strong>Tier 2 (App):</strong> ลอง curl ไปที่ <code>localhost:3000</code> (Internal)</li>
+                <li class="fragment"><strong>Tier 1 (Web):</strong> ลองเข้าผ่าน Browser <code>https://taskboard.local</code></li>
+                <li class="fragment"><strong>Integrity:</strong> ลองสร้าง Task แล้วเช็คว่าลง DB จริงไหม?</li>
+            </ul>
+        </section>
+
+        <section>
+            <h2 style="color: var(--accent);">⭐ The Analysis (15 คะแนน)</h2>
+            <p>ส่วนที่สำคัญที่สุดของ Lab นี้ไม่ใช่แค่ทำให้ทำงานได้</p>
+            <div class="glass-panel">
+                <h4>คำถามที่ต้องตอบใน <code>ANALYSIS.md</code>:</h4>
+                <ul>
+                    <li>Performance ของ Nginx vs Node.js ในการส่ง Static File ต่างกันอย่างไร?</li>
+                    <li>ทำไมเราถึงซ่อน Database ไว้หลัง Firewall (Tier 3)?</li>
+                    <li>ข้อดี/ข้อเสีย เมื่อเทียบกับ Monolith (Week 3)?</li>
+                </ul>
+            </div>
+        </section>
+
+        <section>
+            <h3>🤔 ชวนคิด: Bottleneck?</h3>
+            <p>ใน Architecture นี้ (Single VM) จุดคอขวดอยู่ที่ไหน?</p>
+            <div class="fragment">
+                <i class="fa-solid fa-microchip" style="font-size: 3rem; margin-bottom: 20px;"></i>
+                <p><strong>CPU/RAM ของเครื่อง VM เดียว</strong></p>
+                <p style="font-size: 0.8em;">ถ้า Node.js กิน CPU 100%, Database ก็จะช้าไปด้วย เพราะแย่ง resource กัน</p>
+                <p style="color: var(--secondary);">นี่คือเหตุผลที่เราต้องไป Multi-VM ในอนาคต</p>
+            </div>
+        </section>
+
+        <section>
+            <h3>🤔 ชวนคิด: SSL Termination</h3>
+            <p>ทำไมเราถึงถอดรหัส HTTPS ที่ Nginx แทนที่จะให้ Node.js ทำ?</p>
+            <ul>
+                <li class="fragment">ลดภาระ CPU ของ Node.js (ให้ Node เอาเวลาไปประมวลผล Logic)</li>
+                <li class="fragment">จัดการ Certificate ที่จุดเดียว (Centralized Management)</li>
+                <li class="fragment">ง่ายต่อการ Scale Backend</li>
+            </ul>
+        </section>
+
+        <section>
+            <h2>🏠 การบ้าน: The Real Challenge</h2>
+            <h3 style="color: var(--secondary);">Multi-VM Setup</h3>
+            <div class="architecture-diagram" style="gap: 10px;">
+                <div class="tier-box" style="background: #44475a;">VM 1<br><small>Nginx</small></div>
+                <div class="arrow">↔</div>
+                <div class="tier-box" style="background: #44475a;">VM 2<br><small>Node.js</small></div>
+                <div class="arrow">↔</div>
+                <div class="tier-box" style="background: #44475a;">VM 3<br><small>Postgres</small></div>
+            </div>
+            <p style="margin-top: 20px; font-size: 0.8em;">แยกแต่ละ Tier ไปอยู่คนละ IP Address และ Config ให้คุยกันได้</p>
+        </section>
+
+        <section>
+            <h3>🛠️ Troubleshooting 101</h3>
+            <p>ถ้าพัง... ให้เช็คตามลำดับนี้</p>
+            <ol>
+                <li class="fragment"><strong>Logs คือเพื่อนแท้:</strong> <br><code>pm2 logs</code>, <code>/var/log/nginx/error.log</code></li>
+                <li class="fragment"><strong>Network:</strong> <br><code>ping</code> เจอไหม? <code>telnet port</code> ได้ไหม?</li>
+                <li class="fragment"><strong>Config:</strong> <br>ลืม Reload Nginx หรือเปล่า? Env Variable ถูกไหม?</li>
+                <li class="fragment"><strong>Permissions:</strong> <br>Nginx อ่านไฟล์ใน folder ได้ไหม?</li>
+            </ol>
+        </section>
+
+        <section>
+            <h3>🧰 Tech Stack of The Week</h3>
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;">
+                <div class="tier-box" style="width: auto;">
+                    <i class="fa-brands fa-linux tier-icon"></i><br>Ubuntu VM
+                </div>
+                <div class="tier-box" style="width: auto;">
+                    <i class="fa-solid fa-server tier-icon"></i><br>Nginx
+                </div>
+                <div class="tier-box" style="width: auto;">
+                    <i class="fa-brands fa-node-js tier-icon"></i><br>PM2
+                </div>
+                <div class="tier-box" style="width: auto;">
+                    <i class="fa-solid fa-database tier-icon"></i><br>PostgreSQL
+                </div>
+                <div class="tier-box" style="width: auto;">
+                    <i class="fa-solid fa-lock tier-icon"></i><br>OpenSSL
+                </div>
+                <div class="tier-box" style="width: auto;">
+                    <i class="fa-brands fa-git-alt tier-icon"></i><br>Git
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <h2>📝 สรุปสิ่งที่ได้เรียนรู้</h2>
+            <ul>
+                <li>ความแตกต่างระหว่าง Tier (Physical) และ Layer (Logical)</li>
+                <li>การประกอบร่าง Production-Grade Web Architecture</li>
+                <li>ความสำคัญของ Security และ Reverse Proxy</li>
+            </ul>
+            <div class="glass-panel" style="margin-top: 30px; text-align: center;">
+                <h3>Next Week: Microservices & Docker 🐳</h3>
+                <p>เตรียมตัวให้พร้อมสำหรับการระเบิด Node.js ออกเป็นชิ้นๆ!</p>
+            </div>
+        </section>
+
+        <section>
+            <h1>Q & A</h1>
+            <p>มีคำถาม หรือติดตรงไหนไหมครับ?</p>
+            <div style="font-size: 3rem; margin: 30px;">
+                <i class="fa-regular fa-comments"></i>
+            </div>
+            <p style="font-size: 0.8em; opacity: 0.6;">ENGSE207: Software Architecture</p>
+        </section>
+
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/reveal.min.js"></script>
+<script>
+    Reveal.initialize({
+        hash: true,
+        transition: 'convex', // none/fade/slide/convex/concave/zoom
+        controls: true,
+        progress: true,
+        center: true,
+        // Slide number formatting
+        slideNumber: 'c/t',
+        // Auto-animate options
+        autoAnimateEasing: 'ease-out',
+        autoAnimateDuration: 0.8,
+        autoAnimateUnmatched: false
+    });
+</script>
+
+</body>
+</html>
