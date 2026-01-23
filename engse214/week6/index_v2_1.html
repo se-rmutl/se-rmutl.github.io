@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Week 6: Cryptography Basics | ENGSE214</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0f172a; --fg:#e5e7eb; --card:#020617; --accent:#38bdf8;
+}
+.light{ --bg:#f8fafc; --fg:#020617; --card:#ffffff; --accent:#0284c7; }
+*{box-sizing:border-box}
+body{
+  margin:0; font-family:Inter,system-ui; background:var(--bg); color:var(--fg);
+  overflow:hidden;
+}
+.slide{
+  width:100vw; height:100vh; display:none; padding:64px;
+}
+.slide.active{display:block}
+h1{font-size:3rem;margin:0 0 1rem}
+h2{font-size:2.2rem;margin:0 0 1rem}
+h3{font-size:1.6rem}
+p,li{font-size:1.2rem; line-height:1.6}
+.card{background:var(--card); padding:24px; border-radius:16px; box-shadow:0 20px 40px rgba(0,0,0,.3)}
+.grid{display:grid; grid-template-columns:1fr 1fr; gap:24px}
+.controls{
+ position:fixed; bottom:20px; left:50%; transform:translateX(-50%);
+ display:flex; gap:12px; background:var(--card); padding:12px 16px; border-radius:999px;
+}
+button{background:var(--accent); color:white; border:none; padding:8px 14px; border-radius:999px; cursor:pointer}
+button.secondary{background:#64748b}
+img.diagram{max-width:100%; border-radius:12px; cursor:zoom-in}
+.fullscreen{position:fixed; inset:0; background:black; display:none; align-items:center; justify-content:center}
+.fullscreen img{max-width:95%; max-height:95%}
+</style>
+</head>
+<body>
+
+<!-- Slide 1 -->
+<section class="slide active">
+  <h1>Week 6: Cryptography Basics 🔐</h1>
+  <p>ENGSE214 – Introduction to Cyber Security<br>วิศวกรรมซอฟต์แวร์ ปีที่ 3</p>
+  <div class="card">
+    <h3>Why this matters?</h3>
+    <p>ทุกแอปที่คุณเขียน ทุก API ที่คุณ deploy และทุกข้อมูลผู้ใช้ ล้วนพึ่งพา “Cryptography” เพื่อความปลอดภัย</p>
+  </div>
+</section>
+
+<!-- Slide 2 -->
+<section class="slide">
+  <h2>Learning Objectives 🎯</h2>
+  <ul>
+    <li>เข้าใจพื้นฐานการเข้ารหัสข้อมูล</li>
+    <li>แยก Symmetric / Asymmetric Encryption ได้</li>
+    <li>อธิบาย Digital Signature และ PKI</li>
+    <li>ใช้ Hash และ HMAC อย่างถูกต้อง</li>
+  </ul>
+</section>
+
+<!-- Slide 3 -->
+<section class="slide">
+  <h2>Cryptography คืออะไร?</h2>
+  <div class="grid">
+    <div class="card">
+      <p><b>Cryptography</b> คือการแปลงข้อมูลให้ไม่สามารถอ่านได้ หากไม่มี Key ที่ถูกต้อง</p>
+      <ul>
+        <li>Plaintext → Ciphertext</li>
+        <li>ใช้ Algorithm + Key</li>
+      </ul>
+    </div>
+    <div class="card">
+      <img class="diagram" src="https://upload.wikimedia.org/wikipedia/commons/2/2b/Cryptographic_primitives.svg" />
+    </div>
+  </div>
+</section>
+
+<!-- Slide 4 -->
+<section class="slide">
+  <h2>Cryptography กับ CIA Triad</h2>
+  <ul>
+    <li><b>Confidentiality</b> – Encryption</li>
+    <li><b>Integrity</b> – Hash / MAC</li>
+    <li><b>Authentication</b> – Digital Signature</li>
+  </ul>
+</section>
+
+<!-- Slide 5 -->
+<section class="slide">
+  <h2>Symmetric Encryption</h2>
+  <div class="grid">
+    <div class="card">
+      <p>ใช้ <b>Key เดียวกัน</b> ในการเข้ารหัสและถอดรหัส</p>
+      <ul>
+        <li>เร็วมาก ⚡</li>
+        <li>เหมาะกับข้อมูลขนาดใหญ่</li>
+      </ul>
+    </div>
+    <div class="card">
+      <img class="diagram" src="https://via.placeholder.com/800x450.png?text=Symmetric+Encryption+Diagram" />
+    </div>
+  </div>
+</section>
+
+<!-- Slide 6 -->
+<section class="slide">
+  <h2>Asymmetric Encryption</h2>
+  <div class="grid">
+    <div class="card">
+      <p>ใช้ <b>Key คู่</b>: Public + Private</p>
+      <ul>
+        <li>แก้ปัญหา Key Distribution</li>
+        <li>ช้ากว่า Symmetric</li>
+      </ul>
+    </div>
+    <div class="card">
+      <img class="diagram" src="https://via.placeholder.com/800x450.png?text=Asymmetric+Encryption+Diagram" />
+    </div>
+  </div>
+</section>
+
+<!-- Slide 7 -->
+<section class="slide">
+  <h2>Hybrid Encryption (HTTPS)</h2>
+  <p>โลกจริงใช้ทั้งสองแบบร่วมกัน</p>
+  <ul>
+    <li>Asymmetric → แลก Session Key</li>
+    <li>Symmetric → เข้ารหัสข้อมูลจริง</li>
+  </ul>
+</section>
+
+<!-- Slide 8 -->
+<section class="slide">
+  <h2>Digital Signature ✍️</h2>
+  <p>พิสูจน์ตัวตน + ความถูกต้องของข้อมูล</p>
+  <img class="diagram" src="https://via.placeholder.com/800x450.png?text=Digital+Signature+Workflow" />
+</section>
+
+<!-- Slide 9 -->
+<section class="slide">
+  <h2>PKI – Public Key Infrastructure</h2>
+  <p>โครงสร้างที่ทำให้เรา “เชื่อถือ” Public Key ได้</p>
+  <img class="diagram" src="https://via.placeholder.com/800x450.png?text=PKI+Architecture" />
+</section>
+
+<!-- Slide 10 -->
+<section class="slide">
+  <h2>Hash Function</h2>
+  <ul>
+    <li>One-way</li>
+    <li>Output ขนาดคงที่</li>
+    <li>Avalanche Effect</li>
+  </ul>
+</section>
+
+<!-- Slide 11 -->
+<section class="slide">
+  <h2>Password Storage (Best Practice)</h2>
+  <pre class="card">password -> hash + salt -> database</pre>
+  <p>❌ ห้ามเก็บ plaintext</p>
+</section>
+
+<!-- Slide 12 -->
+<section class="slide">
+  <h2>HMAC – Message Authentication</h2>
+  <p>Hash + Secret Key = Integrity + Authentication</p>
+</section>
+
+<!-- Slide 13 -->
+<section class="slide">
+  <h2>Simulation: Alice – Bob – Eve</h2>
+  <img class="diagram" src="https://via.placeholder.com/800x450.png?text=Alice+Bob+Eve+Simulation" />
+</section>
+
+<!-- Slide 14 -->
+<section class="slide">
+  <h2>Demo: OpenSSL</h2>
+  <pre class="card">openssl enc -aes-256-cbc -in msg.txt -out msg.enc</pre>
+</section>
+
+<!-- Slide 15 -->
+<section class="slide">
+  <h2>Real-world Applications 🌍</h2>
+  <ul>
+    <li>HTTPS / TLS</li>
+    <li>Mobile Banking</li>
+    <li>Blockchain</li>
+    <li>Secure API</li>
+  </ul>
+</section>
+
+<!-- Slide 16 -->
+<section class="slide">
+  <h2>Motivation 💡</h2>
+  <div class="card">
+    <p>“Software Engineer ที่เข้าใจ Cryptography จะเขียนระบบที่ปลอดภัยกว่า และเป็นมืออาชีพกว่า”</p>
+  </div>
+</section>
+
+<div class="controls">
+  <button onclick="prev()">◀</button>
+  <button onclick="next()">▶</button>
+  <button class="secondary" onclick="toggleTheme()">🌗</button>
+  <button class="secondary" onclick="toggleFull()">⛶</button>
+</div>
+
+<div class="fullscreen" id="fs" onclick="this.style.display='none'"></div>
+
+<script>
+const slides=[...document.querySelectorAll('.slide')];
+let i=0;
+function show(){slides.forEach(s=>s.classList.remove('active'));slides[i].classList.add('active')}
+function next(){if(i<slides.length-1){i++;show()}}
+function prev(){if(i>0){i--;show()}}
+function toggleTheme(){document.body.classList.toggle('light')}
+function toggleFull(){if(!document.fullscreenElement){document.documentElement.requestFullscreen()}else{document.exitFullscreen()}}
+document.querySelectorAll('img.diagram').forEach(img=>{
+  img.onclick=()=>{const fs=document.getElementById('fs');fs.innerHTML='<img src="'+img.src+'">';fs.style.display='flex'}
+})
+</script>
+</body>
+</html>

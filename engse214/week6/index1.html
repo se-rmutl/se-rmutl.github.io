@@ -1,0 +1,898 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Week 6: Cryptography Basics - ENGSE214</title>
+    <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@300;400;600;700&family=JetBrains+Mono:wght@400;700&family=Sarabun:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            /* Dark Theme (Cyber Security Default) */
+            --bg-color: #0d1117;
+            --slide-bg: #161b22;
+            --text-color: #c9d1d9;
+            --heading-color: #ffffff;
+            --accent-color: #00bc8c; /* Cyber Green */
+            --secondary-accent: #2f81f7; /* Cyber Blue */
+            --code-bg: #0d1117;
+            --border-color: #30363d;
+            --shadow: 0 0 20px rgba(0, 188, 140, 0.1);
+        }
+
+        [data-theme="light"] {
+            /* Light Theme (Clean Academic) */
+            --bg-color: #f0f2f5;
+            --slide-bg: #ffffff;
+            --text-color: #24292f;
+            --heading-color: #000000;
+            --accent-color: #0969da;
+            --secondary-accent: #d1242f;
+            --code-bg: #f6f8fa;
+            --border-color: #d0d7de;
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Sarabun', sans-serif;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            transition: background-color 0.3s ease;
+        }
+
+        /* Slide Container 16:9 FHD */
+        #presentation-container {
+            width: 100%;
+            max-width: 1600px;
+            aspect-ratio: 16 / 9;
+            background-color: var(--slide-bg);
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow);
+            position: relative;
+            overflow: hidden;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Slide Content Area */
+        .slide {
+            flex: 1;
+            padding: 3rem 4rem;
+            display: none; /* Hidden by default */
+            flex-direction: column;
+            animation: fadeIn 0.4s ease-in-out;
+            font-size: 1.2rem; /* Base font size, adjustable */
+            overflow-y: auto;
+        }
+
+        .slide.active {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Typography */
+        h1, h2, h3 {
+            font-family: 'Chakra Petch', sans-serif;
+            color: var(--heading-color);
+            margin-bottom: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        h1 { font-size: 3em; color: var(--accent-color); text-shadow: 0 0 10px rgba(0, 188, 140, 0.3); }
+        h2 { font-size: 2.2em; border-bottom: 2px solid var(--accent-color); padding-bottom: 0.5rem; width: fit-content; }
+        h3 { font-size: 1.5em; color: var(--secondary-accent); margin-top: 1rem;}
+        p, li { line-height: 1.6; margin-bottom: 0.8rem; }
+        ul { margin-left: 2rem; }
+
+        /* Code Blocks */
+        pre {
+            background-color: var(--code-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 1rem;
+            font-family: 'JetBrains Mono', monospace;
+            overflow-x: auto;
+            margin: 1rem 0;
+            color: var(--accent-color);
+        }
+        
+        code {
+            font-family: 'JetBrains Mono', monospace;
+            background: rgba(128, 128, 128, 0.1);
+            padding: 0.2rem 0.4rem;
+            border-radius: 4px;
+            color: var(--secondary-accent);
+        }
+
+        /* Custom Components */
+        .highlight { color: var(--accent-color); font-weight: bold; }
+        .danger { color: #ff5555; font-weight: bold; }
+        .box {
+            border: 1px solid var(--border-color);
+            padding: 1.5rem;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.02);
+            margin: 1rem 0;
+        }
+        .row { display: flex; gap: 2rem; margin-top: 1rem; }
+        .col { flex: 1; }
+        .center-content { text-align: center; justify-content: center; align-items: center; height: 100%; }
+        
+        /* Diagrams (ASCII art style preservation) */
+        .diagram {
+            font-family: 'JetBrains Mono', monospace;
+            white-space: pre;
+            line-height: 1.2;
+            font-size: 0.9em;
+            text-align: center;
+            color: var(--text-color);
+        }
+
+        /* Control Bar */
+        #controls {
+            height: 60px;
+            background-color: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 2rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .control-group { display: flex; gap: 10px; align-items: center; }
+        
+        button {
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: 'Chakra Petch', sans-serif;
+            font-size: 0.9rem;
+        }
+
+        button:hover {
+            background: var(--accent-color);
+            color: #000;
+            border-color: var(--accent-color);
+        }
+
+        #page-number { font-family: 'JetBrains Mono', monospace; color: var(--accent-color); }
+
+        /* Fullscreen handling */
+        :fullscreen #presentation-container {
+            width: 100vw;
+            height: 100vh;
+            border: none;
+            border-radius: 0;
+        }
+
+        /* Utility for tables */
+        table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+        th, td { border: 1px solid var(--border-color); padding: 0.8rem; text-align: left; }
+        th { background-color: rgba(0, 188, 140, 0.1); color: var(--accent-color); }
+
+    </style>
+</head>
+<body>
+
+    <div id="presentation-container">
+        
+        <div class="slide active center-content">
+            <h3 style="letter-spacing: 5px; margin-bottom: 0;">ENGSE214</h3>
+            <h1 style="font-size: 4em; margin: 20px 0;">Introduction to Cyber Security</h1>
+            <h2 style="border: none; color: var(--text-color);">Week 6: Cryptography Basics</h2>
+            <div style="margin-top: 50px; border-top: 1px solid var(--accent-color); padding-top: 20px; width: 60%;">
+                <p><i class="fas fa-chalkboard-teacher"></i> Instructor: ENGSE214</p>
+                <p><i class="fas fa-university"></i> Software Engineering (Year 3)</p>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>📚 ทบทวน Week 5: Network Security</h2>
+            <div class="row">
+                <div class="col">
+                    <div class="box">
+                        <h3>สิ่งที่เราเรียนไปแล้ว</h3>
+                        <ul>
+                            <li>✓ Network Security Fundamentals</li>
+                            <li>✓ Firewall, IDS/IPS Concepts</li>
+                            <li>✓ Packet Filtering & Wireshark Analysis</li>
+                            <li>✓ DMZ & Network Segmentation</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="col center-content">
+                    <i class="fas fa-network-wired" style="font-size: 8em; color: var(--border-color);"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide center-content">
+            <h2>Key Takeaway from Week 5</h2>
+            <div class="box" style="text-align: left; width: 80%;">
+                <p><i class="fas fa-shield-alt highlight"></i> <strong>Firewall:</strong> ควบคุมการเข้า-ออกของ Traffic</p>
+                <p><i class="fas fa-crosshairs highlight"></i> <strong>IDS/IPS:</strong> ตรวจจับและป้องกันการโจมตี</p>
+                <p><i class="fas fa-project-diagram highlight"></i> <strong>Segmentation:</strong> แบ่งส่วนเพื่อลดความเสี่ยง</p>
+                <hr style="border-color: var(--border-color); margin: 20px 0;">
+                <h3 style="text-align: center;">วันนี้เราจะเรียนวิธี "ปกป้องข้อมูล" ที่วิ่งอยู่ใน Network นั้น!</h3>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>🎯 วัตถุประสงค์การเรียนรู้ (Week 6)</h2>
+            <ul>
+                <li><i class="fas fa-check-circle highlight"></i> อธิบายหลักการพื้นฐานของการเข้ารหัสข้อมูลได้</li>
+                <li><i class="fas fa-check-circle highlight"></i> เปรียบเทียบความแตกต่างระหว่าง <strong>Symmetric</strong> และ <strong>Asymmetric</strong> Encryption</li>
+                <li><i class="fas fa-check-circle highlight"></i> เข้าใจหลักการทำงานของ Digital Signature และ PKI</li>
+                <li><i class="fas fa-check-circle highlight"></i> ประยุกต์ใช้ Hash Function และ Message Authentication</li>
+                <li><i class="fas fa-check-circle highlight"></i> สาธิตการใช้งาน OpenSSL และตรวจสอบ SSL/TLS Certificate</li>
+            </ul>
+        </div>
+
+        <div class="slide center-content">
+            <h1 style="font-size: 2.5em; color: var(--text-color);">🤔 คำถามชวนคิด?</h1>
+            <div class="box" style="margin-top: 30px;">
+                <h2>"ทำไมเราต้อง 'เข้ารหัส' ข้อมูล?<br>แค่ใช้ Firewall ป้องกันไม่พอหรือ?"</h2>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>💡 คำตอบ: Firewall ปกป้องแค่ "ทางเข้า"</h2>
+            <div class="row">
+                <div class="col">
+                    <p>แต่การเข้ารหัส (Encryption) ปกป้อง:</p>
+                    <ul>
+                        <li>1. <strong>Data in Transit:</strong> ข้อมูลขณะส่งผ่าน Network</li>
+                        <li>2. <strong>Data at Rest:</strong> ข้อมูลที่เก็บใน Database/Harddisk</li>
+                        <li>3. <strong>Privacy:</strong> ความเป็นส่วนตัวของผู้ใช้</li>
+                        <li>4. <strong>Authentication:</strong> ยืนยันตัวตนผู้ส่ง</li>
+                    </ul>
+                </div>
+                <div class="col">
+                    <div class="box center-content" style="height: 100%;">
+                        <h3 class="highlight">"แม้ Hacker จะดักข้อมูลได้<br>ก็อ่านไม่ออก!"</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide center-content">
+            <h1 class="highlight">🔐 Part 1</h1>
+            <h2>หลักการพื้นฐานการเข้ารหัสข้อมูล</h2>
+            <h3>(Cryptography Fundamentals)</h3>
+        </div>
+
+        <div class="slide">
+            <h2>1.1 Cryptography คืออะไร?</h2>
+            <p>ศาสตร์และศิลป์ของการปกป้องข้อมูลด้วยการแปลงข้อมูลให้อ่านไม่ออก (Unintelligible) สำหรับคนที่ไม่มีสิทธิ์เข้าถึง</p>
+            <div class="box diagram">
+Cryptography Workflow
+
+Plaintext  ──[Encryption]──> Ciphertext ──[Decryption]──> Plaintext
+"HELLO"        (ใช้ Key)      "X@#$%"       (ใช้ Key)      "HELLO"
+   │                              │                            │
+ข้อมูลจริง                      ข้อมูลรหัส                     ข้อมูลจริง
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>1.2 คำศัพท์พื้นฐาน (1/2)</h2>
+            <div class="row">
+                <div class="col">
+                    <div class="box">
+                        <h3>🔹 Plaintext (ข้อความต้นฉบับ)</h3>
+                        <p>ข้อมูลที่ยังไม่ได้เข้ารหัส อ่านได้ชัดเจน</p>
+                        <code>Ex: "My password is 12345"</code>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="box">
+                        <h3>🔹 Ciphertext (ข้อความรหัส)</h3>
+                        <p>ข้อมูลหลังเข้ารหัสแล้ว อ่านไม่ออก</p>
+                        <code>Ex: "4f8b2e9d1a3c..."</code>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>1.2 คำศัพท์พื้นฐาน (2/2)</h2>
+            <ul>
+                <li><strong>Encryption (การเข้ารหัส):</strong> กระบวนการแปลง Plaintext → Ciphertext</li>
+                <li><strong>Decryption (การถอดรหัส):</strong> กระบวนการแปลง Ciphertext → Plaintext</li>
+                <li><strong>Key (กุญแจ):</strong> ตัวเลขหรือข้อความพิเศษที่ใช้เข้า/ถอดรหัส (เหมือนกุญแจบ้าน)</li>
+                <li><strong>Algorithm (อัลกอริทึม):</strong> สูตรคณิตศาสตร์ที่ใช้เข้ารหัส (เช่น AES, RSA)</li>
+            </ul>
+        </div>
+
+        <div class="slide">
+            <h2>1.3 Cryptography & CIA Triad</h2>
+            <div class="center-content">
+                <table style="font-size: 1.5em; width: 80%;">
+                    <tr>
+                        <td width="20%" style="text-align: center;"><i class="fas fa-user-secret highlight"></i></td>
+                        <td><strong>C : Confidentiality (ความลับ)</strong></td>
+                        <td>Encryption</td>
+                    </tr>
+                    <tr>
+                        <td style="text-align: center;"><i class="fas fa-file-contract highlight"></i></td>
+                        <td><strong>I : Integrity (ความถูกต้อง)</strong></td>
+                        <td>Hashing, MAC</td>
+                    </tr>
+                    <tr>
+                        <td style="text-align: center;"><i class="fas fa-id-badge highlight"></i></td>
+                        <td><strong>A : Authentication (ยืนยันตัวตน)</strong></td>
+                        <td>Digital Signature</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>เป้าหมายอื่นๆ ของ Cryptography</h2>
+            <ul>
+                <li>
+                    <strong>Non-repudiation (ห้ามปฏิเสธความรับผิดชอบ):</strong>
+                    <p>ผู้ส่งไม่สามารถปฏิเสธได้ว่า "ฉันไม่ได้ส่ง"</p>
+                </li>
+                <li>
+                    <strong>Availability (ความพร้อมใช้งาน):</strong>
+                    <p>ระบบเข้ารหัส/ถอดรหัสต้องทำงานได้รวดเร็ว ไม่ถ่วงระบบจนใช้งานไม่ได้</p>
+                </li>
+            </ul>
+        </div>
+
+        <div class="slide center-content">
+            <h1 class="highlight">🔑 Part 2</h1>
+            <h2>Symmetric vs Asymmetric Encryption</h2>
+            <p>เรื่องที่นักศึกษาสับสนกันมากที่สุด</p>
+        </div>
+
+        <div class="slide">
+            <h2>2.1 Symmetric Encryption (แบบสมมาตร)</h2>
+            <p class="highlight" style="font-size: 1.5em;">Concept: "ใช้กุญแจดอกเดียวกัน"</p>
+            <p>ทั้งในการล็อก (Encrypt) และปลดล็อก (Decrypt)</p>
+            <div class="box diagram">
+     Alice                     Bob
+    ┌─────┐      🔑 KEY      ┌─────┐
+    │  A  │ ◄── (Same) ──►   │  B  │
+    └─────┘                  └─────┘
+       │                        │
+    Encrypt                  Decrypt
+       ▼                        ▼
+    Plaintext ──> Cipher ──> Plaintext
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>Symmetric: Pros & Cons</h2>
+            <div class="row">
+                <div class="col">
+                    <h3 style="color: var(--accent-color);">✅ ข้อดี</h3>
+                    <ul>
+                        <li><strong>เร็วมาก (Fast):</strong> เหมาะกับข้อมูลขนาดใหญ่</li>
+                        <li>ใช้ทรัพยากรเครื่องน้อย</li>
+                        <li>เหมาะกับ Encrypt Files, Database, HDD</li>
+                    </ul>
+                </div>
+                <div class="col">
+                    <h3 style="color: var(--secondary-accent);">❌ ข้อเสีย</h3>
+                    <ul>
+                        <li><strong>Key Distribution Problem:</strong> จะส่งกุญแจให้เพื่อนยังไงไม่ให้โดนขโมย?</li>
+                        <li>ถ้ามีคนใช้เยอะ จำนวน Key จะมหาศาล (N * (N-1) / 2)</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>ตัวอย่าง Symmetric Algorithms</h2>
+            <ul>
+                <li><i class="fas fa-check highlight"></i> <strong>AES (Advanced Encryption Standard):</strong> มาตรฐานปัจจุบัน (128/192/256 bits)</li>
+                <li><i class="fas fa-check highlight"></i> <strong>ChaCha20:</strong> เร็วมาก นิยมใน Mobile Apps</li>
+                <li><i class="fas fa-times danger"></i> <strong>DES (Data Encryption Standard):</strong> เก่า ไม่ปลอดภัยแล้ว (56-bit)</li>
+                <li><i class="fas fa-times danger"></i> <strong>3DES:</strong> ช้าและเริ่มไม่ปลอดภัย</li>
+            </ul>
+        </div>
+
+        <div class="slide">
+            <h2>2.2 Asymmetric Encryption (แบบอสมมาตร)</h2>
+            <p class="highlight" style="font-size: 1.5em;">Concept: "ใช้กุญแจคู่ (Key Pair)"</p>
+            <div class="row">
+                <div class="col box">
+                    <h3>🔓 Public Key</h3>
+                    <p>แจกให้ใครก็ได้ เอาไว้ "ล็อก" ข้อมูล</p>
+                </div>
+                <div class="col box" style="border-color: var(--secondary-accent);">
+                    <h3>🔐 Private Key</h3>
+                    <p>เก็บไว้คนเดียว ห้ามบอกใคร เอาไว้ "ปลดล็อก"</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>Asymmetric Workflow</h2>
+            <div class="diagram" style="font-size: 1.2rem;">
+1. Bob แจก Public Key 🔓 ให้ Alice
+   Alice ◄──────────────── Bob
+
+2. Alice เข้ารหัสด้วย Public Key ของ Bob
+   Plaintext + 🔓(Bob) ──> Ciphertext
+
+3. ส่ง Ciphertext ให้ Bob
+   Alice ────────────────► Bob
+
+4. Bob ถอดรหัสด้วย Private Key 🔐 ของตัวเอง
+   Ciphertext + 🔐(Bob) ──> Plaintext
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>Asymmetric: Pros & Cons</h2>
+            <div class="row">
+                <div class="col">
+                    <h3 style="color: var(--accent-color);">✅ ข้อดี</h3>
+                    <ul>
+                        <li><strong>แก้ปัญหา Key Distribution:</strong> ไม่ต้องกลัวคนขโมยกุญแจตอนส่ง เพราะแจก Public Key ได้เลย</li>
+                        <li>ทำ Digital Signature ได้</li>
+                    </ul>
+                </div>
+                <div class="col">
+                    <h3 style="color: var(--secondary-accent);">❌ ข้อเสีย</h3>
+                    <ul>
+                        <li><strong>ช้ากว่า Symmetric มาก:</strong> (100-1000 เท่า)</li>
+                        <li>ไม่เหมาะกับการเข้ารหัสข้อมูลขนาดใหญ่</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>2.3 Hybrid Encryption (โลกความจริงใช้แบบนี้)</h2>
+            <p>เนื่องจาก Asymmetric ช้าแต่ปลอดภัยเรื่อง Key, Symmetric เร็วแต่ส่ง Key ยาก... <strong>เราจึงใช้ร่วมกัน!</strong></p>
+            <div class="box">
+                <ol>
+                    <li>ใช้ <strong>Asymmetric</strong> (RSA) เพื่อส่ง <strong>Symmetric Key</strong> (Session Key) หากันอย่างปลอดภัย</li>
+                    <li>เมื่อทั้งคู่มี Key เหมือนกันแล้ว ให้ใช้ <strong>Symmetric</strong> (AES) รับ-ส่งข้อมูลจริง</li>
+                </ol>
+            </div>
+            <p style="text-align: center;">นี่คือหลักการของ <strong>HTTPS (SSL/TLS)</strong> 🌐</p>
+        </div>
+
+        <div class="slide">
+            <h2>เปรียบเทียบ Symmetric vs Asymmetric</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>หัวข้อ</th>
+                        <th>Symmetric ⚡</th>
+                        <th>Asymmetric 🔐</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>จำนวน Key</td>
+                        <td>1 (Shared)</td>
+                        <td>2 (Public/Private)</td>
+                    </tr>
+                    <tr>
+                        <td>ความเร็ว</td>
+                        <td>เร็วมาก</td>
+                        <td>ช้า</td>
+                    </tr>
+                    <tr>
+                        <td>Use Case</td>
+                        <td>Data ขนาดใหญ่, HDD</td>
+                        <td>แลกเปลี่ยน Key, Digital Sign</td>
+                    </tr>
+                    <tr>
+                        <td>ตัวอย่าง</td>
+                        <td>AES, ChaCha20</td>
+                        <td>RSA, ECC</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="slide center-content">
+            <h1 class="highlight">✍️ Part 3</h1>
+            <h2>Digital Signature & PKI</h2>
+            <p>ลายเซ็นดิจิทัลและการยืนยันตัวตน</p>
+        </div>
+
+        <div class="slide">
+            <h2>3.1 Digital Signature คืออะไร?</h2>
+            <p>เหมือนลายเซ็นในกระดาษ แต่ปลอมแปลงไม่ได้ พิสูจน์ได้ว่า "ใครส่ง" และ "ข้อมูลถูกแก้ไหม"</p>
+            <div class="box diagram">
+🖊️ การเซ็น (Signing):
+Hash(Message) + 🔐 Sender's Private Key = Signature
+
+👁️ การตรวจ (Verifying):
+Signature + 🔓 Sender's Public Key = Hash
+เทียบ Hash นี้กับ Hash ของ Message ที่ได้รับ
+            </div>
+            <p class="highlight" style="text-align: center;">สังเกต: การเซ็นใช้ Private Key เข้ารหัส (กลับด้านกับการส่งข้อความลับ)</p>
+        </div>
+
+        <div class="slide">
+            <h2>3.2 PKI (Public Key Infrastructure)</h2>
+            <p>ระบบที่จัดการกุญแจและการยืนยันตัวตนในระดับองค์กร/โลก</p>
+            <ul>
+                <li><strong>CA (Certificate Authority):</strong> องค์กรกลางที่เชื่อถือได้ (เช่น DigiCert, Let's Encrypt) มีหน้าที่ออกใบรับรอง</li>
+                <li><strong>Digital Certificate:</strong> บัตรประชาชนดิจิทัล ที่บอกว่า "Public Key นี้ เป็นของ นาย A จริงๆ นะ" รับรองโดย CA</li>
+            </ul>
+        </div>
+
+        <div class="slide">
+            <h2>ตัวอย่างข้อมูลใน Certificate (X.509)</h2>
+            <pre>
+Issuer: DigiCert Global Root CA (คนออก)
+Subject: www.google.com (เจ้าของ)
+Validity: 
+  Not Before: 2024-10-21
+  Not After: 2025-01-13
+Public Key: RSA 2048-bit (กุญแจสาธารณะของ Google)
+Signature: ... (ลายเซ็นของ DigiCert)
+            </pre>
+            <p>ถ้า Browser เห็น Cert นี้ มันจะรู้ว่ากำลังคุยกับ Google ตัวจริง เพราะเชื่อใจ DigiCert</p>
+        </div>
+
+        <div class="slide center-content">
+            <h1 class="highlight">#️⃣ Part 4</h1>
+            <h2>Hash Function</h2>
+            <p>ไม่ใช่ Encryption เพราะถอดรหัสกลับไม่ได้!</p>
+        </div>
+
+        <div class="slide">
+            <h2>4.1 Hash Function คืออะไร?</h2>
+            <p>ฟังก์ชันที่แปลงข้อมูลขนาดเท่าไหร่ก็ได้ ให้เป็น <strong>Fixed-Size Output</strong></p>
+            <div class="box diagram">
+"Hello"       ──[SHA-256]──> 2cf24... (64 chars)
+"Hello World" ──[SHA-256]──> a591a... (64 chars)
+[File 10GB]   ──[SHA-256]──> 7f83b... (64 chars)
+            </div>
+            <p><strong>คุณสมบัติสำคัญ: One-way (หาทางกลับไม่ได้)</strong></p>
+        </div>
+
+        <div class="slide">
+            <h2>Avalanche Effect</h2>
+            <p>เปลี่ยน Input นิดเดียว Output เปลี่ยนไปคนละเรื่อง</p>
+            <div class="box">
+                <p>Input: "Hello"</p>
+                <code class="highlight">185f8db32271fe25f561a6fc938b2e264306ec304eda518007d1764826381969</code>
+                <br><br>
+                <p>Input: "hello" (h ตัวเล็ก)</p>
+                <code class="secondary-accent">2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824</code>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>Hash Algorithms: Good vs Bad</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Algorithm</th>
+                        <th>สถานะ</th>
+                        <th>เหตุผล</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="danger">MD5</td>
+                        <td class="danger">BROKEN (ห้ามใช้)</td>
+                        <td>เกิด Collision (ซ้ำกัน) ได้ง่ายมาก</td>
+                    </tr>
+                    <tr>
+                        <td class="danger">SHA-1</td>
+                        <td class="danger">DEPRECATED</td>
+                        <td>Google เจาะได้แล้ว (2017)</td>
+                    </tr>
+                    <tr>
+                        <td class="highlight">SHA-256</td>
+                        <td class="highlight">SECURE (แนะนำ)</td>
+                        <td>มาตรฐานปัจจุบัน</td>
+                    </tr>
+                    <tr>
+                        <td class="highlight">SHA-3</td>
+                        <td class="highlight">SECURE</td>
+                        <td>มาตรฐานใหม่</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="slide">
+            <h2>เอา Hash ไปใช้ทำอะไร?</h2>
+            <ol>
+                <li><strong>Password Storage:</strong> ห้ามเก็บ Plaintext! เก็บ Hash แทน</li>
+                <li><strong>File Integrity Check:</strong> เช็คว่าไฟล์ที่โหลดมาสมบูรณ์ไหม</li>
+                <li><strong>Digital Signature:</strong> Sign ที่ตัว Hash แทนตัวไฟล์ (เร็วขึ้น)</li>
+                <li><strong>Blockchain:</strong> Bitcoin ใช้ SHA-256</li>
+            </ol>
+        </div>
+
+        <div class="slide center-content">
+            <h1 class="highlight">🎮 Part 5</h1>
+            <h2>Demonstrations & Labs</h2>
+            <p>ลงมือทำจริงด้วย OpenSSL และ Python</p>
+        </div>
+
+        <div class="slide">
+            <h2>Alice, Bob, and Eve Scenario</h2>
+            <div class="diagram" style="margin-top: 2rem;">
+Alice 👩 ──────── [Network] ────────► Bob 👨
+                    ▲
+                    │
+                 Eve 😈 (Hacker)
+
+❌ No Encryption: Eve อ่าน "Hello" ได้เลย
+✅ Symmetric: Eve เห็น "@#$%" แต่อ่านไม่ออก
+✅ Asymmetric: Alice ใช้ Key Bob ล็อก, มีแค่ Bob เปิดได้
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>Demo 1: Symmetric Encryption (OpenSSL)</h2>
+            <p>ลองทำใน Terminal:</p>
+            <pre>
+# 1. เข้ารหัสไฟล์ message.txt
+openssl enc -aes-256-cbc -salt -in message.txt -out message.enc -k "Password123"
+
+# 2. ลองอ่านไฟล์ (อ่านไม่ออก)
+cat message.enc 
+
+# 3. ถอดรหัส
+openssl enc -aes-256-cbc -d -in message.enc -out decrypt.txt -k "Password123"
+            </pre>
+        </div>
+
+        <div class="slide">
+            <h2>Demo 2: Check SSL Certificate</h2>
+            <p>วิธีตรวจสอบความปลอดภัยของเว็บผ่าน Browser</p>
+            <ol>
+                <li>คลิกที่รูปกุญแจ 🔒 หน้า URL</li>
+                <li>เลือก "Connection is secure" > "Certificate is valid"</li>
+                <li>ดู <strong>Issued to</strong> (ใครเป็นเจ้าของ)</li>
+                <li>ดู <strong>Issued by</strong> (CA คนไหนรับรอง)</li>
+                <li>ดู <strong>Validity Period</strong> (หมดอายุเมื่อไหร่)</li>
+            </ol>
+        </div>
+
+        <div class="slide">
+            <h2>🧩 Activity: Caesar Cipher Challenge</h2>
+            <div class="box center-content">
+                <h3>ข้อความลับ: "KHOOR ZRUOG"</h3>
+                <p>Hint: Shift ไปทางขวา 3 ตำแหน่ง (A->D, B->E)</p>
+                <hr>
+                <p class="highlight" style="display:none;" id="cipher-ans">เฉลย: HELLO WORLD (K->H, H->E, ...)</p>
+                <button onclick="document.getElementById('cipher-ans').style.display='block'">ดูเฉลย</button>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>Python Code Example</h2>
+            <p>การใช้ Library <code>cryptography</code></p>
+            <pre>
+from cryptography.fernet import Fernet
+
+# 1. สร้าง Key
+key = Fernet.generate_key()
+cipher = Fernet(key)
+
+# 2. เข้ารหัส
+msg = b"Secret Message"
+encrypted = cipher.encrypt(msg)
+print(encrypted) # b'gAAAAAB...'
+
+# 3. ถอดรหัส
+decrypted = cipher.decrypt(encrypted)
+print(decrypted.decode()) # "Secret Message"
+            </pre>
+        </div>
+
+        <div class="slide center-content">
+            <h1 class="highlight">🌍 Part 6</h1>
+            <h2>Cryptography in Real World</h2>
+        </div>
+
+        <div class="slide">
+            <h2>Cryptography อยู่รอบตัวเรา</h2>
+            <ul>
+                <li>🌐 <strong>HTTPS:</strong> เว็บไซต์ทุกเว็บที่มีกุญแจเขียว</li>
+                <li>💬 <strong>WhatsApp/Line:</strong> End-to-End Encryption (Server อ่านไม่ได้)</li>
+                <li>💳 <strong>Banking App:</strong> เข้ารหัสการโอนเงิน</li>
+                <li>🔑 <strong>Password Manager:</strong> เก็บพาสเวิร์ดใน Vault ที่เข้ารหัส</li>
+                <li>💰 <strong>Cryptocurrency:</strong> Bitcoin ใช้ Hash และ Digital Signature</li>
+            </ul>
+        </div>
+
+        <div class="slide">
+            <h2>⚠️ Common Mistakes (สิ่งที่ SE ต้องระวัง)</h2>
+            <ul>
+                <li>❌ <strong>ใช้ MD5 หรือ SHA-1:</strong> เลิกใช้เด็ดขาด!</li>
+                <li>❌ <strong>Hard-code Key ใน Code:</strong> <code>String key = "1234";</code> (ห้ามทำ!)</li>
+                <li>❌ <strong>เก็บ Password เป็น Plaintext:</strong> ผิดกฎหมาย PDPA และอันตรายมาก</li>
+                <li>❌ <strong>สร้าง Crypto Algorithm เอง:</strong> อย่าหาทำ! ให้ใช้ Standard Library</li>
+            </ul>
+        </div>
+
+        <div class="slide">
+            <h2>🛡️ การเก็บ Password ที่ถูกต้อง</h2>
+            <p>ต้องใช้ <strong>Hash + Salt</strong> เสมอ</p>
+            <div class="box">
+                <p><strong>Salt:</strong> ค่าสุ่มที่เติมเข้าไปท้าย Password ก่อน Hash</p>
+                <p><code>Hash(Password + Salt)</code></p>
+                <p>เพื่อป้องกัน <strong>Rainbow Table Attack</strong> (ตารางที่แฮกเกอร์ทำเฉลย Hash ไว้แล้ว)</p>
+            </div>
+            <p>✅ แนะนำ: ใช้ <strong>Bcrypt</strong> หรือ <strong>Argon2</strong></p>
+        </div>
+
+        <div class="slide">
+            <h2>🔮 The Future: Quantum Computing</h2>
+            <ul>
+                <li>Quantum Computer ในอนาคตอาจคำนวณเร็วมากจนถอดรหัส <strong>RSA</strong> ได้</li>
+                <li>แต่ <strong>AES-256</strong> และ <strong>SHA-256</strong> ยังถือว่าปลอดภัยอยู่</li>
+                <li>โลกกำลังเตรียมย้ายไปใช้ <strong>Post-Quantum Cryptography (PQC)</strong></li>
+            </ul>
+        </div>
+
+        <div class="slide">
+            <h2>📝 สรุปบทเรียน Week 6</h2>
+            <ul>
+                <li><strong>Cryptography</strong> คือพื้นฐานความปลอดภัย (C-I-A)</li>
+                <li><strong>Symmetric:</strong> 1 กุญแจ (เร็ว), <strong>Asymmetric:</strong> 2 กุญแจ (ปลอดภัย)</li>
+                <li><strong>HTTPS</strong> ใช้ทั้งสองอย่าง (Hybrid)</li>
+                <li><strong>Hashing</strong> ไม่ใช่ Encryption (ถอดไม่ได้) ใช้เช็คความถูกต้อง</li>
+                <li><strong>Digital Signature</strong> ยืนยันตัวตนคนส่ง</li>
+            </ul>
+        </div>
+
+        <div class="slide">
+            <h2>📊 Assessment Week 6</h2>
+            <div class="row">
+                <div class="col box">
+                    <h3>Quiz 3 (10 คะแนน)</h3>
+                    <p>คำถาม Concept พื้นฐาน (Symmetric/Asymmetric, Hash)</p>
+                </div>
+                <div class="col box">
+                    <h3>Participation (10 คะแนน)</h3>
+                    <p>กิจกรรมถอดรหัส Cipher Puzzle ในห้องเรียน</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide center-content">
+            <h2>🔜 สัปดาห์หน้า: Week 7</h2>
+            <h1 class="highlight">Web Application Security</h1>
+            <p>รู้จัก OWASP Top 10, SQL Injection, XSS</p>
+            <p style="margin-top: 20px;">เตรียม VM/Lab ให้พร้อม!</p>
+        </div>
+
+        <div class="slide center-content">
+            <h1 style="font-size: 4em;">Q & A</h1>
+            <p>ขอบคุณครับ</p>
+            <p style="font-size: 0.8em; color: gray; margin-top: 50px;">ENGSE214 - Introduction to Cyber Security</p>
+        </div>
+
+
+    <div id="controls">
+        <div class="control-group">
+            <span id="page-number">1 / 45</span>
+        </div>
+        <div class="control-group">
+            <button onclick="prevSlide()"><i class="fas fa-arrow-left"></i> Prev</button>
+            <button onclick="nextSlide()">Next <i class="fas fa-arrow-right"></i></button>
+        </div>
+        <div class="control-group">
+            <button onclick="changeFontSize(-2)" title="Decrease Font"><i class="fas fa-minus"></i></button>
+            <button onclick="changeFontSize(2)" title="Increase Font"><i class="fas fa-plus"></i></button>
+            <button onclick="toggleTheme()" title="Toggle Theme"><i class="fas fa-adjust"></i></button>
+            <button onclick="toggleFullScreen()" title="Full Screen"><i class="fas fa-expand"></i></button>
+        </div>
+    </div>
+    
+    </div>
+
+
+    <script>
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slide');
+        const pageNumberDisplay = document.getElementById('page-number');
+        const presentationContainer = document.getElementById('presentation-container');
+        let currentFontSize = 16; // Base font size in px
+
+        function showSlide(index) {
+            slides[currentSlide].classList.remove('active');
+            currentSlide = (index + slides.length) % slides.length;
+            slides[currentSlide].classList.add('active');
+            pageNumberDisplay.innerText = `${currentSlide + 1} / ${slides.length}`;
+            
+            // Auto scroll to top of slide
+            slides[currentSlide].scrollTop = 0;
+        }
+
+        function nextSlide() {
+            if (currentSlide < slides.length - 1) {
+                showSlide(currentSlide + 1);
+            }
+        }
+
+        function prevSlide() {
+            if (currentSlide > 0) {
+                showSlide(currentSlide - 1);
+            }
+        }
+
+        function toggleTheme() {
+            const body = document.body;
+            if (body.getAttribute('data-theme') === 'light') {
+                body.removeAttribute('data-theme');
+            } else {
+                body.setAttribute('data-theme', 'light');
+            }
+        }
+
+        function changeFontSize(amount) {
+            currentFontSize += amount;
+            // Limit range
+            if (currentFontSize < 12) currentFontSize = 12;
+            if (currentFontSize > 32) currentFontSize = 32;
+            
+            slides.forEach(slide => {
+                slide.style.fontSize = currentFontSize + 'px';
+            });
+            
+            // Adjust line height for diagrams
+            document.querySelectorAll('.diagram').forEach(d => {
+                d.style.fontSize = (currentFontSize * 0.8) + 'px';
+            });
+        }
+
+        function toggleFullScreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => {
+                    alert(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
+                });
+            } else {
+                document.exitFullscreen();
+            }
+        }
+
+        // Keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'Enter') {
+                nextSlide();
+            } else if (e.key === 'ArrowLeft') {
+                prevSlide();
+            } else if (e.key === 'f') {
+                toggleFullScreen();
+            }
+        });
+
+        // Initialize
+        showSlide(0);
+    </script>
+</body>
+</html>

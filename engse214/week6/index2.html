@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Week 6: Cryptography Basics | ENGSE214</title>
+
+<!-- Fonts & Icons -->
+<link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+
+<style>
+/* ================= DESIGN SYSTEM ================= */
+:root{
+  --bg:#0b1220;
+  --fg:#e5e7eb;
+  --card:rgba(255,255,255,0.08);
+  --glass:blur(18px);
+  --primary:#38bdf8;
+  --secondary:#22c55e;
+  --danger:#ef4444;
+  --warning:#f59e0b;
+  --accent:#a78bfa;
+  --border:rgba(255,255,255,0.15);
+  --shadow:0 30px 80px rgba(0,0,0,.45);
+}
+
+[data-theme="light"]{
+  --bg:#f8fafc;
+  --fg:#020617;
+  --card:#ffffff;
+  --primary:#0284c7;
+  --secondary:#16a34a;
+  --accent:#7c3aed;
+  --border:#e5e7eb;
+  --shadow:0 25px 60px rgba(0,0,0,.15);
+}
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;
+  font-family:'Kanit',system-ui;
+  background:
+    radial-gradient(1200px 600px at 10% -10%, #1e293b 0%, transparent 60%),
+    radial-gradient(1000px 500px at 90% 10%, #020617 0%, transparent 60%),
+    var(--bg);
+  color:var(--fg);
+  overflow:hidden;
+}
+
+/* ================= LAYOUT ================= */
+#deck{
+  width:92vw; max-width:1680px;
+  aspect-ratio:16/9;
+  margin:auto; position:relative;
+  background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.01));
+  border-radius:28px;
+  box-shadow:var(--shadow);
+  border:1px solid var(--border);
+  overflow:hidden;
+}
+
+.slide{
+  position:absolute; inset:0;
+  padding:72px 96px;
+  opacity:0; transform:translateX(60px) scale(.98);
+  transition:all .7s cubic-bezier(.2,.8,.2,1);
+}
+.slide.active{opacity:1; transform:none}
+
+/* ================= TYPOGRAPHY ================= */
+h1{font-size:4rem; margin:.2em 0; letter-spacing:.3px}
+h2{font-size:2.6rem; margin:.2em 0 1em}
+h3{font-size:1.8rem; margin:.6em 0}
+p,li{font-size:1.35rem; line-height:1.65}
+.small{opacity:.75; font-size:1rem}
+
+.gradient{
+  background:linear-gradient(90deg,var(--primary),var(--accent));
+  -webkit-background-clip:text; background-clip:text; color:transparent;
+}
+
+/* ================= COMPONENTS ================= */
+.card{
+  background:var(--card);
+  backdrop-filter:var(--glass);
+  border:1px solid var(--border);
+  border-radius:22px;
+  padding:28px;
+}
+
+.grid-2{display:grid; grid-template-columns:1fr 1fr; gap:48px; height:100%}
+.center{display:flex; flex-direction:column; justify-content:center}
+
+.badge{
+  display:inline-flex; gap:8px; align-items:center;
+  padding:8px 14px; border-radius:999px;
+  background:rgba(56,189,248,.15); color:var(--primary);
+  font-weight:600; margin-bottom:18px
+}
+
+.stat{
+  font-size:3.2rem; font-weight:700; color:var(--secondary)
+}
+
+/* ================= IMAGES ================= */
+.diagram{
+  width:100%; border-radius:18px;
+  border:1px dashed var(--border);
+  cursor:zoom-in; transition:.3s
+}
+.diagram:hover{transform:scale(1.03)}
+
+/* ================= CONTROLS ================= */
+.controls{
+  position:absolute; left:50%; bottom:22px; transform:translateX(-50%);
+  display:flex; gap:14px; z-index:20;
+  background:var(--card); backdrop-filter:var(--glass);
+  border:1px solid var(--border);
+  border-radius:999px; padding:10px 18px
+}
+
+.controls button{
+  background:transparent; border:none; color:var(--fg);
+  font-size:1.1rem; padding:8px 14px; cursor:pointer
+}
+.controls button:hover{color:var(--primary)}
+
+.topbar{
+  position:absolute; top:22px; right:22px; z-index:20;
+  display:flex; gap:12px
+}
+
+.topbar button{
+  background:var(--card); backdrop-filter:var(--glass);
+  border:1px solid var(--border);
+  color:var(--fg); border-radius:14px; padding:10px 14px
+}
+
+.progress{position:absolute; left:0; bottom:0; height:5px; background:var(--primary)}
+
+/* ================= LIGHTBOX ================= */
+#lightbox{position:fixed; inset:0; background:rgba(0,0,0,.9); display:none; align-items:center; justify-content:center; z-index:50}
+#lightbox img{max-width:92%; max-height:92%}
+</style>
+</head>
+<body>
+
+<div id="deck">
+
+  <!-- SLIDE 1 -->
+  <section class="slide active center">
+    <span class="badge"><i class="fa-solid fa-shield-halved"></i> ENGSE214 · Cyber Security</span>
+    <h1 class="gradient">Cryptography Basics</h1>
+    <h2>Week 6 · Foundations of Secure Systems</h2>
+    <p class="small">สำหรับนักศึกษาวิศวกรรมซอฟต์แวร์ ปีที่ 3</p>
+    <div class="grid-2" style="margin-top:40px">
+      <div class="card">
+        <h3>Why this matters?</h3>
+        <p>ทุกระบบที่คุณเขียน — Web, API, Mobile, Cloud — ล้วนพึ่งพา <b>Cryptography</b> เพื่อปกป้องข้อมูลผู้ใช้</p>
+      </div>
+      <div class="card center" style="align-items:center">
+        <div class="stat">100%</div>
+        <p>ของ HTTPS ใช้ Hybrid Cryptography</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- SLIDE 2 -->
+  <section class="slide">
+    <h2 class="gradient">Learning Objectives</h2>
+    <div class="grid-2">
+      <ul>
+        <li>เข้าใจแนวคิด Encryption / Decryption</li>
+        <li>แยก Symmetric vs Asymmetric ได้ชัดเจน</li>
+        <li>อธิบาย Hash, HMAC, Digital Signature</li>
+        <li>เชื่อมโยงกับ HTTPS, Password, API</li>
+      </ul>
+      <div class="card">
+        <p><b>Outcome:</b> นักศึกษาจะอ่านเอกสาร Security ได้รู้เรื่อง และออกแบบระบบได้ปลอดภัยขึ้น</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- SLIDE 3 -->
+  <section class="slide">
+    <h2>Cryptography in CIA Triad</h2>
+    <div class="grid-2">
+      <div class="card"><h3 style="color:var(--primary)">Confidentiality</h3><p>Encryption ป้องกันการดักฟัง</p></div>
+      <div class="card"><h3 style="color:var(--secondary)">Integrity</h3><p>Hash / MAC ป้องกันการแก้ไขข้อมูล</p></div>
+    </div>
+    <div class="card" style="margin-top:32px">
+      <h3 style="color:var(--accent)">Authentication</h3>
+      <p>Digital Signature & PKI ยืนยันตัวตนผู้ส่ง</p>
+    </div>
+  </section>
+
+  <!-- SLIDE 4 -->
+  <section class="slide">
+    <h2>Symmetric Encryption</h2>
+    <div class="grid-2">
+      <div class="center">
+        <ul>
+          <li>ใช้ Key เดียวกัน</li>
+          <li>เร็วมาก เหมาะกับข้อมูลขนาดใหญ่</li>
+          <li>เช่น AES, ChaCha20</li>
+        </ul>
+      </div>
+      <img class="diagram" src="https://placehold.co/900x500/0b1220/38bdf8?text=Symmetric+Encryption" onclick="zoom(this.src)">
+    </div>
+  </section>
+
+  <!-- SLIDE 5 -->
+  <section class="slide">
+    <h2>Asymmetric Encryption</h2>
+    <div class="grid-2">
+      <div class="center">
+        <ul>
+          <li>Public / Private Key</li>
+          <li>แก้ปัญหา Key Distribution</li>
+          <li>ใช้ใน TLS, Signature</li>
+        </ul>
+      </div>
+      <img class="diagram" src="https://placehold.co/900x500/0b1220/a78bfa?text=Asymmetric+Encryption" onclick="zoom(this.src)">
+    </div>
+  </section>
+
+  <!-- SLIDE 6 -->
+  <section class="slide center">
+    <h1 class="gradient">Hybrid Encryption</h1>
+    <p>โลกจริงใช้ <b>Asymmetric</b> เพื่อแลก Key และ <b>Symmetric</b> เพื่อส่งข้อมูล</p>
+    <img class="diagram" style="margin-top:32px" src="https://placehold.co/1000x450/0b1220/22c55e?text=TLS+Handshake+Hybrid+Model" onclick="zoom(this.src)">
+  </section>
+
+</div>
+
+<!-- CONTROLS -->
+<div class="controls">
+  <button onclick="prev()"><i class="fa-solid fa-arrow-left"></i></button>
+  <button onclick="next()"><i class="fa-solid fa-arrow-right"></i></button>
+  <button onclick="toggleTheme()"><i class="fa-solid fa-circle-half-stroke"></i></button>
+  <button onclick="fullscreen()"><i class="fa-solid fa-expand"></i></button>
+</div>
+
+<div class="topbar">
+  <button onclick="font(-.1)">A-</button>
+  <button onclick="font(.1)">A+</button>
+</div>
+
+<div class="progress" id="progress"></div>
+
+<div id="lightbox" onclick="this.style.display='none'"><img></div>
+
+<script>
+const slides=[...document.querySelectorAll('.slide')];
+let i=0,scale=1;
+function show(){slides.forEach(s=>s.classList.remove('active'));slides[i].classList.add('active');document.getElementById('progress').style.width=((i+1)/slides.length*100)+'%'}
+function next(){if(i<slides.length-1){i++;show()}}
+function prev(){if(i>0){i--;show()}}
+function toggleTheme(){document.body.dataset.theme=document.body.dataset.theme==='light'?'':'light'}
+function fullscreen(){document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen()}
+function font(d){scale=Math.min(1.4,Math.max(.8,scale+d));document.body.style.fontSize=scale+'rem'}
+function zoom(src){const lb=document.getElementById('lightbox');lb.style.display='flex';lb.querySelector('img').src=src}
+show();
+</script>
+</body>
+</html>
