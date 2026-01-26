@@ -1,0 +1,882 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ENGSE207: Docker Foundation Lecture</title>
+
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script crossorigin src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/5.0.4/reveal.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/5.0.4/theme/dracula.min.css" id="theme">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        /* --- ENGSE207 Custom Theme & UI --- */
+        :root {
+            --primary-color: #61dafb; /* React Blue variant */
+            --secondary-color: #bd93f9; /* Purple for architecture */
+            --bg-dark: #191924; /* Deep dark blue/grey */
+            --text-dark: #e2e8f0;
+            --bg-light: #f0f2f5;
+            --text-light: #2d3748;
+            --code-bg: #282c34;
+            --accent-success: #50fa7b;
+            --accent-warning: #ffb86c;
+            --accent-danger: #ff5555;
+        }
+
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: var(--bg-dark);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        /* Force 16:9 Aspect Ratio Container */
+        #root {
+            width: 100vw;
+            height: 56.25vw; /* 100 * 9 / 16 */
+            max-height: 100vh;
+            max-width: 177.78vh; /* 100 * 16 / 9 */
+            margin: auto;
+            position: absolute;
+            top:0;bottom:0;left:0;right:0;
+            box-shadow: 0 0 50px rgba(0,0,0,0.5);
+            transition: transform 0.3s ease;
+        }
+
+        /* Light Theme Overrides */
+        body.light-theme #root {
+            box-shadow: 0 0 50px rgba(0,0,0,0.2);
+        }
+
+        /* Reveal.js Overrides for ENGSE207 look */
+        .reveal {
+            font-size: 28px; /* Base font size */
+        }
+        .reveal h1, .reveal h2, .reveal h3, .reveal h4 {
+            text-transform: none;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+        .reveal h1 { color: var(--primary-color); font-size: 2.5em; }
+        .reveal h2 { color: var(--secondary-color); margin-bottom: 30px; }
+        .reveal strong { color: var(--primary-color); }
+        .reveal code { color: var(--accent-warning); font-family: 'Fira Code', monospace; }
+        .reveal pre {
+            box-shadow: none;
+            border-radius: 8px;
+            border: 1px solid #444;
+        }
+
+        /* Custom UI Control Panel */
+        .control-panel {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            gap: 10px;
+            z-index: 9999;
+            background: rgba(40, 44, 52, 0.8);
+            padding: 10px;
+            border-radius: 50px;
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255,255,255,0.1);
+            transition: all 0.3s ease;
+        }
+        body.light-theme .control-panel {
+            background: rgba(255, 255, 255, 0.8);
+            border: 1px solid rgba(0,0,0,0.1);
+        }
+
+        .btn-control {
+            background: transparent;
+            border: none;
+            color: var(--primary-color);
+            font-size: 1.2rem;
+            cursor: pointer;
+            padding: 8px 12px;
+            border-radius: 50%;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .btn-control:hover {
+            background: rgba(97, 218, 251, 0.2);
+            transform: scale(1.1);
+        }
+        body.light-theme .btn-control {
+            color: #333;
+        }
+        body.light-theme .btn-control:hover {
+            background: rgba(0,0,0,0.1);
+        }
+
+        /* Infographic/Diagram Placeholders Styles */
+        .diagram-box {
+            border: 2px dashed var(--secondary-color);
+            background: rgba(189, 147, 249, 0.1);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            margin: 20px 0;
+            position: relative;
+        }
+        .diagram-box::before {
+            content: '\f0e8'; /* FontAwesome sitemap icon */
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+            position: absolute;
+            top: -15px;
+            left: 20px;
+            background: var(--bg-dark);
+            padding: 0 10px;
+            color: var(--secondary-color);
+            font-size: 1.5em;
+        }
+        body.light-theme .diagram-box::before {
+            background: var(--bg-light);
+        }
+        .diagram-title { font-weight: bold; color: var(--secondary-color); margin-bottom: 10px; display: block;}
+        .diagram-desc { font-size: 0.8em; color: #aaa; font-style: italic;}
+
+        /* Terminal Simulation Style */
+        .terminal-sim {
+            background: #1e1e1e;
+            border-radius: 8px;
+            overflow: hidden;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.8em;
+            text-align: left;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+            margin-top: 20px;
+        }
+        .terminal-header {
+            background: #333;
+            padding: 5px 10px;
+            display: flex;
+            gap: 5px;
+        }
+        .terminal-dot { width: 12px; height: 12px; border-radius: 50%; }
+        .dot-red { background: #ff5f56; } .dot-yellow { background: #ffbd2e; } .dot-green { background: #27c93f; }
+        .terminal-body {
+            padding: 15px;
+            color: #33ff00;
+            white-space: pre-wrap;
+        }
+        .prompt { color: var(--primary-color); }
+        .command { color: #fff; }
+        .output { color: #ccc; }
+
+        /* Utility Classes */
+        .flex-center { display: flex; justify-content: center; align-items: center; height: 100%; }
+        .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; align-items: center;}
+        .text-left { text-align: left; }
+        .highlight-box { background: rgba(97, 218, 251, 0.1); padding: 20px; border-left: 5px solid var(--primary-color); border-radius: 4px; margin: 20px 0; }
+        .quote-box { font-style: italic; border-left: 5px solid var(--accent-warning); padding-left: 20px; color: var(--accent-warning); }
+        .engse-badge { position: absolute; top: 20px; left: 20px; font-weight: 900; color: var(--primary-color); letter-spacing: 2px; opacity: 0.7; font-size: 0.8em;}
+
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/5.0.4/reveal.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/5.0.4/plugin/highlight/highlight.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/5.0.4/plugin/notes/notes.min.js"></script>
+
+
+    <script type="text/babel">
+
+        // --- Components ---
+
+        const TerminalSimulation = ({ command, output }) => (
+            <div className="terminal-sim">
+                <div className="terminal-header">
+                    <div className="terminal-dot dot-red"></div>
+                    <div className="terminal-dot dot-yellow"></div>
+                    <div className="terminal-dot dot-green"></div>
+                </div>
+                <div className="terminal-body">
+                    <div><span className="prompt">engse207@ubuntu:~$</span> <span className="command">{command}</span></div>
+                    <div className="output">{output}</div>
+                </div>
+            </div>
+        );
+
+        const DiagramPlaceholder = ({ title, description, type="flow" }) => {
+            let iconClass = "fa-sitemap";
+            if (type === "architecture") iconClass = "fa-project-diagram";
+            if (type === "process") iconClass = "fa-arrows-spin";
+             if (type === "layer") iconClass = "fa-layer-group";
+
+            return (
+            <div className="diagram-box">
+                <i className={`fa-solid ${iconClass}`} style={{position: 'absolute', top: '-15px', left: '20px', background: 'inherit', padding: '0 10px', color: 'var(--secondary-color)', fontSize: '1.5em'}}></i>
+                <span className="diagram-title">{title}</span>
+                <span className="diagram-desc">{description}</span>
+                <div style={{marginTop: '15px', opacity: 0.3}}>
+                    {/* Pseudo-visual for the diagram structure */}
+                    {type === 'architecture' && <div style={{display: 'flex', justifyContent: 'space-around'}}><div style={{border:'1px solid', padding:'10px'}}>Client</div> <i className="fa-solid fa-arrow-right" style={{alignSelf:'center'}}></i> <div style={{border:'1px solid', padding:'10px'}}>Host (Daemon)</div> <i className="fa-solid fa-arrow-right" style={{alignSelf:'center'}}></i> <div style={{border:'1px solid', padding:'10px'}}>Registry</div></div>}
+                    {type === 'layer' && <div style={{display: 'flex', flexDirection: 'column', alignItems:'center', width:'50%', margin:'auto'}}><div style={{border:'1px solid', width:'100%', padding:'5px', background:'#555'}}>App Layer (R/W)</div><div style={{border:'1px solid', width:'100%', padding:'5px'}}>Lib Layer (RO)</div><div style={{border:'1px solid', width:'100%', padding:'5px'}}>OS Layer (RO)</div></div>}
+                </div>
+            </div>
+            );
+        }
+
+
+        // --- Main App Component ---
+        function App() {
+            const [isDarkTheme, setIsDarkTheme] = React.useState(true); // แก้ไขชื่อตัวแปรให้ถูกต้อง
+            const [zoomLevel, setZoomLevel] = React.useState(1);
+            const revealRef = React.useRef(null);
+            const rootRef = React.useRef(null);
+
+            React.useEffect(() => {
+                // Initialize Reveal.js
+                if (revealRef.current) {
+                    Reveal.initialize({
+                        controls: false, // We use our own controls
+                        progress: true,
+                        center: true,
+                        hash: true,
+                        transition: 'slide', // none/fade/slide/convex/concave/zoom
+                        plugins: [ RevealHighlight, RevealNotes ],
+                        width: 1920,
+		                height: 1080,
+                        margin: 0.04,
+                        minScale: 0.2,
+                        maxScale: 2.0
+                    });
+                }
+
+                // Apply theme class to body
+                document.body.classList.toggle('light-theme', !isDarkTheme);
+                const themeLink = document.getElementById('theme');
+                if (themeLink) {
+                     themeLink.href = isDarkTheme
+                    ? 'https://cdnjs.cloudflare.com/ajax/libs/reveal.js/5.0.4/theme/dracula.min.css'
+                    : 'https://cdnjs.cloudflare.com/ajax/libs/reveal.js/5.0.4/theme/white.min.css';
+                }
+
+            }, [isDarkTheme]);
+
+             // Apply Zoom
+            React.useEffect(() => {
+                const rootElement = document.getElementById('root');
+                 if (rootElement) {
+                    rootElement.style.transform = `scale(${zoomLevel})`;
+                 }
+            }, [zoomLevel]);
+
+
+            const toggleTheme = () => setIsDarkTheme(!isDarkTheme);
+            const zoomIn = () => setZoomLevel(prev => Math.min(prev + 0.1, 1.5));
+            const zoomOut = () => setZoomLevel(prev => Math.max(prev - 0.1, 0.7));
+            const toggleFullScreen = () => {
+                if (!document.fullscreenElement) {
+                    document.documentElement.requestFullscreen();
+                } else {
+                    if (document.exitFullscreen) {
+                        document.exitFullscreen();
+                    }
+                }
+            };
+
+            const goNext = () => Reveal.next();
+            const goPrev = () => Reveal.prev();
+
+
+            return (
+                <React.Fragment>
+                    <div className="engse-badge">ENGSE207 SOFTWARE ARCHITECTURE</div>
+                    <div className="reveal" ref={revealRef}>
+                        <div className="slides">
+
+                            {/* --- SECTION 1: INTRO & MOTIVATION --- */}
+                            <section data-background-gradient="linear-gradient(to bottom right, #191924, #282c34)">
+                                <div className="flex-center" style={{flexDirection: 'column'}}>
+                                    <i className="fab fa-docker fa-5x" style={{color: '#0db7ed', marginBottom: '30px'}}></i>
+                                    <h1>Docker Foundation</h1>
+                                    <h3>สำหรับวิศวกรรมซอฟต์แวร์ (ENGSE207)</h3>
+                                    <p style={{color: '#888', marginTop: '50px'}}>Instructor: ENGSE207 (Software Architect & Full-stack Expert)</p>
+                                </div>
+                            </section>
+
+                            <section>
+                                <h2>ยินดีต้อนรับสู่วิชา Software Architecture</h2>
+                                <div className="two-col">
+                                    <div className="text-left">
+                                        <p>ในฐานะนักศึกษาปี 2 คุณกำลังก้าวจากการเป็น "Coder" สู่ "Engineer"</p>
+                                        <p>วิชานี้ไม่ได้สอนแค่เขียนโค้ดให้ทำงานได้ แต่สอนให้**ออกแบบ**ระบบที่ทนทาน ขยายได้ และดูแลรักษาได้</p>
+                                        <div className="highlight-box">
+                                            <strong>เป้าหมายวันนี้:</strong> เข้าใจเครื่องมือที่เปลี่ยนโลก Software Architecture ไปตลอดกาล... <em>Docker</em>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <i className="fas fa-layer-group fa-8x" style={{color: 'var(--secondary-color)', opacity: 0.5}}></i>
+                                    </div>
+                                </div>
+                            </section>
+
+                            <section>
+                                <h2>ทำไม Architect ต้องแคร์ Docker?</h2>
+                                <div className="two-col">
+                                    <div style={{fontSize: '0.8em'}}>
+                                        <ul>
+                                            <li className="fragment fade-in-then-semi-out"><strong>Consistency:</strong> มั่นใจได้ว่า Dev, Test, Prod environment เหมือนกันทุกประการ</li>
+                                            <li className="fragment fade-in-then-semi-out"><strong>Isolation:</strong> แยกส่วนประกอบของระบบออกจากกัน (Microservices friendly)</li>
+                                            <li className="fragment fade-in-then-semi-out"><strong>Portability:</strong> "Build once, run anywhere" ไม่ว่าจะเป็น Cloud ไหน หรือ OS อะไร</li>
+                                            <li className="fragment fade-in-then-semi-out"><strong>Scalability:</strong> ขยายระบบได้ง่ายและรวดเร็ว (Horizontal Scaling)</li>
+                                        </ul>
+                                    </div>
+                                    <div>
+                                        <DiagramPlaceholder
+                                            title="The Architect's View"
+                                            description="Docker helps bridge the gap between Development defined architecture and Operations infrastructure."
+                                            type="architecture"
+                                        />
+                                    </div>
+                                </div>
+                            </section>
+
+                             {/* --- SECTION 2: THE PROBLEM & SOLUTION --- */}
+                            <section>
+                                <h2>ปัญหาคลาสสิก: "The Matrix from Hell"</h2>
+                                <p>ก่อนมี Docker การ deploy ซอฟต์แวร์คือฝันร้าย</p>
+                                <DiagramPlaceholder
+                                    title="Infographic: The Matrix from Hell"
+                                    description="(อ้างอิงจาก drawio) แสดงตารางที่วุ่นวายระหว่าง Applications (Web, DB, Worker) กับ Environments (Dev OS, QA OS, Prod OS) และ Dependencies ที่ขัดแย้งกัน"
+                                />
+                                <p className="fragment quote-box">"แต่ในเครื่องผมมันรันได้นะ!" (It works on my machine!)</p>
+                            </section>
+
+                            <section>
+                                <h2>Docker คือคำตอบ</h2>
+                                <h3>What is Docker?</h3>
+                                <p>Docker เป็นแพลตฟอร์มสำหรับพัฒนา จัดส่ง และรันแอปพลิเคชัน</p>
+                                <div className="highlight-box">
+                                    หัวใจสำคัญคือ <strong>"Containerization"</strong>: การบรรจุแอปพลิเคชันและ dependencies ทั้งหมดที่จำเป็นลงในหน่วยมาตรฐานที่เรียกว่า Container
+                                </div>
+                            </section>
+
+                            <section>
+                                <h2>Virtual Machines (VMs) vs. Containers</h2>
+                                <div className="two-col">
+                                    <div style={{fontSize: '0.7em'}}>
+                                        <h4>Virtual Machines (VMs)</h4>
+                                        <ul>
+                                            <li>จำลอง Hardware</li>
+                                            <li>มี Guest OS ของตัวเอง (หนัก, เปลืองทรัพยากร)</li>
+                                            <li>Boot ช้า (หลักนาที)</li>
+                                            <li>Isolate ระดับ Hardware</li>
+                                        </ul>
+                                    </div>
+                                    <div style={{fontSize: '0.7em'}}>
+                                        <h4>Containers (Docker)</h4>
+                                        <ul>
+                                            <li>จำลอง OS (ใช้ Kernel ร่วมกับ Host)</li>
+                                            <li>ไม่มี Guest OS (เบา, ใช้ทรัพยากรน้อย)</li>
+                                            <li>Boot เร็ว (หลักวินาที/มิลลิวินาที)</li>
+                                            <li>Isolate ระดับ Process</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                <DiagramPlaceholder
+                                    title="Infographic: VMs vs Containers Architecture"
+                                    description="(สำคัญ! อ้างอิงจาก drawio) แสดงภาพเปรียบเทียบ Stack: [HW > Hypervisor > Guest OS > Bins/Libs > App] VS [HW > Host OS > Docker Engine > Bins/Libs > App]"
+                                    type="architecture"
+                                />
+                            </section>
+
+                            {/* --- SECTION 3: DOCKER ARCHITECTURE & CONCEPTS --- */}
+                            <section>
+                                <h2>Docker Architecture</h2>
+                                <p>Docker ใช้สถาปัตยกรรมแบบ Client-Server</p>
+                                <DiagramPlaceholder
+                                    title="Docker Architecture Diagram"
+                                    description="(อ้างอิงจาก drawio) แสดงความสัมพันธ์ 3 ส่วน: 1. Client (docker build/pull/run) -> 2. Docker Host (Daemon, Images, Containers) <-> 3. Registry (Docker Hub)"
+                                    type="architecture"
+                                />
+                            </section>
+
+                            <section>
+                                <h2>Key Concepts: 3 องค์ประกอบหลัก</h2>
+                                <div className="two-col">
+                                    <div className="text-left">
+                                        <ol>
+                                            <li style={{marginBottom:'20px'}}><strong>Dockerfile:</strong> <br/>พิมพ์เขียว (Blueprint) หรือสูตรการสร้าง Image</li>
+                                            <li style={{marginBottom:'20px'}}><strong>Image:</strong> <br/>แม่พิมพ์ (Template) ที่สร้างจาก Dockerfile (Read-only)</li>
+                                            <li><strong>Container:</strong> <br/>อินสแตนซ์ที่รันอยู่ของ Image (Read-write) เหมือนบ้านที่สร้างจากแปลน</li>
+                                        </ol>
+                                    </div>
+                                    <div>
+                                        <i className="fas fa-file-code fa-3x" style={{color:'#ccc'}}></i> <i className="fas fa-arrow-right"></i>
+                                        <i className="fas fa-compact-disc fa-3x" style={{color:'#ccc'}}></i> <i className="fas fa-arrow-right"></i>
+                                        <i className="fas fa-box-open fa-3x" style={{color:'var(--primary-color)'}}></i>
+                                        <p style={{marginTop:'20px'}}>Workflow: Build -> Ship -> Run</p>
+                                    </div>
+                                </div>
+                            </section>
+
+                             <section>
+                                <h2>Analogy: การทำอาหาร</h2>
+                                <div className="two-col">
+                                    <div className="fragment text-left">
+                                        <h4><i className="fas fa-scroll"></i> Dockerfile = "สูตรอาหาร"</h4>
+                                        <p>บอกส่วนผสม (OS, Libraries) และวิธีทำ (Commands)</p>
+                                    </div>
+                                    <div className="fragment text-left">
+                                        <h4><i className="fas fa-cookie-bite"></i> Image = "แม่พิมพ์ขนม/อาหารแช่แข็ง"</h4>
+                                        <p>สิ่งที่เตรียมไว้แล้ว พร้อมที่จะนำไปทำให้สุก (Read-only)</p>
+                                    </div>
+                                </div>
+                                <div className="fragment text-left" style={{marginTop: '30px'}}>
+                                        <h4><i className="fas fa-utensils"></i> Container = "จานอาหารที่เสิร์ฟ"</h4>
+                                        <p>การนำ Image มารัน (ทำจนสุก) แขกสามารถทานได้ (มี State เปลี่ยนแปลงได้)</p>
+                                </div>
+                            </section>
+
+                            <section>
+                                <h2>Image Layers (แนวคิดสำคัญ!)</h2>
+                                <p>Docker Image ไม่ได้เป็นไฟล์ก้อนเดียว แต่ประกอบด้วย Layer หลายชั้นซ้อนกัน</p>
+                                <div className="two-col">
+                                    <div style={{fontSize:'0.8em'}}>
+                                        <ul>
+                                            <li>แต่ละคำสั่งใน Dockerfile (เช่น `RUN`, `COPY`) จะสร้าง Layer ใหม่</li>
+                                            <li>Layers เป็น Read-only</li>
+                                            <li>เมื่อรัน Container จะมี "Container Layer" (Read-write) ท็อปอัพอยู่ด้านบนสุด</li>
+                                            <li><strong>ประโยชน์:</strong> การใช้ซ้ำ (Caching) และประหยัดพื้นที่</li>
+                                        </ul>
+                                    </div>
+                                    <div>
+                                         <DiagramPlaceholder
+                                            title="Union File System & Layers"
+                                            description="(อ้างอิงจาก drawio) แสดง Base Image Layers (RO) ซ้อนกัน และมี Container Layer (RW) อยู่บนสุด"
+                                            type="layer"
+                                        />
+                                    </div>
+                                </div>
+                            </section>
+
+                            <section>
+                                <h2>Docker Registry</h2>
+                                <p>คือที่จัดเก็บและแจกจ่าย Docker Images</p>
+                                <ul>
+                                    <li>เหมือน GitHub แต่สำหรับ Docker Images</li>
+                                    <li><strong>Docker Hub:</strong> Registry สาธารณะที่ใหญ่ที่สุด (Default)</li>
+                                    <li><strong>Private Registry:</strong> สำหรับองค์กรที่ต้องการเก็บ Image เป็นความลับ (เช่น AWS ECR, Google GCR, Azure ACR)</li>
+                                </ul>
+                                <div style={{textAlign: 'center', marginTop: '30px'}}>
+                                    <i className="fab fa-docker fa-4x" style={{marginRight:'20px'}}></i>
+                                    <i className="fab fa-aws fa-4x" style={{marginRight:'20px', color:'#ff9900'}}></i>
+                                    <i className="fab fa-google fa-4x" style={{color:'#4285F4'}}></i>
+                                </div>
+                            </section>
+
+
+                            {/* --- SECTION 4: HANDS-ON BASIC COMMANDS --- */}
+                             <section data-background="#282c34">
+                                <h2 style={{color:'var(--primary-color)'}}>Section 4: Hands-on Basic Commands</h2>
+                                <p>ได้เวลาลองของจริง! สมมติว่าเราอยู่ใน Terminal</p>
+                                <i className="fas fa-terminal fa-5x" style={{color: '#50fa7b', marginTop:'30px'}}></i>
+                            </section>
+
+                            <section>
+                                <h2>1. ตรวจสอบการติดตั้ง</h2>
+                                <p>เช็คเวอร์ชันของ Docker Engine</p>
+                                <TerminalSimulation
+                                    command="docker version"
+                                    output={`Client: Docker Engine - Community
+ Version:           24.0.5
+ ...
+Server: Docker Engine - Community
+ Engine:
+  Version:          24.0.5
+  ...`}
+                                />
+                            </section>
+
+                            <section>
+                                <h2>2. รัน Container แรก (Hello World)</h2>
+                                <p>คำสั่ง <code>docker run</code> คือพระเอกของเรา</p>
+                                <TerminalSimulation
+                                    command="docker run hello-world"
+                                    output={`Unable to find image 'hello-world:latest' locally
+latest: Pulling from library/hello-world
+719385e32844: Pull complete
+Digest: sha256:926a8...
+Status: Downloaded newer image for hello-world:latest
+
+Hello from Docker!
+This message shows that your installation appears to be working correctly.
+...`}
+                                />
+                                <p style={{fontSize: '0.7em', marginTop: '20px'}}>*สังเกต: ถ้าไม่มี Image ในเครื่อง มันจะไป pull จาก Registry มาให้เอง</p>
+                            </section>
+
+                            <section>
+                                <h2>สิ่งที่เกิดขึ้นเบื้องหลัง `docker run`</h2>
+                                <DiagramPlaceholder
+                                    title="Flow of 'docker run'"
+                                    description="1. Docker Client ส่งคำสั่งหา Daemon. 2. Daemon เช็ค local image store. 3. ถ้าไม่มี, ไป pull จาก Registry. 4. สร้าง Container จาก Image. 5. สตาร์ท Container."
+                                    type="process"
+                                />
+                            </section>
+
+                             <section>
+                                <h2>3. รัน Nginx Web Server (Detached Mode)</h2>
+                                <p>เราต้องการรัน Web Server ทิ้งไว้เบื้องหลัง ใช้ flag <code>-d</code> (detached)</p>
+                                <TerminalSimulation
+                                    command="docker run -d --name my-nginx nginx"
+                                    output={`8a9d7e6f5c4b3a2d1e0f9e8d7c6b5a4e3d2c1b0a... (Container ID)`}
+                                />
+                                <ul>
+                                    <li><code>-d</code>: Run in background</li>
+                                    <li><code>--name</code>: ตั้งชื่อให้ Container (ถ้าไม่ตั้ง Docker จะตั้งชื่อตลกๆ ให้)</li>
+                                    <li><code>nginx</code>: ชื่อ Image</li>
+                                </ul>
+                            </section>
+
+                             <section>
+                                <h2>4. ดูรายการ Containers ที่รันอยู่</h2>
+                                <p>ใช้คำสั่ง <code>docker ps</code> (Process Status)</p>
+                                <TerminalSimulation
+                                    command="docker ps"
+                                    output={`CONTAINER ID   IMAGE     COMMAND                  CREATED         STATUS         PORTS      NAMES
+8a9d7e6f5c4b   nginx     "/docker-entrypoint.…"   2 minutes ago   Up 2 minutes   80/tcp     my-nginx`}
+                                />
+                                <p style={{fontSize: '0.7em'}}>Tip: ใช้ <code>docker ps -a</code> เพื่อดู container ทั้งหมด (รวมที่หยุดไปแล้ว)</p>
+                            </section>
+
+                             <section>
+                                <h2>5. หยุดและลบ Container</h2>
+                                <div className="two-col">
+                                    <div>
+                                        <h4>Stop Container</h4>
+                                        <TerminalSimulation
+                                            command="docker stop my-nginx"
+                                            output={`my-nginx`}
+                                        />
+                                        <p>ส่ง SIGTERM ไปให้ process หลักใน container</p>
+                                    </div>
+                                    <div>
+                                        <h4>Remove Container</h4>
+                                        <TerminalSimulation
+                                            command="docker rm my-nginx"
+                                            output={`my-nginx`}
+                                        />
+                                        <p>ลบ container ที่หยุดแล้ว (ถ้ายังไม่หยุดต้องใช้ <code>-f</code> force)</p>
+                                    </div>
+                                </div>
+                            </section>
+
+                             <section>
+                                <h2>6. จัดการ Images</h2>
+                                <div className="two-col" style={{fontSize:'0.9em'}}>
+                                    <div>
+                                        <h4>ดู Images ในเครื่อง</h4>
+                                        <code style={{display:'block', padding:'10px', background:'#333'}}>docker images</code>
+                                    </div>
+                                    <div>
+                                        <h4>ลบ Image</h4>
+                                        <code style={{display:'block', padding:'10px', background:'#333'}}>docker rmi &lt;image_id/name&gt;</code>
+                                    </div>
+                                </div>
+                                <div className="highlight-box" style={{marginTop: '20px', fontSize:'0.8em'}}>
+                                    <strong>Housekeeping Tip:</strong> ใช้ <code>docker system prune</code> เพื่อล้างข้อมูลขยะ (stopped containers, unused networks, dangling images) ระวังใช้ใน prod!
+                                </div>
+                            </section>
+
+                            {/* --- SECTION 5: DEEP DIVE CONCEPTS --- */}
+                            <section>
+                                <h2>Deep Dive: การเชื่อมต่อกับโลกภายนอก</h2>
+                                <p>โดยปกติ Container จะอยู่ใน Network ที่แยกจาก Host (Isolated)</p>
+                                <p>เราต้องทำการ <strong>"Port Mapping"</strong> เพื่อให้เข้าถึงบริการใน Container ได้</p>
+                                <DiagramPlaceholder
+                                    title="Port Mapping Concept"
+                                    description="(อ้างอิงจาก drawio) แสดง Host OS มี Port 8080 แมปไปยัง Container Port 80 (Nginx). User เข้า localhost:8080 -> traffic ส่งไป container:80"
+                                    type="architecture"
+                                />
+                            </section>
+
+                            <section>
+                                <h2>Hands-on: Port Mapping</h2>
+                                <p>รัน Nginx อีกครั้ง แต่แมปพอร์ต Host (8080) ไปหา Container (80)</p>
+                                <TerminalSimulation
+                                    command="docker run -d -p 8080:80 --name my-web nginx"
+                                    output={`c4d5e6f7g8h9...`}
+                                />
+                                <p>จากนั้นเปิด Browser ไปที่ <code>http://localhost:8080</code> คุณจะเจอหน้า Welcome ของ Nginx!</p>
+                                <div style={{border: '1px solid #ccc', padding: '10px', background: 'white', color: 'black', width: '80%', margin: '20px auto', textAlign:'center'}}>
+                                    <h3>Welcome to nginx!</h3>
+                                    <p style={{fontSize:'0.8em'}}>If you see this page, the nginx web server is successfully installed...</p>
+                                </div>
+                            </section>
+
+                             <section>
+                                <h2>Deep Dive: Data Persistence (Volumes)</h2>
+                                <div className="alert alert-danger highlight-box" style={{borderColor:'var(--accent-danger)'}}>
+                                    <strong>ข้อควรระวัง!</strong> ข้อมูลใน Container Layer เป็นแบบชั่วคราว (Ephemeral). ถ้า Container ถูกลบ ข้อมูลหายหมด!
+                                </div>
+                                <p><strong>ทางแก้:</strong> ใช้ <strong>Docker Volumes</strong> เพื่อเก็บข้อมูลถาวรไว้นอก Container (บน Host)</p>
+                            </section>
+
+                             <section>
+                                <h2>ประเภทของ Storage Mounts</h2>
+                                <div className="two-col" style={{fontSize: '0.8em'}}>
+                                    <div>
+                                        <h4>1. Volumes (แนะนำ)</h4>
+                                        <ul>
+                                            <li>Docker จัดการให้ เก็บในพื้นที่เฉพาะของ Docker บน Host</li>
+                                            <li>ปลอดภัย พกพาง่าย</li>
+                                        </ul>
+                                        <code style={{fontSize:'0.9em'}}>-v my-vol:/data</code>
+                                    </div>
+                                    <div>
+                                        <h4>2. Bind Mounts</h4>
+                                        <ul>
+                                            <li>แมปโฟลเดอร์โดยตรงจาก Host path ที่กำหนด</li>
+                                            <li>เหมาะสำหรับ Development (แก้โค้ดใน Host แล้ว Container เปลี่ยนตาม)</li>
+                                        </ul>
+                                        <code style={{fontSize:'0.9em'}}>-v /home/user/project:/app</code>
+                                    </div>
+                                </div>
+                                 <DiagramPlaceholder
+                                    title="Volumes vs Bind Mounts"
+                                    description="(อ้างอิงจาก drawio) แสดงภาพ Host Filesystem. Volumes อยู่ใน /var/lib/docker/volumes. Bind Mounts ชี้ไปที่โฟลเดอร์ไหนก็ได้."
+                                />
+                            </section>
+
+                             <section>
+                                <h2>Hands-on: Bind Mount สำหรับ Web Dev</h2>
+                                <p>สมมติคุณมีไฟล์ `index.html` อยู่ในโฟลเดอร์ปัจจุบัน และต้องการให้ Nginx แสดงผลไฟล์นี้</p>
+                                <TerminalSimulation
+                                    command="docker run -d -p 8081:80 -v $(pwd):/usr/share/nginx/html nginx"
+                                    output={`d1e2f3g4h5...`}
+                                />
+                                <p style={{fontSize:'0.8em'}}><code>$(pwd)</code> คือ path ปัจจุบัน. เราแมปมันไปทับโฟลเดอร์ default html ของ Nginx.</p>
+                                <p>ตอนนี้ถ้าคุณแก้ไฟล์ `index.html` ในเครื่องคุณ แล้ว refresh browser (localhost:8081) หน้าเว็บจะเปลี่ยนทันที!</p>
+                            </section>
+
+                            {/* --- SECTION 6: DOCKERFILE & BEST PRACTICES --- */}
+                            <section data-background="#282c34">
+                                <h2 style={{color:'var(--primary-color)'}}>Section 6: สร้าง Image เองด้วย Dockerfile</h2>
+                                <p>ถึงเวลาของ Software Engineer ตัวจริง!</p>
+                                <i className="fas fa-file-code fa-5x" style={{color: '#ffb86c', marginTop:'30px'}}></i>
+                            </section>
+
+                            <section>
+                                <h2>ตัวอย่าง Dockerfile (Node.js App)</h2>
+                                <p>สร้างไฟล์ชื่อ <code>Dockerfile</code> (ไม่มีนามสกุล) ในโปรเจกต์</p>
+                                <pre><code className="dockerfile" data-trim data-line-numbers="1-2|4-5|7-9|11-12|14-15">
+{`# 1. Base Image: เริ่มจาก Node.js official image (LTS version) บน Alpine Linux (เล็กดี)
+FROM node:18-alpine
+
+# 2. Set working directory: กำหนดโฟลเดอร์ทำงานใน Container
+WORKDIR /app
+
+# 3. Copy dependencies ไฟล์ package.json และ package-lock.json
+COPY package*.json ./
+
+# 4. Install dependencies
+RUN npm install --production
+
+# 5. Copy source code ทั้งหมด
+COPY . .
+
+# 6. Document ว่า container นี้ใช้ port 3000
+EXPOSE 3000
+
+# 7. Command ที่ใช้รันแอปเมื่อ container start
+CMD ["node", "src/index.js"]`}
+                                </code></pre>
+                            </section>
+
+                             <section>
+                                <h2>อธิบายคำสั่งหลักใน Dockerfile</h2>
+                                <ul style={{fontSize:'0.9em'}}>
+                                    <li><code>FROM</code>: (จำเป็น) ระบุ Base Image ที่จะใช้ต่อยอด</li>
+                                    <li><code>WORKDIR</code>: เหมือนคำสั่ง `cd` เข้าไปในโฟลเดอร์ใน image</li>
+                                    <li><code>COPY</code> / <code>ADD</code>: คัดลอกไฟล์จาก Host เข้าไปใน Image</li>
+                                    <li><code>RUN</code>: รันคำสั่งขณะ <strong>Build</strong> image (เช่น apt-get install, npm install) ผลลัพธ์จะถูก commit เป็น layer ใหม่</li>
+                                    <li><code>CMD</code> / <code>ENTRYPOINT</code>: ระบุคำสั่งที่จะรันเมื่อ <strong>Start</strong> container (มีได้แค่ instruction เดียวที่ทำงาน)</li>
+                                    <li><code>EXPOSE</code>: แค่บอก document ว่า image นี้ตั้งใจใช้ port อะไร (ไม่ได้ publish port จริงๆ)</li>
+                                </ul>
+                            </section>
+
+                            <section>
+                                <h2>Build Image จาก Dockerfile</h2>
+                                <p>ใช้คำสั่ง <code>docker build</code></p>
+                                <TerminalSimulation
+                                    command="docker build -t my-node-app:v1 ."
+                                    output={`[+] Building 15.2s (10/10) FINISHED
+ => [internal] load build definition from Dockerfile
+ => => transferring dockerfile: 320B
+ => [1/6] FROM docker.io/library/node:18-alpine...
+ ...
+ => [4/6] RUN npm install --production
+ ...
+ => exporting to image
+ => => naming to docker.io/library/my-node-app:v1`}
+                                />
+                                <ul>
+                                    <li><code>-t my-node-app:v1</code>: ตั้งชื่อ tag ให้ image (ชื่อ:เวอร์ชัน)</li>
+                                    <li><code>.</code>: (สำคัญมาก) Build Context คือบอกว่าไฟล์ต่างๆ อยู่ที่โฟลเดอร์ปัจจุบัน</li>
+                                </ul>
+                            </section>
+
+                            <section>
+                                <h2>Dockerfile Best Practices (สำหรับ SE)</h2>
+                                <div className="two-col" style={{fontSize:'0.8em'}}>
+                                    <div>
+                                        <h4>1. ใช้ `.dockerignore`</h4>
+                                        <p>Exclude ไฟล์ที่ไม่จำเป็น (เช่น `node_modules`, `.git`, ไฟล์ temp) เพื่อให้ Build context เล็ก และ Image เล็ก</p>
+                                    </div>
+                                    <div>
+                                        <h4>2. เลือก Base Image ที่เหมาะสม</h4>
+                                        <p>ใช้ Official images และพยายามใช้เวอร์ชันที่เล็ก เช่น `alpine` หรือ `slim` เพื่อลดขนาดและช่องโหว่ความปลอดภัย</p>
+                                    </div>
+                                </div>
+                                 <div className="two-col" style={{fontSize:'0.8em', marginTop:'20px'}}>
+                                    <div>
+                                        <h4>3. เรียงลำดับ Layer เพื่อ Caching</h4>
+                                        <p>สิ่งที่เปลี่ยนแปลงบ่อย (Code) ควรอยู่ท้ายๆ สิ่งที่เปลี่ยนน้อย (Dependencies) ควรอยูู่บนๆ Docker จะได้ใช้ Cache ไม่ต้อง build ใหม่หมด</p>
+                                    </div>
+                                    <div>
+                                        <h4>4. Minimize Layers</h4>
+                                        <p>รวมคำสั่ง `RUN` เข้าด้วยกันถ้าทำได้ (เช่น `RUN apt-get update && apt-get install -y ... && rm -rf /var/lib/apt/lists/*`)</p>
+                                    </div>
+                                </div>
+                            </section>
+
+                            <section>
+                                <h2>Visualize Layer Caching</h2>
+                                <p>การเรียงลำดับคำสั่ง COPY มีผลต่อความเร็วในการ Build อย่างมหาศาล</p>
+                                <DiagramPlaceholder
+                                    title="Infographic: Docker Layer Caching Strategy"
+                                    description="แสดงภาพเปรียบเทียบ: แบบไม่ดี (COPY . . ก่อน npm install) ทำให้เมื่อแก้โค้ดนิดเดียว cache ของ npm install หลุด ต้องลงใหม่หมด. VS แบบดี (COPY package.json -> npm install -> COPY . .) แก้โค้ดแล้ว npm install ยังใช้ cache ได้."
+                                    type="layer"
+                                />
+                            </section>
+
+
+                             {/* --- SECTION 7: INTRO TO DOCKER COMPOSE --- */}
+                             <section>
+                                <h2>Beyond Single Container: Docker Compose</h2>
+                                <p>ในโลกความเป็นจริง แอปพลิเคชันมักมีหลายส่วน (Web, API, Database, Cache)</p>
+                                <p>การมานั่งรัน `docker run` ทีละตัว และเชื่อม network เองมันยุ่งยาก</p>
+                                <div className="highlight-box">
+                                    <strong>Docker Compose</strong> คือเครื่องมือสำหรับนิยามและรันแอปพลิเคชันแบบ Multi-container โดยใช้ไฟล์ YAML
+                                </div>
+                            </section>
+
+                             <section>
+                                <h2>ตัวอย่าง `docker-compose.yml` (Web + Redis)</h2>
+                                <pre><code className="yaml" data-trim data-line-numbers>
+{`version: "3.8"
+services:
+  web:
+    build: . # Build จาก Dockerfile ในโฟลเดอร์นี้
+    ports:
+      - "5000:5000"
+    volumes:
+      - .:/code
+    environment:
+      FLASK_ENV: development
+    depends_on:
+      - redis
+
+  redis:
+    image: "redis:alpine" # ใช้ Official image
+    networks:
+      - backend
+
+networks:
+    backend:`}
+                                </code></pre>
+                            </section>
+
+                             <section>
+                                <h2>Compose Commands</h2>
+                                <div className="two-col" style={{fontSize:'0.9em'}}>
+                                    <div>
+                                        <p><strong>Start ทุก services:</strong></p>
+                                        <code style={{display:'block', padding:'10px', background:'#333'}}>docker-compose up -d</code>
+                                        <p>(Build images, สร้าง networks, และ start containers ใน background)</p>
+                                    </div>
+                                    <div>
+                                        <p><strong>Stop และลบทุก services:</strong></p>
+                                        <code style={{display:'block', padding:'10px', background:'#333'}}>docker-compose down</code>
+                                        <p>(Stop containers และลบ networks ที่สร้างขึ้น)</p>
+                                    </div>
+                                </div>
+                                <DiagramPlaceholder
+                                    title="Docker Compose Architecture"
+                                    description="แสดงภาพ 'docker-compose up' อ่านไฟล์ YAML แล้วสั่ง Docker Engine ให้สร้าง Network และสร้าง Containers (Web, Redis) ที่เชื่อมต่อกันใน Network นั้น"
+                                    type="architecture"
+                                />
+                            </section>
+
+                            {/* --- SECTION 8: CONCLUSION & FUTURE PATH --- */}
+                            <section>
+                                <h2>สรุป: ทำไม Docker ถึงเป็นสกิลบังคับ?</h2>
+                                <ul>
+                                    <li style={{marginBottom:'15px'}}><strong>สำหรับ Developer:</strong> Environment การพัฒนาที่สะอาด, Setup โปรเจกต์ใหม่ในไม่กี่นาที, หมดปัญหา "works on my machine"</li>
+                                    <li style={{marginBottom:'15px'}}><strong>สำหรับ Architect:</strong> ออกแบบระบบแบบ Microservices ได้ง่าย, วางแผนเรื่อง Scalability และ Resilience ได้ชัดเจน</li>
+                                    <li><strong>สำหรับ DevOps/SRE:</strong> CI/CD pipeline ที่ราบรื่น, การ deploy ที่รวดเร็วและมั่นใจ, การจัดการ resource ที่มีประสิทธิภาพ</li>
+                                </ul>
+                            </section>
+
+                             <section>
+                                <h2>เส้นทางสู่การเป็น Software Architect (ENGSE207)</h2>
+                                <p>Docker เป็นเพียงจุดเริ่มต้นของโลก Cloud-Native</p>
+                                <div style={{display:'flex', justifyContent:'space-around', marginTop:'30px'}}>
+                                    <div style={{textAlign:'center', opacity: 0.5}}><i className="fab fa-linux fa-3x"></i><br/>Linux Basic</div>
+                                    <div style={{textAlign:'center'}}><i className="fab fa-docker fa-3x" style={{color:'var(--primary-color)'}}></i><br/><strong>Docker (Now!)</strong></div>
+                                    <div style={{textAlign:'center', opacity: 0.8}}><i className="fas fa-dharmachakra fa-3x" style={{color:'var(--secondary-color)'}}></i><br/>Kubernetes (K8s) Orchestration</div>
+                                    <div style={{textAlign:'center', opacity: 0.5}}><i className="fas fa-cloud fa-3x"></i><br/>Cloud Architecture (AWS/Azure/GCP)</div>
+                                </div>
+                                <p style={{marginTop:'30px', fontStyle:'italic', color:'var(--accent-warning)'}}>"The container is the new process. Kubernetes is the new OS."</p>
+                            </section>
+
+                            <section data-background-gradient="linear-gradient(to bottom right, #282c34, #191924)">
+                                <h1>Q & A</h1>
+                                <p>ถามมาได้เลยครับ หรือลองกลับไปเล่น Docker ในเครื่องตัวเองดู!</p>
+                                <i className="fas fa-comments fa-4x" style={{color: 'var(--primary-color)', marginTop:'30px'}}></i>
+                                <p style={{marginTop:'50px', fontSize:'0.6em', color:'#666'}}>ENGSE207 Software Architecture - Lecture Slides by Your Instructor</p>
+                            </section>
+
+                        </div>
+                    </div>
+
+                     {/* UI Control Panel */}
+                    <div className="control-panel">
+                        <button className="btn-control" onClick={goPrev} title="Previous Slide"><i className="fas fa-chevron-left"></i></button>
+                        <button className="btn-control" onClick={goNext} title="Next Slide"><i className="fas fa-chevron-right"></i></button>
+                        <div style={{width:'1px', background:'rgba(255,255,255,0.2)', margin:'0 5px'}}></div>
+                        <button className="btn-control" onClick={zoomOut} title="Zoom Out"><i className="fas fa-search-minus"></i></button>
+                        <button className="btn-control" onClick={zoomIn} title="Zoom In"><i className="fas fa-search-plus"></i></button>
+                        <div style={{width:'1px', background:'rgba(255,255,255,0.2)', margin:'0 5px'}}></div>
+                        <button className="btn-control" onClick={toggleTheme} title="Toggle Theme">
+                            {isDarkTheme ? <i className="fas fa-sun"></i> : <i className="fas fa-moon"></i>}
+                        </button>
+                        <button className="btn-control" onClick={toggleFullScreen} title="Full Screen"><i className="fas fa-expand"></i></button>
+                    </div>
+                </React.Fragment>
+            );
+        }
+
+        // Render the App
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+
+    </script>
+</body>
+</html>

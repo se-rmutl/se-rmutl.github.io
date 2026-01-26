@@ -1,0 +1,1150 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ENGSE207: Docker Foundation Lecture</title>
+
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script crossorigin src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/5.0.4/reveal.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/5.0.4/theme/dracula.min.css"
+        id="theme">
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        /* --- ENGSE207 Custom Theme --- */
+        :root {
+            --primary-color: #61dafb;
+            --secondary-color: #bd93f9;
+            --bg-dark: #191924;
+            --text-dark: #e2e8f0;
+            --bg-light: #f0f2f5;
+            --text-light: #2d3748;
+            --accent-success: #50fa7b;
+            --accent-warning: #ffb86c;
+            --accent-danger: #ff5555;
+            --overlay-pattern: url('data:image/svg+xml,%3Csvg width="42" height="44" viewBox="0 0 42 44" xmlns="http://www.w3.org/2000/svg"%3E%3Cg id="Page-1" fill="none" fill-rule="evenodd"%3E%3Cg id="brick-wall" fill="%23ffffff" fill-opacity="0.05"%3E%3Cpath d="M0 0h42v44H0V0zm1 1h40v20H1V1zM0 22h20v20H0V22zm22 0h20v20H22V22z"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E');
+        }
+
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: var(--bg-dark);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-image: var(--overlay-pattern);
+        }
+
+        body.light-theme {
+            background-image: none;
+        }
+
+        /* 16:9 Container */
+        #root {
+            width: 100vw;
+            height: 56.25vw;
+            max-height: 100vh;
+            max-width: 177.78vh;
+            margin: auto;
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            box-shadow: 0 0 50px rgba(0, 0, 0, 0.5);
+            transition: transform 0.3s ease;
+        }
+
+        /* Reveal.js Overrides */
+        .reveal {
+            font-size: 26px;
+        }
+
+        .reveal h1,
+        .reveal h2,
+        .reveal h3 {
+            text-transform: none;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+        .reveal h1 {
+            color: var(--primary-color);
+            font-size: 2.2em;
+        }
+
+        .reveal h2 {
+            color: var(--secondary-color);
+            margin-bottom: 30px;
+            position: relative;
+            display: inline-block;
+        }
+
+        .reveal h2::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 0;
+            width: 60px;
+            height: 4px;
+            background: var(--primary-color);
+        }
+
+        .reveal strong {
+            color: var(--primary-color);
+        }
+
+        .reveal code {
+            color: var(--accent-warning);
+            font-family: 'Fira Code', monospace;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        .reveal pre code {
+            background: transparent;
+            padding: 0;
+        }
+
+        .reveal pre {
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            border: 1px solid #444;
+            background: #282c34;
+        }
+
+        /* UI Controls */
+        .control-panel {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            gap: 10px;
+            z-index: 9999;
+            background: rgba(40, 44, 52, 0.9);
+            padding: 8px;
+            border-radius: 50px;
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        body.light-theme .control-panel {
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-control {
+            background: transparent;
+            border: none;
+            color: var(--primary-color);
+            font-size: 1.1rem;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 50%;
+            transition: all 0.2s;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-control:hover {
+            background: rgba(97, 218, 251, 0.2);
+            transform: scale(1.1);
+        }
+
+        body.light-theme .btn-control {
+            color: #333;
+        }
+
+        /* Custom Components Styles */
+        .engse-badge {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            font-weight: 900;
+            color: var(--primary-color);
+            letter-spacing: 2px;
+            opacity: 0.5;
+            font-size: 0.9em;
+            z-index: 10;
+        }
+
+        .highlight-box {
+            background: rgba(97, 218, 251, 0.08);
+            padding: 25px;
+            border-left: 6px solid var(--primary-color);
+            border-radius: 0 8px 8px 0;
+            margin: 25px 0;
+            font-size: 1.1em;
+        }
+
+        .quote-box {
+            font-style: italic;
+            border-left: 5px solid var(--accent-warning);
+            padding-left: 25px;
+            color: var(--accent-warning);
+            font-size: 1.2em;
+            margin: 30px 0;
+        }
+
+        .two-col {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            align-items: center;
+        }
+
+        .three-col {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 25px;
+            align-items: start;
+        }
+
+        .flex-center {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+        }
+
+        .text-left {
+            text-align: left;
+        }
+
+        .feature-card {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 25px;
+            border-radius: 12px;
+            text-align: center;
+            border-top: 3px solid var(--secondary-color);
+            transition: transform 0.3s;
+        }
+
+        body.light-theme .feature-card {
+            background: rgba(0, 0, 0, 0.03);
+            border-top: 3px solid var(--primary-color);
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .feature-card i {
+            color: var(--primary-color);
+            margin-bottom: 15px;
+        }
+
+        .feature-card h4 {
+            color: var(--secondary-color);
+            margin: 10px 0;
+        }
+
+        /* Terminal Simulation */
+        .terminal-sim {
+            background: #1e1e1e;
+            border-radius: 10px;
+            overflow: hidden;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.85em;
+            text-align: left;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+            margin: 25px auto;
+            max-width: 90%;
+            border: 1px solid #333;
+        }
+
+        .terminal-header {
+            background: #2d2d2d;
+            padding: 8px 15px;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .terminal-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .dot-red {
+            background: #ff5f56;
+        }
+
+        .dot-yellow {
+            background: #ffbd2e;
+        }
+
+        .dot-green {
+            background: #27c93f;
+        }
+
+        .terminal-body {
+            padding: 20px;
+            color: #a9b7c6;
+            white-space: pre-wrap;
+            line-height: 1.4;
+        }
+
+        .prompt {
+            color: var(--accent-success);
+            font-weight: bold;
+        }
+
+        .command {
+            color: #fff;
+        }
+
+        .output {
+            color: #888;
+            margin-top: 5px;
+        }
+
+        /* Infographic Styles (CSS based) */
+        .info-diagram-container {
+            background: rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            border-radius: 15px;
+            border: 2px dashed var(--secondary-color);
+            margin: 20px 0;
+        }
+
+        body.light-theme .info-diagram-container {
+            background: rgba(0, 0, 0, 0.05);
+        }
+
+        .stack-box {
+            border: 2px solid #444;
+            padding: 10px;
+            margin: 2px;
+            text-align: center;
+            color: white;
+            font-weight: bold;
+            font-size: 0.8em;
+            border-radius: 4px;
+        }
+
+        .stack-app {
+            background: var(--primary-color);
+            color: black;
+        }
+
+        .stack-bins {
+            background: #999;
+            color: black;
+        }
+
+        .stack-guest {
+            background: var(--secondary-color);
+            color: black;
+        }
+
+        .stack-docker {
+            background: #0db7ed;
+        }
+
+        .stack-os {
+            background: #555;
+        }
+
+        .stack-hw {
+            background: #222;
+            border-bottom: 4px solid #ff5555;
+            color: #888;
+        }
+
+        .layer-box {
+            border: 2px solid var(--primary-color);
+            background: rgba(97, 218, 251, 0.1);
+            padding: 10px;
+            margin-bottom: -2px;
+            text-align: center;
+            position: relative;
+        }
+
+        .layer-rw {
+            border-color: var(--accent-success);
+            background: rgba(80, 250, 123, 0.2);
+            z-index: 10;
+        }
+
+        .layer-ro {
+            opacity: 0.8;
+        }
+
+        .arch-box {
+            border: 2px solid var(--secondary-color);
+            padding: 15px;
+            background: rgba(189, 147, 249, 0.1);
+            border-radius: 8px;
+            text-align: center;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="root"></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/5.0.4/reveal.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/5.0.4/plugin/highlight/highlight.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/5.0.4/plugin/notes/notes.min.js"></script>
+
+    <script type="text/babel">
+        // --- React Components ---
+
+        const TerminalSimulation = ({ command, output }) => (
+            <div className="terminal-sim">
+                <div className="terminal-header">
+                    <div className="terminal-dot dot-red"></div><div className="terminal-dot dot-yellow"></div><div className="terminal-dot dot-green"></div>
+                    <span style={{ marginLeft: '10px', color: '#888', fontSize: '0.8em' }}>bash</span>
+                </div>
+                <div className="terminal-body">
+                    <div><span className="prompt">engse207@host:~$</span> <span className="command">{command}</span></div>
+                    {output && <div className="output">{output}</div>}
+                </div>
+            </div>
+        );
+
+        // Infographic: VM vs Container
+        const InfographicVMvsContainer = () => (
+            <div className="two-col info-diagram-container">
+                <div style={{ textAlign: 'center' }}>
+                    <h4>Virtual Machine (VM)</h4>
+                    <div className="stack-box stack-app">App A</div>
+                    <div className="stack-box stack-bins">Bins/Libs</div>
+                    <div className="stack-box stack-guest" style={{ height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Guest OS</div>
+                    <div className="stack-box stack-os" style={{ background: '#444', borderStyle: 'dashed' }}>Hypervisor</div>
+                    <div className="stack-box stack-hw">Host OS & Infrastructure</div>
+                    <p style={{ fontSize: '0.7em', marginTop: '10px' }}>Heavyweight, Complete OS isolation</p>
+                </div>
+                <div style={{ textAlign: 'center' }}>
+                    <h4>Container (Docker)</h4>
+                    <div className="stack-box stack-app">App A</div>
+                    <div className="stack-box stack-bins">Bins/Libs</div>
+                    <div style={{ height: '42px' }}></div> {/* Spacer */}
+                    <div className="stack-box stack-docker" style={{ height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Docker Engine</div>
+                    <div className="stack-box stack-hw">Host OS & Infrastructure</div>
+                    <p style={{ fontSize: '0.7em', marginTop: '10px', color: 'var(--primary-color)' }}>Lightweight, Process isolation (Shared Kernel)</p>
+                </div>
+            </div>
+        );
+
+        // Infographic: Docker Architecture
+        const InfographicArchitecture = () => (
+            <div className="info-diagram-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-around', padding: '30px' }}>
+                <div className="arch-box">
+                    <i className="fas fa-terminal fa-2x"></i><br />Client<br /><span style={{ fontSize: '0.7em', fontWeight: 'normal' }}>(docker build/run)</span>
+                </div>
+                <i className="fas fa-arrow-right fa-2x" style={{ color: 'var(--secondary-color)' }}></i>
+                <div className="arch-box" style={{ background: 'rgba(97, 218, 251, 0.1)', borderColor: 'var(--primary-color)', width: '30%' }}>
+                    <i className="fab fa-docker fa-2x"></i><br />Docker_Host<br />(Daemon)
+                    <div style={{ display: 'flex', gap: '10px', marginTop: '10px', justifyContent: 'center' }}>
+                        <div className="stack-box stack-docker" style={{ fontSize: '0.6em', padding: '5px' }}>Images</div>
+                        <div className="stack-box stack-app" style={{ fontSize: '0.6em', padding: '5px' }}>Containers</div>
+                    </div>
+                </div>
+                <i className="fas fa-exchange-alt fa-2x" style={{ color: 'var(--secondary-color)' }}></i>
+                <div className="arch-box">
+                    <i className="fas fa-cloud fa-2x"></i><br />Registry<br /><span style={{ fontSize: '0.7em', fontWeight: 'normal' }}>(Docker Hub)</span>
+                </div>
+            </div>
+        );
+
+        // Infographic: Image Layers
+        const InfographicLayers = () => (
+            <div className="info-diagram-container two-col">
+                <div style={{ textAlign: 'left', fontSize: '0.8em' }}>
+                    <ul>
+                        <li><strong style={{ color: 'var(--accent-success)' }}>Container Layer (R/W):</strong> เกิดขึ้นเมื่อรัน Container. ข้อมูลใหม่/แก้ไข อยู่ที่นี่. หายไปเมื่อลบ Container.</li>
+                        <li style={{ marginTop: '20px' }}><strong>Image Layers (R/O):</strong> เกิดจากคำสั่งใน Dockerfile (FROM, RUN, COPY). เปลี่ยนแปลงไม่ได้. แชร์กันได้ระหว่าง Image.</li>
+                    </ul>
+                </div>
+                <div style={{ width: '60%', margin: 'auto' }}>
+                    <div className="layer-box layer-rw">Container Layer (Read/Write) <i className="fas fa-pencil-alt" style={{ marginLeft: '10px' }}></i></div>
+                    <div className="layer-box layer-ro">Layer 3 (e.g., COPY app code)</div>
+                    <div className="layer-box layer-ro">Layer 2 (e.g., RUN npm install)</div>
+                    <div className="layer-box layer-ro" style={{ borderBottom: '4px solid #555' }}>Base Layer (e.g., FROM node:18)</div>
+                    <div style={{ textAlign: 'center', fontSize: '0.7em', marginTop: '5px', color: '#888' }}>Union File System View</div>
+                </div>
+            </div>
+        );
+
+
+        // Infographic: Port Mapping (Updated: Fix layout overflow)
+        const InfographicPortMapping = () => (
+            <div className="info-diagram-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '30px', gap: '20px' }}>
+
+                {/* 1. User / Browser (External) */}
+                <div style={{ textAlign: 'center', minWidth: '100px' }}>
+                    <i className="fas fa-laptop fa-3x" style={{ color: '#ccc' }}></i><br />
+                    <span style={{ fontSize: '0.6em', color: '#aaa', display: 'block', marginTop: '5px' }}>User<br />(localhost:8080)</span>
+                </div>
+
+                {/* 2. Arrow Connection */}
+                <i className="fas fa-arrow-right fa-2x" style={{ color: 'var(--secondary-color)' }}></i>
+
+                {/* 3. Host Machine Box */}
+                <div style={{
+                    border: '3px solid #555',
+                    borderRadius: '12px',
+                    background: '#222',
+                    padding: '30px 20px',
+                    position: 'relative',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '15px'
+                }}>
+                    <span style={{ position: 'absolute', top: '-12px', left: '15px', background: '#222', padding: '0 8px', color: '#888', fontSize: '0.8em', fontWeight: 'bold' }}>Host Machine</span>
+
+                    {/* Host Port (Doorway) */}
+                    <div style={{ background: 'var(--secondary-color)', padding: '10px 15px', borderRadius: '6px', color: 'black', fontWeight: 'bold', fontSize: '0.9em', boxShadow: '0 0 15px rgba(189, 147, 249, 0.3)' }}>
+                        Port 8080
+                    </div>
+
+                    {/* Mapping Flow Arrow */}
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                        <span style={{ fontSize: '0.5em', color: '#666', marginBottom: '2px' }}>MAPPED TO</span>
+                        <i className="fas fa-long-arrow-alt-right fa-2x" style={{ color: 'var(--accent-success)' }}></i>
+                    </div>
+
+                    {/* Container Box (Inside Host) */}
+                    <div style={{
+                        border: '2px solid var(--primary-color)',
+                        borderRadius: '8px',
+                        background: '#282c34',
+                        padding: '15px',
+                        position: 'relative',
+                        minWidth: '120px',
+                        textAlign: 'center'
+                    }}>
+                        <span style={{ position: 'absolute', top: '-10px', right: '10px', background: '#282c34', padding: '0 5px', color: 'var(--primary-color)', fontSize: '0.7em' }}>Container</span>
+                        <div style={{ background: 'var(--accent-success)', padding: '10px', borderRadius: '6px', color: 'black', fontWeight: 'bold', fontSize: '0.9em', boxShadow: '0 0 10px rgba(80, 250, 123, 0.3)' }}>
+                            Port 80
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+        // --- Main App Component ---
+        function App() {
+            const [isDarkTheme, setIsDarkTheme] = React.useState(true);
+            const [zoomLevel, setZoomLevel] = React.useState(1);
+            const revealRef = React.useRef(null);
+
+            React.useEffect(() => {
+                if (revealRef.current) {
+                    Reveal.initialize({
+                        controls: false, progress: true, center: true, hash: true,
+                        transition: 'slide', // none/fade/slide/convex/concave/zoom
+                        plugins: [RevealHighlight, RevealNotes],
+                        width: 1920, height: 1080, margin: 0.04, minScale: 0.2, maxScale: 2.0
+                    });
+                }
+                document.body.classList.toggle('light-theme', !isDarkTheme);
+                const themeLink = document.getElementById('theme');
+                if (themeLink) {
+                    themeLink.href = isDarkTheme
+                        ? 'https://cdnjs.cloudflare.com/ajax/libs/reveal.js/5.0.4/theme/dracula.min.css'
+                        : 'https://cdnjs.cloudflare.com/ajax/libs/reveal.js/5.0.4/theme/white.min.css';
+                }
+            }, [isDarkTheme]);
+
+            React.useEffect(() => {
+                const rootElement = document.getElementById('root');
+                if (rootElement) rootElement.style.transform = `scale(${zoomLevel})`;
+            }, [zoomLevel]);
+
+            // Controls handlers
+            const toggleTheme = () => setIsDarkTheme(!isDarkTheme);
+            const zoomIn = () => setZoomLevel(prev => Math.min(prev + 0.1, 1.5));
+            const zoomOut = () => setZoomLevel(prev => Math.max(prev - 0.1, 0.7));
+            const toggleFullScreen = () => document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen();
+            const goNext = () => Reveal.next();
+            const goPrev = () => Reveal.prev();
+
+
+            return (
+                <React.Fragment>
+                    <div className="engse-badge"><i className="fas fa-graduation-cap"></i> ENGSE207 SOFTWARE ARCHITECTURE</div>
+                    <div className="reveal" ref={revealRef}>
+                        <div className="slides">
+
+                            {/* --- SECTION 1: INTRODUCTION --- */}
+                            <section data-background-gradient="linear-gradient(135deg, #191924 0%, #282c34 100%)">
+                                <div className="flex-center" style={{ flexDirection: 'column' }}>
+                                    <i className="fab fa-docker fa-6x" style={{ color: '#0db7ed', filter: 'drop-shadow(0 0 20px rgba(13, 183, 237, 0.5))', animation: 'float 3s ease-in-out infinite' }}></i>
+                                    <h1 style={{ fontSize: '3.5em', marginTop: '20px' }}>Docker Foundation</h1>
+                                    <h3 style={{ color: 'var(--secondary-color)' }}>สำหรับวิศวกรรมซอฟต์แวร์ (ENGSE207)</h3>
+                                    <div style={{ width: '100px', height: '4px', background: 'var(--primary-color)', margin: '30px auto' }}></div>
+                                    <p style={{ color: '#aaa' }}>Building Blocks for Modern Software Architecture</p>
+                                </div>
+                                <style>{`@keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-15px); } 100% { transform: translateY(0px); } }`}</style>
+                            </section>
+
+                            <section>
+                                <h2>ยินดีต้อนรับสู่โลกของ Software Architecture</h2>
+                                <div className="two-col">
+                                    <div className="text-left">
+                                        <p style={{ fontSize: '1.2em' }}>ปี 2 คือจุดเปลี่ยนจาก "Coder" สู่ "Engineer"</p>
+                                        <p>วิชานี้ไม่ได้สอนแค่เขียนโค้ดให้ทำงานได้ แต่สอนให้ **ออกแบบ** ระบบที่:</p>
+                                        <ul style={{ color: 'var(--primary-color)' }}>
+                                            <li>ทนทาน (Robust)</li>
+                                            <li>ขยายได้ (Scalable)</li>
+                                            <li>ดูแลรักษาได้ (Maintainable)</li>
+                                        </ul>
+                                    </div>
+                                    <div>
+                                        <i className="fas fa-drafting-compass fa-8x" style={{ color: 'var(--secondary-color)', opacity: 0.2, transform: 'rotate(-15deg)' }}></i>
+                                    </div>
+                                </div>
+                                <div className="highlight-box" style={{ marginTop: '40px', textAlign: 'center' }}>
+                                    เป้าหมายวันนี้: เข้าใจเครื่องมือที่เป็นหัวใจของสถาปัตยกรรมยุคใหม่... <strong>Docker</strong>
+                                </div>
+                            </section>
+
+                            <section>
+                                <h2>ทำไม Architect ต้องแคร์ Docker?</h2>
+                                <div className="three-col" style={{ marginTop: '40px' }}>
+                                    <div className="feature-card fragment fade-up">
+                                        <i className="fas fa-check-double fa-3x"></i>
+                                        <h4>Consistency</h4>
+                                        <p style={{ fontSize: '0.8em' }}>หมดปัญหา "Works on my machine". Dev, Test, Prod เหมือนกันทุกประการ</p>
+                                    </div>
+                                    <div className="feature-card fragment fade-up">
+                                        <i className="fas fa-cubes fa-3x"></i>
+                                        <h4>Isolation & Modularity</h4>
+                                        <p style={{ fontSize: '0.8em' }}>รากฐานของ Microservices Architecture แยกส่วนประกอบออกจากกัน</p>
+                                    </div>
+                                    <div className="feature-card fragment fade-up">
+                                        <i className="fas fa-tachometer-alt fa-3x"></i>
+                                        <h4>Scalability & Speed</h4>
+                                        <p style={{ fontSize: '0.8em' }}>Boot เร็ว ขยาย (Scale out) ได้ง่าย รองรับ Traffic มหาศาล</p>
+                                    </div>
+                                </div>
+                            </section>
+
+                            {/* --- SECTION 2: THE PROBLEM & SOLUTION --- */}
+                            <section>
+                                <h2>ปัญหาคลาสสิก: "The Matrix from Hell"</h2>
+                                <div className="two-col">
+                                    <div className="text-left">
+                                        <p>ก่อนมี Docker การ Deploy ซอฟต์แวร์คือฝันร้ายของทีม Ops</p>
+                                        <ul>
+                                            <li>OS ต่างเวอร์ชัน (Ubuntu vs CentOS)</li>
+                                            <li>Library ตีกัน (Python 2.7 vs 3.x)</li>
+                                            <li>Config ที่กระจัดกระจาย</li>
+                                        </ul>
+                                        <p className="quote-box" style={{ marginTop: '30px' }}>"แต่ในเครื่องผมมันรันได้นะ!" <br /><span style={{ fontSize: '0.7em', opacity: 0.7 }}>(คำแก้ตัวยอดฮิตของ Developer)</span></p>
+                                    </div>
+                                    <div style={{ position: 'relative' }}>
+                                        <i className="fas fa-biohazard fa-10x" style={{ color: '#ff5555', opacity: 0.2, position: 'absolute', top: 0, left: 0 }}></i>
+                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', position: 'relative', zIndex: 2, fontSize: '0.8em' }}>
+                                            <div className="stack-box stack-app">Node.js 14</div><div className="stack-box stack-os">Ubuntu 18.04</div>
+                                            <div className="stack-box stack-app" style={{ background: 'var(--secondary-color)' }}>Python 3.9</div><div className="stack-box stack-os">CentOS 7</div>
+                                            <div className="stack-box stack-bins">Libc v2.1</div><div className="stack-box stack-bins" style={{ background: '#ff5555' }}>Libc v2.5 (Conflict!)</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </section>
+
+                            <section>
+                                <h2>Docker คือคำตอบ</h2>
+                                <h3>What is Docker?</h3>
+                                <p style={{ fontSize: '1.3em' }}>แพลตฟอร์มสำหรับ <strong>Build, Ship, and Run</strong> แอปพลิเคชัน</p>
+                                <div className="highlight-box" style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+                                    <i className="fas fa-box-open fa-3x" style={{ color: 'var(--primary-color)' }}></i>
+                                    <div>
+                                        หัวใจสำคัญคือ <strong>"Containerization"</strong>: การบรรจุแอปฯ และ dependencies ทั้งหมดที่จำเป็น ลงในกล่องมาตรฐานใบเดียว (Container)
+                                    </div>
+                                </div>
+                            </section>
+
+                            <section>
+                                <h2>Key Concept: VM vs. Container</h2>
+                                <p>เข้าใจความแตกต่างนี้ คือก้าวแรกสู่การเข้าใจ Docker</p>
+                                <InfographicVMvsContainer />
+                                <div style={{ textAlign: 'center', fontWeight: 'bold', marginTop: '20px', color: 'var(--accent-warning)' }}>
+                                    Container แชร์ OS Kernel กับ Host ทำให้เบาและเร็วกว่า VM มาก
+                                </div>
+                            </section>
+
+                            {/* --- SECTION 3: DOCKER ARCHITECTURE & CONCEPTS --- */}
+                            <section>
+                                <h2>Docker Architecture</h2>
+                                <p>Docker ทำงานแบบ <strong>Client-Server Architecture</strong></p>
+                                <InfographicArchitecture />
+                                <ul>
+                                    <li><strong>Daemon (Server):</strong> ทำงานหนัก (สร้าง, รัน, จัดการ objects)</li>
+                                    <li><strong>Client:</strong> รับคำสั่งจากเรา แล้วส่งไปบอก Daemon ผ่าน REST API</li>
+                                </ul>
+                            </section>
+
+                            <section>
+                                <h2>The Big 3 Concepts (ต้องจำให้ได้!)</h2>
+                                <div className="three-col" style={{ marginTop: '40px' }}>
+                                    <div className="feature-card" style={{ borderTopColor: 'var(--accent-warning)' }}>
+                                        <i className="fas fa-file-code fa-3x" style={{ color: 'var(--accent-warning)' }}></i>
+                                        <h4>1. Dockerfile</h4>
+                                        <p><strong>"พิมพ์เขียว" (Blueprint)</strong> หรือสูตรอาหาร. เป็นไฟล์ Text ที่บอกขั้นตอนการสร้าง Image</p>
+                                    </div>
+                                    <div className="feature-card" style={{ borderTopColor: 'var(--secondary-color)' }}>
+                                        <i className="fas fa-compact-disc fa-3x" style={{ color: 'var(--secondary-color)' }}></i>
+                                        <h4>2. Image</h4>
+                                        <p><strong>"แม่พิมพ์" (Template)</strong> ที่สร้างจาก Dockerfile. เป็นแบบ Read-only แก้ไขไม่ได้</p>
+                                    </div>
+                                    <div className="feature-card" style={{ borderTopColor: 'var(--accent-success)' }}>
+                                        <i className="fas fa-box-open fa-3x" style={{ color: 'var(--accent-success)' }}></i>
+                                        <h4>3. Container</h4>
+                                        <p><strong>"อินสแตนซ์" (Runtime)</strong> คือ Image ที่ถูกนำมารัน. มีสถานะ (State) และเขียนข้อมูลทับได้</p>
+                                    </div>
+                                </div>
+                                <div style={{ textAlign: 'center', marginTop: '30px', fontSize: '1.2em' }}>
+                                    Workflow: Build <i className="fas fa-arrow-right"></i> Ship <i className="fas fa-arrow-right"></i> Run
+                                </div>
+                            </section>
+
+                            <section>
+                                <h2>Deep Dive: Image Layers (UnionFS)</h2>
+                                <p>ความลับที่ทำให้ Docker ประหยัดพื้นที่และรวดเร็ว</p>
+                                <InfographicLayers />
+                                <p style={{ textAlign: 'center', fontSize: '0.8em', marginTop: '20px' }}>*Docker ใช้เทคนิค <strong>Copy-on-Write (CoW)</strong> เมื่อ Container ต้องการแก้ไขไฟล์จาก Image layer มันจะคัดลอกไฟล์นั้นขึ้นมาที่ Container layer ก่อนแก้ไข</p>
+                            </section>
+
+                            <section>
+                                <h2>Docker Registry</h2>
+                                <div className="two-col">
+                                    <div className="text-left">
+                                        <p>คือ "GitHub สำหรับ Docker Images"</p>
+                                        <ul>
+                                            <li>ที่จัดเก็บและแจกจ่าย Images</li>
+                                            <li><strong>Docker Hub:</strong> Public Registry ที่ใหญ่ที่สุด (Default)</li>
+                                            <li><strong>Private Registry:</strong> สำหรับองค์กร (AWS ECR, Google GCR, Azure ACR, Harbor)</li>
+                                        </ul>
+                                        <p style={{ marginTop: '20px' }}>คำสั่งที่เกี่ยวข้อง: <code>docker push</code> / <code>docker pull</code></p>
+                                    </div>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', alignItems: 'center', opacity: 0.8 }}>
+                                        <i className="fab fa-docker fa-4x"></i>
+                                        <div style={{ display: 'flex', gap: '20px' }}>
+                                            <i className="fab fa-aws fa-3x" style={{ color: '#ff9900' }}></i>
+                                            <i className="fab fa-google fa-3x" style={{ color: '#4285F4' }}></i>
+                                            <i className="fab fa-microsoft fa-3x" style={{ color: '#00a4ef' }}></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </section>
+
+
+                            {/* --- SECTION 4: HANDS-ON BASIC COMMANDS --- */}
+                            <section data-background="#1e1e1e">
+                                <div style={{ textAlign: 'center' }}>
+                                    <i className="fas fa-terminal fa-5x" style={{ color: '#50fa7b', marginBottom: '30px' }}></i>
+                                    <h2 style={{ color: 'var(--accent-success)' }}>Section 4: Workshop - Basic Commands</h2>
+                                    <p>ได้เวลาลงมือทำ! สมมติว่าเราอยู่ใน Terminal (กดปุ่มลูกศรขวาเพื่อเริ่ม)</p>
+                                </div>
+                            </section>
+
+                            <section>
+                                <h3>1. Hello World & Understanding `run`</h3>
+                                <p>คำสั่งมหัศจรรย์ที่รวมหลายขั้นตอนไว้ด้วยกัน</p>
+                                <TerminalSimulation
+                                    command="docker run hello-world"
+                                    output={`Unable to find image 'hello-world:latest' locally
+latest: Pulling from library/hello-world
+...
+Status: Downloaded newer image for hello-world:latest
+
+Hello from Docker!
+This message shows that your installation appears to be working correctly.
+...`}
+                                />
+                                <div className="fragment fade-in info-diagram-container" style={{ marginTop: '20px', padding: '15px', fontSize: '0.8em' }}>
+                                    <strong>สิ่งที่เกิดขึ้นเบื้องหลัง:</strong> <br />
+                                    1. Docker Client สั่ง Daemon <i className="fas fa-arrow-right"></i>
+                                    2. Daemon เช็ค Local Cache (ไม่มี) <i className="fas fa-arrow-right"></i>
+                                    3. Daemon <strong>Pull</strong> Image จาก Registry <i className="fas fa-arrow-right"></i>
+                                    4. Daemon <strong>Create</strong> Container จาก Image <i className="fas fa-arrow-right"></i>
+                                    5. Daemon <strong>Start</strong> Container (รันโปรแกรม, แสดงผล, แล้วจบการทำงาน)
+                                </div>
+                            </section>
+
+                            <section>
+                                <h3>2. รัน Web Server (Nginx) แบบ Background</h3>
+                                <p>ใช้งานจริงเรามักรัน Container เป็น Service แช่ไว้ (Detached mode)</p>
+                                <TerminalSimulation
+                                    command="docker run -d --name my-web-server nginx"
+                                    output={`e3b4c5d6e7f8g9h0... (Container ID ที่ยาวเหยียด)`}
+                                />
+                                <ul style={{ fontSize: '0.9em', marginTop: '20px' }}>
+                                    <li><code>-d</code> (detached): รันใน background ไม่ยึดหน้าจอ terminal</li>
+                                    <li><code>--name</code>: ตั้งชื่อเล่นให้ container (ถ้าไม่ตั้ง Docker จะตั้งชื่อตลกๆ ให้ เช่น `boring_wozniak`)</li>
+                                </ul>
+                            </section>
+
+                            <section>
+                                <h3>3. ตรวจสอบสถานะ Containers (Process Status)</h3>
+                                <p>ดูว่ามีอะไรวิ่งอยู่บ้าง</p>
+                                <TerminalSimulation
+                                    command="docker ps"
+                                    output={`CONTAINER ID   IMAGE     COMMAND                  CREATED          STATUS          PORTS      NAMES
+e3b4c5d6e7f8   nginx     "/docker-entrypoint.…"   1 minute ago     Up 1 minute     80/tcp     my-web-server`}
+                                />
+                                <div className="highlight-box" style={{ fontSize: '0.8em', padding: '15px' }}>
+                                    <strong>Tip:</strong> ใช้ <code>docker ps -a</code> เพื่อดู containers <strong>ทั้งหมด</strong> (รวมถึงที่ตาย/หยุดไปแล้ว)
+                                </div>
+                            </section>
+
+                            <section>
+                                <h3>4. การหยุดและลบ Container (Lifecycle)</h3>
+                                <div className="two-col">
+                                    <div>
+                                        <h4><i className="fas fa-stop-circle" style={{ color: 'var(--accent-warning)' }}></i> Stop</h4>
+                                        <p style={{ fontSize: '0.8em' }}>ส่งสัญญาณ (SIGTERM) ให้แอปฯ จบการทำงานอย่างนิ่มนวล</p>
+                                        <TerminalSimulation command="docker stop my-web-server" output="my-web-server" />
+                                    </div>
+                                    <div>
+                                        <h4><i className="fas fa-trash-alt" style={{ color: 'var(--accent-danger)' }}></i> Remove</h4>
+                                        <p style={{ fontSize: '0.8em' }}>ลบ Container ที่หยุดแล้วทิ้งไป (ข้อมูลใน R/W layer จะหายไป!)</p>
+                                        <TerminalSimulation command="docker rm my-web-server" output="my-web-server" />
+                                    </div>
+                                </div>
+                                <p style={{ textAlign: 'center', fontSize: '0.7em', marginTop: '20px' }}>*ถ้าใจร้อน: ใช้ <code>docker rm -f &lt;name&gt;</code> เพื่อบังคับหยุดและลบทันที (SIGKILL)</p>
+                            </section>
+
+                            <section>
+                                <h3>5. การจัดการ Images (Housekeeping)</h3>
+                                <div className="two-col" style={{ fontSize: '0.9em' }}>
+                                    <div>
+                                        <h4>List Images</h4>
+                                        <TerminalSimulation command="docker images" output={`REPOSITORY    TAG       IMAGE ID       SIZE
+nginx         latest    605c77e624dd   141MB
+hello-world   latest    feb5d9fea6a5   13.3kB`} />
+                                    </div>
+                                    <div>
+                                        <h4>Remove Image</h4>
+                                        <TerminalSimulation command="docker rmi hello-world" output={`Untagged: hello-world:latest
+Deleted: sha256:feb5d9fea6a5...`} />
+                                    </div>
+                                </div>
+                            </section>
+
+                            {/* --- SECTION 5: DEEP DIVE CONCEPTS --- */}
+                            <section data-background="#191924">
+                                <h2>Deep Dive: Networking & Storage</h2>
+                                <p>หัวใจสำคัญของการนำ Docker ไปใช้งานจริงในระดับ Architecture</p>
+                                <div style={{ display: 'flex', gap: '30px', justifyContent: 'center', marginTop: '30px' }}>
+                                    <i className="fas fa-network-wired fa-4x" style={{ color: 'var(--primary-color)' }}></i>
+                                    <i className="fas fa-hdd fa-4x" style={{ color: 'var(--accent-warning)' }}></i>
+                                </div>
+                            </section>
+
+                            <section>
+                                <h2>Networking: Port Mapping</h2>
+                                <p>โดย Default โลกภายนอกเข้าถึง Container ไม่ได้ เราต้อง "เจาะช่อง" (Publish Port)</p>
+                                <InfographicPortMapping />
+                                <div style={{ textAlign: 'center', marginTop: '20px' }}>
+                                    Syntax: <code>-p [HostPort]:[ContainerPort]</code>
+                                </div>
+                            </section>
+
+                            <section>
+                                <h3>Hands-on: เข้าถึง Nginx จาก Browser</h3>
+                                <p>มารัน Nginx อีกรอบ แต่คราวนี้แมปพอร์ต 8080 ของเครื่องเรา เข้าไปที่พอร์ต 80 ของ Nginx</p>
+                                <TerminalSimulation
+                                    command="docker run -d -p 8080:80 --name my-web-mapped nginx"
+                                    output={`f1a2b3c4d5...`}
+                                />
+                                <p>จากนั้นเปิด Browser ไปที่ <a href="http://localhost:8080" target="_blank" style={{ color: 'var(--accent-success)' }}>http://localhost:8080</a></p>
+                                <div style={{ background: 'white', color: 'black', padding: '15px', borderRadius: '5px', width: '60%', margin: '20px auto', textAlign: 'center', fontFamily: 'serif' }}>
+                                    <h3 style={{ color: 'black', margin: '0' }}>Welcome to nginx!</h3>
+                                    <p style={{ fontSize: '0.8em' }}>If you see this page, the nginx web server is successfully installed...</p>
+                                </div>
+                            </section>
+
+                            <section>
+                                <h2>Storage: ปัญหาข้อมูลหาย (Ephemeral)</h2>
+                                <div className="alert alert-danger highlight-box" style={{ borderColor: 'var(--accent-danger)', backgroundColor: 'rgba(255, 85, 85, 0.1)' }}>
+                                    <h4><i className="fas fa-exclamation-triangle"></i> ข้อควรระวังระดับวิกฤต!</h4>
+                                    ข้อมูลใน Container Layer (R/W) เป็นแบบชั่วคราว ถ้า Container ถูกลบ (docker rm) <strong>ข้อมูลจะหายไปตลอดกาล!</strong>
+                                </div>
+                                <p><strong>ทางแก้ของ Architect:</strong> ใช้ <strong>Docker Volumes</strong> เพื่อเก็บข้อมูลถาวรไว้นอก Container (บน Host FS)</p>
+                            </section>
+
+                            <section>
+                                <h2>ประเภทของ Storage Mounts</h2>
+                                <div className="two-col">
+                                    <div className="feature-card" style={{ borderTopColor: 'var(--accent-success)' }}>
+                                        <i className="fas fa-database fa-2x" style={{ color: 'var(--accent-success)' }}></i>
+                                        <h4>1. Volumes (แนะนำสำหรับ Prod)</h4>
+                                        <p style={{ fontSize: '0.8em', textAlign: 'left' }}>Docker เป็นผู้จัดการพื้นที่เก็บข้อมูล (มักอยู่ที่ <code>/var/lib/docker/volumes/</code>). ปลอดภัย, แชร์ง่าย, พกพาสะดวก.</p>
+                                        <code>-v my-db-data:/var/lib/mysql</code>
+                                    </div>
+                                    <div className="feature-card" style={{ borderTopColor: 'var(--accent-warning)' }}>
+                                        <i className="fas fa-folder-open fa-2x" style={{ color: 'var(--accent-warning)' }}></i>
+                                        <h4>2. Bind Mounts (เหมาะกับ Dev)</h4>
+                                        <p style={{ fontSize: '0.8em', textAlign: 'left' }}>แมป Folder จาก Host เข้าไปตรงๆ. เหมาะสำหรับแก้โค้ดแล้วให้เห็นผลทันที (Hot Reload).</p>
+                                        <code>-v $(pwd)/src:/app/src</code>
+                                    </div>
+                                </div>
+                            </section>
+
+                            {/* --- SECTION 6: DOCKERFILE & BEST PRACTICES --- */}
+                            <section data-background="#1e1e1e">
+                                <div style={{ textAlign: 'center' }}>
+                                    <i className="fas fa-scroll fa-5x" style={{ color: '#ffb86c', marginBottom: '30px' }}></i>
+                                    <h2 style={{ color: 'var(--accent-warning)' }}>Section 6: The Art of Dockerfile</h2>
+                                    <p>การเขียนพิมพ์เขียวอย่าง Software Engineer มืออาชีพ</p>
+                                </div>
+                            </section>
+
+                            <section>
+                                <h2>ตัวอย่าง Dockerfile (Node.js App)</h2>
+                                <div className="two-col">
+                                    <pre style={{ fontSize: '0.55em' }}><code className="dockerfile" data-trim data-line-numbers="1-2|4-5|7-9|11-12|14-15|17-18">
+                                        {`# 1. Base Image: เลือก OS และ Runtime ที่เล็กและปลอดภัย (Alpine)
+FROM node:18-alpine
+
+# 2. Working Directory: กำหนดบ้านใน Container
+WORKDIR /app
+
+# 3. Dependencies: คัดลอกไฟล์ package ก่อน (เพื่อ Cache)
+COPY package*.json ./
+# และติดตั้ง dependencies
+RUN npm ci --only=production
+
+# 4. Source Code: คัดลอกโค้ดส่วนที่เหลือ
+COPY . .
+
+# 5. Documentation: บอกว่าจะใช้พอร์ตอะไร (แค่บอกเฉยๆ)
+EXPOSE 3000
+
+# 6. Startup Command: คำสั่งรันแอปฯ เมื่อเริ่ม Container
+CMD ["node", "src/index.js"]`}
+                                    </code></pre>
+                                    <div className="text-left" style={{ fontSize: '0.9em' }}>
+                                        <h4>คำสั่งหลักที่ต้องรู้:</h4>
+                                        <ul>
+                                            <li><code>FROM</code>: เริ่มต้นจาก Image อะไร (จำเป็นต้องมี)</li>
+                                            <li><code>WORKDIR</code>: เหมือนคำสั่ง <code>cd</code> เข้าไปรอ</li>
+                                            <li><code>COPY</code>: ก็อปไฟล์จากเครื่องเราเข้า Image</li>
+                                            <li><code>RUN</code>: รันคำสั่ง *ขณะ Build* (ผลลัพธ์ถูกบันทึกเป็น Layer)</li>
+                                            <li><code>CMD</code>: คำสั่งที่จะรัน *เมื่อ Start Container* (มีได้อันเดียว)</li>
+                                        </ul>
+                                        <div style={{ marginTop: '20px' }}>
+                                            Build command: <br /><code>docker build -t my-app:v1 .</code>
+                                        </div>
+                                    </div>
+                                </div>
+                            </section>
+
+                            <section>
+                                <h2>Best Practices for Architects</h2>
+                                <div className="three-col">
+                                    <div className="feature-card">
+                                        <i className="fas fa-filter fa-2x"></i>
+                                        <h5>1. Use `.dockerignore`</h5>
+                                        <p style={{ fontSize: '0.7em' }}>อย่าขนขยะเข้า Image! (เช่น `node_modules`, `.git`, logs). ช่วยให้ Image เล็กและ Build เร็ว</p>
+                                    </div>
+                                    <div className="feature-card">
+                                        <i className="fas fa-shield-alt fa-2x"></i>
+                                        <h5>2. Minimal Base Images</h5>
+                                        <p style={{ fontSize: '0.7em' }}>ใช้ `alpine` หรือ `slim` versions. ยิ่งเล็ก = ยิ่งปลอดภัย (Attack surface น้อยลง)</p>
+                                    </div>
+                                    <div className="feature-card">
+                                        <i className="fas fa-layer-group fa-2x"></i>
+                                        <h5>3. Optimize Layer Caching</h5>
+                                        <p style={{ fontSize: '0.7em' }}>เรียงลำดับคำสั่งให้ดี. อะไรเปลี่ยนบ่อย (Code) ไว้ล่างสุด. อะไรเปลี่ยนน้อย (Dependencies) ไว้บนๆ.</p>
+                                    </div>
+                                </div>
+                            </section>
+
+                            <section>
+                                <h2>Visualize Layer Caching Strategy</h2>
+                                <p>การเรียงลำดับ `COPY` ผิด ชีวิตเปลี่ยน (Build ช้ามาก)</p>
+                                <div className="two-col info-diagram-container" style={{ fontSize: '0.8em' }}>
+                                    <div style={{ opacity: 0.6 }}>
+                                        <h4 style={{ color: 'var(--accent-danger)' }}><i className="fas fa-times-circle"></i> Bad Practice</h4>
+                                        <div className="layer-box layer-ro">FROM node:alpine</div>
+                                        <div className="layer-box layer-ro">WORKDIR /app</div>
+                                        <div className="layer-box layer-ro" style={{ border: '2px dashed var(--accent-danger)' }}>COPY . . <br />(Code เปลี่ยน = Cache หลุด!)</div>
+                                        <div className="layer-box layer-ro">RUN npm install <br />(ต้องรันใหม่ทุกครั้งที่แก้โค้ด)</div>
+                                    </div>
+                                    <div>
+                                        <h4 style={{ color: 'var(--accent-success)' }}><i className="fas fa-check-circle"></i> Good Practice</h4>
+                                        <div className="layer-box layer-ro">FROM node:alpine</div>
+                                        <div className="layer-box layer-ro">WORKDIR /app</div>
+                                        <div className="layer-box layer-ro">COPY package*.json ./ <br />(เปลี่ยนไม่บ่อย = ใช้ Cache ได้)</div>
+                                        <div className="layer-box layer-ro" style={{ background: 'rgba(80, 250, 123, 0.2)' }}>RUN npm ci <br />(เร็ว! เพราะใช้ Cache)</div>
+                                        <div className="layer-box layer-ro">COPY . . <br />(แก้โค้ดกระทบแค่นี้)</div>
+                                    </div>
+                                </div>
+                            </section>
+
+
+                            {/* --- SECTION 7: INTRO TO DOCKER COMPOSE --- */}
+                            <section>
+                                <h2>Beyond Single Container: Docker Compose</h2>
+                                <p>โลกความจริง แอปฯ หนึ่งตัวไม่ได้มีแค่ Container เดียว (e.g., Web + API + DB + Cache)</p>
+                                <div className="highlight-box">
+                                    <strong>Docker Compose</strong> คือเครื่องมือสำหรับ "Define and Run" แอปพลิเคชันแบบ <strong>Multi-container</strong> โดยใช้ไฟล์ YAML เพียงไฟล์เดียว
+                                </div>
+                                <p style={{ fontSize: '0.8em' }}>ทำหน้าที่เป็น "Conductor" คุมวงดนตรี (Containers) ให้เล่นไปพร้อมๆ กัน</p>
+                            </section>
+
+                            <section>
+                                <h2>ตัวอย่าง `docker-compose.yml` (Web + Redis)</h2>
+                                <div className="two-col">
+                                    <pre style={{ fontSize: '0.6em', margin: 0 }}><code className="yaml" data-trim>
+                                        {`version: "3.8"
+services:
+  # Service 1: เว็บแอปของเรา
+  web:
+    build: .          # Build จาก Dockerfile ที่นี่
+    ports:
+      - "5000:5000"   # Map port
+    volumes:
+      - .:/code       # Bind mount สำหรับ Dev
+    environment:
+      FLASK_ENV: development
+    depends_on:
+      - redis         # บอกว่าต้องรอ Redis ก่อน
+
+  # Service 2: ฐานข้อมูล Redis
+  redis:
+    image: "redis:alpine" # ใช้ Image สำเร็จรูป
+
+# (Optional) นิยาม Network/Volume ถ้าต้องการ custom
+# networks:
+#   backend:`}
+                                    </code></pre>
+                                    <div>
+                                        <h4>Magic Commands:</h4>
+                                        <div style={{ marginBottom: '20px' }}>
+                                            <code>docker-compose up -d</code><br />
+                                            <small>สร้าง Network, Build images, Start ทุก services ใน background</small>
+                                        </div>
+                                        <div>
+                                            <code>docker-compose down</code><br />
+                                            <small>Stop และลบ Containers/Networks ทั้งหมดที่สร้างขึ้น</small>
+                                        </div>
+                                        <div className="info-diagram-container" style={{ marginTop: '20px', padding: '10px' }}>
+                                            <i className="fas fa-project-diagram"></i> Compose สร้าง Network ส่วนตัวให้โดยอัตโนมัติ ทำให้ `web` คุยกับ `redis` ได้ผ่านชื่อ service เลย!
+                                        </div>
+                                    </div>
+                                </div>
+                            </section>
+
+                            {/* --- SECTION 8: CONCLUSION & FUTURE PATH --- */}
+                            <section>
+                                <h2>สรุป: ทำไม Docker ถึงเป็น #MustHave Skill?</h2>
+                                <div className="three-col" style={{ marginTop: '30px' }}>
+                                    <div className="feature-card">
+                                        <i className="fas fa-code fa-2x"></i>
+                                        <h5>For Developers</h5>
+                                        <p style={{ fontSize: '0.7em' }}>Dev Environment ที่สะอาด, Setup โปรเจกต์ใหม่ในไม่กี่นาที, เลิกทะเลาะกับ Ops เรื่อง environment</p>
+                                    </div>
+                                    <div className="feature-card">
+                                        <i className="fas fa-sitemap fa-2x"></i>
+                                        <h5>For Architects (ENGSE207)</h5>
+                                        <p style={{ fontSize: '0.7em' }}>ออกแบบระบบ Microservices ได้ง่าย, วางแผนเรื่อง Scalability และ Resilience ได้ชัดเจนด้วยหน่วยที่เป็นมาตรฐาน</p>
+                                    </div>
+                                    <div className="feature-card">
+                                        <i className="fas fa-server fa-2x"></i>
+                                        <h5>For DevOps/SRE</h5>
+                                        <p style={{ fontSize: '0.7em' }}>CI/CD pipeline ที่ราบรื่น, การ deploy ที่รวดเร็วและมั่นใจ (Immutable Infrastructure), ใช้ resource คุ้มค่า</p>
+                                    </div>
+                                </div>
+                            </section>
+
+                            <section>
+                                <h2>เส้นทางสู่การเป็น Cloud-Native Architect</h2>
+                                <p>Docker เป็นเพียงจุดเริ่มต้น... ของการเดินทางที่ยิ่งใหญ่</p>
+                                <div style={{ display: 'flex', justifyContent: 'space-around', alignItems: 'center', marginTop: '50px', position: 'relative' }}>
+                                    {/* Path Line */}
+                                    <div style={{ position: 'absolute', top: '40%', left: '10%', right: '10%', height: '4px', background: 'var(--secondary-color)', zIndex: -1, opacity: 0.5 }}></div>
+
+                                    <div style={{ textAlign: 'center', opacity: 0.6, transform: 'scale(0.8)' }}>
+                                        <div style={{ background: 'var(--bg-dark)', padding: '20px', borderRadius: '50%', border: '4px solid #555' }}>
+                                            <i className="fab fa-linux fa-3x"></i>
+                                        </div>
+                                        <h5 style={{ marginTop: '10px' }}>Linux & Basics</h5>
+                                    </div>
+                                    <div style={{ textAlign: 'center', transform: 'scale(1.1)' }}>
+                                        <div style={{ background: 'var(--bg-dark)', padding: '20px', borderRadius: '50%', border: '4px solid var(--primary-color)', boxShadow: '0 0 20px var(--primary-color)' }}>
+                                            <i className="fab fa-docker fa-4x" style={{ color: 'var(--primary-color)' }}></i>
+                                        </div>
+                                        <h5 style={{ marginTop: '10px', color: 'var(--primary-color)' }}>Docker (You are here!)</h5>
+                                    </div>
+                                    <div style={{ textAlign: 'center', opacity: 0.8 }}>
+                                        <div style={{ background: 'var(--bg-dark)', padding: '20px', borderRadius: '50%', border: '4px solid var(--secondary-color)' }}>
+                                            <i className="fas fa-dharmachakra fa-3x" style={{ color: 'var(--secondary-color)' }}></i>
+                                        </div>
+                                        <h5 style={{ marginTop: '10px' }}>Kubernetes (K8s)</h5>
+                                        <small>Orchestration at Scale</small>
+                                    </div>
+                                    <div style={{ textAlign: 'center', opacity: 0.6, transform: 'scale(0.8)' }}>
+                                        <div style={{ background: 'var(--bg-dark)', padding: '20px', borderRadius: '50%', border: '4px solid #555' }}>
+                                            <i className="fas fa-cloud fa-3x"></i>
+                                        </div>
+                                        <h5 style={{ marginTop: '10px' }}>Cloud Architecture</h5>
+                                        <small>AWS / Azure / GCP</small>
+                                    </div>
+                                </div>
+                                <p className="quote-box" style={{ marginTop: '50px', textAlign: 'center', fontSize: '1em', border: 'none' }}>
+                                    "The container is the new process. Kubernetes is the new OS."
+                                </p>
+                            </section>
+
+                            <section data-background-gradient="linear-gradient(135deg, #282c34 0%, #191924 100%)">
+                                <h1>Q & A</h1>
+                                <p style={{ fontSize: '1.2em' }}>สงสัยตรงไหน ถามได้เลยครับ!</p>
+                                <div style={{ margin: '40px auto' }}>
+                                    <i className="fas fa-comments fa-6x" style={{ color: 'var(--primary-color)', opacity: 0.8 }}></i>
+                                </div>
+                                <h3>Next Steps:</h3>
+                                <ul style={{ display: 'inline-block', textAlign: 'left', fontSize: '0.9em' }}>
+                                    <li>ติดตั้ง Docker Desktop ในเครื่องตัวเอง</li>
+                                    <li>ลองทำตาม Lab ในสไลด์นี้ซ้ำอีกครั้ง</li>
+                                    <li>ลองเขียน Dockerfile ให้กับโปรเจกต์เก่าๆ ของตัวเอง</li>
+                                </ul>
+                                <p style={{ marginTop: '60px', fontSize: '0.7em', color: '#666', borderTop: '1px solid #444', paddingTop: '20px' }}>
+                                    ENGSE207 Software Architecture | Department of Software Engineering
+                                </p>
+                            </section>
+
+                        </div>
+                    </div>
+
+                    {/* UI Control Panel */}
+                    <div className="control-panel">
+                        <button className="btn-control" onClick={goPrev} title="Previous Slide"><i className="fas fa-chevron-left"></i></button>
+                        <button className="btn-control" onClick={goNext} title="Next Slide"><i className="fas fa-chevron-right"></i></button>
+                        <div style={{ width: '1px', background: 'rgba(255,255,255,0.2)', margin: '0 8px' }}></div>
+                        <button className="btn-control" onClick={zoomOut} title="Zoom Out"><i className="fas fa-search-minus"></i></button>
+                        <button className="btn-control" onClick={zoomIn} title="Zoom In"><i className="fas fa-search-plus"></i></button>
+                        <div style={{ width: '1px', background: 'rgba(255,255,255,0.2)', margin: '0 8px' }}></div>
+                        <button className="btn-control" onClick={toggleTheme} title="Toggle Theme">
+                            {isDarkTheme ? <i className="fas fa-sun"></i> : <i className="fas fa-moon"></i>}
+                        </button>
+                        <button className="btn-control" onClick={toggleFullScreen} title="Full Screen"><i className="fas fa-expand"></i></button>
+                    </div>
+                </React.Fragment>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+
+    </script>
+</body>
+
+</html>

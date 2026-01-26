@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ENGSE207: Docker Pre-Lab Workshops</title>
+
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script crossorigin src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/5.0.4/reveal.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/5.0.4/theme/dracula.min.css" id="theme">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        /* --- ENGSE207 Custom Theme --- */
+        :root {
+            --primary-color: #61dafb;
+            --secondary-color: #bd93f9;
+            --bg-dark: #191924;
+            --text-dark: #e2e8f0;
+            --bg-light: #f0f2f5;
+            --text-light: #2d3748;
+            --accent-success: #50fa7b;
+            --accent-warning: #ffb86c;
+            --accent-danger: #ff5555;
+            --overlay-pattern: url('data:image/svg+xml,%3Csvg width="42" height="44" viewBox="0 0 42 44" xmlns="http://www.w3.org/2000/svg"%3E%3Cg id="Page-1" fill="none" fill-rule="evenodd"%3E%3Cg id="brick-wall" fill="%23ffffff" fill-opacity="0.05"%3E%3Cpath d="M0 0h42v44H0V0zm1 1h40v20H1V1zM0 22h20v20H0V22zm22 0h20v20H22V22z"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E');
+        }
+
+        body {
+            margin: 0; overflow: hidden; background-color: var(--bg-dark);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-image: var(--overlay-pattern);
+        }
+        body.light-theme { background-image: none; }
+
+        /* 16:9 Container */
+        #root {
+            width: 100vw; height: 56.25vw; max-height: 100vh; max-width: 177.78vh;
+            margin: auto; position: absolute; top:0;bottom:0;left:0;right:0;
+            box-shadow: 0 0 50px rgba(0,0,0,0.5); transition: transform 0.3s ease;
+        }
+
+        /* Reveal.js Overrides */
+        .reveal { font-size: 26px; }
+        .reveal h1, .reveal h2, .reveal h3 { text-transform: none; font-weight: 700; letter-spacing: -0.5px; }
+        .reveal h1 { color: var(--primary-color); font-size: 2.2em; }
+        .reveal h2 { color: var(--secondary-color); margin-bottom: 30px; position: relative; display: inline-block;}
+        .reveal h2::after { content: ''; position: absolute; bottom: -10px; left: 0; width: 60px; height: 4px; background: var(--primary-color); }
+        .reveal strong { color: var(--primary-color); }
+        .reveal code { color: var(--accent-warning); font-family: 'Fira Code', monospace; background: rgba(255,255,255,0.1); padding: 2px 6px; border-radius: 4px;}
+        .reveal pre code { background: transparent; padding: 0; }
+        .reveal pre { box-shadow: 0 10px 30px rgba(0,0,0,0.3); border-radius: 8px; border: 1px solid #444; background: #282c34; }
+
+        /* UI Controls */
+        .control-panel {
+            position: fixed; bottom: 20px; right: 20px; display: flex; gap: 10px; z-index: 9999;
+            background: rgba(40, 44, 52, 0.9); padding: 8px; border-radius: 50px;
+            backdrop-filter: blur(5px); border: 1px solid rgba(255,255,255,0.1);
+        }
+        body.light-theme .control-panel { background: rgba(255, 255, 255, 0.9); border: 1px solid rgba(0,0,0,0.1); }
+        .btn-control {
+            background: transparent; border: none; color: var(--primary-color); font-size: 1.1rem;
+            cursor: pointer; padding: 8px; border-radius: 50%; transition: all 0.2s; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;
+        }
+        .btn-control:hover { background: rgba(97, 218, 251, 0.2); transform: scale(1.1); }
+        body.light-theme .btn-control { color: #333; }
+
+        /* Custom Components Styles */
+        .engse-badge { position: absolute; top: 20px; left: 20px; font-weight: 900; color: var(--primary-color); letter-spacing: 2px; opacity: 0.5; font-size: 0.9em; z-index: 10;}
+        .highlight-box { background: rgba(97, 218, 251, 0.08); padding: 25px; border-left: 6px solid var(--primary-color); border-radius: 0 8px 8px 0; margin: 25px 0; font-size: 1.1em;}
+        .quote-box { font-style: italic; border-left: 5px solid var(--accent-warning); padding-left: 25px; color: var(--accent-warning); font-size: 1.2em; margin: 30px 0;}
+
+        .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: center;}
+        .three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 25px; align-items: start;}
+        .flex-center { display: flex; justify-content: center; align-items: center; height: 100%; }
+        .text-left { text-align: left; }
+
+        .feature-card { background: rgba(255,255,255,0.05); padding: 25px; border-radius: 12px; text-align: center; border-top: 3px solid var(--secondary-color); transition: transform 0.3s;}
+        body.light-theme .feature-card { background: rgba(0,0,0,0.03); border-top: 3px solid var(--primary-color); }
+        .feature-card:hover { transform: translateY(-5px); }
+        .feature-card i { color: var(--primary-color); margin-bottom: 15px; }
+        .feature-card h4 { color: var(--secondary-color); margin: 10px 0; }
+
+        /* Infographic Styles */
+        .info-container { background: rgba(0,0,0,0.1); padding: 20px; border-radius: 15px; border: 2px dashed #444; margin: 20px 0; position: relative;}
+        .step-circle { width: 40px; height: 40px; border-radius: 50%; background: var(--primary-color); color: black; font-weight: bold; display: flex; align-items: center; justify-content: center; margin: 0 auto 10px;}
+        .role-box { padding: 15px; border-radius: 8px; background: #333; margin-bottom: 10px; border-left: 4px solid; text-align: left;}
+        
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/5.0.4/reveal.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/5.0.4/plugin/highlight/highlight.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/5.0.4/plugin/notes/notes.min.js"></script>
+
+    <script type="text/babel">
+        // --- Infographic Components ---
+
+        const ComparisonTable = () => (
+            <div style={{fontSize: '0.8em'}}>
+                <div style={{display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:'10px', background:'#333', padding:'10px', borderRadius:'8px 8px 0 0', fontWeight:'bold'}}>
+                    <div>Feature</div>
+                    <div style={{color:'var(--primary-color)'}}>Workshop 1 (Step-by-Step)</div>
+                    <div style={{color:'var(--accent-success)'}}>Workshop 2 (Team Sim)</div>
+                </div>
+                <div style={{display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:'10px', background:'rgba(255,255,255,0.05)', padding:'10px', borderBottom:'1px solid #444'}}>
+                    <div>Focus</div>
+                    <div>Technical Skills</div>
+                    <div>Process & Teamwork</div>
+                </div>
+                 <div style={{display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:'10px', background:'rgba(255,255,255,0.05)', padding:'10px', borderBottom:'1px solid #444'}}>
+                    <div>Project</div>
+                    <div>Simple Note App</div>
+                    <div>Contact Manager</div>
+                </div>
+                 <div style={{display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:'10px', background:'rgba(255,255,255,0.05)', padding:'10px', borderBottom:'1px solid #444'}}>
+                    <div>Architecture</div>
+                    <div>Node.js + Postgres</div>
+                    <div>Nginx + Node.js + DB</div>
+                </div>
+                 <div style={{display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:'10px', background:'rgba(255,255,255,0.05)', padding:'10px', borderRadius:'0 0 8px 8px'}}>
+                    <div>Outcome</div>
+                    <div>Docker Mastery</div>
+                    <div>Collaboration Skills</div>
+                </div>
+            </div>
+        );
+
+        const ArchitectureDiagram = ({type}) => (
+            <div className="info-container" style={{display:'flex', alignItems:'center', justifyContent:'center', gap:'20px'}}>
+                 {type === 'single' ? (
+                     <div style={{border:'2px solid var(--primary-color)', padding:'20px', borderRadius:'10px', textAlign:'center'}}>
+                         <i className="fab fa-node-js fa-3x" style={{color:'var(--accent-success)'}}></i><br/>Node App<br/>(Container)
+                     </div>
+                 ) : (
+                    <React.Fragment>
+                        <div style={{border:'2px solid var(--primary-color)', padding:'20px', borderRadius:'10px', textAlign:'center'}}>
+                             <i className="fab fa-node-js fa-3x" style={{color:'var(--accent-success)'}}></i><br/>API Service
+                             <div style={{fontSize:'0.6em', marginTop:'5px', background:'#444', padding:'2px'}}>Port 3000</div>
+                        </div>
+                        <div style={{display:'flex', flexDirection:'column', alignItems:'center'}}>
+                            <span style={{fontSize:'0.6em', color:'var(--secondary-color)'}}>Docker Network</span>
+                            <div style={{height:'2px', width:'50px', background:'var(--secondary-color)', margin:'5px 0'}}></div>
+                            <i className="fas fa-network-wired"></i>
+                        </div>
+                        <div style={{border:'2px solid var(--accent-warning)', padding:'20px', borderRadius:'10px', textAlign:'center'}}>
+                             <i className="fas fa-database fa-3x" style={{color:'var(--primary-color)'}}></i><br/>PostgreSQL
+                             <div style={{fontSize:'0.6em', marginTop:'5px', background:'#444', padding:'2px'}}>Port 5432</div>
+                        </div>
+                    </React.Fragment>
+                 )}
+            </div>
+        );
+
+        const TeamRoles = () => (
+            <div className="three-col">
+                <div className="feature-card">
+                    <div className="step-circle" style={{background:'var(--primary-color)'}}><i className="fas fa-paint-brush"></i></div>
+                    <h4>สมชาย</h4>
+                    <p style={{fontSize:'0.7em'}}>Frontend Developer</p>
+                    <small>โฟกัส: UI/UX, API Integration</small>
+                </div>
+                <div className="feature-card">
+                     <div className="step-circle" style={{background:'var(--secondary-color)'}}><i className="fas fa-cogs"></i></div>
+                    <h4>สมหญิง</h4>
+                    <p style={{fontSize:'0.7em'}}>Backend Developer</p>
+                    <small>โฟกัส: API Logic, Database, Docker</small>
+                </div>
+                <div className="feature-card">
+                     <div className="step-circle" style={{background:'var(--accent-warning)'}}><i className="fas fa-bug"></i></div>
+                    <h4>สมปอง</h4>
+                    <p style={{fontSize:'0.7em'}}>Tester / QA</p>
+                    <small>โฟกัส: Break things, Find bugs</small>
+                </div>
+            </div>
+        );
+
+        // --- Main App ---
+        function App() {
+            const [isDarkTheme, setIsDarkTheme] = React.useState(true);
+            const [zoomLevel, setZoomLevel] = React.useState(1);
+            const revealRef = React.useRef(null);
+
+            React.useEffect(() => {
+                if (revealRef.current) {
+                    Reveal.initialize({
+                        controls: false, progress: true, center: true, hash: true,
+                        transition: 'slide',
+                        plugins: [ RevealHighlight, RevealNotes ],
+                        width: 1920, height: 1080, margin: 0.04
+                    });
+                }
+                document.body.classList.toggle('light-theme', !isDarkTheme);
+                const themeLink = document.getElementById('theme');
+                if (themeLink) {
+                     themeLink.href = isDarkTheme
+                    ? 'https://cdnjs.cloudflare.com/ajax/libs/reveal.js/5.0.4/theme/dracula.min.css'
+                    : 'https://cdnjs.cloudflare.com/ajax/libs/reveal.js/5.0.4/theme/white.min.css';
+                }
+            }, [isDarkTheme]);
+
+            React.useEffect(() => {
+                const rootElement = document.getElementById('root');
+                if (rootElement) rootElement.style.transform = `scale(${zoomLevel})`;
+            }, [zoomLevel]);
+
+            const toggleTheme = () => setIsDarkTheme(!isDarkTheme);
+            const zoomIn = () => setZoomLevel(prev => Math.min(prev + 0.1, 1.5));
+            const zoomOut = () => setZoomLevel(prev => Math.max(prev - 0.1, 0.7));
+            const toggleFullScreen = () => document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen();
+            const goNext = () => Reveal.next();
+            const goPrev = () => Reveal.prev();
+
+            return (
+                <React.Fragment>
+                    <div className="engse-badge"><i className="fas fa-laptop-code"></i> ENGSE207 PRE-LAB WORKSHOPS</div>
+                    
+                    <div className="reveal" ref={revealRef}>
+                        <div className="slides">
+
+                            {/* --- INTRO SECTION --- */}
+                            <section data-background-gradient="linear-gradient(135deg, #191924 0%, #282c34 100%)">
+                                <div className="flex-center" style={{flexDirection: 'column'}}>
+                                    <div style={{display:'flex', gap:'20px', marginBottom:'20px'}}>
+                                        <i className="fab fa-docker fa-5x" style={{color: '#0db7ed'}}></i>
+                                        <i className="fas fa-users fa-5x" style={{color: 'var(--accent-warning)'}}></i>
+                                    </div>
+                                    <h1>Docker Pre-Lab Workshops</h1>
+                                    <h3>เตรียมความพร้อมสำหรับ Week 6 Lab</h3>
+                                    <p style={{color: '#aaa', marginTop:'20px'}}>วิชา ENGSE207 Software Architecture | Year 2</p>
+                                </div>
+                            </section>
+
+                            <section>
+                                <h2>ทำไมต้องมี Pre-Lab?</h2>
+                                <div className="two-col">
+                                    <div className="text-left">
+                                        <p>ใน Week 6 เราจะทำ Lab ใหญ่เรื่อง <strong>N-Tier Architecture Deployment</strong></p>
+                                        <p>เพื่อไม่ให้ "หลงทาง" ในห้องเรียน เราต้องปูพื้นฐาน 2 เรื่องหลัก:</p>
+                                        <ul style={{fontSize:'0.9em', marginTop:'20px'}}>
+                                            <li className="fragment"><strong>Technical:</strong> การใช้ Docker, Dockerfile, Compose อย่างคล่องแคล่ว</li>
+                                            <li className="fragment"><strong>Process:</strong> การทำงานเป็นทีม (Git Flow) ร่วมกับ Docker</li>
+                                        </ul>
+                                    </div>
+                                    <div className="highlight-box fragment">
+                                        <i className="fas fa-quote-left"></i>
+                                        <p>"Practice makes permanent"</p>
+                                        <small>ฝึกทำ 2 Workshops นี้ แล้ว Lab Week 6 จะเป็นเรื่องง่าย!</small>
+                                    </div>
+                                </div>
+                            </section>
+
+                            <section>
+                                <h2>Overview: 2 Workshops</h2>
+                                <ComparisonTable />
+                            </section>
+
+                            {/* --- WORKSHOP 1: DOCKER STEP-BY-STEP --- */}
+                            <section data-background="#282c34">
+                                <h2 style={{color:'var(--primary-color)'}}>Workshop 1: Docker Step-by-Step</h2>
+                                <p>จากศูนย์... สู่ Multi-Container Application</p>
+                                <i className="fas fa-layer-group fa-4x" style={{marginTop:'30px', color:'var(--primary-color)'}}></i>
+                            </section>
+
+                            <section>
+                                <h2>Project: Simple Note App</h2>
+                                <div className="two-col">
+                                    <div>
+                                        <p>เราจะสร้างแอปฯ จดบันทึกง่ายๆ ด้วย <strong>Node.js</strong></p>
+                                        <ul style={{fontSize:'0.8em'}}>
+                                            <li><strong>Initial State:</strong> รันบนเครื่องตัวเอง (localhost)</li>
+                                            <li><strong>Goal:</strong> ย้ายไปรันบน Docker 100%</li>
+                                        </ul>
+                                    </div>
+                                    <div style={{background:'white', padding:'20px', borderRadius:'10px', color:'black'}}>
+                                        <h4 style={{margin:0}}>📝 My Notes</h4>
+                                        <ul style={{textAlign:'left', fontSize:'0.7em', paddingLeft:'20px'}}>
+                                            <li>Buy milk</li>
+                                            <li>Learn Docker</li>
+                                            <li>Submit Assignment</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </section>
+
+                            <section>
+                                <h2>Step 1: Single Container</h2>
+                                <p>เป้าหมาย: เขียน <code>Dockerfile</code> เพื่อแพ็คแอปฯ</p>
+                                <div className="two-col">
+                                    <pre><code className="dockerfile">{`FROM node:20-alpine
+WORKDIR /app
+COPY package*.json ./
+RUN npm install
+COPY . .
+EXPOSE 3000
+CMD ["node", "server.js"]`}</code></pre>
+                                    <ArchitectureDiagram type="single" />
+                                </div>
+                            </section>
+
+                            <section>
+                                <h2>Step 2: Adding Database</h2>
+                                <p>แอปฯ จริงต้องเก็บข้อมูล! เราจะเพิ่ม PostgreSQL</p>
+                                <div className="alert highlight-box" style={{fontSize:'0.8em', borderLeftColor:'var(--accent-warning)'}}>
+                                    <strong>Challenge:</strong> Container 2 ตัว (App, DB) จะคุยกันอย่างไร? <br/>
+                                    <strong>Solution:</strong> Docker Network
+                                </div>
+                                <div style={{textAlign:'center', marginTop:'20px'}}>
+                                    <code>docker network create my-net</code>
+                                </div>
+                            </section>
+
+                            <section>
+                                <h2>Architecture: Multi-Container</h2>
+                                <ArchitectureDiagram type="multi" />
+                                <p style={{fontSize:'0.7em', marginTop:'20px'}}>App Container เรียกหา DB ด้วยชื่อ "container name" (Service Discovery) ไม่ใช่ IP Address</p>
+                            </section>
+
+                            <section>
+                                <h2>Step 3: Docker Compose</h2>
+                                <p>รันทีละคำสั่งมันเหนื่อย... ใช้ <code>docker-compose.yml</code> ดีกว่า</p>
+                                <div className="two-col">
+                                    <pre><code className="yaml" style={{fontSize:'0.7em', maxHeight:'400px'}}>{`version: '3.8'
+services:
+  api:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - DB_HOST=db
+    depends_on:
+      - db
+
+  db:
+    image: postgres:15-alpine
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:`}</code></pre>
+                                    <div style={{textAlign:'left'}}>
+                                        <h4>Key Benefits:</h4>
+                                        <ul>
+                                            <li><span style={{color:'var(--accent-success)'}}>Automated Network:</span> สร้าง network ให้เอง</li>
+                                            <li><span style={{color:'var(--accent-success)'}}>Persistence:</span> จัดการ Volume ง่าย</li>
+                                            <li><span style={{color:'var(--accent-success)'}}>One Command:</span> <code>docker-compose up -d</code></li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </section>
+
+                             <section>
+                                <h2>Workshop 1 Recap: Key Commands</h2>
+                                <div className="three-col" style={{fontSize:'0.7em'}}>
+                                    <div className="feature-card">
+                                        <i className="fas fa-hammer"></i>
+                                        <h5>Build</h5>
+                                        <code>docker build -t myapp .</code>
+                                    </div>
+                                    <div className="feature-card">
+                                        <i className="fas fa-play-circle"></i>
+                                        <h5>Run</h5>
+                                        <code>docker run -p 3000:3000 myapp</code>
+                                    </div>
+                                    <div className="feature-card">
+                                        <i className="fas fa-cubes"></i>
+                                        <h5>Compose</h5>
+                                        <code>docker-compose up -d</code>
+                                    </div>
+                                </div>
+                            </section>
+
+                            {/* --- WORKSHOP 2: TEAM DEVELOPMENT --- */}
+                            <section data-background="#191924">
+                                <h2 style={{color:'var(--accent-success)'}}>Workshop 2: Team Development</h2>
+                                <p>จำลองสถานการณ์จริง: Git + Docker + Teamwork</p>
+                                <i className="fas fa-users-cog fa-4x" style={{marginTop:'30px', color:'var(--accent-success)'}}></i>
+                            </section>
+
+                            <section>
+                                <h2>The Scenario: "Contact Manager"</h2>
+                                <p>บริษัท <strong>TechStart</strong> กำลังสร้างระบบสมุดรายชื่อ</p>
+                                <TeamRoles />
+                                <p style={{marginTop:'30px'}}>ทุกคนต้องทำงานบน Codebase เดียวกัน ผ่าน <strong>Git</strong> และรันบน <strong>Docker</strong> เพื่อ environment ที่เหมือนกัน</p>
+                            </section>
+
+                            <section>
+                                <h2>Workflow Overview</h2>
+                                <div className="info-container" style={{padding:'30px'}}>
+                                    <div style={{display:'flex', alignItems:'center', justifyContent:'space-between'}}>
+                                        <div style={{textAlign:'center'}}>
+                                            <div className="step-circle" style={{margin:'auto'}}>1</div>
+                                            <p>Branching</p>
+                                            <small>แยก Feature Branch</small>
+                                        </div>
+                                        <i className="fas fa-arrow-right"></i>
+                                        <div style={{textAlign:'center'}}>
+                                            <div className="step-circle" style={{margin:'auto'}}>2</div>
+                                            <p>Development</p>
+                                            <small>Docker Compose up</small>
+                                        </div>
+                                        <i className="fas fa-arrow-right"></i>
+                                        <div style={{textAlign:'center'}}>
+                                            <div className="step-circle" style={{margin:'auto'}}>3</div>
+                                            <p>Merge & PR</p>
+                                            <small>Review Code</small>
+                                        </div>
+                                        <i className="fas fa-arrow-right"></i>
+                                        <div style={{textAlign:'center'}}>
+                                            <div className="step-circle" style={{margin:'auto'}}>4</div>
+                                            <p>Testing</p>
+                                            <small>Find Bugs</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </section>
+
+                            <section>
+                                <h2>Day 1: ต่างคนต่างทำ</h2>
+                                <div className="two-col">
+                                    <div className="role-box" style={{borderColor:'var(--primary-color)'}}>
+                                        <strong>👨‍💻 สมชาย (Frontend):</strong>
+                                        <ul>
+                                            <li>สร้าง Branch <code>feature/ui</code></li>
+                                            <li>แก้ไฟล์ HTML/CSS</li>
+                                            <li>รัน Docker เช็คความสวยงาม</li>
+                                        </ul>
+                                    </div>
+                                    <div className="role-box" style={{borderColor:'var(--secondary-color)'}}>
+                                        <strong>👩‍💻 สมหญิง (Backend):</strong>
+                                        <ul>
+                                            <li>สร้าง Branch <code>feature/api</code></li>
+                                            <li>เชื่อมต่อ Database ใน Code</li>
+                                            <li>รัน Docker เช็ค API response</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                <div style={{textAlign:'center', marginTop:'20px', color:'var(--accent-success)'}}>
+                                    <i className="fas fa-check-circle"></i> Docker ทำให้ทั้งคู่มี Database ใช้โดยไม่ต้องลงในเครื่องตัวเอง!
+                                </div>
+                            </section>
+
+                            <section>
+                                <h2>Day 2: The Integration (หายนะบังเกิด)</h2>
+                                <p>เมื่อ Merge Code มารวมกันที่ <code>main</code> branch...</p>
+                                <div className="highlight-box" style={{borderLeftColor:'var(--accent-danger)'}}>
+                                    <h4 style={{color:'var(--accent-danger)'}}><i className="fas fa-exclamation-circle"></i> BUG FOUND!</h4>
+                                    <p><strong>สมปอง (Tester)</strong> พบว่า: "เพิ่มรายชื่อยาวๆ แล้ว App พัง!"</p>
+                                    <small>Error: Data too long for column 'name' at row 1</small>
+                                </div>
+                                <p style={{fontSize:'0.8em', marginTop:'20px'}}>นี่คือสถานการณ์จริงที่ Database Schema (VARCHAR) ไม่ตรงกับ Validation ของ Code</p>
+                            </section>
+
+                             <section>
+                                <h2>Day 3: Debugging & Fix</h2>
+                                <p>ทีมต้องช่วยกันแก้ปัญหา:</p>
+                                <ul style={{fontSize:'0.9em'}}>
+                                    <li><strong>Step 1 Reproduce:</strong> ใช้ Docker Compose รัน Environment เดียวกับ Tester</li>
+                                    <li><strong>Step 2 Inspect:</strong> ดู Logs ด้วย <code>docker-compose logs -f api</code></li>
+                                    <li><strong>Step 3 Fix:</strong>
+                                        <ul>
+                                            <li>Backend: เพิ่ม Validation ใน Code</li>
+                                            <li>Database: Alter Table ขยายขนาด Column</li>
+                                        </ul>
+                                    </li>
+                                </ul>
+                            </section>
+
+                             <section>
+                                <h2>Key Takeaways จาก Workshop 2</h2>
+                                <div className="three-col">
+                                    <div className="feature-card">
+                                        <i className="fas fa-code-branch fa-2x"></i>
+                                        <h5>Git Workflow</h5>
+                                        <small>เข้าใจการแตก Branch, PR และ Merge Conflict</small>
+                                    </div>
+                                    <div className="feature-card">
+                                        <i className="fas fa-desktop fa-2x"></i>
+                                        <h5>Consistent Env</h5>
+                                        <small>Docker ช่วยให้ "It works on my machine" เป็นเรื่องจริง</small>
+                                    </div>
+                                    <div className="feature-card">
+                                        <i className="fas fa-bug fa-2x"></i>
+                                        <h5>Debugging</h5>
+                                        <small>อ่าน Logs และแก้ปัญหาใน Container เป็น</small>
+                                    </div>
+                                </div>
+                            </section>
+
+                            {/* --- CONCLUSION --- */}
+                            <section>
+                                <h2>Checklist ก่อนเข้าเรียน Week 6</h2>
+                                <div className="two-col">
+                                    <div style={{fontSize:'0.8em', textAlign:'left'}}>
+                                        <h4>✅ Docker Skills</h4>
+                                        <ul>
+                                            <li>[ ] เขียน Dockerfile เองได้</li>
+                                            <li>[ ] เข้าใจ Layer Caching</li>
+                                            <li>[ ] ใช้ Docker Compose คล่อง</li>
+                                        </ul>
+                                    </div>
+                                    <div style={{fontSize:'0.8em', textAlign:'left'}}>
+                                        <h4>✅ Soft Skills</h4>
+                                        <ul>
+                                            <li>[ ] กล้าเล่นกับ Git Branch</li>
+                                            <li>[ ] อ่าน Error Logs ไม่ตกใจ</li>
+                                            <li>[ ] เข้าใจ Concept N-Tier Architecture</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                <h3 style={{marginTop:'30px', color:'var(--primary-color)'}}>พร้อมสำหรับ N-Tier Deployment แล้วหรือยัง?</h3>
+                            </section>
+
+                            <section data-background-gradient="linear-gradient(135deg, #282c34 0%, #191924 100%)">
+                                <h1>Q & A</h1>
+                                <p>ติดปัญหาตรงไหนใน Workshop ถามได้เลย!</p>
+                                <div style={{margin:'40px auto'}}>
+                                    <i className="fas fa-comments fa-6x" style={{color: 'var(--primary-color)', opacity:0.8}}></i>
+                                </div>
+                                <p style={{fontSize:'0.7em', color:'#888'}}>
+                                    ENGSE207 Software Architecture | Pre-Lab Workshops
+                                </p>
+                            </section>
+
+                        </div>
+                    </div>
+
+                    {/* Controls */}
+                    <div className="control-panel">
+                        <button className="btn-control" onClick={goPrev}><i className="fas fa-chevron-left"></i></button>
+                        <button className="btn-control" onClick={goNext}><i className="fas fa-chevron-right"></i></button>
+                        <div style={{width:'1px', background:'rgba(255,255,255,0.2)', margin:'0 8px'}}></div>
+                        <button className="btn-control" onClick={zoomOut}><i className="fas fa-search-minus"></i></button>
+                        <button className="btn-control" onClick={zoomIn}><i className="fas fa-search-plus"></i></button>
+                        <div style={{width:'1px', background:'rgba(255,255,255,0.2)', margin:'0 8px'}}></div>
+                        <button className="btn-control" onClick={toggleTheme}>
+                            {isDarkTheme ? <i className="fas fa-sun"></i> : <i className="fas fa-moon"></i>}
+                        </button>
+                        <button className="btn-control" onClick={toggleFullScreen}><i className="fas fa-expand"></i></button>
+                    </div>
+
+                </React.Fragment>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+
+    </script>
+</body>
+</html>
