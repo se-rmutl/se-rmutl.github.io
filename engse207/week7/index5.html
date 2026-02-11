@@ -1,0 +1,2382 @@
+from pathlib import Path, PurePosixPath
+
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ENGSE207 Week 7 • Cloud & Containerization</title>
+  <style>
+    :root{
+      --bg1:#0b1220;
+      --bg2:#0a1a3a;
+      --card: rgba(255,255,255,.08);
+      --card2: rgba(255,255,255,.06);
+      --stroke: rgba(255,255,255,.14);
+      --text: rgba(255,255,255,.92);
+      --muted: rgba(255,255,255,.70);
+      --muted2: rgba(255,255,255,.55);
+      --accent: #7c3aed;
+      --accent2:#22c55e;
+      --warn:#f59e0b;
+      --danger:#ef4444;
+      --shadow: 0 22px 60px rgba(0,0,0,.45);
+      --radius: 22px;
+      --pad: 34px;
+
+      --fontScale: 1; /* controlled by zoom buttons */
+      --base: 18px; /* base font */
+    }
+
+    *{ box-sizing:border-box; }
+    html,body{ height:100%; margin:0; font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans Thai", "Noto Sans", Arial, sans-serif; color:var(--text); background: radial-gradient(1100px 700px at 10% 10%, rgba(124,58,237,.35), transparent 55%),
+      radial-gradient(900px 600px at 90% 15%, rgba(34,197,94,.25), transparent 55%),
+      radial-gradient(1100px 800px at 50% 100%, rgba(245,158,11,.18), transparent 55%),
+      linear-gradient(135deg, var(--bg1), var(--bg2)); overflow:hidden; }
+
+    /* --- Stage layout (16:9) --- */
+    .viewport{
+      height:100%;
+      width:100%;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding: 14px;
+      position:relative;
+    }
+    .frame{
+      width: min(1400px, 98vw);
+      aspect-ratio: 16 / 9;
+      position:relative;
+      transform-origin: center center;
+      border-radius: calc(var(--radius) + 10px);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+      border: 1px solid rgba(255,255,255,.12);
+      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+      backdrop-filter: blur(10px);
+    }
+    .bg-grid{
+      position:absolute; inset:0;
+      background-image:
+        linear-gradient(rgba(255,255,255,.06) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.06) 1px, transparent 1px);
+      background-size: 44px 44px;
+      mask-image: radial-gradient(circle at 50% 30%, rgba(0,0,0,1) 0, rgba(0,0,0,.88) 55%, rgba(0,0,0,0) 100%);
+      opacity:.55;
+      pointer-events:none;
+    }
+    .spot{
+      position:absolute; inset:-60px;
+      background:
+        radial-gradient(700px 400px at 20% 30%, rgba(124,58,237,.25), transparent 70%),
+        radial-gradient(800px 500px at 80% 35%, rgba(34,197,94,.18), transparent 70%),
+        radial-gradient(900px 600px at 50% 120%, rgba(59,130,246,.16), transparent 70%);
+      filter: blur(10px);
+      opacity:.9;
+      pointer-events:none;
+    }
+
+    /* --- Slide --- */
+    .slide{
+      position:absolute; inset:0;
+      padding: var(--pad);
+      display:flex;
+      flex-direction:column;
+      gap: 18px;
+      font-size: calc(var(--base) * var(--fontScale));
+      line-height: 1.38;
+    }
+    .topbar{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap: 12px;
+    }
+    .kicker{
+      display:inline-flex;
+      align-items:center;
+      gap:10px;
+      padding: 10px 14px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.07);
+      border: 1px solid rgba(255,255,255,.12);
+      color: var(--muted);
+      font-size: .9em;
+      letter-spacing:.2px;
+    }
+    .kicker b{ color: var(--text); font-weight:700; }
+    .meta{
+      text-align:right;
+      font-size:.86em;
+      color: var(--muted2);
+    }
+    h1,h2,h3{ margin:0; letter-spacing: -0.02em; }
+    h1{ font-size: 2.15em; line-height:1.06; }
+    h2{ font-size: 1.65em; line-height:1.14; }
+    h3{ font-size: 1.18em; line-height:1.2; color: var(--text); }
+    p{ margin:0; color: var(--muted); }
+    .lead{ font-size: 1.06em; color: var(--muted); max-width: 56ch; }
+    .muted{ color: var(--muted); }
+    .small{ font-size:.9em; color: var(--muted2); }
+    .badge{
+      display:inline-flex; align-items:center; gap:8px;
+      padding: 6px 10px; border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.06);
+      font-size:.86em; color: var(--muted);
+      white-space:nowrap;
+    }
+    .badge .dot{ width:10px; height:10px; border-radius:50%; background: var(--accent); box-shadow: 0 0 0 5px rgba(124,58,237,.18); }
+    .badge.green .dot{ background: var(--accent2); box-shadow: 0 0 0 5px rgba(34,197,94,.18); }
+    .badge.warn .dot{ background: var(--warn); box-shadow: 0 0 0 5px rgba(245,158,11,.18); }
+
+    .grid{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      flex: 1 1 auto;
+      min-height: 0;
+    }
+    .grid.three{ grid-template-columns: 1fr 1fr 1fr; }
+    .grid.one{ grid-template-columns: 1fr; }
+    .card{
+      background: var(--card);
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: var(--radius);
+      padding: 16px 18px;
+      min-height: 0;
+      overflow:auto;
+    }
+    .card.soft{ background: var(--card2); }
+    .card h3{ margin-bottom: 10px; }
+    ul{ margin: 0; padding-left: 1.1em; color: var(--muted); }
+    li{ margin: 7px 0; }
+    .pillrow{ display:flex; flex-wrap:wrap; gap:10px; }
+    .split{
+      display:grid;
+      grid-template-columns: 1.05fr .95fr;
+      gap: 16px;
+      flex:1 1 auto;
+      min-height: 0;
+    }
+
+    .big-quote{
+      border-left: 4px solid rgba(124,58,237,.9);
+      padding: 10px 12px;
+      margin-top: 10px;
+      background: rgba(124,58,237,.09);
+      border-radius: 12px;
+      color: rgba(255,255,255,.88);
+    }
+
+    .table{
+      width:100%;
+      border-collapse: collapse;
+      font-size: .95em;
+      overflow:hidden;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,.12);
+    }
+    .table th, .table td{
+      padding: 10px 12px;
+      border-bottom: 1px solid rgba(255,255,255,.10);
+      vertical-align: top;
+    }
+    .table th{
+      text-align:left;
+      background: rgba(255,255,255,.07);
+      color: rgba(255,255,255,.86);
+      font-weight:700;
+    }
+    .table tr:last-child td{ border-bottom:none; }
+    .hl{ color: rgba(255,255,255,.94); font-weight:700; }
+    .ok{ color: rgba(34,197,94,.95); font-weight:700; }
+    .warnText{ color: rgba(245,158,11,.95); font-weight:700; }
+    .dangerText{ color: rgba(239,68,68,.95); font-weight:700; }
+
+    pre.code{
+      margin: 0;
+      padding: 12px 14px;
+      background: rgba(0,0,0,.28);
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 16px;
+      overflow:auto;
+      font-size: .88em;
+      line-height: 1.3;
+      color: rgba(255,255,255,.9);
+      white-space: pre;
+    }
+    .callout{
+      display:flex; gap:12px; align-items:flex-start;
+      padding: 12px 14px;
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.06);
+    }
+    .callout .icon{
+      width: 40px; height: 40px; border-radius: 14px;
+      display:grid; place-items:center;
+      background: rgba(124,58,237,.18);
+      border: 1px solid rgba(124,58,237,.35);
+      flex: 0 0 auto;
+    }
+    .callout .icon.green{ background: rgba(34,197,94,.18); border-color: rgba(34,197,94,.35); }
+    .callout .icon.warn{ background: rgba(245,158,11,.18); border-color: rgba(245,158,11,.35); }
+    .callout .icon.red{ background: rgba(239,68,68,.18); border-color: rgba(239,68,68,.35); }
+
+    .footer{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 10px;
+      margin-top: 8px;
+      font-size: .88em;
+      color: var(--muted2);
+    }
+
+    /* --- Controls --- */
+    .controls{
+      position:absolute;
+      left: 14px;
+      right: 14px;
+      bottom: 14px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 10px;
+      pointer-events:none;
+    }
+    .btnbar{
+      display:flex;
+      gap: 10px;
+      pointer-events:auto;
+    }
+    button.btn{
+      appearance:none;
+      border:none;
+      cursor:pointer;
+      border-radius: 14px;
+      padding: 10px 12px;
+      background: rgba(255,255,255,.10);
+      border: 1px solid rgba(255,255,255,.14);
+      color: rgba(255,255,255,.9);
+      font-size: 14px;
+      display:inline-flex;
+      align-items:center;
+      gap: 8px;
+      transition: transform .12s ease, background .12s ease, border-color .12s ease;
+      backdrop-filter: blur(10px);
+    }
+    button.btn:hover{ transform: translateY(-1px); background: rgba(255,255,255,.14); border-color: rgba(255,255,255,.22); }
+    button.btn:active{ transform: translateY(0px) scale(.98); }
+    button.btn.primary{
+      background: rgba(124,58,237,.26);
+      border-color: rgba(124,58,237,.45);
+    }
+    button.btn.primary:hover{ background: rgba(124,58,237,.34); }
+    button.btn.green{
+      background: rgba(34,197,94,.20);
+      border-color: rgba(34,197,94,.42);
+    }
+    .progressWrap{
+      pointer-events:auto;
+      flex: 1 1 auto;
+      min-width: 200px;
+      display:flex;
+      align-items:center;
+      gap: 10px;
+      justify-content:flex-end;
+    }
+    .progress{
+      flex: 1 1 auto;
+      height: 10px;
+      background: rgba(255,255,255,.10);
+      border: 1px solid rgba(255,255,255,.14);
+      border-radius: 999px;
+      overflow:hidden;
+      max-width: 420px;
+    }
+    .bar{
+      height:100%;
+      width: 0%;
+      background: linear-gradient(90deg, rgba(124,58,237,.95), rgba(34,197,94,.95));
+      border-radius: 999px;
+      transition: width .25s ease;
+    }
+    .counter{
+      font-variant-numeric: tabular-nums;
+      font-size: 13px;
+      color: rgba(255,255,255,.72);
+      white-space:nowrap;
+    }
+
+    /* --- Slide transitions --- */
+    .fade{
+      animation: fadeIn .22s ease both;
+    }
+    @keyframes fadeIn{
+      from{ opacity:0; transform: translateY(6px); }
+      to{ opacity:1; transform: translateY(0); }
+    }
+
+    /* --- Overlay (slide list / help) --- */
+    .overlay{
+      position:absolute; inset:0;
+      background: rgba(0,0,0,.62);
+      backdrop-filter: blur(10px);
+      display:none;
+      padding: 18px;
+    }
+    .overlay.show{ display:block; }
+    .overlay .panel{
+      height:100%;
+      border-radius: 22px;
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(18,24,38,.70);
+      box-shadow: 0 18px 50px rgba(0,0,0,.5);
+      overflow:hidden;
+      display:flex;
+      flex-direction:column;
+    }
+    .overlay .panelHeader{
+      display:flex; align-items:center; justify-content:space-between;
+      padding: 14px 16px;
+      border-bottom: 1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.04);
+    }
+    .overlay .panelHeader h3{ margin:0; font-size: 1.05em; }
+    .overlay .panelBody{
+      padding: 14px 16px;
+      overflow:auto;
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .tocItem{
+      padding: 10px 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.06);
+      cursor:pointer;
+      display:flex;
+      gap: 10px;
+      align-items:flex-start;
+    }
+    .tocItem:hover{ background: rgba(255,255,255,.10); border-color: rgba(255,255,255,.18); }
+    .tocNum{
+      width: 34px; height: 34px;
+      border-radius: 12px;
+      background: rgba(124,58,237,.18);
+      border: 1px solid rgba(124,58,237,.35);
+      display:grid; place-items:center;
+      font-weight:800;
+      color: rgba(255,255,255,.92);
+      flex: 0 0 auto;
+      font-variant-numeric: tabular-nums;
+    }
+    .tocText b{ display:block; font-size:.98em; color: rgba(255,255,255,.92); }
+    .tocText span{ display:block; font-size:.86em; color: rgba(255,255,255,.60); margin-top:2px; }
+
+    /* Helpers */
+    .svgBox{
+      width: 100%;
+      height: auto;
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(0,0,0,.14);
+      padding: 12px;
+    }
+    .twoCol{
+      display:grid; grid-template-columns: 1fr 1fr; gap: 14px;
+    }
+
+    /* Respect reduced motion */
+    @media (prefers-reduced-motion: reduce){
+      .fade{ animation:none; }
+      button.btn{ transition:none; }
+      .bar{ transition:none; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="viewport" id="viewport">
+    <div class="frame" id="frame" aria-live="polite">
+      <div class="spot"></div>
+      <div class="bg-grid"></div>
+
+      <div class="slide fade" id="slide"></div>
+
+      <div class="controls">
+        <div class="btnbar">
+          <button class="btn" id="btnPrev" title="ก่อนหน้า (←)">
+            ◀︎ <span>ก่อนหน้า</span>
+          </button>
+          <button class="btn primary" id="btnNext" title="ถัดไป (→/Space)">
+            <span>ถัดไป</span> ▶︎
+          </button>
+          <button class="btn" id="btnToc" title="สารบัญ (T)">
+            ☰ <span>สารบัญ</span>
+          </button>
+        </div>
+
+        <div class="btnbar">
+          <button class="btn" id="btnZoomOut" title="ย่อฟอนต์ (-)">A−</button>
+          <button class="btn" id="btnZoomIn" title="ขยายฟอนต์ (+)">A+</button>
+          <button class="btn green" id="btnFull" title="เต็มจอ (F)">⛶</button>
+        </div>
+
+        <div class="progressWrap">
+          <div class="progress" aria-label="ความคืบหน้าสไลด์"><div class="bar" id="bar"></div></div>
+          <div class="counter" id="counter">1/1</div>
+        </div>
+      </div>
+
+      <div class="overlay" id="overlay" role="dialog" aria-modal="true" aria-label="สารบัญ">
+        <div class="panel">
+          <div class="panelHeader">
+            <h3>สารบัญสไลด์ (กด T เพื่อปิด/เปิด)</h3>
+            <button class="btn" id="btnCloseOverlay">ปิด ✕</button>
+          </div>
+          <div class="panelBody" id="toc"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+/* ==============================
+   ENGSE207 • Week 7 Slide Deck
+   Single-file HTML (16:9)
+   Controls:
+   - ←/→ or Space: prev/next
+   - Home/End: first/last
+   - T: table of contents
+   - + / - : zoom in/out
+   - F: fullscreen
+   - Click right/left half: next/prev
+================================ */
+
+const slides = [
+  // 1
+  {
+    kicker: "ENGSE207 • สัปดาห์ที่ 7",
+    title: "สถาปัตยกรรมสำหรับ Cloud & Containerization",
+    subtitle: "Cloud Computing Fundamentals • 12-Factor App • Containers & Deployment Topologies",
+    body: `
+      <div class="split">
+        <div class="card">
+          <h3>ทำไมสัปดาห์นี้สำคัญ?</h3>
+          <ul>
+            <li>สัปดาห์ก่อนเรา “ออกแบบสถาปัตยกรรม” → สัปดาห์นี้เราจะ “ทำให้มันรันจริงบนโครงสร้างพื้นฐาน”</li>
+            <li>สถาปัตยกรรมที่ดีต้องคิดเรื่อง <span class="hl">Scalability / Availability / Deployability</span> ตั้งแต่ต้น</li>
+            <li>Cloud & Containers คือ “ภาษากลาง” ของระบบสมัยใหม่</li>
+          </ul>
+          <div class="big-quote">เป้าหมาย: จาก “Diagram บนกระดาษ” ไปสู่ “ระบบที่ Deploy ได้จริง”</div>
+        </div>
+        <div class="card soft">
+          <h3>โครงเวลา (รวม 5 ชั่วโมง)</h3>
+          <ul>
+            <li><b>บรรยาย 2 ชม.</b> (90 นาทีเนื้อหา + 15 นาทีสรุป/เตรียม Lab)</li>
+            <li><b>ปฏิบัติ 3 ชม.</b> (วาด Cloud Diagram • วิเคราะห์ Topology • ประเมิน Capacity)</li>
+          </ul>
+          <div class="pillrow" style="margin-top:10px">
+            <span class="badge"><span class="dot"></span> 16:9 • Single HTML</span>
+            <span class="badge green"><span class="dot"></span> มี Infographic</span>
+            <span class="badge warn"><span class="dot"></span> มีคำถามชวนคิด</span>
+          </div>
+        </div>
+      </div>
+    `
+  },
+
+  // 2
+  {
+    kicker: "ก่อนเริ่ม • ทบทวนสัปดาห์ที่ 6",
+    title: "สัปดาห์ที่ 6: ADD-Lite & ADR (สรุปเร็ว)",
+    subtitle: "เราเรียน “กระบวนการออกแบบสถาปัตยกรรม” เพื่อสร้าง Candidate และตัดสินใจอย่างมีเหตุผล",
+    body: `
+      <div class="grid">
+        <div class="card">
+          <h3>ADD-Lite 5 ขั้นตอน</h3>
+          <div class="svgBox">
+            ${svg_add_lite()}
+          </div>
+          <p class="small" style="margin-top:10px">
+            จุดสำคัญ: เราต้อง “เลือก” ไม่ใช่ “เดา” — เปรียบเทียบ Candidate ตาม Architectural Drivers
+          </p>
+        </div>
+        <div class="card soft">
+          <h3>ADR: ทำไมต้องบันทึก?</h3>
+          <ul>
+            <li>ช่วยให้ทีมเข้าใจ <span class="hl">เหตุผล</span> ของการเลือกเทคโนโลยี/รูปแบบ</li>
+            <li>ย้อนกลับมาดูได้เมื่อเกิดปัญหา หรือบริบทเปลี่ยน</li>
+            <li>ลด “จำไม่ได้ว่าตอนนั้นคิดอะไรไว้”</li>
+          </ul>
+          <div class="callout" style="margin-top:12px">
+            <div class="icon">🧠</div>
+            <div>
+              <div class="hl">คำถามชวนคิด</div>
+              <div class="muted small">ถ้าต้องรับคนใหม่เข้าโปรเจกต์ คุณอยากให้เขาเข้าใจการตัดสินใจสำคัญจากอะไร?</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `
+  },
+
+  // 3
+  {
+    kicker: "สะพานเชื่อม Week 6 → Week 7",
+    title: "จาก “Design” ไปสู่ “Deploy”",
+    subtitle: "สัปดาห์นี้เราจะตอบ: ถ้าออกแบบแล้ว…เอาไปวางบน Infrastructure อย่างไรให้ตอบโจทย์ NFR?",
+    body: `
+      <div class="card">
+        <div class="svgBox">${svg_bridge_design_deploy()}</div>
+        <div class="twoCol" style="margin-top:12px">
+          <div class="callout">
+            <div class="icon green">✅</div>
+            <div>
+              <div class="hl">สิ่งที่เราจะทำได้หลังจบสัปดาห์</div>
+              <div class="muted small">เลือก Service Model • อธิบาย 12-Factor • เปรียบเทียบ VM/Container • ออกแบบ Topology</div>
+            </div>
+          </div>
+          <div class="callout">
+            <div class="icon warn">⚠️</div>
+            <div>
+              <div class="hl">ข้อสังเกต</div>
+              <div class="muted small">“Deploy ง่าย” ไม่ได้แปลว่า “สถาปัตยกรรมดี” — ต้องบาลานซ์ Trade-offs เสมอ</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `
+  },
+
+  // 4
+  {
+    kicker: "Week 7 • วัตถุประสงค์การสอน",
+    title: "Learning Objectives",
+    subtitle: "Cloud Fundamentals • 12-Factor App • Containers & Topologies",
+    body: `
+      <div class="grid">
+        <div class="card">
+          <h3>1.1 Cloud Fundamentals & Service Models</h3>
+          <ul>
+            <li>อธิบาย Cloud และ <b>5 คุณลักษณะตาม NIST</b> ได้</li>
+            <li>เปรียบเทียบ <b>IaaS / PaaS / SaaS</b> พร้อมยกตัวอย่างผู้ให้บริการจริง</li>
+            <li>อธิบาย <b>Public / Private / Hybrid</b> และเลือกใช้ให้เหมาะกับบริบท</li>
+          </ul>
+        </div>
+        <div class="card soft">
+          <h3>1.2–1.3 Cloud-Native & Deployment</h3>
+          <ul>
+            <li>อธิบายหลักการ <b>12-Factor App</b> และความสำคัญ</li>
+            <li>ระบุปัญหาจากการ “ไม่ทำตาม 12-Factor” และเสนอแนวทางแก้</li>
+            <li>อธิบาย Containerization และความแตกต่าง <b>VM vs Container</b></li>
+            <li>อธิบายบทบาท <b>Docker</b> และ <b>Kubernetes</b> (Overview)</li>
+            <li>ออกแบบ Basic Deployment Topologies สำหรับระบบบน Cloud</li>
+          </ul>
+        </div>
+      </div>
+    `
+  },
+
+  // 5
+  {
+    kicker: "CLO ที่เกี่ยวข้อง (ย่อ)",
+    title: "เชื่อมโยง CLO กับเนื้อหา Week 7",
+    subtitle: "Knowledge → Cognitive → Analytical",
+    body: `
+      <div class="card">
+        <table class="table">
+          <thead>
+            <tr><th style="width:18%">CLO</th><th>สิ่งที่เนื้อหาสัปดาห์นี้สนับสนุน</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="hl">CLO2</td><td>Cloud-Native Patterns / Styles และ Trade-offs (เช่น Microservices on Cloud, Serverless)</td></tr>
+            <tr><td class="hl">CLO3</td><td>Quality Attributes ที่ Cloud กระทบโดยตรง: Scalability (Auto-scaling), Availability (Multi-AZ), Performance (CDN/Cache)</td></tr>
+            <tr><td class="hl">CLO4</td><td>พื้นฐาน Cloud Computing, Containerization, Serverless (ภาพรวม)</td></tr>
+            <tr><td class="hl">CLO6</td><td>วาด/อธิบาย Deployment View เป็นส่วนหนึ่งของ Documentation</td></tr>
+            <tr><td class="hl">CLO13</td><td>คิดเชิงปริมาณ: Latency/Throughput, Capacity (ประมาณการเบื้องต้น)</td></tr>
+            <tr><td class="hl">CLO14</td><td>เชื่อมสถาปัตยกรรมกับ DevOps Tools (Docker/K8s/CI-CD/Monitoring)</td></tr>
+          </tbody>
+        </table>
+        <div class="callout" style="margin-top:12px">
+          <div class="icon">🎯</div>
+          <div>
+            <div class="hl">ความคิดหลัก</div>
+            <div class="muted small">Architecture ไม่จบแค่ “วาด” — ต้อง “Deploy-Operate-Evolve” ได้ด้วย</div>
+          </div>
+        </div>
+      </div>
+    `
+  },
+
+  // 6
+  {
+    kicker: "Part 1 • Cloud Fundamentals",
+    title: "Cloud Computing คืออะไร?",
+    subtitle: "ให้บริการทรัพยากรคอมพิวเตอร์ผ่านอินเทอร์เน็ต โดยคิดค่าใช้จ่ายตามการใช้งานจริง (Pay-as-you-go)",
+    body: `
+      <div class="split">
+        <div class="card">
+          <h3>ภาพรวมแนวคิด</h3>
+          <ul>
+            <li>ทรัพยากร: Server, Storage, Database, Network, Software</li>
+            <li>ผู้ใช้ “ขอใช้” ได้เร็ว → ไม่ต้องซื้อเครื่องเอง</li>
+            <li>ยืดหยุ่น: ขยาย/ลดได้ตามช่วงเวลาที่โหลดเปลี่ยน</li>
+          </ul>
+          <div class="callout" style="margin-top:12px">
+            <div class="icon green">💡</div>
+            <div>
+              <div class="hl">ตัวอย่างปัญหาในโลกจริง</div>
+              <div class="muted small">Flash sale / ช่วงลงทะเบียน / ช่วงเปิดเทอม — ปริมาณผู้ใช้พุ่งเป็น 10× ภายในไม่กี่นาที</div>
+            </div>
+          </div>
+        </div>
+        <div class="card soft">
+          <h3>Infographic: On‑Prem vs Cloud</h3>
+          <div class="svgBox">${svg_onprem_vs_cloud()}</div>
+          <p class="small" style="margin-top:10px">สังเกต: Cloud เน้น “ความเร็วในการจัดสรร” และ “วัดผลการใช้ทรัพยากร”</p>
+        </div>
+      </div>
+    `
+  },
+
+  // 7
+  {
+    kicker: "มาตรฐาน NIST SP 800‑145",
+    title: "5 Essential Characteristics of Cloud",
+    subtitle: "ถ้าขาดข้อใดข้อหนึ่ง…อาจเป็น Hosting ธรรมดา ไม่ใช่ Cloud ที่แท้จริง",
+    body: `
+      <div class="grid">
+        <div class="card">
+          <div class="svgBox">${svg_nist_5()}</div>
+        </div>
+        <div class="card soft">
+          <h3>คำถามเช็คความเข้าใจ</h3>
+          <ul>
+            <li>บริการที่ต้อง “ทักแชทหาแอดมิน” ทุกครั้งถึงจะเพิ่มเครื่องได้ → ข้อไหนหายไป?</li>
+            <li>ถ้า “คิดราคาเหมาจ่าย ไม่วัดการใช้” → ข้อไหนหายไป?</li>
+            <li>ถ้าขยายระบบได้เฉพาะเดือนละครั้ง → ข้อไหนหายไป?</li>
+          </ul>
+          <div class="callout" style="margin-top:12px">
+            <div class="icon warn">🧠</div>
+            <div>
+              <div class="hl">ข้อสังเกต</div>
+              <div class="muted small">Cloud ที่ดีจะทำให้ “ทีมพัฒนา” ได้ทดลอง/ปล่อยงานไวขึ้น (ลด Lead time)</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `
+  },
+
+  // 8
+  {
+    kicker: "Service Models",
+    title: "IaaS vs PaaS vs SaaS (แนวคิด)",
+    subtitle: "วัดจาก “คุณต้องดูแลอะไรบ้าง” — Pizza as a Service",
+    body: `
+      <div class="card">
+        <div class="svgBox">${svg_pizza_models()}</div>
+        <div class="twoCol" style="margin-top:12px">
+          <div class="callout">
+            <div class="icon">📌</div>
+            <div>
+              <div class="hl">หลักคิด</div>
+              <div class="muted small">ยิ่งไปทาง SaaS → ยิ่งเร็ว/ง่าย แต่ควบคุมได้น้อยลง</div>
+            </div>
+          </div>
+          <div class="callout">
+            <div class="icon warn">⚖️</div>
+            <div>
+              <div class="hl">Trade-off</div>
+              <div class="muted small">Control vs Management Effort vs Time-to-Deploy</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `
+  },
+
+  // 9
+  {
+    kicker: "IaaS",
+    title: "IaaS (Infrastructure as a Service)",
+    subtitle: "คุณดูแล OS ขึ้นไป • Provider ดูแล Hardware/Virtualization",
+    body: `
+      <div class="split">
+        <div class="card">
+          <h3>เมื่อไหร่ควรเลือก IaaS?</h3>
+          <ul>
+            <li>ต้องการ <span class="hl">ควบคุมสูง</span>: OS, Runtime, Network, Security config</li>
+            <li>มีข้อจำกัด/Legacy ต้องปรับแต่งเยอะ</li>
+            <li>ทีมมีทักษะ Ops/DevOps พอสมควร</li>
+          </ul>
+          <div class="callout" style="margin-top:12px">
+            <div class="icon green">✅</div>
+            <div>
+              <div class="hl">ตัวอย่าง</div>
+              <div class="muted small">AWS EC2, Azure Virtual Machines, Google Compute Engine, DigitalOcean Droplets</div>
+            </div>
+          </div>
+        </div>
+        <div class="card soft">
+          <h3>จุดสังเกตด้านสถาปัตยกรรม</h3>
+          <ul>
+            <li>ต้องคิดเรื่อง <b>Auto-scaling</b>, <b>Load balancer</b>, <b>Backup</b>, <b>Monitoring</b></li>
+            <li>มีโอกาสเกิด “Snowflake Server” ถ้าตั้งค่าด้วยมือ → แนะนำ Infrastructure as Code</li>
+          </ul>
+          <div class="callout" style="margin-top:12px">
+            <div class="icon warn">🧩</div>
+            <div>
+              <div class="hl">คำถาม</div>
+              <div class="muted small">ถ้าทีมไม่มี Ops เลย การเริ่มด้วย IaaS จะเสี่ยงอะไร?</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `
+  },
+
+  // 10
+  {
+    kicker: "PaaS",
+    title: "PaaS (Platform as a Service)",
+    subtitle: "คุณโฟกัสที่ App + Data • Provider จัดการ Runtime/OS/Infra ให้",
+    body: `
+      <div class="split">
+        <div class="card">
+          <h3>ทำไม PaaS ทำให้ Deploy เร็ว?</h3>
+          <ul>
+            <li>ไม่ต้องดูแล OS และ Runtime stack</li>
+            <li>มีระบบ deploy/scale/log/healthcheck สำเร็จรูป</li>
+            <li>เหมาะกับทีมที่อยากโฟกัส Product</li>
+          </ul>
+          <div class="callout" style="margin-top:12px">
+            <div class="icon green">🚀</div>
+            <div>
+              <div class="hl">ตัวอย่าง</div>
+              <div class="muted small">Heroku, Google App Engine, Azure App Service, Render</div>
+            </div>
+          </div>
+        </div>
+        <div class="card soft">
+          <h3>ข้อควรระวัง</h3>
+          <ul>
+            <li>ข้อจำกัดด้าน <b>customization</b> และบางครั้งติด vendor</li>
+            <li>ต้องออกแบบตามแนวทาง Cloud-Native (เช่น 12-Factor)</li>
+            <li>ค่าใช้จ่ายอาจพุ่งเมื่อ scale สูง — ต้อง monitor cost</li>
+          </ul>
+          <div class="callout" style="margin-top:12px">
+            <div class="icon warn">⚖️</div>
+            <div>
+              <div class="hl">คำถาม</div>
+              <div class="muted small">ถ้าองค์กรต้องทำ Compliance เคร่งมาก (เช่นข้อมูลการเงิน) จะเลือก PaaS ได้แค่ไหน?</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `
+  },
+
+  // 11
+  {
+    kicker: "SaaS",
+    title: "SaaS (Software as a Service)",
+    subtitle: "ใช้งานผ่าน Browser ได้ทันที • Provider ดูแลแทบทั้งหมด",
+    body: `
+      <div class="grid">
+        <div class="card">
+          <h3>คุณได้อะไรจาก SaaS?</h3>
+          <ul>
+            <li>เริ่มใช้งานเร็วที่สุด (แทบไม่ต้อง deploy)</li>
+            <li>มีการอัปเดตและดูแลความปลอดภัยจากผู้ให้บริการ</li>
+            <li>เหมาะกับงานทั่วไป: Email, Office, CRM, Project Management</li>
+          </ul>
+          <div class="callout" style="margin-top:12px">
+            <div class="icon green">✅</div>
+            <div>
+              <div class="hl">ตัวอย่าง</div>
+              <div class="muted small">Google Workspace, Microsoft 365, Salesforce, Jira, Trello, Notion</div>
+            </div>
+          </div>
+        </div>
+        <div class="card soft">
+          <h3>ข้อจำกัดหลัก</h3>
+          <ul>
+            <li>Customization จำกัด</li>
+            <li>การย้ายข้อมูล/ย้ายระบบอาจยาก (Data portability)</li>
+            <li>ต้องดูเรื่องสิทธิ์ข้อมูลและ Privacy/PDPA</li>
+          </ul>
+          <div class="callout" style="margin-top:12px">
+            <div class="icon warn">🔎</div>
+            <div>
+              <div class="hl">คำถาม</div>
+              <div class="muted small">องค์กรควรเก็บ “ข้อมูลสำคัญ” ไว้ที่ไหน? และอะไรคือ “ข้อมูลสำคัญ”?</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `
+  },
+
+  // 12
+  {
+    kicker: "สรุป Service Models",
+    title: "IaaS vs PaaS vs SaaS (เปรียบเทียบ)",
+    subtitle: "เลือกตามบริบท ไม่ใช่เลือกตามความชอบ",
+    body: `
+      <div class="card">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>ด้าน</th>
+              <th>IaaS</th>
+              <th>PaaS</th>
+              <th>SaaS</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td class="hl">Control</td><td>สูงสุด</td><td>ปานกลาง</td><td>ต่ำสุด</td></tr>
+            <tr><td class="hl">Flexibility</td><td>สูงสุด</td><td>ปานกลาง</td><td>ต่ำสุด</td></tr>
+            <tr><td class="hl">Management Effort</td><td>สูงสุด</td><td>ปานกลาง</td><td>ต่ำสุด</td></tr>
+            <tr><td class="hl">Cost Predictability</td><td>ต่ำ</td><td>ปานกลาง</td><td>สูง</td></tr>
+            <tr><td class="hl">Time-to-Deploy</td><td>ช้า</td><td>เร็ว</td><td>ทันที</td></tr>
+            <tr><td class="hl">Customization</td><td>ไม่จำกัด</td><td>จำกัด</td><td>น้อยมาก</td></tr>
+          </tbody>
+        </table>
+
+        <div class="twoCol" style="margin-top:12px">
+          <div class="callout">
+            <div class="icon">🧩</div>
+            <div>
+              <div class="hl">คำถามชวนคิด</div>
+              <div class="muted small">ถ้าโปรเจกต์ของคุณมี “เส้นตาย 1 เดือน” และทีมเล็ก จะเริ่มที่โมเดลไหน?</div>
+            </div>
+          </div>
+          <div class="callout">
+            <div class="icon warn">⚠️</div>
+            <div>
+              <div class="hl">ข้อสังเกต</div>
+              <div class="muted small">บางองค์กรใช้ผสมกัน: Core อยู่ Private, บริการเสริมอยู่ Public (Hybrid)</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `
+  },
+
+  // 13
+  {
+    kicker: "Deployment Models",
+    title: "Public • Private • Hybrid Cloud",
+    subtitle: "เลือกรูปแบบการวางระบบตามความเสี่ยง ข้อกำหนด และงบประมาณ",
+    body: `
+      <div class="grid">
+        <div class="card">
+          <h3>Infographic: Deployment Models</h3>
+          <div class="svgBox">${svg_deployment_models()}</div>
+          <p class="small" style="margin-top:10px">Public: shared resources • Private: dedicated • Hybrid: เชื่อมสองฝั่ง</p>
+        </div>
+        <div class="card soft">
+          <h3>คำถามเลือกโมเดล</h3>
+          <ul>
+            <li>ข้อมูลมีความอ่อนไหวระดับไหน? (PDPA/Compliance)</li>
+            <li>ต้องการ scale เร็วแค่ไหน? (traffic spike?)</li>
+            <li>ทีมมีความพร้อมดูแล infra แค่ไหน?</li>
+            <li>องค์กรรับ vendor lock‑in ได้แค่ไหน?</li>
+          </ul>
+          <div class="callout" style="margin-top:12px">
+            <div class="icon">🧠</div>
+            <div>
+              <div class="hl">ข้อสังเกต</div>
+              <div class="muted small">“Cloud” ไม่ได้เท่ากับ “Public Cloud เสมอไป” — Private Cloud ก็ยังเป็น Cloud ได้</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `
+  },
+
+  // 14
+  {
+    kicker: "Case thinking (ไทย)",
+    title: "ตัวอย่างแนวทาง (มุมคิด)",
+    subtitle: "ทำไมบางองค์กรเลือก Hybrid หรือ Multi-cloud?",
+    body: `
+      <div class="grid">
+        <div class="card">
+          <h3>ตัวอย่างสถานการณ์</h3>
+          <ul>
+            <li><b>ธนาคาร / การเงิน:</b> ข้อมูลสำคัญอยู่ Private เพื่อ Compliance แต่ workload อื่นไป Public</li>
+            <li><b>E‑commerce:</b> ใช้ CDN และ Multi-cloud เพื่อรองรับช่วง Flash Sale</li>
+            <li><b>Real‑time Platform:</b> ใช้ Cloud เพื่อ scale และ geo‑distribution</li>
+          </ul>
+          <div class="callout" style="margin-top:12px">
+            <div class="icon green">🧩</div>
+            <div>
+              <div class="hl">คำถาม</div>
+              <div class="muted small">ถ้าคุณต้องการลด vendor lock‑in จะออกแบบสถาปัตยกรรมอย่างไร?</div>
+            </div>
+          </div>
+        </div>
+        <div class="card soft">
+          <h3>Infographic: Risk vs Speed</h3>
+          <div class="svgBox">${svg_risk_speed()}</div>
+          <p class="small" style="margin-top:10px">แนวคิด: เร็วขึ้นมักมาพร้อมความเสี่ยง/ความซับซ้อนที่เพิ่มขึ้น → ต้องบริหารให้ดี</p>
+        </div>
+      </div>
+    `
+  },
+
+  // 15
+  {
+    kicker: "Part 2 • 12‑Factor App",
+    title: "12‑Factor App คืออะไร?",
+    subtitle: "หลักการ 12 ข้อสำหรับสร้างแอปที่ Deploy/Scale/Port ได้ดีบน Cloud",
+    body: `
+      <div class="split">
+        <div class="card">
+          <h3>เป้าหมายของ 12‑Factor</h3>
+          <ul>
+            <li>Deploy อัตโนมัติได้ง่าย</li>
+            <li>Scale ได้โดยไม่พัง</li>
+            <li>Portable ข้าม Cloud Providers</li>
+            <li>Dev/Prod parity ลด “ทำไมบนเครื่องฉันได้?”</li>
+          </ul>
+          <div class="big-quote">ถ้าออกแบบไม่เป็น 12‑Factor → พอขึ้น Cloud แล้วมักจะเจอปัญหาเร็วมาก</div>
+        </div>
+        <div class="card soft">
+          <h3>คำถามนำเข้า</h3>
+          <ul>
+            <li>เคยเจอ config hardcode ในโค้ดไหม?</li>
+            <li>เคยเก็บ session ใน memory แล้วพอ scale เป็น 2 เครื่อง login หลุดไหม?</li>
+            <li>เคยเขียน log ลงไฟล์ แล้วพอรันใน container หาไฟล์ไม่เจอไหม?</li>
+          </ul>
+          <div class="callout" style="margin-top:12px">
+            <div class="icon warn">⚠️</div>
+            <div>
+              <div class="hl">Insight</div>
+              <div class="muted small">12‑Factor คือ “แนวทางออกแบบแอป” เพื่อให้ Infra สมัยใหม่ทำงานได้เต็มที่</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `
+  },
+
+  // 16
+  {
+    kicker: "12‑Factor Overview (1/2)",
+    title: "12‑Factor (1–6)",
+    subtitle: "Foundation ของ Cloud‑Native App",
+    body: `
+      <div class="grid">
+        <div class="card">
+          <table class="table">
+            <thead><tr><th style="width:34%">Factor</th><th>แนวคิด</th></tr></thead>
+            <tbody>
+              <tr><td class="hl">1. Codebase</td><td>One codebase, many deploys (หนึ่ง repo = หนึ่ง app)</td></tr>
+              <tr><td class="hl">2. Dependencies</td><td>ประกาศ dependency ชัด (เช่น package.json)</td></tr>
+              <tr><td class="hl">3. Config ⭐</td><td>เก็บ config ใน environment (ไม่ hardcode)</td></tr>
+              <tr><td class="hl">4. Backing services ⭐</td><td>DB/Queue/Cache เป็น resource ที่เปลี่ยนได้โดยไม่แก้โค้ด</td></tr>
+              <tr><td class="hl">5. Build/Release/Run</td><td>แยก stage: build → release → run</td></tr>
+              <tr><td class="hl">6. Processes ⭐</td><td>รันแบบ stateless process (ไม่เก็บ state ใน memory/disk ของ app)</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="card soft">
+          <h3>ตัวอย่างปัญหายอดฮิต</h3>
+          <ul>
+            <li><b>Config</b>: key/secret โผล่ใน Git → รั่ว</li>
+            <li><b>Backing services</b>: code ผูกกับ DB เครื่องเดียว → ย้ายระบบลำบาก</li>
+            <li><b>Processes</b>: session เก็บใน memory → scale แล้วผู้ใช้หลุด</li>
+          </ul>
+          <div class="callout" style="margin-top:12px">
+            <div class="icon green">🧩</div>
+            <div>
+              <div class="hl">คำถาม</div>
+              <div class="muted small">ทำไม “Stateless” ช่วยให้ Auto‑scaling ทำงานได้ง่ายขึ้น?</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `
+  },
+
+  // 17
+  {
+    kicker: "12‑Factor Overview (2/2)",
+    title: "12‑Factor (7–12)",
+    subtitle: "พร้อมสำหรับการ Deploy และ Operate",
+    body: `
+      <div class="grid">
+        <div class="card">
+          <table class="table">
+            <thead><tr><th style="width:34%">Factor</th><th>แนวคิด</th></tr></thead>
+            <tbody>
+              <tr><td class="hl">7. Port binding</td><td>App serve ผ่าน port ของตัวเอง (เช่น HTTP)</td></tr>
+              <tr><td class="hl">8. Concurrency</td><td>Scale out ด้วย process model (เพิ่มจำนวน instance)</td></tr>
+              <tr><td class="hl">9. Disposability ⭐</td><td>start/stop เร็ว รองรับการ restart ได้</td></tr>
+              <tr><td class="hl">10. Dev/Prod parity ⭐</td><td>ให้ environment คล้ายกัน ลด “มันพังเฉพาะ prod”</td></tr>
+              <tr><td class="hl">11. Logs ⭐</td><td>ส่ง logs ไป stdout/stderr แล้วให้ platform รวม/จัดเก็บ</td></tr>
+              <tr><td class="hl">12. Admin processes</td><td>งาน admin/run once แยกจาก process หลัก</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="card soft">
+          <h3>Shortcut ที่ควรจำ (5 ข้อสำคัญ)</h3>
+          <ul>
+            <li><span class="hl">Config in ENV</span></li>
+            <li><span class="hl">Stateless Processes</span> (ใช้ Redis/DB แทน memory)</li>
+            <li><span class="hl">Disposability</span> (start/stop เร็ว)</li>
+            <li><span class="hl">Logs to stdout</span> (ไม่เขียนไฟล์)</li>
+            <li><span class="hl">Dev/Prod parity</span> (environment เหมือนกัน)</li>
+          </ul>
+          <div class="callout" style="margin-top:12px">
+            <div class="icon warn">🔎</div>
+            <div>
+              <div class="hl">สังเกต</div>
+              <div class="muted small">หลายข้อ “จะทำได้จริง” เมื่อเราใช้ Containers/Platform ที่เหมาะสม</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `
+  },
+
+  // 18
+  {
+    kicker: "12‑Factor → คุณลักษณะคุณภาพ",
+    title: "12‑Factor ส่งผลต่อ Quality Attributes อย่างไร?",
+    subtitle: "Scalability • Deployability • Reliability • Security",
+    body: `
+      <div class="card">
+        <div class="svgBox">${svg_12factor_to_qa()}</div>
+        <div class="twoCol" style="margin-top:12px">
+          <div class="callout">
+            <div class="icon green">✅</div>
+            <div>
+              <div class="hl">ผลเชิงบวก</div>
+              <div class="muted small">Scale ง่ายขึ้น, Rollback/Deploy เร็วขึ้น, แก้ปัญหาเร็วขึ้นเพราะ log รวมศูนย์</div>
+            </div>
+          </div>
+          <div class="callout">
+            <div class="icon warn">⚠️</div>
+            <div>
+              <div class="hl">Trade-off</div>
+              <div class="muted small">Stateless อาจต้องพึ่งพา backing services มากขึ้น → ต้องดูเรื่อง latency และ cost</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `
+  },
+
+  // 19
+  {
+    kicker: "Part 3 • Containers",
+    title: "Containerization: ทำไมต้องมี?",
+    subtitle: "แก้ปัญหา “Works on my machine” และทำให้ Deploy ซ้ำได้เหมือนกันทุกที่",
+    body: `
+      <div class="split">
+        <div class="card">
+          <h3>แนวคิดสั้น ๆ</h3>
+          <ul>
+            <li>แพ็ก <b>App + Dependencies</b> อยู่ในหน่วยเดียว</li>
+            <li>รันได้เหมือนกันบน Dev/QA/Prod</li>
+            <li>เหมาะกับ Microservices และการ scale แบบแนวนอน</li>
+          </ul>
+          <div class="callout" style="margin-top:12px">
+            <div class="icon green">🔁</div>
+            <div>
+              <div class="hl">เชื่อมกับ 12‑Factor</div>
+              <div class="muted small">Dev/Prod parity, Disposability, Logs — ทำได้ง่ายเมื่อใช้ container platform</div>
+            </div>
+          </div>
+        </div>
+        <div class="card soft">
+          <h3>Infographic: VM vs Container (Stack)</h3>
+          <div class="svgBox">${svg_vm_vs_container()}</div>
+        </div>
+      </div>
+    `
+  },
+
+  // 20
+  {
+    kicker: "VM vs Container (ตาราง)",
+    title: "เปรียบเทียบ Virtual Machines vs Containers",
+    subtitle: "เข้าใจภาพรวมก่อนเลือกใช้จริง",
+    body: `
+      <div class="card">
+        <table class="table">
+          <thead><tr><th style="width:20%">ด้าน</th><th>Virtual Machines</th><th>Containers</th></tr></thead>
+          <tbody>
+            <tr><td class="hl">ขนาด</td><td>GB (รวม Guest OS)</td><td>MB (App + Libs)</td></tr>
+            <tr><td class="hl">Start time</td><td>นาที</td><td>วินาที</td></tr>
+            <tr><td class="hl">Performance</td><td>มี overhead จาก Hypervisor</td><td>ใกล้ native</td></tr>
+            <tr><td class="hl">Isolation</td><td>แข็งแรง (แยก OS)</td><td>ระดับ process (ต้องคุม security เพิ่ม)</td></tr>
+            <tr><td class="hl">Density</td><td>หลักสิบ VM ต่อ host</td><td>หลักร้อย container ต่อ host</td></tr>
+            <tr><td class="hl">Portability</td><td>พอใช้</td><td>สูงมาก</td></tr>
+            <tr><td class="hl">Use case</td><td>Different OS, legacy apps</td><td>Microservices, cloud‑native</td></tr>
+          </tbody>
+        </table>
+        <div class="callout" style="margin-top:12px">
+          <div class="icon warn">🧠</div>
+          <div>
+            <div class="hl">คำถาม</div>
+            <div class="muted small">ระบบแบบไหน “ยังควรใช้ VM” มากกว่า container? (Hint: isolation/OS requirement)</div>
+          </div>
+        </div>
+      </div>
+    `
+  },
+
+  // 21
+  {
+    kicker: "Docker",
+    title: "Docker Overview (Build • Ship • Run)",
+    subtitle: "Container platform ยอดนิยม: image → registry → container",
+    body: `
+      <div class="grid">
+        <div class="card">
+          <h3>Concept ที่ต้องจำ</h3>
+          <ul>
+            <li><span class="hl">Image</span> = Template/Blueprint (read‑only)</li>
+            <li><span class="hl">Container</span> = instance ที่กำลังรัน (มี read‑write layer)</li>
+            <li><span class="hl">Dockerfile</span> = recipe สร้าง image</li>
+            <li><span class="hl">Registry</span> = ที่เก็บ images (เช่น Docker Hub)</li>
+          </ul>
+          <div class="callout" style="margin-top:12px">
+            <div class="icon green">✅</div>
+            <div>
+              <div class="hl">ถ้าคุณทำ CI/CD</div>
+              <div class="muted small">CI จะ build image → push registry → CD ดึง image ไปรันใน environment ต่าง ๆ</div>
+            </div>
+          </div>
+        </div>
+        <div class="card soft">
+          <h3>Infographic: Docker Flow</h3>
+          <div class="svgBox">${svg_docker_flow()}</div>
+        </div>
+      </div>
+    `
+  },
+
+  // 22
+  {
+    kicker: "Dockerfile Example",
+    title: "Dockerfile ตัวอย่าง (Node.js)",
+    subtitle: "อ่านให้เป็น: ทำไมต้อง COPY package ก่อน? ทำไมต้อง EXPOSE?",
+    body: `
+      <div class="split">
+        <div class="card">
+<pre class="code"># Dockerfile สำหรับ Node.js Application
+# ใช้ Node.js 18 บน Alpine Linux (image เล็ก)
+FROM node:18-alpine
+
+# ตั้ง working directory ใน container
+WORKDIR /app
+
+# Copy package files ก่อน (สำหรับ caching)
+COPY package*.json ./
+
+# Install dependencies (production only)
+RUN npm ci --only=production
+
+# Copy source code
+COPY . .
+
+# Document ว่า app ฟังที่ port อะไร
+EXPOSE 3000
+
+# คำสั่งเริ่มต้น app
+CMD ["node", "server.js"]</pre>
+        </div>
+        <div class="card soft">
+          <h3>จุดสังเกต (อ่านแบบสถาปนิก)</h3>
+          <ul>
+            <li><b>Caching layer:</b> COPY package ก่อน → ถ้าโค้ดเปลี่ยนแต่ dependency ไม่เปลี่ยน จะ build เร็วขึ้น</li>
+            <li><b>Immutable:</b> image ควรสร้างซ้ำได้เหมือนเดิม (reproducible)</li>
+            <li><b>Port binding:</b> EXPOSE ทำให้สอดคล้องกับ 12‑Factor</li>
+          </ul>
+          <div class="callout" style="margin-top:12px">
+            <div class="icon warn">🧠</div>
+            <div>
+              <div class="hl">คำถาม</div>
+              <div class="muted small">ถ้าต้องการ dev/prod parity คุณจะทำอย่างไรกับ .env และ config?</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `
+  },
+
+  // 23
+  {
+    kicker: "Docker Commands",
+    title: "คำสั่ง Docker พื้นฐาน (จำให้ได้)",
+    subtitle: "พอสำหรับเข้าใจภาพรวม workflow",
+    body: `
+      <div class="grid">
+        <div class="card">
+<pre class="code"># Build image จาก Dockerfile
+docker build -t myapp:1.0 .
+
+# Run container จาก image
+docker run -d -p 3000:3000 --name myapp myapp:1.0
+
+# ดู containers ที่กำลังรัน
+docker ps
+
+# ดู logs
+docker logs myapp
+
+# หยุด container
+docker stop myapp
+
+# Push image ไป registry
+docker push myregistry/myapp:1.0</pre>
+        </div>
+        <div class="card soft">
+          <h3>Observation</h3>
+          <ul>
+            <li>คำสั่ง “build” ทำให้การ deploy <b>เป็น artefact เดียวกัน</b> ทุก environment</li>
+            <li>logs ควรส่งออก stdout/stderr → ง่ายต่อ platform ที่รวม log</li>
+            <li>การ push ไป registry ทำให้ทีมแชร์ image ได้และเหมาะกับ CI/CD</li>
+          </ul>
+          <div class="callout" style="margin-top:12px">
+            <div class="icon green">✅</div>
+            <div>
+              <div class="hl">Mini Exercise</div>
+              <div class="muted small">ถ้าจะ run แบบ “เปลี่ยน config ตาม env” คุณจะส่ง ENV เข้า container อย่างไร?</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `
+  },
+
+  // 24
+  {
+    kicker: "Kubernetes",
+    title: "ทำไมต้องมี Kubernetes (Orchestration)?",
+    subtitle: "เมื่อมี container “เยอะ” และ “ต้องรันให้เสถียร”",
+    body: `
+      <div class="split">
+        <div class="card">
+          <h3>Kubernetes ช่วยอะไร?</h3>
+          <ul>
+            <li><b>Auto-scaling</b> ตาม load</li>
+            <li><b>Load balancing</b> กระจาย traffic</li>
+            <li><b>Self-healing</b> restart container ที่ล้ม</li>
+            <li><b>Rolling updates</b> ปล่อยเวอร์ชันใหม่แบบ zero‑downtime</li>
+          </ul>
+          <div class="big-quote">คิดแบบง่าย: Docker = “รัน 1 กล่อง” • Kubernetes = “บริหารทั้งเมืองของกล่อง”</div>
+        </div>
+        <div class="card soft">
+          <h3>คำถามก่อนใช้จริง</h3>
+          <ul>
+            <li>ระบบคุณมีหลาย service และต้อง scale แยกกันไหม?</li>
+            <li>ต้องการ uptime สูง (เช่น 99.9%+) ไหม?</li>
+            <li>ทีมพร้อมกับความซับซ้อนเพิ่มขึ้นไหม?</li>
+          </ul>
+          <div class="callout" style="margin-top:12px">
+            <div class="icon warn">⚠️</div>
+            <div>
+              <div class="hl">ข้อสังเกต</div>
+              <div class="muted small">K8s ไม่ใช่คำตอบทุกอย่าง — บางโปรเจกต์เริ่มจาก PaaS/Managed service ง่ายกว่า</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `
+  },
+
+  // 25
+  {
+    kicker: "K8s Architecture (Simplified)",
+    title: "Kubernetes Architecture",
+    subtitle: "Control Plane + Worker Nodes + Pods",
+    body: `
+      <div class="card">
+        <div class="svgBox">${svg_k8s_arch()}</div>
+        <div class="twoCol" style="margin-top:12px">
+          <div class="callout">
+            <div class="icon">🧭</div>
+            <div>
+              <div class="hl">Control Plane ทำหน้าที่</div>
+              <div class="muted small">รับคำสั่ง • จัดวาง pod • คุม state • เก็บ config/state ใน etcd</div>
+            </div>
+          </div>
+          <div class="callout">
+            <div class="icon green">📦</div>
+            <div>
+              <div class="hl">Worker Node ทำหน้าที่</div>
+              <div class="muted small">รัน container จริง • report สถานะ • รับ traffic ผ่าน service/load balancer</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `
+  },
+
+  // 26
+  {
+    kicker: "Deployment Topologies",
+    title: "Basic Deployment Topologies (ภาพรวม)",
+    subtitle: "จากเล็ก → ใหญ่: cost/complexity เพิ่มขึ้นตามความต้องการ",
+    body: `
+      <div class="grid three">
+        <div class="card">
+          <h3>1) Single Server</h3>
+          <ul>
+            <li>เหมาะกับ Dev/Small</li>
+            <li>ง่ายที่สุด</li>
+            <li class="small">ประมาณ $5–20/mo</li>
+          </ul>
+          <div class="svgBox" style="margin-top:10px">${svg_topo_single()}</div>
+        </div>
+        <div class="card">
+          <h3>2) Separated DB</h3>
+          <ul>
+            <li>แยก DB ออก</li>
+            <li>รองรับ prod เล็ก</li>
+            <li class="small">ประมาณ $30–100/mo</li>
+          </ul>
+          <div class="svgBox" style="margin-top:10px">${svg_topo_sepdb()}</div>
+        </div>
+        <div class="card">
+          <h3>3) Load Balanced</h3>
+          <ul>
+            <li>มี LB + หลาย App instance</li>
+            <li>รองรับ HA</li>
+            <li class="small">ประมาณ $200–500/mo</li>
+          </ul>
+          <div class="svgBox" style="margin-top:10px">${svg_topo_lb()}</div>
+        </div>
+      </div>
+      <div class="footer">
+        <div>ENGSE207 • Week 7</div>
+        <div>Topology #4 (Enterprise) อยู่สไลด์ถัดไป</div>
+      </div>
+    `
+  },
+
+  // 27
+  {
+    kicker: "Deployment Topologies (ต่อ)",
+    title: "Full Production / Enterprise Topology",
+    subtitle: "หลาย AZ/Region + Managed Services + Observability",
+    body: `
+      <div class="split">
+        <div class="card">
+          <h3>4) Full Production</h3>
+          <ul>
+            <li>Multi‑AZ / redundancy</li>
+            <li>Managed DB + Cache + Message Broker</li>
+            <li>Monitoring/Logging/Tracing</li>
+            <li class="small">ประมาณ $500–5000+/mo (ขึ้นกับ scale)</li>
+          </ul>
+          <div class="callout" style="margin-top:12px">
+            <div class="icon warn">⚖️</div>
+            <div>
+              <div class="hl">Trade-offs ที่ต้องคิด</div>
+              <div class="muted small">Complexity สูงขึ้นมาก แต่ได้ Availability/Scalability เพิ่ม</div>
+            </div>
+          </div>
+        </div>
+        <div class="card soft">
+          <h3>Infographic: Full Production</h3>
+          <div class="svgBox">${svg_topo_full()}</div>
+        </div>
+      </div>
+    `
+  },
+
+  // 28
+  {
+    kicker: "Decision Tree",
+    title: "เลือก Topology แบบเป็นเหตุเป็นผล",
+    subtitle: "เริ่มจาก requirement ก่อน แล้วค่อยเลือกโครงสร้าง",
+    body: `
+      <div class="card">
+        <div class="svgBox">${svg_decision_tree()}</div>
+        <div class="twoCol" style="margin-top:12px">
+          <div class="callout">
+            <div class="icon">🧠</div>
+            <div>
+              <div class="hl">คำถาม</div>
+              <div class="muted small">ถ้า “ต้อง 99.9% uptime” แต่ “งบน้อย” คุณจะทำอย่างไร?</div>
+            </div>
+          </div>
+          <div class="callout">
+            <div class="icon green">📝</div>
+            <div>
+              <div class="hl">เชื่อมกับ ADR</div>
+              <div class="muted small">ให้เขียน ADR อธิบายว่าทำไมเลือก topology นี้และยอมรับ trade-off อะไร</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `
+  },
+
+  // 29
+  {
+    kicker: "Lab (3 ชั่วโมง)",
+    title: "เตรียมตัวสำหรับ Lab: 3 งานหลัก",
+    subtitle: "จาก diagram → วิเคราะห์ → ประเมิน",
+    body: `
+      <div class="grid three">
+        <div class="card">
+          <h3>Lab 1 (90 นาที)</h3>
+          <p class="muted">Cloud Architecture Diagram</p>
+          <ul>
+            <li>วาด Deployment Diagram ของ <b>Task Board System</b></li>
+            <li>ประกอบด้วย: Web App, API, DB, Broker, Cache</li>
+            <li>ใช้ Cloud Icons ใน Draw.io</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Lab 2 (60 นาที)</h3>
+          <p class="muted">Topology Analysis</p>
+          <ul>
+            <li>วิเคราะห์ trade-offs ของแต่ละ topology</li>
+            <li>เลือก topology ที่เหมาะกับ requirements</li>
+            <li>เขียน <b>ADR</b> สำหรับการตัดสินใจ</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Lab 3 (30 นาที)</h3>
+          <p class="muted">Capacity Estimation</p>
+          <ul>
+            <li>ประเมิน latency/throughput คร่าว ๆ</li>
+            <li>เลือกขนาด resources</li>
+            <li>คำนวณค่าใช้จ่ายโดยประมาณ</li>
+          </ul>
+        </div>
+      </div>
+      <div class="callout" style="margin-top:14px">
+        <div class="icon green">✅</div>
+        <div>
+          <div class="hl">Deliverables ที่ควรมี</div>
+          <div class="muted small">1) Diagram 1 หน้า • 2) ADR 1 ฉบับ • 3) ตารางประเมิน capacity/cost แบบสั้น ๆ</div>
+        </div>
+      </div>
+    `
+  },
+
+  // 30
+  {
+    kicker: "Key Takeaways",
+    title: "สรุปสิ่งที่เรียนวันนี้",
+    subtitle: "4 แกน: Service Models • 12‑Factor • Containers • Topologies",
+    body: `
+      <div class="grid">
+        <div class="card">
+          <h3>Key Takeaways</h3>
+          <ul>
+            <li><b>Service Models:</b> IaaS/PaaS/SaaS → เลือกตาม control vs effort</li>
+            <li><b>12‑Factor:</b> Config in ENV • Stateless • Disposability • Logs • Dev/Prod parity</li>
+            <li><b>Containers:</b> Lightweight กว่า VM และ portable มาก</li>
+            <li><b>Topologies:</b> เลือกตาม requirement, scale, uptime, cost</li>
+          </ul>
+          <div class="big-quote">เป้าหมาย: Deploy ได้จริง + อธิบายเหตุผลของการเลือกได้ (Architecture + Rationale)</div>
+        </div>
+        <div class="card soft">
+          <h3>คำถามท้ายคาบ (Discussion)</h3>
+          <ul>
+            <li>Monolith บน Cloud = Cloud‑Native ไหม? เพราะอะไร?</li>
+            <li>ถ้าต้องการลด cost คุณจะปรับที่ “สถาปัตยกรรม” หรือ “การตั้งค่า infra” ก่อน?</li>
+            <li>อะไรคือสัญญาณว่า “ระบบต้องย้ายจาก Single Server ไป Load Balanced”?</li>
+          </ul>
+          <div class="callout" style="margin-top:12px">
+            <div class="icon warn">📝</div>
+            <div>
+              <div class="hl">การบ้าน (ถ้าต้องการ)</div>
+              <div class="muted small">เลือก 1 ระบบที่คุ้นเคย (เช่น e‑commerce) แล้วตอบ: จะเลือก IaaS/PaaS/SaaS + topology อะไร และทำ ADR 1 หน้า</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `
+  },
+
+  // 31
+  {
+    kicker: "สอบกลางภาค",
+    title: "Midterm Examination (ครอบคลุม สัปดาห์ 1–7)",
+    subtitle: "ข้อเขียนเน้นแนวคิด ~60% • ปฏิบัติ ~40%",
+    body: `
+      <div class="card">
+        <table class="table">
+          <thead><tr><th style="width:12%">สัปดาห์</th><th>หัวข้อ</th><th style="width:14%">น้ำหนัก</th></tr></thead>
+          <tbody>
+            <tr><td class="hl">1</td><td>บทนำ Software Architecture</td><td>10%</td></tr>
+            <tr><td class="hl">2</td><td>Quality Attributes & Drivers</td><td>15%</td></tr>
+            <tr><td class="hl">3–4</td><td>Architectural Styles & Patterns</td><td>25%</td></tr>
+            <tr><td class="hl">5</td><td>C4 Model</td><td>20%</td></tr>
+            <tr><td class="hl">6</td><td>ADD‑Lite & ADR</td><td>15%</td></tr>
+            <tr><td class="hl">7</td><td>Cloud & Containerization</td><td>15%</td></tr>
+          </tbody>
+        </table>
+        <div class="twoCol" style="margin-top:12px">
+          <div class="callout">
+            <div class="icon">📌</div>
+            <div>
+              <div class="hl">แนวข้อสอบ (ตัวอย่าง)</div>
+              <div class="muted small">อธิบาย/เปรียบเทียบ IaaS vs PaaS + วิเคราะห์ topology ตาม requirement + อ่าน diagram แล้วชี้ trade-off</div>
+            </div>
+          </div>
+          <div class="callout">
+            <div class="icon green">✅</div>
+            <div>
+              <div class="hl">เตรียมตัว</div>
+              <div class="muted small">ฝึก “พูดเหตุผลเชิงสถาปัตยกรรม” มากกว่า “ท่องจำคำศัพท์”</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `
+  },
+
+  // 32
+  {
+    kicker: "จบสัปดาห์ที่ 7",
+    title: "Q&A และเตรียมพบกันใน Lab 🚀",
+    subtitle: "กด T เพื่อเปิดสารบัญและเลือกกลับไปทบทวนสไลด์ใดก็ได้",
+    body: `
+      <div class="split">
+        <div class="card">
+          <h3>Checklist ก่อนเข้าห้อง Lab</h3>
+          <ul>
+            <li>จำ NIST 5 characteristics ได้</li>
+            <li>อธิบาย IaaS/PaaS/SaaS แบบ “ใครดูแลอะไร” ได้</li>
+            <li>รู้ 12‑Factor “5 ข้อสำคัญ” และยกตัวอย่าง anti‑pattern ได้</li>
+            <li>บอกความต่าง VM vs Container ได้</li>
+            <li>เลือก topology แบบมีเหตุผล + พร้อมเขียน ADR</li>
+          </ul>
+          <div class="big-quote">“Architecture ที่ดี” = อธิบายได้ + Deploy ได้ + เปลี่ยนได้</div>
+        </div>
+        <div class="card soft">
+          <h3>Quick Poll (ยกมือ)</h3>
+          <ul>
+            <li>เคยใช้ Docker แล้วกี่คน?</li>
+            <li>เคย deploy ขึ้น cloud จริง ๆ แล้วกี่คน?</li>
+            <li>อยากทำระบบแบบไหน: web app / mobile / data / realtime?</li>
+          </ul>
+          <div class="callout" style="margin-top:12px">
+            <div class="icon">💬</div>
+            <div>
+              <div class="hl">คำถามเปิดท้ายคาบ</div>
+              <div class="muted small">ถ้าคุณต้องเลือก “1 สิ่ง” ที่จะทำให้ระบบคุณ Cloud‑ready ที่สุด คุณจะเลือกข้อไหนของ 12‑Factor?</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `
+  }
+];
+
+/* ---------- SVG Infographics (inline) ---------- */
+function svg_add_lite(){
+  return `
+  <svg viewBox="0 0 900 320" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="ADD-Lite process">
+    <defs>
+      <linearGradient id="g1" x1="0" x2="1">
+        <stop offset="0" stop-color="rgba(124,58,237,.95)"/>
+        <stop offset="1" stop-color="rgba(34,197,94,.95)"/>
+      </linearGradient>
+      <filter id="sh" x="-20%" y="-20%" width="140%" height="140%">
+        <feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="rgba(0,0,0,.35)"/>
+      </filter>
+    </defs>
+    <rect x="20" y="20" width="860" height="280" rx="22" fill="rgba(255,255,255,.06)" stroke="rgba(255,255,255,.16)"/>
+    ${stepBox(60,70,"1","Gather\nRequirements")}
+    ${arrow(220,110)}
+    ${stepBox(250,70,"2","Identify\nArchitectural\nDrivers")}
+    ${arrow(410,110)}
+    ${stepBox(440,70,"3","Design\n(ADD‑Lite)")}
+    ${arrow(600,110)}
+    ${stepBox(630,70,"4","Evaluate &\nCompare\nCandidates")}
+    ${arrow(790,110)}
+    ${stepBox(820,70,"5","Document\n(ADR)")}
+    <text x="60" y="265" font-size="18" fill="rgba(255,255,255,.72)">
+      แนวคิด: สร้างตัวเลือก (candidates) แล้วตัดสินใจแบบมีเหตุผล + บันทึกไว้
+    </text>
+  </svg>`;
+
+  function stepBox(x,y,num,label){
+    const w=150,h=150;
+    return `
+      <g filter="url(#sh)">
+        <rect x="${x}" y="${y}" width="${w}" height="${h}" rx="18" fill="rgba(0,0,0,.20)" stroke="rgba(255,255,255,.18)"/>
+        <circle cx="${x+26}" cy="${y+26}" r="18" fill="url(#g1)"/>
+        <text x="${x+26}" y="${y+32}" text-anchor="middle" font-size="16" font-weight="800" fill="white">${num}</text>
+        <text x="${x+w/2}" y="${y+74}" text-anchor="middle" font-size="18" font-weight="700" fill="rgba(255,255,255,.92)">
+          ${label.split("\n")[0]}
+        </text>
+        ${label.split("\n").slice(1).map((t,i)=>`<text x="${x+w/2}" y="${y+98+i*22}" text-anchor="middle" font-size="16" fill="rgba(255,255,255,.70)">${t}</text>`).join("")}
+      </g>
+    `;
+  }
+  function arrow(x,y){
+    return `<path d="M ${x} ${y} L ${x+40} ${y}" stroke="rgba(255,255,255,.45)" stroke-width="6" stroke-linecap="round"/><path d="M ${x+32} ${y-10} L ${x+46} ${y} L ${x+32} ${y+10}" fill="none" stroke="rgba(255,255,255,.45)" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>`;
+  }
+}
+
+function svg_bridge_design_deploy(){
+  return `
+  <svg viewBox="0 0 900 340" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Design to Deploy bridge">
+    <defs>
+      <linearGradient id="g2" x1="0" x2="1">
+        <stop offset="0" stop-color="rgba(124,58,237,.9)"/>
+        <stop offset="1" stop-color="rgba(59,130,246,.9)"/>
+      </linearGradient>
+      <linearGradient id="g3" x1="0" x2="1">
+        <stop offset="0" stop-color="rgba(59,130,246,.9)"/>
+        <stop offset="1" stop-color="rgba(34,197,94,.9)"/>
+      </linearGradient>
+    </defs>
+    <rect x="20" y="20" width="860" height="300" rx="22" fill="rgba(255,255,255,.06)" stroke="rgba(255,255,255,.16)"/>
+    <g>
+      <rect x="70" y="70" width="300" height="200" rx="22" fill="rgba(0,0,0,.18)" stroke="rgba(255,255,255,.16)"/>
+      <text x="220" y="115" text-anchor="middle" font-size="24" font-weight="800" fill="rgba(255,255,255,.92)">Week 6</text>
+      <text x="220" y="145" text-anchor="middle" font-size="18" fill="rgba(255,255,255,.72)">ออกแบบ Architecture</text>
+      <g>
+        <rect x="105" y="175" width="230" height="65" rx="18" fill="url(#g2)" opacity="0.95"/>
+        <text x="220" y="205" text-anchor="middle" font-size="18" font-weight="800" fill="white">ADD‑Lite + ADR</text>
+        <text x="220" y="230" text-anchor="middle" font-size="14" fill="rgba(255,255,255,.92)">Drivers → Candidates → Decisions</text>
+      </g>
+    </g>
+
+    <g>
+      <rect x="530" y="70" width="300" height="200" rx="22" fill="rgba(0,0,0,.18)" stroke="rgba(255,255,255,.16)"/>
+      <text x="680" y="115" text-anchor="middle" font-size="24" font-weight="800" fill="rgba(255,255,255,.92)">Week 7</text>
+      <text x="680" y="145" text-anchor="middle" font-size="18" fill="rgba(255,255,255,.72)">Deploy บน Cloud</text>
+      <g>
+        <rect x="565" y="175" width="230" height="65" rx="18" fill="url(#g3)" opacity="0.95"/>
+        <text x="680" y="205" text-anchor="middle" font-size="18" font-weight="800" fill="white">Cloud + Containers</text>
+        <text x="680" y="230" text-anchor="middle" font-size="14" fill="rgba(255,255,255,.92)">IaaS/PaaS • 12‑Factor • Topology</text>
+      </g>
+    </g>
+
+    <path d="M 395 170 C 450 170, 450 170, 505 170" stroke="rgba(255,255,255,.55)" stroke-width="8" fill="none" stroke-linecap="round"/>
+    <path d="M 495 150 L 520 170 L 495 190" stroke="rgba(255,255,255,.55)" stroke-width="8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="450" y="205" text-anchor="middle" font-size="14" fill="rgba(255,255,255,.65)">จากแบบ → ไปสู่ของจริง</text>
+  </svg>
+  `;
+}
+
+function svg_onprem_vs_cloud(){
+  return `
+  <svg viewBox="0 0 900 360" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="On-prem vs Cloud">
+    <defs>
+      <linearGradient id="g4" x1="0" x2="1">
+        <stop offset="0" stop-color="rgba(245,158,11,.85)"/>
+        <stop offset="1" stop-color="rgba(239,68,68,.85)"/>
+      </linearGradient>
+      <linearGradient id="g5" x1="0" x2="1">
+        <stop offset="0" stop-color="rgba(124,58,237,.9)"/>
+        <stop offset="1" stop-color="rgba(34,197,94,.9)"/>
+      </linearGradient>
+    </defs>
+    <rect x="20" y="20" width="860" height="320" rx="22" fill="rgba(255,255,255,.06)" stroke="rgba(255,255,255,.16)"/>
+    <g>
+      <rect x="60" y="70" width="360" height="230" rx="20" fill="rgba(0,0,0,.18)" stroke="rgba(255,255,255,.16)"/>
+      <text x="240" y="110" text-anchor="middle" font-size="22" font-weight="800" fill="rgba(255,255,255,.92)">On‑Premises</text>
+      <text x="240" y="138" text-anchor="middle" font-size="14" fill="rgba(255,255,255,.62)">ซื้อ/ดูแลเองทั้งหมด</text>
+      ${miniStack(100,170, "คุณดูแล", ["Servers","Network","Storage","DB","OS","Runtime","App"], "url(#g4)")}
+    </g>
+    <g>
+      <rect x="480" y="70" width="360" height="230" rx="20" fill="rgba(0,0,0,.18)" stroke="rgba(255,255,255,.16)"/>
+      <text x="660" y="110" text-anchor="middle" font-size="22" font-weight="800" fill="rgba(255,255,255,.92)">Cloud</text>
+      <text x="660" y="138" text-anchor="middle" font-size="14" fill="rgba(255,255,255,.62)">ขอใช้ได้ทันที • จ่ายตามใช้</text>
+      ${miniStack(520,170, "แบ่งความรับผิดชอบ", ["Networking","Storage","Servers","Virtualization"], "url(#g5)", true)}
+    </g>
+    <path d="M 430 185 L 470 185" stroke="rgba(255,255,255,.50)" stroke-width="8" stroke-linecap="round"/>
+    <path d="M 455 165 L 475 185 L 455 205" fill="none" stroke="rgba(255,255,255,.50)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="450" y="245" text-anchor="middle" font-size="13" fill="rgba(255,255,255,.62)">เปลี่ยน CAPEX → OPEX</text>
+  </svg>
+  `;
+  function miniStack(x,y,title,items,fill,cloud=false){
+    const w=280, h=34;
+    return `
+      <text x="${x+w/2}" y="${y-16}" text-anchor="middle" font-size="15" fill="rgba(255,255,255,.72)">${title}</text>
+      ${items.map((t,i)=>`
+        <rect x="${x}" y="${y+i*(h+6)}" width="${w}" height="${h}" rx="12" fill="${fill}" opacity="${cloud? 0.55:0.72}"/>
+        <text x="${x+14}" y="${y+i*(h+6)+22}" font-size="14" fill="rgba(255,255,255,.92)" font-weight="700">${t}</text>
+      `).join("")}
+    `;
+  }
+}
+
+function svg_nist_5(){
+  return `
+  <svg viewBox="0 0 900 360" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="NIST 5 characteristics">
+    <defs>
+      <linearGradient id="g6" x1="0" x2="1">
+        <stop offset="0" stop-color="rgba(124,58,237,.95)"/>
+        <stop offset="1" stop-color="rgba(34,197,94,.95)"/>
+      </linearGradient>
+    </defs>
+    <rect x="20" y="20" width="860" height="320" rx="22" fill="rgba(255,255,255,.06)" stroke="rgba(255,255,255,.16)"/>
+    <text x="450" y="70" text-anchor="middle" font-size="22" font-weight="900" fill="rgba(255,255,255,.92)">NIST • 5 Essential Characteristics</text>
+    ${nistRow(90,105,"1","On‑demand Self‑service","ขอใช้ทรัพยากรได้เองอัตโนมัติ")}
+    ${nistRow(90,155,"2","Broad Network Access","เข้าถึงได้จากทุกที่ ทุกอุปกรณ์")}
+    ${nistRow(90,205,"3","Resource Pooling","รวมทรัพยากรแบบ multi‑tenant")}
+    ${nistRow(90,255,"4","Rapid Elasticity","ขยาย/ลดทรัพยากรได้รวดเร็ว")}
+    ${nistRow(90,305,"5","Measured Service","วัดการใช้ จ่ายตามจริง")}
+  </svg>`;
+  function nistRow(x,y,num,title,desc){
+    return `
+      <g>
+        <circle cx="${x}" cy="${y-6}" r="18" fill="url(#g6)"/>
+        <text x="${x}" y="${y}" text-anchor="middle" font-size="16" font-weight="900" fill="white">${num}</text>
+        <text x="${x+30}" y="${y}" font-size="18" font-weight="800" fill="rgba(255,255,255,.92)">${title}</text>
+        <text x="${x+30}" y="${y+22}" font-size="14" fill="rgba(255,255,255,.65)">${desc}</text>
+      </g>
+    `;
+  }
+}
+
+function svg_pizza_models(){
+  return `
+  <svg viewBox="0 0 900 360" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Pizza as a Service model">
+    <defs>
+      <linearGradient id="g7" x1="0" x2="1">
+        <stop offset="0" stop-color="rgba(124,58,237,.9)"/>
+        <stop offset="1" stop-color="rgba(59,130,246,.9)"/>
+      </linearGradient>
+      <linearGradient id="g8" x1="0" x2="1">
+        <stop offset="0" stop-color="rgba(34,197,94,.9)"/>
+        <stop offset="1" stop-color="rgba(245,158,11,.85)"/>
+      </linearGradient>
+    </defs>
+    <rect x="20" y="20" width="860" height="320" rx="22" fill="rgba(255,255,255,.06)" stroke="rgba(255,255,255,.16)"/>
+    <text x="450" y="70" text-anchor="middle" font-size="22" font-weight="900" fill="rgba(255,255,255,.92)">"Pizza as a Service" Analogy</text>
+    ${col(80,105,"On‑Prem","ทำเองทั้งหมด","🍳")}
+    ${col(285,105,"IaaS","ซื้อวัตถุดิบ/เตา","🧱")}
+    ${col(490,105,"PaaS","ซื้อพิซซ่าสำเร็จ","🍕")}
+    ${col(695,105,"SaaS","กินที่ร้าน","🏪")}
+  </svg>`;
+  function col(x,y,title,desc,emoji){
+    return `
+      <g>
+        <rect x="${x}" y="${y}" width="170" height="210" rx="18" fill="rgba(0,0,0,.18)" stroke="rgba(255,255,255,.14)"/>
+        <text x="${x+85}" y="${y+44}" text-anchor="middle" font-size="24" font-weight="900" fill="white">${emoji}</text>
+        <text x="${x+85}" y="${y+82}" text-anchor="middle" font-size="18" font-weight="900" fill="rgba(255,255,255,.92)">${title}</text>
+        <text x="${x+85}" y="${y+108}" text-anchor="middle" font-size="13" fill="rgba(255,255,255,.64)">${desc}</text>
+        <rect x="${x+18}" y="${y+132}" width="134" height="12" rx="6" fill="url(#g7)" opacity=".8"/>
+        <rect x="${x+18}" y="${y+154}" width="${title==='On‑Prem'?134: title==='IaaS'?110: title==='PaaS'?70:40}" height="12" rx="6" fill="url(#g8)" opacity=".85"/>
+        <text x="${x+85}" y="${y+196}" text-anchor="middle" font-size="12" fill="rgba(255,255,255,.60)">
+          ${title==='On‑Prem'?'Control สูงสุด': title==='SaaS'?'Deploy ทันที':'Balance'}
+        </text>
+      </g>
+    `;
+  }
+}
+
+function svg_deployment_models(){
+  return `
+  <svg viewBox="0 0 900 360" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Cloud deployment models">
+    <defs>
+      <linearGradient id="g9" x1="0" x2="1">
+        <stop offset="0" stop-color="rgba(59,130,246,.9)"/>
+        <stop offset="1" stop-color="rgba(124,58,237,.9)"/>
+      </linearGradient>
+      <linearGradient id="g10" x1="0" x2="1">
+        <stop offset="0" stop-color="rgba(34,197,94,.9)"/>
+        <stop offset="1" stop-color="rgba(245,158,11,.85)"/>
+      </linearGradient>
+    </defs>
+    <rect x="20" y="20" width="860" height="320" rx="22" fill="rgba(255,255,255,.06)" stroke="rgba(255,255,255,.16)"/>
+    <text x="450" y="70" text-anchor="middle" font-size="22" font-weight="900" fill="rgba(255,255,255,.92)">Cloud Deployment Models</text>
+    ${dm(85,110,"Public Cloud","AWS • Azure • GCP","☁️", "url(#g9)")}
+    ${dm(365,110,"Private Cloud","On‑prem • VMware","🏢", "url(#g10)")}
+    ${dm(645,110,"Hybrid Cloud","Public + Private","🔗", "url(#g9)")}
+    <path d="M 530 220 L 610 220" stroke="rgba(255,255,255,.55)" stroke-width="8" stroke-linecap="round"/>
+    <path d="M 596 200 L 620 220 L 596 240" fill="none" stroke="rgba(255,255,255,.55)" stroke-width="8" stroke-linejoin="round" stroke-linecap="round"/>
+  </svg>
+  `;
+  function dm(x,y,title,desc,emoji,fill){
+    return `
+      <g>
+        <rect x="${x}" y="${y}" width="220" height="190" rx="18" fill="rgba(0,0,0,.18)" stroke="rgba(255,255,255,.14)"/>
+        <circle cx="${x+44}" cy="${y+52}" r="24" fill="${fill}" opacity=".85"/>
+        <text x="${x+44}" y="${y+60}" text-anchor="middle" font-size="22" fill="white">${emoji}</text>
+        <text x="${x+110}" y="${y+56}" text-anchor="middle" font-size="18" font-weight="900" fill="rgba(255,255,255,.92)">${title}</text>
+        <text x="${x+110}" y="${y+86}" text-anchor="middle" font-size="13" fill="rgba(255,255,255,.64)">${desc}</text>
+        <rect x="${x+22}" y="${y+114}" width="176" height="14" rx="7" fill="${fill}" opacity=".55"/>
+        <rect x="${x+22}" y="${y+138}" width="${title==='Public Cloud'?156: title==='Private Cloud'?118:142}" height="14" rx="7" fill="${fill}" opacity=".80"/>
+        <text x="${x+110}" y="${y+172}" text-anchor="middle" font-size="12" fill="rgba(255,255,255,.60)">${title==='Private Cloud'?'Control/Compliance สูง':'Scale/Speed สูง'}</text>
+      </g>
+    `;
+  }
+}
+
+function svg_risk_speed(){
+  return `
+  <svg viewBox="0 0 900 360" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Risk vs Speed">
+    <defs>
+      <linearGradient id="g11" x1="0" x2="1">
+        <stop offset="0" stop-color="rgba(34,197,94,.95)"/>
+        <stop offset="1" stop-color="rgba(239,68,68,.90)"/>
+      </linearGradient>
+    </defs>
+    <rect x="20" y="20" width="860" height="320" rx="22" fill="rgba(255,255,255,.06)" stroke="rgba(255,255,255,.16)"/>
+    <text x="450" y="70" text-anchor="middle" font-size="22" font-weight="900" fill="rgba(255,255,255,.92)">Speed vs Risk/Complexity</text>
+    <line x1="110" y1="275" x2="820" y2="275" stroke="rgba(255,255,255,.25)" stroke-width="2"/>
+    <line x1="110" y1="275" x2="110" y2="95" stroke="rgba(255,255,255,.25)" stroke-width="2"/>
+    <path d="M 130 255 C 270 240, 360 220, 470 185 C 580 150, 675 135, 800 110" stroke="url(#g11)" stroke-width="10" fill="none" stroke-linecap="round"/>
+    ${point(160,252,"On‑Prem")}
+    ${point(300,235,"Private")}
+    ${point(470,185,"Hybrid")}
+    ${point(650,140,"Public")}
+    ${point(790,112,"Multi‑cloud")}
+    <text x="820" y="300" text-anchor="end" font-size="13" fill="rgba(255,255,255,.62)">Speed/Elasticity →</text>
+    <text x="95" y="100" text-anchor="start" font-size="13" fill="rgba(255,255,255,.62)" transform="rotate(-90 95 100)">Risk/Complexity ↑</text>
+  </svg>`;
+  function point(x,y,label){
+    return `
+      <g>
+        <circle cx="${x}" cy="${y}" r="8" fill="rgba(255,255,255,.92)"/>
+        <circle cx="${x}" cy="${y}" r="16" fill="rgba(255,255,255,.12)"/>
+        <text x="${x}" y="${y-16}" text-anchor="middle" font-size="12" fill="rgba(255,255,255,.72)">${label}</text>
+      </g>
+    `;
+  }
+}
+
+function svg_12factor_to_qa(){
+  return `
+  <svg viewBox="0 0 900 360" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="12-factor to quality attributes">
+    <defs>
+      <linearGradient id="g12" x1="0" x2="1">
+        <stop offset="0" stop-color="rgba(124,58,237,.95)"/>
+        <stop offset="1" stop-color="rgba(34,197,94,.95)"/>
+      </linearGradient>
+    </defs>
+    <rect x="20" y="20" width="860" height="320" rx="22" fill="rgba(255,255,255,.06)" stroke="rgba(255,255,255,.16)"/>
+    <text x="450" y="70" text-anchor="middle" font-size="22" font-weight="900" fill="rgba(255,255,255,.92)">12‑Factor → Quality Attributes</text>
+
+    <g>
+      <rect x="60" y="100" width="360" height="220" rx="20" fill="rgba(0,0,0,.18)" stroke="rgba(255,255,255,.14)"/>
+      <text x="240" y="130" text-anchor="middle" font-size="16" font-weight="900" fill="rgba(255,255,255,.92)">12‑Factor (ตัวอย่างสำคัญ)</text>
+      ${pill(95,150,"Config in ENV")}
+      ${pill(95,192,"Stateless Processes")}
+      ${pill(95,234,"Logs to stdout")}
+      ${pill(95,276,"Dev/Prod parity")}
+    </g>
+
+    <g>
+      <rect x="480" y="100" width="360" height="220" rx="20" fill="rgba(0,0,0,.18)" stroke="rgba(255,255,255,.14)"/>
+      <text x="660" y="130" text-anchor="middle" font-size="16" font-weight="900" fill="rgba(255,255,255,.92)">Quality Attributes ที่ดีขึ้น</text>
+      ${qa(515,160,"Scalability")}
+      ${qa(515,200,"Deployability")}
+      ${qa(515,240,"Reliability")}
+      ${qa(515,280,"Security")}
+    </g>
+
+    <path d="M 420 175 C 455 175, 455 175, 480 175" stroke="url(#g12)" stroke-width="10" fill="none" stroke-linecap="round"/>
+    <path d="M 420 235 C 455 235, 455 235, 480 235" stroke="url(#g12)" stroke-width="10" fill="none" stroke-linecap="round"/>
+  </svg>`;
+
+  function pill(x,y,text){
+    return `
+      <g>
+        <rect x="${x}" y="${y}" width="290" height="34" rx="17" fill="rgba(124,58,237,.22)" stroke="rgba(124,58,237,.35)"/>
+        <text x="${x+145}" y="${y+23}" text-anchor="middle" font-size="13" font-weight="800" fill="rgba(255,255,255,.92)">${text}</text>
+      </g>
+    `;
+  }
+  function qa(x,y,text){
+    return `
+      <g>
+        <rect x="${x}" y="${y}" width="290" height="34" rx="17" fill="rgba(34,197,94,.18)" stroke="rgba(34,197,94,.35)"/>
+        <text x="${x+145}" y="${y+23}" text-anchor="middle" font-size="13" font-weight="800" fill="rgba(255,255,255,.92)">${text}</text>
+      </g>
+    `;
+  }
+}
+
+function svg_vm_vs_container(){
+  return `
+  <svg viewBox="0 0 900 360" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="VM vs Container stack">
+    <defs>
+      <linearGradient id="g13" x1="0" x2="1">
+        <stop offset="0" stop-color="rgba(245,158,11,.9)"/>
+        <stop offset="1" stop-color="rgba(239,68,68,.85)"/>
+      </linearGradient>
+      <linearGradient id="g14" x1="0" x2="1">
+        <stop offset="0" stop-color="rgba(59,130,246,.9)"/>
+        <stop offset="1" stop-color="rgba(34,197,94,.9)"/>
+      </linearGradient>
+    </defs>
+    <rect x="20" y="20" width="860" height="320" rx="22" fill="rgba(255,255,255,.06)" stroke="rgba(255,255,255,.16)"/>
+    <text x="450" y="70" text-anchor="middle" font-size="22" font-weight="900" fill="rgba(255,255,255,.92)">VM vs Container (Stack)</text>
+
+    ${stack(80,110,"Virtual Machines","Hypervisor", "url(#g13)", ["App","Libs","Guest OS","VM"] )}
+    ${stack(520,110,"Containers","Container Runtime", "url(#g14)", ["App","Libs","Container"] )}
+
+    <path d="M 450 170 L 450 250" stroke="rgba(255,255,255,.22)" stroke-width="2"/>
+  </svg>`;
+
+  function stack(x,y,title,mid,fill,items){
+    const boxW=300, boxH=200;
+    const layers = items.length;
+    const layerH = (boxH-70)/layers;
+    return `
+      <g>
+        <rect x="${x}" y="${y}" width="${boxW}" height="${boxH}" rx="20" fill="rgba(0,0,0,.18)" stroke="rgba(255,255,255,.14)"/>
+        <text x="${x+150}" y="${y+34}" text-anchor="middle" font-size="16" font-weight="900" fill="rgba(255,255,255,.92)">${title}</text>
+        <text x="${x+150}" y="${y+54}" text-anchor="middle" font-size="12" fill="rgba(255,255,255,.62)">${mid}</text>
+        ${items.map((t,i)=>`
+          <rect x="${x+24}" y="${y+70+i*layerH}" width="${boxW-48}" height="${layerH-8}" rx="14" fill="${fill}" opacity="${0.25 + i*0.12}"/>
+          <text x="${x+40}" y="${y+70+i*layerH + (layerH-8)/2 + 5}" font-size="13" font-weight="800" fill="rgba(255,255,255,.90)">${t}</text>
+        `).join("")}
+      </g>
+    `;
+  }
+}
+
+function svg_docker_flow(){
+  return `
+  <svg viewBox="0 0 900 360" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Docker flow">
+    <defs>
+      <linearGradient id="g15" x1="0" x2="1">
+        <stop offset="0" stop-color="rgba(59,130,246,.9)"/>
+        <stop offset="1" stop-color="rgba(124,58,237,.9)"/>
+      </linearGradient>
+      <linearGradient id="g16" x1="0" x2="1">
+        <stop offset="0" stop-color="rgba(34,197,94,.9)"/>
+        <stop offset="1" stop-color="rgba(245,158,11,.85)"/>
+      </linearGradient>
+    </defs>
+    <rect x="20" y="20" width="860" height="320" rx="22" fill="rgba(255,255,255,.06)" stroke="rgba(255,255,255,.16)"/>
+    <text x="450" y="70" text-anchor="middle" font-size="22" font-weight="900" fill="rgba(255,255,255,.92)">Docker: Build → Ship → Run</text>
+    ${node(80,125,"Developer","เขียนโค้ด + Dockerfile","👨‍💻","url(#g15)")}
+    ${arrow2(270,180)}
+    ${node(310,125,"Build Image","docker build","📦","url(#g15)")}
+    ${arrow2(500,180)}
+    ${node(540,125,"Registry","push/pull images","🏷️","url(#g16)")}
+    ${arrow2(730,180)}
+    ${node(770,125,"Run Container","docker run","🐳","url(#g16)")}
+  </svg>`;
+  function node(x,y,title,desc,emoji,fill){
+    return `
+      <g>
+        <rect x="${x}" y="${y}" width="170" height="130" rx="18" fill="rgba(0,0,0,.18)" stroke="rgba(255,255,255,.14)"/>
+        <circle cx="${x+32}" cy="${y+40}" r="20" fill="${fill}" opacity=".9"/>
+        <text x="${x+32}" y="${y+47}" text-anchor="middle" font-size="18" fill="white">${emoji}</text>
+        <text x="${x+98}" y="${y+44}" text-anchor="middle" font-size="14" font-weight="900" fill="rgba(255,255,255,.92)">${title}</text>
+        <text x="${x+98}" y="${y+70}" text-anchor="middle" font-size="12" fill="rgba(255,255,255,.64)">${desc}</text>
+      </g>
+    `;
+  }
+  function arrow2(x,y){
+    return `<path d="M ${x} ${y} L ${x+30} ${y}" stroke="rgba(255,255,255,.55)" stroke-width="8" stroke-linecap="round"/><path d="M ${x+18} ${y-10} L ${x+34} ${y} L ${x+18} ${y+10}" fill="none" stroke="rgba(255,255,255,.55)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>`;
+  }
+}
+
+function svg_k8s_arch(){
+  return `
+  <svg viewBox="0 0 900 420" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Kubernetes architecture simplified">
+    <defs>
+      <linearGradient id="g17" x1="0" x2="1">
+        <stop offset="0" stop-color="rgba(124,58,237,.9)"/>
+        <stop offset="1" stop-color="rgba(34,197,94,.9)"/>
+      </linearGradient>
+    </defs>
+    <rect x="20" y="20" width="860" height="380" rx="22" fill="rgba(255,255,255,.06)" stroke="rgba(255,255,255,.16)"/>
+    <text x="450" y="70" text-anchor="middle" font-size="22" font-weight="900" fill="rgba(255,255,255,.92)">Kubernetes Cluster</text>
+
+    <g>
+      <rect x="70" y="95" width="760" height="120" rx="18" fill="rgba(124,58,237,.12)" stroke="rgba(124,58,237,.35)"/>
+      <text x="90" y="125" font-size="14" font-weight="900" fill="rgba(255,255,255,.92)">Control Plane</text>
+      ${mini(120,145,"API Server","kubectl / API","url(#g17)")}
+      ${mini(300,145,"Scheduler","จัดวาง Pods","url(#g17)")}
+      ${mini(480,145,"Controller","ดูแล state","url(#g17)")}
+      ${mini(660,145,"etcd","Key‑Value DB","url(#g17)")}
+    </g>
+
+    <g>
+      <rect x="70" y="235" width="760" height="145" rx="18" fill="rgba(34,197,94,.10)" stroke="rgba(34,197,94,.35)"/>
+      <text x="90" y="265" font-size="14" font-weight="900" fill="rgba(255,255,255,.92)">Worker Nodes</text>
+      ${nodePods(120,285,"Node A")}
+      ${nodePods(390,285,"Node B")}
+      ${nodePods(660,285,"Node C")}
+    </g>
+  </svg>`;
+
+  function mini(x,y,title,desc,fill){
+    return `
+      <g>
+        <rect x="${x}" y="${y}" width="160" height="56" rx="14" fill="rgba(0,0,0,.18)" stroke="rgba(255,255,255,.14)"/>
+        <rect x="${x+10}" y="${y+10}" width="12" height="36" rx="6" fill="${fill}" opacity=".9"/>
+        <text x="${x+90}" y="${y+27}" text-anchor="middle" font-size="13" font-weight="900" fill="rgba(255,255,255,.92)">${title}</text>
+        <text x="${x+90}" y="${y+45}" text-anchor="middle" font-size="11" fill="rgba(255,255,255,.64)">${desc}</text>
+      </g>
+    `;
+  }
+  function nodePods(x,y,label){
+    return `
+      <g>
+        <rect x="${x}" y="${y}" width="210" height="78" rx="16" fill="rgba(0,0,0,.18)" stroke="rgba(255,255,255,.14)"/>
+        <text x="${x+18}" y="${y+26}" font-size="12" font-weight="900" fill="rgba(255,255,255,.82)">${label}</text>
+        <rect x="${x+18}" y="${y+38}" width="52" height="26" rx="10" fill="rgba(59,130,246,.25)" stroke="rgba(59,130,246,.35)"/>
+        <rect x="${x+78}" y="${y+38}" width="52" height="26" rx="10" fill="rgba(59,130,246,.25)" stroke="rgba(59,130,246,.35)"/>
+        <rect x="${x+138}" y="${y+38}" width="52" height="26" rx="10" fill="rgba(59,130,246,.25)" stroke="rgba(59,130,246,.35)"/>
+        <text x="${x+44}" y="${y+56}" text-anchor="middle" font-size="11" fill="rgba(255,255,255,.80)">Pod</text>
+        <text x="${x+104}" y="${y+56}" text-anchor="middle" font-size="11" fill="rgba(255,255,255,.80)">Pod</text>
+        <text x="${x+164}" y="${y+56}" text-anchor="middle" font-size="11" fill="rgba(255,255,255,.80)">Pod</text>
+      </g>
+    `;
+  }
+}
+
+function svg_topo_single(){
+  return topoBase("Single", ["Client","App+DB"], ["#7c3aed","#22c55e"]);
+}
+function svg_topo_sepdb(){
+  return topoBase("Separated DB", ["Client","App","DB"], ["#7c3aed","#3b82f6","#22c55e"]);
+}
+function svg_topo_lb(){
+  return topoBase("Load Balanced", ["Client","LB","App xN","DB"], ["#7c3aed","#f59e0b","#3b82f6","#22c55e"]);
+}
+function svg_topo_full(){
+  return `
+  <svg viewBox="0 0 900 360" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Full production topology">
+    <defs>
+      <linearGradient id="g18" x1="0" x2="1">
+        <stop offset="0" stop-color="rgba(124,58,237,.9)"/>
+        <stop offset="1" stop-color="rgba(34,197,94,.9)"/>
+      </linearGradient>
+    </defs>
+    <rect x="20" y="20" width="860" height="320" rx="22" fill="rgba(0,0,0,.16)" stroke="rgba(255,255,255,.14)"/>
+    <text x="450" y="70" text-anchor="middle" font-size="20" font-weight="900" fill="rgba(255,255,255,.92)">Full Production (Multi‑AZ + Managed Services)</text>
+
+    ${box(70,110,160,70,"Users","👥","rgba(124,58,237,.20)")}
+    ${arrow3(240,145)}
+    ${box(270,110,190,70,"CDN / WAF","🛡️","rgba(59,130,246,.20)")}
+    ${arrow3(470,145)}
+    ${box(500,110,190,70,"Load Balancer","⚖️","rgba(245,158,11,.20)")}
+
+    ${arrowDown(595,190)}
+    ${box(450,215,290,70,"App Service (Auto‑scale)","📦","rgba(34,197,94,.18)")}
+
+    ${arrowDown(595,295)}
+    ${box(140,295,200,55,"Managed DB","🗄️","rgba(34,197,94,.14)")}
+    ${box(360,295,200,55,"Cache","⚡","rgba(34,197,94,.14)")}
+    ${box(580,295,200,55,"Message Broker","📨","rgba(34,197,94,.14)")}
+
+    <text x="450" y="345" text-anchor="middle" font-size="12" fill="rgba(255,255,255,.60)">+ Observability (Metrics/Logs/Tracing) + Backup/DR</text>
+  </svg>`;
+
+  function box(x,y,w,h,title,emoji,fill){
+    return `
+      <g>
+        <rect x="${x}" y="${y}" width="${w}" height="${h}" rx="16" fill="${fill}" stroke="rgba(255,255,255,.16)"/>
+        <text x="${x+22}" y="${y+44}" font-size="20" fill="rgba(255,255,255,.92)">${emoji}</text>
+        <text x="${x+w/2}" y="${y+43}" text-anchor="middle" font-size="14" font-weight="900" fill="rgba(255,255,255,.92)">${title}</text>
+      </g>
+    `;
+  }
+  function arrow3(x,y){
+    return `<path d="M ${x} ${y} L ${x+25} ${y}" stroke="rgba(255,255,255,.55)" stroke-width="8" stroke-linecap="round"/><path d="M ${x+14} ${y-10} L ${x+30} ${y} L ${x+14} ${y+10}" fill="none" stroke="rgba(255,255,255,.55)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>`;
+  }
+  function arrowDown(x,y){
+    return `<path d="M ${x} ${y} L ${x} ${y+18}" stroke="rgba(255,255,255,.55)" stroke-width="8" stroke-linecap="round"/><path d="M ${x-10} ${y+10} L ${x} ${y+26} L ${x+10} ${y+10}" fill="none" stroke="rgba(255,255,255,.55)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>`;
+  }
+}
+
+function topoBase(title, labels, colors){
+  // Simple left-to-right chain diagram
+  const n = labels.length;
+  const gap = 20;
+  const w = 820;
+  const startX = 40;
+  const nodeW = Math.min(220, (w - (n-1)*gap)/n);
+  const y = 105;
+
+  return `
+  <svg viewBox="0 0 900 260" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${title} topology">
+    <defs>
+      <linearGradient id="tg" x1="0" x2="1">
+        <stop offset="0" stop-color="rgba(124,58,237,.9)"/>
+        <stop offset="1" stop-color="rgba(34,197,94,.9)"/>
+      </linearGradient>
+    </defs>
+    <rect x="20" y="20" width="860" height="220" rx="22" fill="rgba(0,0,0,.16)" stroke="rgba(255,255,255,.14)"/>
+    <text x="450" y="60" text-anchor="middle" font-size="18" font-weight="900" fill="rgba(255,255,255,.90)">${title}</text>
+    ${labels.map((lab,i)=>{
+      const x = startX + i*(nodeW+gap);
+      const fill = `rgba(${hexToRgb(colors[i%colors.length])},.20)`;
+      return `
+        <g>
+          <rect x="${x}" y="${y}" width="${nodeW}" height="70" rx="16" fill="${fill}" stroke="rgba(255,255,255,.16)"/>
+          <text x="${x+nodeW/2}" y="${y+43}" text-anchor="middle" font-size="14" font-weight="900" fill="rgba(255,255,255,.92)">${lab}</text>
+        </g>
+        ${i<n-1 ? arrowSmall(x+nodeW, y+35) : ""}
+      `;
+    }).join("")}
+  </svg>`;
+
+  function arrowSmall(x,y){
+    return `<path d="M ${x} ${y} L ${x+18} ${y}" stroke="rgba(255,255,255,.55)" stroke-width="7" stroke-linecap="round"/><path d="M ${x+10} ${y-9} L ${x+22} ${y} L ${x+10} ${y+9}" fill="none" stroke="rgba(255,255,255,.55)" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>`;
+  }
+
+  function hexToRgb(hex){
+    const h = hex.replace('#','');
+    const r = parseInt(h.substring(0,2),16);
+    const g = parseInt(h.substring(2,4),16);
+    const b = parseInt(h.substring(4,6),16);
+    return `${r},${g},${b}`;
+  }
+}
+
+function svg_decision_tree(){
+  // Simplified decision tree drawn (not full ASCII)
+  return `
+  <svg viewBox="0 0 900 420" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Decision tree choosing topology">
+    <defs>
+      <linearGradient id="g19" x1="0" x2="1">
+        <stop offset="0" stop-color="rgba(124,58,237,.9)"/>
+        <stop offset="1" stop-color="rgba(34,197,94,.9)"/>
+      </linearGradient>
+    </defs>
+    <rect x="20" y="20" width="860" height="380" rx="22" fill="rgba(0,0,0,.16)" stroke="rgba(255,255,255,.14)"/>
+    <text x="450" y="70" text-anchor="middle" font-size="20" font-weight="900" fill="rgba(255,255,255,.92)">Decision Tree: Choosing Topology</text>
+
+    ${nodeDT(370,95,160,55,"Start","🚦")}
+    ${down(450,150,40)}
+
+    ${nodeDT(280,190,340,70,"Development / Learning only?","🧪")}
+    ${branch(450,260,190,65, "Yes", "Single Server", 130)}
+    ${branch(450,260,710,65, "No", "< 1000 users expected?", 500)}
+
+    ${branch2(710,150, 650,300, "Yes", "Separated DB")}
+    ${branch2(710,150, 780,300, "No", "Need 99.9%+ uptime?")}
+
+    ${branch3(780,150, 720,365, "No", "Load Balanced")}
+    ${branch3(780,150, 840,365, "Yes", "Full Production")}
+  </svg>`;
+
+  function nodeDT(x,y,w,h,label,emoji){
+    return `
+      <g>
+        <rect x="${x}" y="${y}" width="${w}" height="${h}" rx="18" fill="rgba(124,58,237,.14)" stroke="rgba(124,58,237,.35)"/>
+        <text x="${x+26}" y="${y+36}" font-size="20" fill="rgba(255,255,255,.92)">${emoji}</text>
+        <text x="${x+w/2}" y="${y+36}" text-anchor="middle" font-size="14" font-weight="900" fill="rgba(255,255,255,.92)">${label}</text>
+      </g>
+    `;
+  }
+  function down(cx, y, len){
+    return `<path d="M ${cx} ${y} L ${cx} ${y+len}" stroke="rgba(255,255,255,.55)" stroke-width="8" stroke-linecap="round"/>`;
+  }
+  function branch(cx, y, x2, y2, edgeLabel, target, offsetX){
+    // from question node bottom to child
+    const x1 = cx, y1 = y;
+    const xChild = x2- (target.includes("?")?170:110);
+    const w = target.includes("?")?340:220;
+    return `
+      <path d="M ${x1} ${y1} C ${x1} ${y1+40}, ${xChild+w/2} ${y1+40}, ${xChild+w/2} ${y2-10}" stroke="rgba(255,255,255,.50)" stroke-width="6" fill="none" stroke-linecap="round"/>
+      <text x="${(x1 + (xChild+w/2))/2}" y="${y1+30}" text-anchor="middle" font-size="12" fill="rgba(255,255,255,.70)">${edgeLabel}</text>
+      ${nodeDT(xChild, y2, w, 55, target, target.includes("?")?"❓":"✅")}
+    `;
+  }
+  function branch2(xQCenter, yQTop, xChildCenter, yChild, edgeLabel, target){
+    const w = target.includes("?")?300:220;
+    const xChild = xChildCenter - w/2;
+    const fromX = xQCenter, fromY = 260;
+    return `
+      <path d="M ${fromX} ${fromY} C ${fromX+40} ${fromY+30}, ${xChildCenter-40} ${fromY+30}, ${xChildCenter} ${yChild-10}" stroke="rgba(255,255,255,.50)" stroke-width="6" fill="none" stroke-linecap="round"/>
+      <text x="${(fromX + xChildCenter)/2}" y="${fromY+40}" text-anchor="middle" font-size="12" fill="rgba(255,255,255,.70)">${edgeLabel}</text>
+      ${nodeDT(xChild, yChild, w, 55, target, target.includes("?")?"❓":"✅")}
+    `;
+  }
+  function branch3(xQCenter, yQTop, xChildCenter, yChild, edgeLabel, target){
+    const w = 220;
+    const xChild = xChildCenter - w/2;
+    const fromX = xQCenter, fromY = 355;
+    return `
+      <path d="M ${fromX} ${fromY} C ${fromX+30} ${fromY+20}, ${xChildCenter-30} ${fromY+20}, ${xChildCenter} ${yChild-10}" stroke="rgba(255,255,255,.50)" stroke-width="6" fill="none" stroke-linecap="round"/>
+      <text x="${(fromX + xChildCenter)/2}" y="${fromY+26}" text-anchor="middle" font-size="12" fill="rgba(255,255,255,.70)">${edgeLabel}</text>
+      ${nodeDT(xChild, yChild, w, 55, target, "🏁")}
+    `;
+  }
+}
+
+/* ---------- Slide rendering ---------- */
+const elSlide = document.getElementById('slide');
+const elBar = document.getElementById('bar');
+const elCounter = document.getElementById('counter');
+const overlay = document.getElementById('overlay');
+const toc = document.getElementById('toc');
+
+let idx = 0;
+let fontScale = 1;
+const FONT_MIN = 0.82;
+const FONT_MAX = 1.35;
+const FONT_STEP = 0.06;
+
+function render(i){
+  idx = clamp(i, 0, slides.length-1);
+  const s = slides[idx];
+
+  elSlide.classList.remove('fade');
+  void elSlide.offsetWidth; // restart animation
+  elSlide.classList.add('fade');
+
+  elSlide.innerHTML = `
+    <div class="topbar">
+      <div>
+        <div class="kicker">${escapeHtml(s.kicker || '')}</div>
+      </div>
+      <div class="meta">
+        <div><b>ENGSE207</b> • Software Architecture</div>
+        <div>Week 7 • Cloud & Containerization</div>
+      </div>
+    </div>
+
+    <div>
+      <h1>${escapeHtml(s.title || '')}</h1>
+      ${s.subtitle ? `<p class="lead" style="margin-top:10px">${escapeHtml(s.subtitle)}</p>` : ''}
+    </div>
+
+    <div style="flex:1 1 auto; min-height:0">
+      ${s.body || ''}
+    </div>
+
+    <div class="footer">
+      <div>© ENGSE207 • ใช้เพื่อการเรียนการสอน</div>
+      <div>Tip: ←/→, Space, T, +/−, F</div>
+    </div>
+  `;
+
+  updateUI();
+}
+
+function updateUI(){
+  const pct = ((idx+1)/slides.length)*100;
+  elBar.style.width = pct.toFixed(2) + '%';
+  elCounter.textContent = `${idx+1}/${slides.length}`;
+  document.documentElement.style.setProperty('--fontScale', fontScale.toString());
+}
+
+function next(){ render(idx+1); }
+function prev(){ render(idx-1); }
+
+/* ---------- Controls ---------- */
+document.getElementById('btnNext').addEventListener('click', next);
+document.getElementById('btnPrev').addEventListener('click', prev);
+
+document.getElementById('btnZoomIn').addEventListener('click', ()=>{
+  fontScale = clamp(fontScale + FONT_STEP, FONT_MIN, FONT_MAX);
+  updateUI();
+});
+document.getElementById('btnZoomOut').addEventListener('click', ()=>{
+  fontScale = clamp(fontScale - FONT_STEP, FONT_MIN, FONT_MAX);
+  updateUI();
+});
+
+document.getElementById('btnFull').addEventListener('click', toggleFullscreen);
+document.getElementById('btnToc').addEventListener('click', toggleOverlay);
+document.getElementById('btnCloseOverlay').addEventListener('click', hideOverlay);
+
+/* Click navigation (left/right half) */
+document.getElementById('frame').addEventListener('click', (e)=>{
+  if(overlay.classList.contains('show')) return;
+  const rect = e.currentTarget.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  if(x > rect.width*0.55) next();
+  else if(x < rect.width*0.45) prev();
+});
+
+/* Keyboard */
+window.addEventListener('keydown', (e)=>{
+  if(e.key === 'ArrowRight' || e.key === ' '){ e.preventDefault(); next(); }
+  if(e.key === 'ArrowLeft'){ e.preventDefault(); prev(); }
+  if(e.key === 'Home'){ e.preventDefault(); render(0); }
+  if(e.key === 'End'){ e.preventDefault(); render(slides.length-1); }
+  if(e.key.toLowerCase() === 't'){ e.preventDefault(); toggleOverlay(); }
+  if(e.key === '+' || (e.key === '=' && e.shiftKey)){ e.preventDefault(); fontScale = clamp(fontScale + FONT_STEP, FONT_MIN, FONT_MAX); updateUI(); }
+  if(e.key === '-' || e.key === '_'){ e.preventDefault(); fontScale = clamp(fontScale - FONT_STEP, FONT_MIN, FONT_MAX); updateUI(); }
+  if(e.key.toLowerCase() === 'f'){ e.preventDefault(); toggleFullscreen(); }
+  if(e.key === 'Escape' && overlay.classList.contains('show')){ hideOverlay(); }
+});
+
+/* Touch swipe */
+let touchX = null;
+window.addEventListener('touchstart', (e)=>{
+  if(overlay.classList.contains('show')) return;
+  touchX = e.changedTouches?.[0]?.clientX ?? null;
+},{passive:true});
+window.addEventListener('touchend', (e)=>{
+  if(overlay.classList.contains('show')) return;
+  if(touchX == null) return;
+  const x2 = e.changedTouches?.[0]?.clientX ?? touchX;
+  const dx = x2 - touchX;
+  if(Math.abs(dx) > 55){
+    if(dx < 0) next(); else prev();
+  }
+  touchX = null;
+},{passive:true});
+
+/* Overlay / TOC */
+function buildTOC(){
+  toc.innerHTML = slides.map((s,i)=>{
+    const sub = (s.subtitle || '').slice(0,80);
+    return `
+      <div class="tocItem" data-i="${i}">
+        <div class="tocNum">${i+1}</div>
+        <div class="tocText">
+          <b>${escapeHtml(s.title || '')}</b>
+          <span>${escapeHtml(sub)}</span>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  toc.querySelectorAll('.tocItem').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      const i = parseInt(el.getAttribute('data-i'), 10);
+      hideOverlay();
+      render(i);
+    });
+  });
+}
+buildTOC();
+
+function toggleOverlay(){
+  overlay.classList.toggle('show');
+}
+function hideOverlay(){ overlay.classList.remove('show'); }
+
+/* Fullscreen */
+function toggleFullscreen(){
+  const doc = document;
+  if(!doc.fullscreenElement){
+    doc.documentElement.requestFullscreen?.();
+  }else{
+    doc.exitFullscreen?.();
+  }
+}
+
+/* Helpers */
+function clamp(v,min,max){ return Math.max(min, Math.min(max, v)); }
+function escapeHtml(str){
+  return String(str).replace(/[&<>"']/g, (m)=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;" }[m]));
+}
+
+/* Initial render */
+render(0);
+</script>
+</body>
+</html>

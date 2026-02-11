@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ENGSE207 - Week 7: Cloud & Containerization</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --secondary: #ec4899;
+            --dark: #0f172a;
+            --light: #f8fafc;
+        }
+        body {
+            font-family: 'Kanit', sans-serif;
+            background-color: var(--dark);
+            color: var(--light);
+            margin: 0;
+            overflow: hidden;
+        }
+        .slide-container {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            perspective: 1000px;
+        }
+        .slide {
+            width: 90vw;
+            height: calc(90vw * 9 / 16);
+            max-width: 1280px;
+            max-height: 720px;
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            border-radius: 1.5rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            position: relative;
+            padding: 3rem;
+            display: none;
+            flex-direction: column;
+            border: 1px solid rgba(255,255,255,0.1);
+            transition: all 0.5s ease;
+        }
+        .slide.active {
+            display: flex;
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .progress-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            height: 6px;
+            background: linear-gradient(to right, var(--primary), var(--secondary));
+            transition: width 0.3s ease;
+            z-index: 50;
+        }
+        .controls {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            display: flex;
+            gap: 1rem;
+            z-index: 100;
+        }
+        .btn {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 0.75rem;
+            border-radius: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .btn:hover {
+            background: var(--primary);
+            transform: scale(1.1);
+        }
+        .infographic-box {
+            background: rgba(255, 255, 255, 0.05);
+            border-left: 4px solid var(--primary);
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+        }
+        code {
+            font-family: 'Fira Code', monospace;
+            background: #000;
+            padding: 0.2rem 0.4rem;
+            border-radius: 4px;
+            color: #fbbf24;
+        }
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+        .grid-infographic {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="progress-bar" id="progressBar"></div>
+
+    <div class="slide-container" id="slideContainer">
+        <!-- Slides will be injected here by JS -->
+    </div>
+
+    <div class="controls">
+        <button class="btn" onclick="adjustFontSize(-2)" title="ลดขนาดตัวอักษร">A-</button>
+        <button class="btn" onclick="adjustFontSize(2)" title="เพิ่มขนาดตัวอักษร">A+</button>
+        <button class="btn" onclick="prevSlide()" id="prevBtn">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+        </button>
+        <button class="btn" onclick="nextSlide()" id="nextBtn">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+        </button>
+        <button class="btn" onclick="toggleFullScreen()" title="Full Screen">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+        </button>
+    </div>
+
+    <script>
+        const slideData = [
+            {
+                type: "title",
+                title: "ENGSE207 สถาปัตยกรรมซอฟต์แวร์",
+                subtitle: "สัปดาห์ที่ 7: สถาปัตยกรรมสำหรับ Cloud & Containerization",
+                author: "วิศวกรรมซอฟต์แวร์ | มทร.ล้านนา",
+                bg: "linear-gradient(rgba(99, 102, 241, 0.2), rgba(236, 72, 153, 0.2))"
+            },
+            {
+                type: "content",
+                badge: "Recap",
+                title: "ทบทวนสัปดาห์ที่ 6: Microservices & Patterns",
+                content: `
+                    <div class="grid grid-cols-2 gap-8 mt-6">
+                        <div class="infographic-box border-blue-500">
+                            <h3 class="text-xl font-bold mb-2">Microservices</h3>
+                            <p>การแยกโมดูลออกจากกันเพื่อความอิสระ (Decoupling) และการสเกลแยกส่วน</p>
+                        </div>
+                        <div class="infographic-box border-pink-500">
+                            <h3 class="text-xl font-bold mb-2">Distributed Systems</h3>
+                            <p>ความซับซ้อนของการสื่อสารผ่าน Network และการจัดการข้อมูลที่กระจายตัว</p>
+                        </div>
+                    </div>
+                    <div class="mt-8 text-lg italic text-gray-400 text-center">
+                        "เมื่อระบบมีขนาดใหญ่ขึ้น เราต้องการโครงสร้างพื้นฐานที่ยืดหยุ่นกว่า Physical Server ปกติ..."
+                    </div>
+                `
+            },
+            {
+                type: "content",
+                badge: "Introduction",
+                title: "ทำไมต้อง Cloud & Container?",
+                content: `
+                    <div class="flex items-center gap-10 mt-10">
+                        <div class="w-1/2 space-y-4">
+                            <p class="text-xl">ในอดีต: <b>On-Premise</b> (ต้องซื้อ Server, ติดตั้ง OS, ดูแลแอร์, จัดการไฟ)</p>
+                            <p class="text-xl">ปัจจุบัน: <b>Cloud Native</b> (จ่ายตามจริง, สเกลอัตโนมัติ, ย้ายได้อิสระ)</p>
+                        </div>
+                        <div class="w-1/2 bg-white/10 p-6 rounded-xl border border-white/20">
+                            <p class="text-center font-bold text-primary mb-4">Evolution of Deployment</p>
+                            <div class="flex justify-between items-end h-32 gap-2">
+                                <div class="w-1/3 bg-gray-500 h-10 rounded-t-lg flex items-center justify-center text-xs">Physical</div>
+                                <div class="w-1/3 bg-blue-500 h-24 rounded-t-lg flex items-center justify-center text-xs text-white">Virtual</div>
+                                <div class="w-1/3 bg-pink-500 h-32 rounded-t-lg flex items-center justify-center text-xs text-white">Container</div>
+                            </div>
+                        </div>
+                    </div>
+                `
+            },
+            {
+                type: "content",
+                badge: "Learning Objectives",
+                title: "วัตถุประสงค์การเรียนรู้ (Week 7)",
+                content: `
+                    <ul class="space-y-4 text-xl mt-6">
+                        <li class="flex items-center gap-3"><span class="text-primary">01.</span> เข้าใจ NIST Cloud Characteristics ทั้ง 5 ประการ</li>
+                        <li class="flex items-center gap-3"><span class="text-primary">02.</span> แยกแยะ IaaS, PaaS, SaaS ได้อย่างแม่นยำ</li>
+                        <li class="flex items-center gap-3"><span class="text-primary">03.</span> ออกแบบซอฟต์แวร์ตามหลักการ 12-Factor App</li>
+                        <li class="flex items-center gap-3"><span class="text-primary">04.</span> อธิบายความแตกต่างระหว่าง VM และ Container</li>
+                        <li class="flex items-center gap-3"><span class="text-primary">05.</span> ออกแบบ Basic Deployment Topologies สำหรับ Cloud</li>
+                    </ul>
+                `
+            },
+            {
+                type: "section",
+                title: "1. Cloud Computing Fundamentals",
+                subtitle: "เข้าใจพื้นฐานและโมเดลการให้บริการ"
+            },
+            {
+                type: "content",
+                badge: "NIST Definition",
+                title: "5 คุณลักษณะสำคัญของ Cloud (NIST)",
+                content: `
+                    <div class="grid grid-cols-3 gap-4 mt-4">
+                        <div class="p-4 bg-white/5 rounded-lg border border-white/10">
+                            <h4 class="font-bold text-primary">1. On-demand Self-service</h4>
+                            <p class="text-sm">ผู้ใช้จัดการได้เอง ไม่ต้องผ่านแอดมิน</p>
+                        </div>
+                        <div class="p-4 bg-white/5 rounded-lg border border-white/10">
+                            <h4 class="font-bold text-primary">2. Broad Network Access</h4>
+                            <p class="text-sm">เข้าถึงได้จากทุกที่ ทุกอุปกรณ์</p>
+                        </div>
+                        <div class="p-4 bg-white/5 rounded-lg border border-white/10">
+                            <h4 class="font-bold text-primary">3. Resource Pooling</h4>
+                            <p class="text-sm">แชร์ทรัพยากรร่วมกัน (Multi-tenancy)</p>
+                        </div>
+                        <div class="p-4 bg-white/5 rounded-lg border border-white/10">
+                            <h4 class="font-bold text-primary">4. Rapid Elasticity</h4>
+                            <p class="text-sm">ขยายหรือลดขนาดได้ทันทีตามโหลด</p>
+                        </div>
+                        <div class="p-4 bg-white/5 rounded-lg border border-white/10">
+                            <h4 class="font-bold text-primary">5. Measured Service</h4>
+                            <p class="text-sm">จ่ายเงินตามปริมาณที่ใช้งานจริง</p>
+                        </div>
+                    </div>
+                `
+            },
+            {
+                type: "content",
+                badge: "Service Models",
+                title: "Cloud Service Models: IaaS vs PaaS vs SaaS",
+                content: `
+                    <div class="flex justify-around mt-8 items-end gap-4 text-center">
+                        <div class="flex-1">
+                            <div class="bg-gray-700 h-20 rounded-t-lg mb-2 flex items-center justify-center">Infrastructure</div>
+                            <div class="text-xs font-bold">IaaS (AWS EC2, GCP GCE)</div>
+                            <p class="text-[10px] text-gray-400 mt-2">คุณดูแล OS, App, Data</p>
+                        </div>
+                        <div class="flex-1">
+                            <div class="bg-blue-600 h-40 rounded-t-lg mb-2 flex items-center justify-center">Platform</div>
+                            <div class="text-xs font-bold">PaaS (Heroku, App Engine)</div>
+                            <p class="text-[10px] text-gray-400 mt-2">คุณดูแลแค่ App และ Data</p>
+                        </div>
+                        <div class="flex-1">
+                            <div class="bg-pink-600 h-60 rounded-t-lg mb-2 flex items-center justify-center">Software</div>
+                            <div class="text-xs font-bold">SaaS (Gmail, Slack)</div>
+                            <p class="text-[10px] text-gray-400 mt-2">คุณเป็นเพียงผู้ใช้งาน</p>
+                        </div>
+                    </div>
+                `
+            },
+            {
+                type: "content",
+                badge: "Infographic",
+                title: "Pizza as a Service (ยอดฮิต)",
+                content: `
+                    <div class="grid grid-cols-4 gap-2 text-xs mt-6">
+                        <div class="bg-white/5 p-4 rounded border border-white/20">
+                            <h4 class="font-bold text-blue-400">On-Premises</h4>
+                            <p class="mt-2 text-gray-400">ทำเองทุกอย่าง: แป้ง, ซอส, หน้า, เตา, ไฟ, โต๊ะ</p>
+                        </div>
+                        <div class="bg-white/5 p-4 rounded border border-white/20">
+                            <h4 class="font-bold text-green-400">IaaS</h4>
+                            <p class="mt-2 text-gray-400">เช่าเตาและแก๊ส: คุณเตรียมแป้งและซอสเอง</p>
+                        </div>
+                        <div class="bg-white/5 p-4 rounded border border-white/20">
+                            <h4 class="font-bold text-yellow-400">PaaS</h4>
+                            <p class="mt-2 text-gray-400">สั่ง Delivery: คุณจัดโต๊ะและเตรียมน้ำดื่มเอง</p>
+                        </div>
+                        <div class="bg-white/5 p-4 rounded border border-white/20">
+                            <h4 class="font-bold text-red-400">SaaS</h4>
+                            <p class="mt-2 text-gray-400">ไปกินที่ร้าน: ทุกอย่างถูกเตรียมไว้หมดแล้ว</p>
+                        </div>
+                    </div>
+                    <div class="mt-10 text-center font-bold text-xl text-primary">
+                        "ในฐานะ Software Engineer เรามักทำงานในช่วง PaaS และ IaaS"
+                    </div>
+                `
+            },
+            {
+                type: "content",
+                badge: "Deployment Models",
+                title: "Deployment Models: จะวางระบบที่ไหนดี?",
+                content: `
+                    <div class="grid grid-cols-3 gap-6 mt-10">
+                        <div class="bg-blue-900/30 p-6 rounded-xl border border-blue-500/50">
+                            <h3 class="font-bold mb-2">Public Cloud</h3>
+                            <p class="text-sm">แชร์ใช้ร่วมกับคนอื่น ประหยัด สเกลง่าย (AWS, Azure, GCP)</p>
+                        </div>
+                        <div class="bg-purple-900/30 p-6 rounded-xl border border-purple-500/50">
+                            <h3 class="font-bold mb-2">Private Cloud</h3>
+                            <p class="text-sm">ใช้ส่วนตัวในองค์กร ปลอดภัยสูง แต่ต้นทุนแพง</p>
+                        </div>
+                        <div class="bg-pink-900/30 p-6 rounded-xl border border-pink-500/50">
+                            <h3 class="font-bold mb-2">Hybrid Cloud</h3>
+                            <p class="text-sm">ผสมผสาน ความปลอดภัยสูงอยู่ที่ Private การสเกลอยู่ที่ Public</p>
+                        </div>
+                    </div>
+                `
+            },
+            {
+                type: "section",
+                title: "2. The 12-Factor App",
+                subtitle: "คัมภีร์การออกแบบ Cloud-Native Applications"
+            },
+            {
+                type: "content",
+                badge: "Why 12-Factor?",
+                title: "ทำไมต้อง 12-Factor App?",
+                content: `
+                    <div class="infographic-box border-yellow-500 mb-6">
+                        <p class="text-lg">ชุดหลักการปฏิบัติเพื่อสร้างซอฟต์แวร์ที่ <b>Scale</b> ได้ง่าย <b>Deploy</b> ได้เร็ว และ <b>Portable</b> (ย้ายที่อยู่ได้โดยไม่ต้องแก้โค้ด)</p>
+                    </div>
+                    <div class="flex justify-center mt-10">
+                        <div class="grid grid-cols-4 gap-4">
+                            ${Array.from({length: 12}).map((_, i) => `<div class="w-16 h-16 bg-primary/20 border border-primary flex items-center justify-center rounded-lg font-bold">${i+1}</div>`).join('')}
+                        </div>
+                    </div>
+                `
+            },
+            {
+                type: "content",
+                badge: "Factors 1-3",
+                title: "1. Codebase, 2. Dependencies, 3. Config",
+                content: `
+                    <div class="space-y-6 mt-6">
+                        <div class="flex gap-4">
+                            <div class="font-bold text-secondary">01. Codebase</div>
+                            <p>ใช้ Version Control (Git) เพียงตัวเดียวต่อ 1 แอป</p>
+                        </div>
+                        <div class="flex gap-4">
+                            <div class="font-bold text-secondary">02. Dependencies</div>
+                            <p>ประกาศ dependencies ให้ชัดเจน (เช่น package.json) ห้ามพึ่งพาซอฟต์แวร์ในเครื่องแม่ข่าย</p>
+                        </div>
+                        <div class="flex gap-4">
+                            <div class="font-bold text-secondary">03. Config</div>
+                            <p>เก็บค่า Configuration ไว้ใน <b>Environment Variables</b> เสมอ (ห้าม Hardcode!)</p>
+                        </div>
+                    </div>
+                `
+            },
+            {
+                type: "content",
+                badge: "Factor 6: Stateless",
+                title: "6. Processes: หัวใจของ Cloud",
+                content: `
+                    <div class="infographic-box border-red-500">
+                        <h3 class="text-2xl font-bold mb-4">Stateless Application</h3>
+                        <p class="text-lg">แอปต้องไม่เก็บข้อมูลใดๆ ไว้ในตัวมันเอง (Memory หรือ Local Disk)</p>
+                    </div>
+                    <div class="grid grid-cols-2 gap-8 mt-10">
+                        <div class="text-center p-4 bg-red-900/20 rounded">
+                            <span class="text-red-500 font-bold">WRONG ❌</span>
+                            <p class="text-xs mt-2">เก็บไฟล์รูปไว้ใน /uploads ของเครื่อง Server</p>
+                        </div>
+                        <div class="text-center p-4 bg-green-900/20 rounded">
+                            <span class="text-green-500 font-bold">RIGHT ✅</span>
+                            <p class="text-xs mt-2">เก็บไฟล์รูปไว้ใน Cloud Storage (S3) และ Database</p>
+                        </div>
+                    </div>
+                `
+            },
+            {
+                type: "content",
+                badge: "Case Study",
+                title: "คำถาม: ทำไม Stateless ถึงสำคัญมากสำหรับ Cloud?",
+                content: `
+                    <div class="bg-gray-800 p-8 rounded-2xl mt-10 border-l-8 border-primary">
+                        <p class="text-2xl italic">"ถ้า Server ตัวหนึ่งตาย แล้ว Cloud สั่งรันตัวใหม่ขึ้นมาแทนที่ (Auto-healing) ข้อมูลที่เคยมีอยู่ในตัวเก่าจะหายไปทั้งหมด หากเราเป็น Stateless เราจะไม่เสียข้อมูลอะไรเลย"</p>
+                        <p class="mt-4 text-primary font-bold text-right">- Software Architect Principle</p>
+                    </div>
+                `
+            },
+            {
+                type: "section",
+                title: "3. Containers & Docker",
+                subtitle: "ก้าวข้ามขีดจำกัดของ Virtual Machines"
+            },
+            {
+                type: "content",
+                badge: "Architecture",
+                title: "VM vs Container: ต่างกันยังไง?",
+                content: `
+                    <div class="flex gap-10 mt-6">
+                        <div class="w-1/2 border border-white/10 p-4 rounded-xl">
+                            <h4 class="font-bold text-center mb-4">Virtual Machines</h4>
+                            <div class="space-y-1 text-xs text-center">
+                                <div class="bg-blue-400 p-2 rounded">App A</div>
+                                <div class="bg-blue-300 p-2 rounded">Guest OS (Heavy)</div>
+                                <div class="bg-gray-500 p-2 rounded">Hypervisor</div>
+                                <div class="bg-gray-700 p-2 rounded">Host Infrastructure</div>
+                            </div>
+                        </div>
+                        <div class="w-1/2 border border-white/10 p-4 rounded-xl border-primary">
+                            <h4 class="font-bold text-center mb-4 text-primary">Containers</h4>
+                            <div class="space-y-1 text-xs text-center">
+                                <div class="flex gap-1">
+                                    <div class="flex-1 bg-pink-400 p-2 rounded">App A</div>
+                                    <div class="flex-1 bg-pink-400 p-2 rounded">App B</div>
+                                </div>
+                                <div class="bg-pink-300 p-2 rounded">Runtime Libs</div>
+                                <div class="bg-primary p-2 rounded">Docker Engine (Light)</div>
+                                <div class="bg-gray-700 p-2 rounded">Host OS</div>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="mt-6 text-center font-bold">Container รันได้เร็วกว่า ใช้ทรัพยากรน้อยกว่า และขนาดเล็กกว่ามาก!</p>
+                `
+            },
+            {
+                type: "content",
+                badge: "Docker Components",
+                title: "หัวใจของ Docker",
+                content: `
+                    <div class="grid grid-cols-3 gap-4 mt-10">
+                        <div class="infographic-box">
+                            <h4 class="font-bold">1. Dockerfile</h4>
+                            <p class="text-xs">พิมพ์เขียวของแอป (Script การสร้าง)</p>
+                        </div>
+                        <div class="infographic-box">
+                            <h4 class="font-bold">2. Image</h4>
+                            <p class="text-xs">แอปที่ถูกแพ็กไว้พร้อมรัน (เหมือน CD-ROM)</p>
+                        </div>
+                        <div class="infographic-box">
+                            <h4 class="font-bold">3. Container</h4>
+                            <p class="text-xs">อินสแตนซ์ที่กำลังรัน Image อยู่จริง</p>
+                        </div>
+                    </div>
+                `
+            },
+            {
+                type: "content",
+                badge: "Code Snippet",
+                title: "ตัวอย่าง Dockerfile พื้นฐาน",
+                content: `
+                    <pre class="bg-black p-6 rounded-xl mt-4 text-sm overflow-x-auto border border-white/20">
+<code class="text-green-400"># 1. เริ่มจาก Base Image
+FROM node:18-alpine
+
+# 2. ตั้งค่า Working Directory
+WORKDIR /app
+
+# 3. คัดลอกไฟล์โค้ด
+COPY . .
+
+# 4. รันคำสั่งติดตั้ง
+RUN npm install
+
+# 5. เปิด Port และเริ่มทำงาน
+EXPOSE 3000
+CMD ["npm", "start"]</code></pre>
+                `
+            },
+            {
+                type: "section",
+                title: "4. Container Orchestration",
+                subtitle: "เมื่อต้องดูแลคอนเทนเนอร์นับร้อย"
+            },
+            {
+                type: "content",
+                badge: "The Problem",
+                title: "จะเกิดอะไรขึ้นถ้ามีพันคอนเทนเนอร์?",
+                content: `
+                    <div class="flex flex-col items-center justify-center mt-10 space-y-4">
+                        <p class="text-2xl">ใครจะเป็นคนเช็กว่ามันตายหรือยัง?</p>
+                        <p class="text-2xl">ใครจะเป็นคนแบ่งโหลด (Load Balancing)?</p>
+                        <p class="text-2xl">ใครจะเป็นคนอัปเกรดเวอร์ชันโดยไม่ให้ระบบล่ม?</p>
+                        <div class="text-4xl font-bold text-primary animate-bounce mt-10">คำตอบคือ: Kubernetes (K8s)</div>
+                    </div>
+                `
+            },
+            {
+                type: "content",
+                badge: "K8s Architecture",
+                title: "Kubernetes ในมุมมองสถาปนิก",
+                content: `
+                    <div class="flex gap-6 mt-6">
+                        <div class="w-1/3 bg-blue-900/40 p-6 rounded border border-blue-400">
+                            <h4 class="font-bold border-b border-blue-400 pb-2 mb-4">Control Plane</h4>
+                            <ul class="text-xs space-y-2">
+                                <li>- API Server</li>
+                                <li>- Scheduler</li>
+                                <li>- Controller Manager</li>
+                            </ul>
+                        </div>
+                        <div class="w-2/3 bg-gray-800 p-6 rounded border border-gray-400">
+                            <h4 class="font-bold border-b border-gray-400 pb-2 mb-4">Worker Nodes</h4>
+                            <div class="flex gap-4">
+                                <div class="flex-1 bg-white/10 p-2 rounded text-[10px] text-center">Node 1: Pods A, B</div>
+                                <div class="flex-1 bg-white/10 p-2 rounded text-[10px] text-center">Node 2: Pods A, C</div>
+                                <div class="flex-1 bg-white/10 p-2 rounded text-[10px] text-center">Node 3: Pods B, C</div>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="mt-8 text-center text-sm italic">K8s ดูแล "Desired State" - เราแค่บอกว่าต้องการกี่เครื่อง K8s จัดการที่เหลือให้เอง!</p>
+                `
+            },
+            {
+                type: "section",
+                title: "5. Deployment Topologies",
+                subtitle: "การจัดวางโครงสร้างระบบบน Cloud"
+            },
+            {
+                type: "content",
+                badge: "Topology 1",
+                title: "Monolithic on Cloud (Lift & Shift)",
+                content: `
+                    <div class="flex items-center gap-10 mt-6">
+                        <div class="w-1/2">
+                            <p>เหมาะสำหรับการย้ายระบบเก่าขึ้น Cloud โดยเร็วที่สุด</p>
+                            <ul class="mt-4 list-disc ml-6 space-y-2 text-sm">
+                                <li>ง่าย ไม่ต้องแก้โค้ดเยอะ</li>
+                                <li>เสียเปรียบเรื่องการ Scale (ต้องยกไปทั้งก้อน)</li>
+                                <li>มีความเสี่ยงเรื่อง Single Point of Failure</li>
+                            </ul>
+                        </div>
+                        <div class="w-1/2 p-4 bg-white/5 border border-dashed rounded">
+                            <p class="text-center text-xs mb-4">Architecture Diagram</p>
+                            <div class="h-40 flex items-center justify-center">
+                                <div class="bg-blue-600 p-4 rounded-xl">[ Huge App ]</div>
+                                <div class="mx-4">→</div>
+                                <div class="bg-green-600 p-4 rounded-full">DB</div>
+                            </div>
+                        </div>
+                    </div>
+                `
+            },
+            {
+                type: "content",
+                badge: "Topology 2",
+                title: "Microservices with Container Orchestration",
+                content: `
+                    <div class="grid grid-cols-2 gap-8 mt-6">
+                        <div class="infographic-box border-pink-500">
+                            <h4 class="font-bold">Cloud-Native Approach</h4>
+                            <p class="text-xs mt-2">ทุก Service เป็นอิสระ ใส่ไว้ใน Container และจัดการผ่าน K8s</p>
+                        </div>
+                        <div class="infographic-box border-yellow-500">
+                            <h4 class="font-bold">Trade-off</h4>
+                            <p class="text-xs mt-2">ประสิทธิภาพสูงมาก แต่ระบบซับซ้อนและใช้คนดูแลเยอะ</p>
+                        </div>
+                    </div>
+                    <div class="mt-8 flex justify-center gap-4">
+                        <div class="w-20 h-20 bg-primary/40 rounded flex items-center justify-center text-[10px]">Auth</div>
+                        <div class="w-20 h-20 bg-primary/40 rounded flex items-center justify-center text-[10px]">Cart</div>
+                        <div class="w-20 h-20 bg-primary/40 rounded flex items-center justify-center text-[10px]">Payment</div>
+                        <div class="w-20 h-20 bg-primary/40 rounded flex items-center justify-center text-[10px]">Shipment</div>
+                    </div>
+                `
+            },
+            {
+                type: "content",
+                badge: "Cost Management",
+                title: "การประเมินค่าใช้จ่าย (Cloud Economics)",
+                content: `
+                    <div class="grid grid-cols-2 gap-10 mt-6">
+                        <div>
+                            <h4 class="font-bold text-red-400 mb-4">Hidden Costs!</h4>
+                            <ul class="space-y-2 text-sm">
+                                <li>1. Egress Bandwidth (ส่งข้อมูลออก)</li>
+                                <li>2. Snapshot & Storage backups</li>
+                                <li>3. Managed Services fees</li>
+                            </ul>
+                        </div>
+                        <div class="bg-white/10 p-4 rounded border border-white/20">
+                            <p class="text-xs font-bold mb-4">TCO Comparison (3 Years)</p>
+                            <div class="space-y-2">
+                                <div class="flex items-center gap-2"><div class="bg-gray-500 h-4 w-40"></div><span class="text-[10px]">On-Prem</span></div>
+                                <div class="flex items-center gap-2"><div class="bg-blue-500 h-4 w-28"></div><span class="text-[10px]">Cloud (Optimized)</span></div>
+                            </div>
+                        </div>
+                    </div>
+                `
+            },
+            {
+                type: "content",
+                badge: "Conclusion",
+                title: "สรุปเนื้อหาสัปดาห์ที่ 7",
+                content: `
+                    <div class="grid grid-cols-2 gap-6 mt-4">
+                        <div class="bg-white/5 p-4 rounded border-l-4 border-primary">
+                            <h4 class="font-bold">Cloud</h4>
+                            <p class="text-sm">ไม่ใช่แค่การเช่า Server แต่คือการเปลี่ยน Mindset สู่ระบบที่ยืดหยุ่น</p>
+                        </div>
+                        <div class="bg-white/5 p-4 rounded border-l-4 border-secondary">
+                            <h4 class="font-bold">12-Factor</h4>
+                            <p class="text-sm">มาตรฐานการเขียนแอปเพื่อให้พร้อมรันบน Cloud</p>
+                        </div>
+                        <div class="bg-white/5 p-4 rounded border-l-4 border-green-500">
+                            <h4 class="font-bold">Container</h4>
+                            <p class="text-sm">หน่วยของซอฟต์แวร์ที่ Lightweight และรันได้ทุกที่</p>
+                        </div>
+                        <div class="bg-white/5 p-4 rounded border-l-4 border-yellow-500">
+                            <h4 class="font-bold">Kubernetes</h4>
+                            <p class="text-sm">ผู้คุมวงดนตรี (Orchestrator) ที่คอยจัดการคอนเทนเนอร์</p>
+                        </div>
+                    </div>
+                `
+            },
+            {
+                type: "content",
+                badge: "Reflection",
+                title: "คำถามชวนคิดสำหรับวิศวกรซอฟต์แวร์",
+                content: `
+                    <div class="flex flex-col gap-6 mt-10">
+                        <div class="p-4 bg-primary/10 rounded-xl border border-primary/30">
+                            <p class="text-lg">"ระบบที่มี User 100 คน กับ 1,000,000 คน ต้องการ Cloud Architecture ต่างกันอย่างไร?"</p>
+                        </div>
+                        <div class="p-4 bg-secondary/10 rounded-xl border border-secondary/30">
+                            <p class="text-lg">"ถ้าแอปของคุณยังไม่เป็น 12-Factor จะเกิดอะไรขึ้นเมื่อลองเอาไปรันบน Kubernetes?"</p>
+                        </div>
+                    </div>
+                `
+            },
+            {
+                type: "content",
+                badge: "Lab Preparation",
+                title: "เตรียมตัวสำหรับ Lab ท้ายคาบ",
+                content: `
+                    <div class="space-y-6 mt-6">
+                        <p class="text-xl">1. ออกแบบ Deployment Diagram สำหรับ **Task Board System**</p>
+                        <p class="text-xl">2. วิเคราะห์ข้อดี/ข้อเสียของ Topology ที่เลือก</p>
+                        <p class="text-xl">3. เขียน **ADR (Architecture Decision Record)** เพื่ออธิบายการตัดสินใจ</p>
+                        <div class="mt-10 p-4 bg-yellow-900/20 border border-yellow-500/50 rounded">
+                            <p class="text-xs text-yellow-500 font-bold">⚠️ Warning: ห้ามเลือก Architecture เพียงเพราะมัน 'เท่' ให้เลือกตาม 'Requirements' เท่านั้น!</p>
+                        </div>
+                    </div>
+                `
+            },
+            {
+                type: "title",
+                title: "ขอบคุณครับ",
+                subtitle: "Q&A และ เจอกันในชั่วโมงปฏิบัติ",
+                author: "ENGSE207 Software Architecture",
+                bg: "linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)"
+            }
+        ];
+
+        // Slide logic
+        let currentSlide = 0;
+        let fontSize = 100;
+        const slideContainer = document.getElementById('slideContainer');
+        const progressBar = document.getElementById('progressBar');
+
+        function renderSlides() {
+            slideData.forEach((data, index) => {
+                const slideDiv = document.createElement('div');
+                slideDiv.className = `slide ${index === 0 ? 'active' : ''}`;
+                slideDiv.id = `slide-${index}`;
+                
+                if (data.type === 'title') {
+                    slideDiv.style.background = data.bg || 'var(--dark)';
+                    slideDiv.innerHTML = `
+                        <div class="h-full flex flex-col items-center justify-center text-center">
+                            <h1 class="text-6xl font-extrabold mb-4">${data.title}</h1>
+                            <p class="text-3xl text-gray-300 mb-12">${data.subtitle}</p>
+                            <div class="w-24 h-1 bg-white mb-8"></div>
+                            <p class="text-xl font-bold text-white/80">${data.author}</p>
+                        </div>
+                    `;
+                } else if (data.type === 'section') {
+                    slideDiv.innerHTML = `
+                        <div class="h-full flex flex-col items-center justify-center text-center">
+                            <span class="badge bg-secondary text-white uppercase tracking-widest">Part ${Math.floor(index/5)+1}</span>
+                            <h2 class="text-5xl font-bold mb-6">${data.title}</h2>
+                            <p class="text-2xl text-gray-400 italic">${data.subtitle}</p>
+                        </div>
+                    `;
+                } else {
+                    slideDiv.innerHTML = `
+                        <div class="flex flex-col h-full">
+                            <div class="flex justify-between items-start mb-6">
+                                <div>
+                                    <span class="badge bg-primary text-white">${data.badge}</span>
+                                    <h2 class="text-4xl font-bold">${data.title}</h2>
+                                </div>
+                                <span class="text-gray-500 font-mono text-sm">ENGSE207 • 07 • ${index + 1}</span>
+                            </div>
+                            <div class="flex-grow">
+                                ${data.content}
+                            </div>
+                            <div class="mt-6 flex justify-between items-center text-xs text-gray-500 border-t border-white/10 pt-4">
+                                <span>Software Architecture Lecture Series</span>
+                                <span>Slide ${index + 1} of ${slideData.length}</span>
+                            </div>
+                        </div>
+                    `;
+                }
+                slideContainer.appendChild(slideDiv);
+            });
+            updateProgress();
+        }
+
+        function showSlide(index) {
+            document.querySelectorAll('.slide').forEach(s => s.classList.remove('active'));
+            document.getElementById(`slide-${index}`).classList.add('active');
+            currentSlide = index;
+            updateProgress();
+        }
+
+        function nextSlide() {
+            if (currentSlide < slideData.length - 1) showSlide(currentSlide + 1);
+        }
+
+        function prevSlide() {
+            if (currentSlide > 0) showSlide(currentSlide - 1);
+        }
+
+        function updateProgress() {
+            const percent = ((currentSlide + 1) / slideData.length) * 100;
+            progressBar.style.width = `${percent}%`;
+        }
+
+        function adjustFontSize(change) {
+            fontSize += change;
+            slideContainer.style.fontSize = `${fontSize}%`;
+        }
+
+        function toggleFullScreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+            } else {
+                if (document.exitFullscreen) document.exitFullscreen();
+            }
+        }
+
+        // Keyboard controls
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === ' ') nextSlide();
+            if (e.key === 'ArrowLeft') prevSlide();
+            if (e.key === 'f') toggleFullScreen();
+        });
+
+        // Initialize
+        renderSlides();
+    </script>
+</body>
+</html>

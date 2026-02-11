@@ -1,0 +1,2040 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ENGSE207 • Week 7 • Cloud & Containerization (No Tailwind)</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      --bg0:#070a12;
+      --bg1:#0b1222;
+      --card: rgba(15,23,42,.55);
+      --card2: rgba(255,255,255,.055);
+      --line: rgba(255,255,255,.12);
+      --line2: rgba(255,255,255,.16);
+      --txt: #eaf0ff;
+      --muted: rgba(234,240,255,.72);
+
+      --p:#6366f1;   /* indigo */
+      --s:#ec4899;   /* pink */
+      --a:#10b981;   /* emerald */
+      --w:#fbbf24;   /* amber */
+      --c:#22d3ee;   /* cyan */
+      --r:#fb7185;   /* rose */
+
+      --ui-scale: 1;            /* controlled by A+/A- */
+      --radius: 22px;
+    }
+
+    html, body { height: 100%; }
+    body{
+      margin:0;
+      overflow:hidden;
+      font-family:'Kanit', sans-serif;
+      color: var(--txt);
+      background:
+        radial-gradient(1200px 700px at 20% 20%, rgba(99,102,241,.22), transparent 55%),
+        radial-gradient(900px 600px at 80% 30%, rgba(236,72,153,.18), transparent 55%),
+        radial-gradient(900px 700px at 60% 85%, rgba(16,185,129,.11), transparent 55%),
+        linear-gradient(180deg, var(--bg0), var(--bg1));
+    }
+
+    /* Stage + Slide sizing (big on fullscreen) */
+    .stage{
+      width:100vw; height:100vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding: 8px;
+    }
+    .slide{
+      width: min(98vw, 1920px);
+      aspect-ratio: 16 / 9;
+      height: auto;
+      max-height: 94vh;
+
+      border-radius: var(--radius);
+      border: 1px solid var(--line);
+      background: linear-gradient(135deg, rgba(255,255,255,.07), rgba(255,255,255,.02));
+      box-shadow: 0 30px 80px rgba(0,0,0,.45);
+      position: relative;
+      overflow:hidden;
+
+      display:none;
+      opacity:0;
+      transform: translateY(10px);
+      transition: opacity .28s ease, transform .28s ease;
+    }
+    .slide.active{
+      display:block;
+      opacity:1;
+      transform: translateY(0);
+    }
+
+    /* Fullscreen: fill screen */
+    :fullscreen .stage{ padding:0; }
+    :fullscreen .slide{
+      width: 100vw;
+      max-height: 100vh;
+      border-radius: 0;
+      border-left: none;
+      border-right: none;
+    }
+
+    .gridOverlay{
+      position:absolute; inset:0;
+      background-image:
+        linear-gradient(to right, rgba(255,255,255,.06) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255,255,255,.05) 1px, transparent 1px);
+      background-size: 44px 44px;
+      opacity:.08;
+      pointer-events:none;
+    }
+
+    /* Typography scales (no tailwind, always scalable) */
+    #root{
+      font-size: calc(18px * var(--ui-scale)); /* base for slide */
+    }
+    .t-xxs{ font-size: calc(0.90rem * var(--ui-scale)); color: var(--muted); }
+    .t-xs { font-size: calc(1.00rem * var(--ui-scale)); color: var(--muted); }
+    .t-sm { font-size: calc(1.12rem * var(--ui-scale)); }
+    .t-md { font-size: calc(1.25rem * var(--ui-scale)); }
+    .t-lg { font-size: calc(1.55rem * var(--ui-scale)); }
+    .t-xl { font-size: calc(2.10rem * var(--ui-scale)); }
+    .t-2xl{ font-size: calc(2.70rem * var(--ui-scale)); }
+    .t-3xl{ font-size: calc(3.30rem * var(--ui-scale)); }
+    .title{ font-weight: 800; letter-spacing: .2px; line-height: 1.08; }
+    .muted{ color: var(--muted); }
+
+    /* Layout utilities */
+    .row{ display:flex; gap: 14px; }
+    .col{ display:flex; flex-direction: column; gap: 14px; }
+    .between{ display:flex; align-items:center; justify-content:space-between; }
+    .center{ display:flex; align-items:center; justify-content:center; }
+    .wrap{ flex-wrap: wrap; }
+    .grow{ flex:1; }
+    .w-40{ width: 40%; }
+    .w-60{ width: 60%; }
+    .w-50{ width: 50%; }
+    .w-33{ width: 33.333%; }
+    .w-67{ width: 66.667%; }
+
+    .pad{ padding: 18px; }
+    .padTop{ padding: 18px 18px 12px 18px; }
+    .padBody{ padding: 0 18px 12px 18px; }
+    .padBottom{ padding: 10px 18px 14px 18px; }
+
+    /* Cards */
+    .card{
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 14px;
+      backdrop-filter: blur(8px);
+    }
+    .card2{
+      background: var(--card2);
+      border: 1px solid rgba(255,255,255,.10);
+      border-radius: 16px;
+      padding: 12px;
+    }
+    .glowP{ box-shadow: 0 0 0 1px rgba(99,102,241,.22), 0 18px 60px rgba(99,102,241,.14); }
+    .glowS{ box-shadow: 0 0 0 1px rgba(236,72,153,.18), 0 18px 60px rgba(236,72,153,.12); }
+    .glowA{ box-shadow: 0 0 0 1px rgba(16,185,129,.18), 0 18px 60px rgba(16,185,129,.12); }
+
+    .pill{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      padding: 8px 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.055);
+      font-size: calc(.98rem * var(--ui-scale));
+      white-space: nowrap;
+    }
+    .badge{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding: 7px 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.16);
+      background: rgba(255,255,255,.06);
+      font-weight: 700;
+      font-size: calc(.95rem * var(--ui-scale));
+    }
+    .dot{
+      width: 10px; height: 10px; border-radius: 999px;
+      background: linear-gradient(90deg, var(--p), var(--s));
+      box-shadow: 0 0 30px rgba(99,102,241,.25);
+    }
+    .arrow{
+      width: 46px; height: 46px;
+      border-radius: 999px;
+      border: 1px dashed rgba(255,255,255,.24);
+      display:flex; align-items:center; justify-content:center;
+      color: rgba(234,240,255,.85);
+      flex: 0 0 auto;
+    }
+
+    /* Top/bottom */
+    .topbar{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:14px;
+      padding: 18px 18px 10px 18px;
+    }
+    .bottombar{
+      position:absolute;
+      left:0; right:0; bottom:0;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      padding: 10px 18px 14px 18px;
+      border-top: 1px solid rgba(255,255,255,.08);
+      color: var(--muted);
+      font-size: calc(.95rem * var(--ui-scale));
+      background: linear-gradient(180deg, transparent, rgba(0,0,0,.12));
+    }
+
+    /* Progress */
+    .progressWrap{
+      position: fixed;
+      left: 0; bottom: 0;
+      width: 100%;
+      height: 6px;
+      background: rgba(255,255,255,.06);
+      z-index: 60;
+    }
+    .progressBar{
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--p), var(--s));
+      transition: width .2s ease;
+    }
+
+    /* Controls */
+    .controls{
+      position: fixed;
+      right: 16px;
+      bottom: 16px;
+      display:flex;
+      gap:10px;
+      z-index: 100;
+    }
+    .btn{
+      width: 46px; height: 46px;
+      border-radius: 14px;
+      background: rgba(255,255,255,.085);
+      border: 1px solid rgba(255,255,255,.14);
+      backdrop-filter: blur(10px);
+      display:flex; align-items:center; justify-content:center;
+      cursor:pointer;
+      user-select:none;
+      transition: transform .12s ease, background .12s ease;
+      color: rgba(234,240,255,.92);
+      font-weight: 800;
+    }
+    .btn:hover{ transform: scale(1.06); background: rgba(99,102,241,.22); }
+    .btn:active{ transform: scale(.98); }
+
+    .hint{
+      position: fixed;
+      left: 16px; bottom: 16px;
+      z-index: 100;
+      padding: 10px 12px;
+      border-radius: 14px;
+      background: rgba(0,0,0,.45);
+      border: 1px solid rgba(255,255,255,.12);
+      color: rgba(234,240,255,.78);
+      font-size: calc(.92rem * var(--ui-scale));
+      backdrop-filter: blur(8px);
+      display:flex; gap:10px; align-items:center;
+    }
+
+    /* Code */
+    pre, code{ font-family: 'Fira Code', monospace; }
+    pre{
+      background: rgba(0,0,0,.55);
+      border: 1px solid rgba(255,255,255,.10);
+      border-radius: 16px;
+      padding: 12px;
+      overflow:auto;
+      font-size: calc(.95rem * var(--ui-scale));
+      line-height: 1.35;
+      margin:0;
+    }
+
+    /* Simple infographic blocks */
+    .icon{
+      font-size: calc(2.2rem * var(--ui-scale));
+      line-height: 1;
+    }
+    .kpi{
+      display:flex; align-items:center; gap:12px;
+    }
+    .bar{
+      flex:1;
+      height: 14px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.08);
+      border: 1px solid rgba(255,255,255,.10);
+      overflow:hidden;
+    }
+    .bar > i{
+      display:block;
+      height:100%;
+      width: var(--w, 50%);
+      background: var(--bg, linear-gradient(90deg, var(--a), rgba(16,185,129,.18)));
+    }
+
+    /* Section slide */
+    .sectionCenter{
+      height:100%;
+      padding: 0 7%;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      text-align:center;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="progressWrap"><div class="progressBar" id="progressBar"></div></div>
+
+  <div class="stage">
+    <div id="root"></div>
+  </div>
+
+  <div class="controls">
+    <div class="btn" id="btnFontDown" title="ลดขนาดตัวอักษร (A-)">A-</div>
+    <div class="btn" id="btnFontUp" title="เพิ่มขนาดตัวอักษร (A+)">A+</div>
+    <div class="btn" id="btnPrev" title="สไลด์ก่อนหน้า (←)">‹</div>
+    <div class="btn" id="btnNext" title="สไลด์ถัดไป (→ / Space)">›</div>
+    <div class="btn" id="btnFS" title="Full Screen (F)">⛶</div>
+  </div>
+
+  <div class="hint">
+    <span class="badge"><span class="dot"></span>Tips</span>
+    <span>←/→, Space, F, Home/End • Swipe บนมือถือได้</span>
+  </div>
+
+  <script>
+    // ---------------------------
+    // Slide Content (No Tailwind)
+    // ---------------------------
+    const slides = [
+      // 1 Title
+      {
+        type:"title",
+        kicker:"ENGSE207 • Software Architecture",
+        title:"สัปดาห์ที่ 7<br/>Cloud & Containerization",
+        subtitle:"จาก “ออกแบบสถาปัตยกรรม” → “Deploy ให้สเกลได้จริง”",
+        footerLeft:"ENGSE207 • Software Architecture",
+        footerRight:"Week 7",
+        bg: `
+          radial-gradient(900px 540px at 30% 30%, rgba(99,102,241,.28), transparent 60%),
+          radial-gradient(900px 540px at 75% 40%, rgba(236,72,153,.22), transparent 60%),
+          linear-gradient(135deg, rgba(255,255,255,.08), rgba(255,255,255,.02))
+        `,
+        html: `
+          <div class="gridOverlay"></div>
+          <div class="sectionCenter">
+            <div class="badge"><span class="dot"></span><span class="t-xs">Modern Deployment • Cloud-Native • DevOps Basics</span></div>
+            <div class="title t-3xl" style="margin-top:14px; text-shadow:0 18px 60px rgba(99,102,241,.20);">
+              สถาปัตยกรรมสำหรับ Cloud<br/> & Containerization
+            </div>
+            <div class="t-lg muted" style="margin-top:10px;">Deploy • Scale • Observe • Recover</div>
+
+            <div class="row" style="margin-top:26px; width:100%; max-width:1100px;">
+              <div class="card glowP grow">
+                <div class="row" style="align-items:center;">
+                  <div class="icon">☁️</div>
+                  <div class="col" style="gap:4px;">
+                    <div class="t-md" style="font-weight:800;">Cloud Fundamentals</div>
+                    <div class="t-xs muted">NIST • Service/Deployment Models</div>
+                  </div>
+                </div>
+              </div>
+              <div class="card glowS grow">
+                <div class="row" style="align-items:center;">
+                  <div class="icon">🧠</div>
+                  <div class="col" style="gap:4px;">
+                    <div class="t-md" style="font-weight:800;">12-Factor App</div>
+                    <div class="t-xs muted">Design for portability & scale</div>
+                  </div>
+                </div>
+              </div>
+              <div class="card glowA grow">
+                <div class="row" style="align-items:center;">
+                  <div class="icon">🐳</div>
+                  <div class="col" style="gap:4px;">
+                    <div class="t-md" style="font-weight:800;">Containers & K8s</div>
+                    <div class="t-xs muted">Docker → Orchestration</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="t-xs muted" style="margin-top:18px;">กด <b>Space</b> เพื่อเริ่ม • <b>F</b> เข้า Full Screen</div>
+          </div>
+        `
+      },
+
+      // 2 Recap
+      {
+        type:"content",
+        badge:"Recap • Week 6",
+        title:"ทบทวน: ADD-Lite & ADR (สัปดาห์ที่ 6)",
+        html: `
+          <div class="gridOverlay"></div>
+          <div class="padBody">
+            <div class="row">
+              <div class="card w-60">
+                <div class="t-md" style="font-weight:800; margin-bottom:10px;">Architectural Design Process (ADD-Lite)</div>
+
+                <div class="row" style="align-items:center;">
+                  <div class="card2 grow center col" style="gap:6px;">
+                    <div class="icon">🧩</div>
+                    <div class="t-sm" style="font-weight:800;">Reqs</div>
+                  </div>
+                  <div class="arrow">→</div>
+                  <div class="card2 grow center col" style="gap:6px;">
+                    <div class="icon">🎯</div>
+                    <div class="t-sm" style="font-weight:800;">Drivers</div>
+                  </div>
+                  <div class="arrow">→</div>
+                  <div class="card2 grow center col" style="gap:6px;">
+                    <div class="icon">🏗️</div>
+                    <div class="t-sm" style="font-weight:800;">Design</div>
+                  </div>
+                </div>
+
+                <div style="height:10px;"></div>
+
+                <div class="row" style="align-items:center;">
+                  <div class="card2 grow center col" style="gap:6px;">
+                    <div class="icon">⚖️</div>
+                    <div class="t-sm" style="font-weight:800;">Compare</div>
+                  </div>
+                  <div class="arrow">→</div>
+                  <div class="card2 grow center col" style="gap:6px;">
+                    <div class="icon">🧾</div>
+                    <div class="t-sm" style="font-weight:800;">ADR</div>
+                  </div>
+                  <div class="card2 grow" style="display:flex; align-items:center; gap:10px;">
+                    <div class="icon">💡</div>
+                    <div>
+                      <div class="t-sm" style="font-weight:800;">Idea</div>
+                      <div class="t-xs muted">ทำ 2–3 candidates แล้วเทียบ trade-offs</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="card w-40 glowP">
+                <div class="t-md" style="font-weight:800; margin-bottom:10px;">สะพานสู่ Week 7</div>
+                <div class="t-sm muted" style="line-height:1.4;">
+                  Week 6 = “ออกแบบ”<br/>
+                  Week 7 = “เอาไป Deploy บน Cloud ให้สเกล/ทนทาน”
+                </div>
+
+                <div style="height:12px;"></div>
+
+                <div class="row">
+                  <div class="card2 grow">
+                    <div class="t-sm" style="font-weight:800;">Input</div>
+                    <div class="t-xs muted">Architecture + Quality Attributes</div>
+                  </div>
+                  <div class="card2 grow">
+                    <div class="t-sm" style="font-weight:800;">Output</div>
+                    <div class="t-xs muted">Deployment Topology + Ops Plan</div>
+                  </div>
+                </div>
+
+                <div style="height:12px;"></div>
+                <div class="row wrap" style="gap:10px;">
+                  <span class="pill" style="border-color:rgba(16,185,129,.28); background:rgba(16,185,129,.10)">Scalability</span>
+                  <span class="pill" style="border-color:rgba(34,211,238,.28); background:rgba(34,211,238,.10)">Availability</span>
+                  <span class="pill" style="border-color:rgba(251,191,36,.28); background:rgba(251,191,36,.10)">Security</span>
+                  <span class="pill" style="border-color:rgba(251,113,133,.28); background:rgba(251,113,133,.10)">Cost</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        `
+      },
+
+      // 3 Objectives
+      {
+        type:"content",
+        badge:"Objectives • Week 7",
+        title:"เป้าหมายของสัปดาห์นี้ (เรียนแล้วทำได้อะไร?)",
+        html: `
+          <div class="gridOverlay"></div>
+          <div class="padBody">
+            <div class="row">
+              <div class="card w-60 glowA">
+                <div class="row">
+                  <div class="card2 grow">
+                    <div class="icon">☁️</div>
+                    <div class="t-md" style="font-weight:800;">Cloud (NIST)</div>
+                    <div class="t-xs muted">5 characteristics + models</div>
+                  </div>
+                  <div class="card2 grow">
+                    <div class="icon">🍕</div>
+                    <div class="t-md" style="font-weight:800;">IaaS/PaaS/SaaS</div>
+                    <div class="t-xs muted">ใครรับผิดชอบอะไร</div>
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="card2 grow">
+                    <div class="icon">🧠</div>
+                    <div class="t-md" style="font-weight:800;">12-Factor</div>
+                    <div class="t-xs muted">ย้าย/สเกลง่าย</div>
+                  </div>
+                  <div class="card2 grow">
+                    <div class="icon">🐳</div>
+                    <div class="t-md" style="font-weight:800;">Containers & K8s</div>
+                    <div class="t-xs muted">Docker → Orchestration</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="card w-40">
+                <div class="t-md" style="font-weight:800; margin-bottom:8px;">CLO ที่แตะชัดๆ</div>
+                <div class="t-sm muted" style="line-height:1.4;">
+                  CLO4 • CLO6 • CLO14<br/>
+                  เชื่อม CLO3 และ CLO13
+                </div>
+                <div style="height:12px;"></div>
+                <div class="card2">
+                  <div class="t-sm" style="font-weight:800;">คำถามนำ</div>
+                  <div class="t-md">“สถาปัตยกรรมเดิม ถ้าโดนทราฟฟิกพุ่ง 10× จะรอดไหม?”</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        `
+      },
+
+      // 4 Section
+      { type:"section", title:"Part 1 • Cloud Fundamentals", subtitle:"NIST • Service Models • Deployment Models" },
+
+      // 5 NIST 5 chars
+      {
+        type:"content",
+        badge:"Cloud • NIST",
+        title:"Cloud = 5 Essential Characteristics (NIST)",
+        html: `
+          <div class="gridOverlay"></div>
+          <div class="padBody">
+            <div class="row">
+              ${[
+                ["🔄","On-demand","สั่งใช้ได้ทันที"],
+                ["🌐","Broad Access","เข้าถึงได้ทุกที่"],
+                ["🏊","Resource Pooling","multi-tenant แชร์ทรัพยากร"],
+                ["⚡","Rapid Elasticity","สเกลขึ้นลงไว"],
+                ["📊","Measured Service","จ่ายตามใช้จริง"]
+              ].map(x=>`
+                <div class="card2 grow center col" style="gap:6px;">
+                  <div class="icon">${x[0]}</div>
+                  <div class="t-md" style="font-weight:800;">${x[1]}</div>
+                  <div class="t-xs muted">${x[2]}</div>
+                </div>
+              `).join("")}
+            </div>
+
+            <div style="height:12px;"></div>
+
+            <div class="row">
+              <div class="card w-60">
+                <div class="t-md" style="font-weight:800; margin-bottom:10px;">Infographic: “Cloud Behavior”</div>
+                ${kpi("Elasticity", "88%", "linear-gradient(90deg, var(--a), rgba(16,185,129,.18))")}
+                ${kpi("Automation", "78%", "linear-gradient(90deg, var(--p), rgba(99,102,241,.18))")}
+                ${kpi("Pay-per-use", "70%", "linear-gradient(90deg, var(--w), rgba(251,191,36,.18))")}
+              </div>
+
+              <div class="card w-40 glowP">
+                <div class="t-md" style="font-weight:800; margin-bottom:10px;">จำง่ายแบบวิศวกร</div>
+                <div class="card2 t-md">
+                  Cloud ไม่ใช่ “เครื่องเช่า” อย่างเดียว<br/>
+                  แต่คือ “ระบบที่สั่ง-สเกล-วัด-จ่าย” ได้
+                </div>
+                <div style="height:12px;"></div>
+                <div class="row wrap" style="gap:10px;">
+                  <span class="pill">Auto-scaling</span>
+                  <span class="pill">Self-service</span>
+                  <span class="pill">Metering</span>
+                  <span class="pill">API-driven</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        `
+      },
+
+      // 6 Service Models
+      {
+        type:"content",
+        badge:"Cloud • Service Models",
+        title:"IaaS / PaaS / SaaS = “ใครดูแลอะไร?”",
+        html: `
+          <div class="gridOverlay"></div>
+          <div class="padBody">
+            <div class="row">
+              <div class="card w-60">
+                <div class="t-md" style="font-weight:800; margin-bottom:10px;">Responsibility Stack</div>
+
+                <div class="row">
+                  ${serviceCol("IaaS", "var(--a)", [
+                    ["App","You"],["Data","You"],["Runtime","You"],["OS","You"],
+                    ["Virtualization","Provider"],["Servers","Provider"],["Network","Provider"],["Storage","Provider"]
+                  ])}
+                  ${serviceCol("PaaS", "var(--w)", [
+                    ["App","You"],["Data","You"],
+                    ["Runtime","Provider"],["OS","Provider"],["Infra","Provider"]
+                  ], "deploy เร็ว ลด ops burden")}
+                  ${serviceCol("SaaS", "var(--s)", [
+                    ["Use","You"],
+                    ["App","Provider"],["Data","Provider"],["Runtime","Provider"],["OS","Provider"],["Infra","Provider"],["Security Patches","Provider"]
+                  ], "คุณ “ใช้” มากกว่า “ดูแล”")}
+                </div>
+              </div>
+
+              <div class="card w-40 glowS">
+                <div class="t-md" style="font-weight:800; margin-bottom:10px;">Pizza as a Service 🍕</div>
+                ${pizza("On-Prem","ทำเองทุกอย่าง","👨‍🍳")}
+                ${pizza("IaaS","ซื้อวัตถุดิบ/เตา","🧺")}
+                ${pizza("PaaS","ซื้อพิซซ่าสำเร็จ","📦")}
+                ${pizza("SaaS","กินที่ร้าน","🍽️")}
+              </div>
+            </div>
+          </div>
+        `
+      },
+
+      // 7 Deployment Models
+      {
+        type:"content",
+        badge:"Cloud • Deployment Models",
+        title:"Public / Private / Hybrid (เลือก “ที่อยู่ของงาน”)",
+        html: `
+          <div class="gridOverlay"></div>
+          <div class="padBody">
+            <div class="row">
+              ${deployCard("Public Cloud","☁️","สเกลง่าย • cost-effective", "var(--p)", [
+                pill("AWS/Azure/GCP", "rgba(34,211,238,.10)", "rgba(34,211,238,.26)"),
+                pill("Multi-tenant")
+              ])}
+              ${deployCard("Private Cloud","🏢","control สูง • compliance", "var(--a)", [
+                pill("On-prem/Dedicated"),
+                pill("Policy/Compliance", "rgba(16,185,129,.10)", "rgba(16,185,129,.26)")
+              ])}
+              ${deployCard("Hybrid Cloud","🔗","best of both • แต่ซับซ้อน", "var(--s)", [
+                pill("Sensitive → Private", "rgba(251,191,36,.10)", "rgba(251,191,36,.26)"),
+                pill("Scale → Public", "rgba(99,102,241,.10)", "rgba(99,102,241,.26)")
+              ])}
+            </div>
+
+            <div style="height:12px;"></div>
+            <div class="card">
+              <div class="t-md" style="font-weight:800; margin-bottom:10px;">Quick Decision</div>
+              <div class="row">
+                <div class="card2 grow"><div class="t-sm" style="font-weight:800;">เริ่มต้นไว</div><div class="t-xs muted">→ Public</div></div>
+                <div class="card2 grow"><div class="t-sm" style="font-weight:800;">ข้อกำกับสูง</div><div class="t-xs muted">→ Private/Hybrid</div></div>
+                <div class="card2 grow"><div class="t-sm" style="font-weight:800;">ต้องสเกล/โลก</div><div class="t-xs muted">→ Public + CDN</div></div>
+              </div>
+            </div>
+          </div>
+        `
+      },
+
+      // 8 Section 12-Factor
+      { type:"section", title:"Part 2 • 12-Factor App", subtitle:"หลักคิดออกแบบแอปให้ “ย้ายง่าย-สเกลง่าย”" },
+
+      // 9 12 factor overview (no tiny text)
+      {
+        type:"content",
+        badge:"12-Factor • Overview",
+        title:"12 ข้อ = แผนที่สู่ Cloud-Native",
+        html: `
+          <div class="gridOverlay"></div>
+          <div class="padBody">
+            <div class="row">
+              <div class="card w-60">
+                <div class="t-md" style="font-weight:800; margin-bottom:12px;">Infographic: 12 Factors</div>
+
+                <div class="row wrap" style="gap:12px;">
+                  ${[
+                    "Codebase","Deps","Config","Backing","Build/Release/Run","Processes",
+                    "Port","Concurrency","Disposability","Dev/Prod","Logs","Admin"
+                  ].map((name, i)=>`
+                    <div class="card2" style="width: calc(16.5% - 10px); min-width: 140px; text-align:center;">
+                      <div class="t-xl title">${i+1}</div>
+                      <div class="t-xs muted">${name}</div>
+                    </div>
+                  `).join("")}
+                </div>
+
+                <div style="height:12px;"></div>
+                <div class="card2 t-md">
+                  <b>เป้าหมาย:</b> Deploy ได้เร็ว • scale out ได้ • เปลี่ยน env ไม่ต้องแก้โค้ด
+                </div>
+              </div>
+
+              <div class="card w-40 glowS">
+                <div class="t-md" style="font-weight:800; margin-bottom:10px;">5 ข้อที่ “ต้องรู้” ก่อนลงสนาม</div>
+                ${starItem("3. Config in ENV","Secrets/config อย่า hardcode")}
+                ${starItem("6. Stateless","state ไปอยู่ DB/Redis/S3")}
+                ${starItem("9. Disposability","start/stop เร็ว, graceful shutdown")}
+                ${starItem("10. Dev/Prod Parity","สภาพแวดล้อมใกล้กันที่สุด")}
+                ${starItem("11. Logs to stdout","รวม log จากหลาย instance")}
+              </div>
+            </div>
+          </div>
+        `
+      },
+
+      // 10 Config in ENV
+      {
+        type:"content",
+        badge:"12-Factor • #3 Config",
+        title:"Config ต้องอยู่ใน ENV (ไม่อยู่ในโค้ด)",
+        html: `
+          <div class="gridOverlay"></div>
+          <div class="padBody">
+            <div class="row">
+              <div class="card w-50 glowS">
+                <div class="t-md" style="font-weight:800; margin-bottom:10px;">❌ Bad</div>
+<pre><code>const DB = "mongodb://localhost:27017";
+const API_KEY = "sk-xxxx-secret";</code></pre>
+                <div class="t-sm muted" style="margin-top:10px;">ปัญหา: secret รั่ว / ย้าย env ยาก / deploy ซ้ำหลายที่พัง</div>
+              </div>
+
+              <div class="card w-50 glowA">
+                <div class="t-md" style="font-weight:800; margin-bottom:10px;">✅ Good</div>
+<pre><code>const DB = process.env.DATABASE_URL;
+const API_KEY = process.env.API_KEY;</code></pre>
+                <div class="t-sm muted" style="margin-top:10px;">ผลลัพธ์: codebase เดียว deploy ได้หลาย env</div>
+              </div>
+            </div>
+
+            <div style="height:12px;"></div>
+            <div class="card2 t-md">
+              <b>Insight:</b> Cloud = เปลี่ยนเครื่องได้ตลอดเวลา → config ต้อง “attach” ได้ ไม่ใช่ “ฝัง” อยู่ในโค้ด
+            </div>
+          </div>
+        `
+      },
+
+      // 11 Stateless
+      {
+        type:"content",
+        badge:"12-Factor • #6 Processes",
+        title:"Stateless: อย่าฝากชีวิตไว้ที่ instance",
+        html: `
+          <div class="gridOverlay"></div>
+          <div class="padBody">
+            <div class="row">
+              <div class="card w-60">
+                <div class="t-md" style="font-weight:800; margin-bottom:10px;">Infographic: Stateful vs Stateless</div>
+                <div class="row">
+                  <div class="card2 grow">
+                    <div class="t-md" style="font-weight:800;">Stateful ❌</div>
+                    <div style="height:10px;"></div>
+                    ${miniFlow(["LB","App #1 (session)"])}
+                    ${miniFlow(["LB","App #2 (ไม่มี)"])}
+                    <div class="t-sm muted" style="margin-top:8px;">ไปคนละเครื่องแล้ว “หลุด login”</div>
+                  </div>
+                  <div class="card2 grow">
+                    <div class="t-md" style="font-weight:800;">Stateless ✅</div>
+                    <div style="height:10px;"></div>
+                    ${miniFlow(["App #1","Redis/DB"], true)}
+                    ${miniFlow(["App #2","Redis/DB"], true)}
+                    <div class="t-sm muted" style="margin-top:8px;">ทุก instance เข้าถึง state ได้</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="card w-40 glowP">
+                <div class="t-md" style="font-weight:800; margin-bottom:10px;">เอา state ไปไว้ไหน?</div>
+                ${kv("🧠 Session","Redis")}
+                ${kv("🗃️ Data","DB")}
+                ${kv("🖼️ Files","Object Storage")}
+                ${kv("⚡ Cache","Redis/CDN")}
+                <div style="height:10px;"></div>
+                <div class="card2 t-md"><b>Principle:</b> Instance คือ “ของใช้แล้วทิ้ง”</div>
+              </div>
+            </div>
+          </div>
+        `
+      },
+
+      // 12 Disposability
+      {
+        type:"content",
+        badge:"12-Factor • #9 Disposability",
+        title:"Start/Stop เร็ว + Shutdown สวย = รอดใน Cloud",
+        html: `
+          <div class="gridOverlay"></div>
+          <div class="padBody">
+            <div class="row">
+              <div class="card w-60">
+                <div class="t-md" style="font-weight:800; margin-bottom:10px;">Lifecycle (ภาพรวม)</div>
+                <div class="row">
+                  ${phase("🚀","Startup","< 10s")}
+                  ${phase("🏃","Running","health checks")}
+                  ${phase("🛑","Shutdown","graceful")}
+                </div>
+                <div style="height:10px;"></div>
+                <div class="card2 t-md">
+                  Cloud/K8s ส่ง <b>SIGTERM</b> → ปิดรับ request → เคลียร์งาน → ปิด connection
+                </div>
+              </div>
+
+              <div class="card w-40 glowA">
+                <div class="t-md" style="font-weight:800; margin-bottom:10px;">ผลลัพธ์ที่ได้</div>
+                ${ok("✅ Auto-scaling ทำงานทัน")}
+                ${ok("✅ Rolling update ไม่ล่ม")}
+                ${ok("✅ Crash แล้วฟื้นเร็ว")}
+                <div style="height:10px;"></div>
+                <div class="card2 t-md"><b>ข้อสังเกต:</b> startup ช้า → scale ไม่ทัน → user timeout</div>
+              </div>
+            </div>
+          </div>
+        `
+      },
+
+      // 13 Dev/Prod Parity
+      {
+        type:"content",
+        badge:"12-Factor • #10 Dev/Prod Parity",
+        title:"Dev ≈ Prod: ลด “สามช่องว่าง”",
+        html: `
+          <div class="gridOverlay"></div>
+          <div class="padBody">
+            <div class="row">
+              ${gapCard("⏱️","Time Gap","deploy ถี่/เล็ก","var(--p)")}
+              ${gapCard("👥","Personnel Gap","DevOps culture","var(--s)")}
+              ${gapCard("🧰","Tools Gap","stack เหมือนกัน","var(--a)")}
+            </div>
+
+            <div style="height:12px;"></div>
+            <div class="card">
+              <div class="t-md" style="font-weight:800; margin-bottom:10px;">Infographic: Same Stack</div>
+              <div class="row">
+                ${envBox("Dev","Docker + Postgres + Redis")}
+                ${envBox("Staging","Docker + Postgres + Redis")}
+                ${envBox("Prod","Docker + Postgres + Redis")}
+              </div>
+            </div>
+          </div>
+        `
+      },
+
+      // 14 Logs
+      {
+        type:"content",
+        badge:"12-Factor • #11 Logs",
+        title:"Logs = Event Stream (รวมจากหลาย instance)",
+        html: `
+          <div class="gridOverlay"></div>
+          <div class="padBody">
+            <div class="row">
+              <div class="card w-60">
+                <div class="t-md" style="font-weight:800; margin-bottom:10px;">Infographic: Log Flow</div>
+                <div class="row" style="align-items:center;">
+                  ${flowBox("🐳","App stdout")}
+                  <div class="arrow">→</div>
+                  ${flowBox("☸️","Docker/K8s")}
+                  <div class="arrow">→</div>
+                  ${flowBox("📦","Aggregator")}
+                  <div class="arrow">→</div>
+                  ${flowBox("📊","Dashboard/Alert")}
+                </div>
+
+                <div style="height:12px;"></div>
+                <div class="row">
+                  <div class="card2 grow"><div class="t-md" style="font-weight:800;">❌ อย่าเขียนไฟล์</div><div class="t-sm muted">container restart = ไฟล์หาย</div></div>
+                  <div class="card2 grow"><div class="t-md" style="font-weight:800;">✅ stdout</div><div class="t-sm muted">รวม/ค้นหา/แจ้งเตือนได้</div></div>
+                </div>
+              </div>
+
+              <div class="card w-40 glowP">
+                <div class="t-md" style="font-weight:800; margin-bottom:10px;">Mini Pattern</div>
+<pre><code>console.log(JSON.stringify({
+  ts: new Date().toISOString(),
+  level: "info",
+  msg: "user_login",
+  userId: 123
+}))</code></pre>
+                <div class="t-sm muted" style="margin-top:10px;">structured log = query ได้ง่าย</div>
+              </div>
+            </div>
+          </div>
+        `
+      },
+
+      // 15 Traditional vs 12-Factor
+      {
+        type:"content",
+        badge:"Comparison",
+        title:"Traditional vs 12-Factor (สรุปแบบภาพ)",
+        html: `
+          <div class="gridOverlay"></div>
+          <div class="padBody">
+            <div class="row">
+              <div class="card w-50 glowS">
+                <div class="t-md" style="font-weight:800; margin-bottom:10px;">Traditional</div>
+                ${row2("Config","ไฟล์/Hardcode")}
+                ${row2("State","memory/disk")}
+                ${row2("Logs","เขียนไฟล์")}
+                ${row2("Scaling","scale up")}
+              </div>
+              <div class="card w-50 glowA">
+                <div class="t-md" style="font-weight:800; margin-bottom:10px;">12-Factor</div>
+                ${row2("Config","ENV")}
+                ${row2("State","external stores")}
+                ${row2("Logs","stdout stream")}
+                ${row2("Scaling","scale out")}
+              </div>
+            </div>
+            <div style="height:12px;"></div>
+            <div class="card2 t-md"><b>Takeaway:</b> จะขึ้น Cloud/Containers ให้รอด → “คิดแบบ 12-Factor” ก่อน</div>
+          </div>
+        `
+      },
+
+      // 16 NEW Migration Map
+      {
+        type:"content",
+        badge:"Migration • Map",
+        title:"เส้นทางย้ายขึ้น Cloud (Monolith → Cloud-Native)",
+        html: `
+          <div class="gridOverlay"></div>
+          <div class="padBody">
+            <div class="card glowP">
+              <div class="t-md" style="font-weight:800; margin-bottom:12px;">Infographic: Step-by-step Journey</div>
+              <div class="row" style="align-items:center;">
+                ${step("🏢","Monolith","single deploy")}
+                <div class="arrow">→</div>
+                ${step("🧱","Layered","UI/API/DB")}
+                <div class="arrow">→</div>
+                ${step("🐳","Containerize","docker image")}
+                <div class="arrow">→</div>
+                ${step("🧩","Microservices","independent deploy")}
+                <div class="arrow">→</div>
+                ${step("☁️","Cloud Ops","scale/observe", true)}
+              </div>
+
+              <div style="height:12px;"></div>
+              <div class="row">
+                <div class="card2 grow">${kpi("Payoff","", "linear-gradient(90deg, var(--a), rgba(16,185,129,.18))", "80%")}</div>
+                <div class="card2 grow">${kpi("Complexity","", "linear-gradient(90deg, var(--s), rgba(236,72,153,.18))", "70%")}</div>
+                <div class="card2 grow">${kpi("Risk","", "linear-gradient(90deg, var(--w), rgba(251,191,36,.18))", "55%")}</div>
+              </div>
+            </div>
+
+            <div style="height:12px;"></div>
+            <div class="card2 t-md"><b>หลักคิด:</b> ไม่ต้อง “กระโดด” ไป microservices ทันที — เริ่มจากสิ่งที่คุ้มสุดก่อน</div>
+          </div>
+        `
+      },
+
+      // 17 Cloud-ready Monolith
+      {
+        type:"content",
+        badge:"Migration • Step 1",
+        title:"Step 1: ทำ Monolith ให้ “Cloud-ready” ก่อน",
+        html: `
+          <div class="gridOverlay"></div>
+          <div class="padBody">
+            <div class="row">
+              <div class="card w-60 glowA">
+                <div class="t-md" style="font-weight:800; margin-bottom:10px;">Infographic: 12-Factor Mini Checklist</div>
+                <div class="row wrap" style="gap:12px;">
+                  ${check("ENV Config", "#3")}
+                  ${check("Stateless", "#6")}
+                  ${check("Fast Start/Stop", "#9")}
+                  ${check("Dev≈Prod", "#10")}
+                  ${check("Logs stdout", "#11")}
+                  ${check("Health Check", "ops")}
+                </div>
+                <div style="height:10px;"></div>
+                <div class="card2 t-md"><b>Outcome:</b> ยังเป็น monolith แต่เริ่ม “scale out ได้” และ deploy ซ้ำได้</div>
+              </div>
+
+              <div class="card w-40">
+                <div class="t-md" style="font-weight:800; margin-bottom:10px;">Pitfall ที่เจอบ่อย</div>
+                ${warn("session ใน memory (scale แล้วหลุด)")}
+                ${warn("config hardcode / secret ฝัง")}
+                ${warn("เขียนไฟล์ local เพื่อเก็บ state")}
+                ${warn("shutdown ไม่ graceful")}
+                <div style="height:10px;"></div>
+                <div class="card2 t-md"><b>Tip:</b> ถ้าแก้ 4 ข้อนี้ได้ → containerize จะง่ายมาก</div>
+              </div>
+            </div>
+          </div>
+        `
+      },
+
+      // 18 Layered on Cloud
+      {
+        type:"content",
+        badge:"Migration • Step 2",
+        title:"Step 2: Layered (UI/API/DB) ขึ้น Cloud แบบคุ้มที่สุด",
+        html: `
+          <div class="gridOverlay"></div>
+          <div class="padBody">
+            <div class="row">
+              <div class="card w-60">
+                <div class="t-md" style="font-weight:800; margin-bottom:10px;">Infographic: 3-Tier + Managed DB</div>
+                <div class="row" style="align-items:center;">
+                  ${mini("🧑‍💻","Users")}
+                  <div class="arrow">→</div>
+                  ${mini("🖼️","Web/UI","CDN friendly")}
+                  <div class="arrow">→</div>
+                  ${mini("🔌","API","scale out")}
+                  <div class="arrow">→</div>
+                  ${mini("🗄️","Managed DB","backup/patch", "rgba(16,185,129,.10)","rgba(16,185,129,.28)")}
+                </div>
+                <div style="height:12px;"></div>
+                <div class="row">
+                  <div class="card2 grow t-md">✅ แยก DB ก่อน = ลด risk และ ops burden</div>
+                  <div class="card2 grow t-md">✅ API scale out ได้ทันที (LB/Ingress)</div>
+                </div>
+              </div>
+
+              <div class="card w-40 glowS">
+                <div class="t-md" style="font-weight:800; margin-bottom:10px;">จุดที่ควร “แยกเพิ่ม” เมื่อโต</div>
+                ${kv("Session","Redis")}
+                ${kv("Static assets","CDN/Object")}
+                ${kv("Async jobs","Queue/Worker")}
+                ${kv("Cache","Redis/CDN")}
+              </div>
+            </div>
+          </div>
+        `
+      },
+
+      // 19 Dockerize + pipeline
+      {
+        type:"content",
+        badge:"Migration • Step 3",
+        title:"Step 3: Dockerize + Pipeline (Build → Push → Deploy)",
+        html: `
+          <div class="gridOverlay"></div>
+          <div class="padBody">
+            <div class="row">
+              <div class="card w-60 glowP">
+                <div class="t-md" style="font-weight:800; margin-bottom:10px;">Infographic: CI/CD to Cloud</div>
+                <div class="row" style="align-items:center;">
+                  ${mini("🌿","Git","commit")}
+                  <div class="arrow">→</div>
+                  ${mini("🏗️","CI","build+test")}
+                  <div class="arrow">→</div>
+                  ${mini("📦","Registry","tag version")}
+                  <div class="arrow">→</div>
+                  ${mini("🚀","Deploy","VM/K8s")}
+                  <div class="arrow">→</div>
+                  ${mini("📈","Observe","logs/metrics")}
+                </div>
+                <div style="height:12px;"></div>
+                <div class="row">
+                  <div class="card2 grow t-md">✅ Image immutable = deploy ซ้ำได้</div>
+                  <div class="card2 grow t-md">✅ Tag ชัด = rollback ง่าย</div>
+                </div>
+              </div>
+
+              <div class="card w-40">
+                <div class="t-md" style="font-weight:800; margin-bottom:10px;">Tag Strategy</div>
+                <div class="row wrap" style="gap:10px;">
+                  <span class="pill">myapp:1.0.3</span>
+                  <span class="pill" style="border-color:rgba(34,211,238,.28); background:rgba(34,211,238,.10)">myapp:sha-abc123</span>
+                  <span class="pill" style="border-color:rgba(251,191,36,.28); background:rgba(251,191,36,.10)">myapp:latest</span>
+                </div>
+                <div style="height:12px;"></div>
+                <div class="card2 t-md"><b>ข้อสังเกต:</b> prod ควร deploy ด้วย tag ที่ “ชี้ชัด” (version/sha) มากกว่า latest</div>
+              </div>
+            </div>
+          </div>
+        `
+      },
+
+      // 20 Microservices + Strangler
+      {
+        type:"content",
+        badge:"Migration • Step 4–5",
+        title:"Step 4–5: Microservices + Strangler Fig (ทำแบบลดความเสี่ยง)",
+        html: `
+          <div class="gridOverlay"></div>
+          <div class="padBody">
+            <div class="row">
+              <div class="card w-60 glowA">
+                <div class="t-md" style="font-weight:800; margin-bottom:10px;">Infographic: Strangler Fig</div>
+                <div class="row" style="align-items:center;">
+                  ${mini("🏢","Monolith","เดิมยังอยู่")}
+                  <div class="arrow">→</div>
+                  ${mini("🚪","API Gateway","route")}
+                  <div class="arrow">→</div>
+                  <div class="col grow" style="gap:12px;">
+                    ${mini("🧩","Service A","new")}
+                    ${mini("🧩","Service B","new")}
+                  </div>
+                </div>
+                <div style="height:12px;"></div>
+                <div class="card2 t-md"><b>Idea:</b> ย้าย “ทีละ endpoint/feature” → ลด downtime และลด risk</div>
+              </div>
+
+              <div class="card w-40 glowS">
+                <div class="t-md" style="font-weight:800; margin-bottom:10px;">เมื่อไหร่ควรแยก microservices?</div>
+                ${ok("✅ ทีมหลายทีม ต้อง deploy แยกกัน")}
+                ${ok("✅ บางส่วนโหลดสูง ต้องสเกลเฉพาะจุด")}
+                ${ok("✅ domain ชัด (bounded context)")}
+                ${warn("ถ้ายังไม่พร้อม ops → เริ่มจาก “modular monolith”")}
+              </div>
+            </div>
+          </div>
+        `
+      },
+
+      // 21 Section Docker
+      { type:"section", title:"Part 3 • Containers & Docker", subtitle:"จาก “works on my machine” → “works everywhere”" },
+
+      // 22 VM vs Container layers
+      {
+        type:"content",
+        badge:"Containers • Concept",
+        title:"VM vs Container (ดูเป็นชั้น ๆ)",
+        html: `
+          <div class="gridOverlay"></div>
+          <div class="padBody">
+            <div class="row">
+              <div class="card w-50 glowP">
+                <div class="t-md" style="font-weight:800; margin-bottom:10px;">Virtual Machine</div>
+                ${stack(["App","Bins/Libs","Guest OS (หนัก)","Hypervisor","Host Infra"], "rgba(251,191,36,.10)","rgba(251,191,36,.26)")}
+                <div class="t-sm muted" style="margin-top:10px;">เริ่มช้า • ขนาดใหญ่ • isolation แข็งแรง</div>
+              </div>
+              <div class="card w-50 glowA">
+                <div class="t-md" style="font-weight:800; margin-bottom:10px;">Container</div>
+                ${stack(["App A + App B","Bins/Libs","Container Runtime (เบา)","Host OS","Host Infra"], "rgba(16,185,129,.10)","rgba(16,185,129,.26)")}
+                <div class="t-sm muted" style="margin-top:10px;">เริ่มไว • เบา • portability สูงมาก</div>
+              </div>
+            </div>
+
+            <div style="height:12px;"></div>
+            <div class="card2 t-md"><b>จำง่าย:</b> VM = “ยก OS ไปด้วย” • Container = “แชร์ OS แล้วแพ็กแอป”</div>
+          </div>
+        `
+      },
+
+      // 23 VM vs Container metrics
+      {
+        type:"content",
+        badge:"Comparison",
+        title:"VM vs Container (สรุปสั้นแบบ Metric)",
+        html: `
+          <div class="gridOverlay"></div>
+          <div class="padBody">
+            <div class="row">
+              <div class="card w-50">
+                <div class="t-md" style="font-weight:800; margin-bottom:10px;">Virtual Machine</div>
+                ${kpi("Size","", "linear-gradient(90deg, var(--w), rgba(251,191,36,.20))", "75%")}
+                ${kpi("Start time","", "linear-gradient(90deg, var(--r), rgba(251,113,133,.20))", "70%")}
+                ${kpi("Density","", "linear-gradient(90deg, rgba(234,240,255,.65), rgba(234,240,255,.15))", "35%")}
+                ${kpi("Isolation","", "linear-gradient(90deg, var(--c), rgba(34,211,238,.20))", "85%")}
+              </div>
+
+              <div class="card w-50 glowA">
+                <div class="t-md" style="font-weight:800; margin-bottom:10px;">Container</div>
+                ${kpi("Size","", "linear-gradient(90deg, var(--a), rgba(16,185,129,.20))", "25%")}
+                ${kpi("Start time","", "linear-gradient(90deg, var(--a), rgba(16,185,129,.20))", "20%")}
+                ${kpi("Density","", "linear-gradient(90deg, var(--p), rgba(99,102,241,.20))", "82%")}
+                ${kpi("Portability","", "linear-gradient(90deg, var(--s), rgba(236,72,153,.20))", "92%")}
+              </div>
+            </div>
+          </div>
+        `
+      },
+
+      // 24 Docker workflow
+      {
+        type:"content",
+        badge:"Docker • Workflow",
+        title:"Docker: Build → Ship → Run (ภาพรวม)",
+        html: `
+          <div class="gridOverlay"></div>
+          <div class="padBody">
+            <div class="row">
+              <div class="card w-60">
+                <div class="t-md" style="font-weight:800; margin-bottom:10px;">Pipeline</div>
+                <div class="row" style="align-items:center;">
+                  ${mini("📄","Dockerfile","recipe")}
+                  <div class="arrow">→</div>
+                  ${mini("📦","Image","artifact")}
+                  <div class="arrow">→</div>
+                  ${mini("🐳","Container","running")}
+                </div>
+                <div style="height:12px;"></div>
+                <div class="row">
+                  <div class="card2 grow"><div class="t-md" style="font-weight:800;">Key Idea</div><div class="t-sm muted">Image = read-only template</div></div>
+                  <div class="card2 grow"><div class="t-md" style="font-weight:800;">Why it matters</div><div class="t-sm muted">deploy ซ้ำได้ “เหมือนเดิม”</div></div>
+                </div>
+              </div>
+
+              <div class="card w-40 glowP">
+                <div class="t-md" style="font-weight:800; margin-bottom:10px;">คำสั่งจำเป็น (3 บรรทัด)</div>
+<pre><code>docker build -t myapp:1.0 .
+docker run -d -p 3000:3000 myapp:1.0
+docker logs -f &lt;container&gt;</code></pre>
+                <div class="t-sm muted" style="margin-top:10px;">เข้าใจ flow → พร้อมต่อยอดไป K8s</div>
+              </div>
+            </div>
+          </div>
+        `
+      },
+
+      // 25 Dockerfile
+      {
+        type:"content",
+        badge:"Docker • Dockerfile",
+        title:"ตัวอย่าง Dockerfile (Node.js) แบบเล็กและชัด",
+        html: `
+          <div class="gridOverlay"></div>
+          <div class="padBody">
+            <div class="row">
+              <div class="card w-60 glowA">
+<pre><code>FROM node:18-alpine
+WORKDIR /app
+
+COPY package*.json ./
+RUN npm ci --only=production
+
+COPY . .
+EXPOSE 3000
+CMD ["node","server.js"]</code></pre>
+              </div>
+
+              <div class="card w-40">
+                <div class="t-md" style="font-weight:800; margin-bottom:10px;">Micro-Checklist ✅</div>
+                ${kv("base image","เล็ก/ปลอดภัย")}
+                ${kv("env config","process.env")}
+                ${kv("logs","stdout")}
+                ${kv("stateless","no local state")}
+                <div style="height:12px;"></div>
+                <div class="card2 t-md"><b>เชื่อม 12-Factor:</b> Config/Logs/Stateless ทำให้ container “อยู่ได้” บน Cloud</div>
+              </div>
+            </div>
+          </div>
+        `
+      },
+
+      // 26 Registry
+      {
+        type:"content",
+        badge:"Docker • Registry",
+        title:"Image ต้องไปอยู่ที่ไหน? (Registry)",
+        html: `
+          <div class="gridOverlay"></div>
+          <div class="padBody">
+            <div class="card">
+              <div class="t-md" style="font-weight:800; margin-bottom:10px;">Infographic: Push / Pull</div>
+              <div class="row" style="align-items:center;">
+                ${mini("👩‍💻","Developer","build")}
+                <div class="arrow">→</div>
+                ${mini("📦","Registry","Docker Hub/ECR/GCR", "rgba(99,102,241,.10)","rgba(99,102,241,.26)")}
+                <div class="arrow">→</div>
+                ${mini("🖥️","Runtime","server/cluster")}
+              </div>
+
+              <div style="height:12px;"></div>
+              <div class="row">
+                <div class="card2 grow t-md"><b>Push</b> = ส่ง artifact “immutable”</div>
+                <div class="card2 grow t-md"><b>Pull</b> = เอาเวอร์ชันเดิมไป deploy ได้ซ้ำ</div>
+              </div>
+            </div>
+          </div>
+        `
+      },
+
+      // 27 Section K8s
+      { type:"section", title:"Part 4 • Orchestration (Kubernetes)", subtitle:"ถ้ามีคอนเทนเนอร์ “หลักร้อย-พัน” ใครดูแล?" },
+
+      // 28 K8s problem
+      {
+        type:"content",
+        badge:"Orchestration • Problem",
+        title:"เมื่อมีคอนเทนเนอร์เยอะ… ปัญหาจะมาเป็นแพ็ก",
+        html: `
+          <div class="gridOverlay"></div>
+          <div class="padBody">
+            <div class="row">
+              <div class="card w-50 glowS">
+                <div class="icon">😵‍💫</div>
+                <div class="t-xl title" style="margin-top:8px;">Operational Problems</div>
+                ${warn("ใคร restart ตัวที่ล่ม?")}
+                ${warn("ใครกระจายโหลด?")}
+                ${warn("ใครอัปเดตแบบไม่ downtime?")}
+                ${warn("ใครรักษา desired replicas?")}
+              </div>
+
+              <div class="card w-50 glowP center col" style="text-align:center;">
+                <div class="icon" style="font-size: calc(4rem * var(--ui-scale));">☸️</div>
+                <div class="title t-2xl">Kubernetes</div>
+                <div class="t-lg muted">“บอก Desired State แล้วให้ระบบจัดการ”</div>
+                <div class="row wrap center" style="margin-top:12px;">
+                  <span class="pill" style="border-color:rgba(16,185,129,.28); background:rgba(16,185,129,.10)">Self-healing</span>
+                  <span class="pill">Scaling</span>
+                  <span class="pill" style="border-color:rgba(99,102,241,.28); background:rgba(99,102,241,.10)">Rolling Update</span>
+                  <span class="pill" style="border-color:rgba(34,211,238,.28); background:rgba(34,211,238,.10)">Service Discovery</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        `
+      },
+
+      // 29 K8s architecture
+      {
+        type:"content",
+        badge:"K8s • Architecture",
+        title:"Kubernetes (ภาพสถาปัตยกรรมแบบสั้น)",
+        html: `
+          <div class="gridOverlay"></div>
+          <div class="padBody">
+            <div class="row">
+              <div class="card w-40 glowP">
+                <div class="t-md" style="font-weight:800; margin-bottom:10px;">Control Plane</div>
+                ${kv("API Server","entrypoint")}
+                ${kv("Scheduler","วาง pod")}
+                ${kv("Controller","รักษา state")}
+                ${kv("etcd","config store")}
+              </div>
+
+              <div class="card w-60">
+                <div class="t-md" style="font-weight:800; margin-bottom:10px;">Worker Nodes</div>
+                <div class="row">
+                  ${nodeBox("Node A")}
+                  ${nodeBox("Node B")}
+                  ${nodeBox("Node C")}
+                </div>
+                <div style="height:12px;"></div>
+                <div class="card2 t-md"><b>คำสำคัญ:</b> Pod • Deployment • Service • Ingress • ConfigMap/Secret</div>
+              </div>
+            </div>
+          </div>
+        `
+      },
+
+      // 30 K8s objects
+      {
+        type:"content",
+        badge:"K8s • Objects",
+        title:"K8s Objects ที่เจอบ่อย (จำเป็นต่อการอ่าน Diagram)",
+        html: `
+          <div class="gridOverlay"></div>
+          <div class="padBody">
+            <div class="row">
+              ${objCard("Pod","หน่วยรันเล็กสุด (1+ containers)", ["app","sidecar"], "var(--a)")}
+              ${objCard("Deployment","replicas + rolling update", ["replicas","strategy"], "var(--p)")}
+              ${objCard("Service / Ingress","รับ traffic + routing", ["DNS","Routes"], "var(--s)")}
+            </div>
+
+            <div style="height:12px;"></div>
+            <div class="card2 t-md"><b>สังเกต:</b> วาด Cloud-Native ให้แยก “App (Pods)” ออกจาก “Traffic Entry (Ingress/LB)”</div>
+          </div>
+        `
+      },
+
+      // 31 Section Topologies
+      { type:"section", title:"Part 5 • Deployment Topologies", subtitle:"เลือกโครงสร้างให้เหมาะกับ “โหลด-งบ-ความเสี่ยง”" },
+
+      // 32 Topology 1
+      {
+        type:"content",
+        badge:"Topology 1",
+        title:"Single Server (ง่ายสุดสำหรับเรียน/ทดลอง)",
+        html: `
+          <div class="gridOverlay"></div>
+          <div class="padBody">
+            <div class="row">
+              <div class="card w-60">
+                <div class="t-md" style="font-weight:800; margin-bottom:10px;">Infographic</div>
+                <div class="row" style="align-items:center;">
+                  ${mini("👤","Users")}
+                  <div class="arrow">→</div>
+                  ${mini("🖥️","1 VM","Web + API + DB", "rgba(99,102,241,.10)","rgba(99,102,241,.26)")}
+                </div>
+
+                <div style="height:12px;"></div>
+                <div class="row">
+                  <div class="card2 grow"><div class="t-md" style="font-weight:800;">✅ ดี</div><div class="t-sm muted">ถูก • ง่าย • เหมาะกับ dev</div></div>
+                  <div class="card2 grow"><div class="t-md" style="font-weight:800;">❌ เสี่ยง</div><div class="t-sm muted">SPOF • scale ยาก</div></div>
+                </div>
+              </div>
+
+              <div class="card w-40 glowA">
+                <div class="t-md" style="font-weight:800; margin-bottom:10px;">เหมาะกับ</div>
+                ${ok("โปรเจกต์เรียน")}
+                ${ok("prototype / demo")}
+                ${ok("โหลดน้อย")}
+                <div style="height:12px;"></div>
+                <div class="card2 t-md"><b>Mindset:</b> เริ่มง่าย → เก็บข้อมูลจริง → ค่อย “ยก topology”</div>
+              </div>
+            </div>
+          </div>
+        `
+      },
+
+      // 33 Topology 2
+      {
+        type:"content",
+        badge:"Topology 2",
+        title:"Separated Database (แยก DB เป็น Managed)",
+        html: `
+          <div class="gridOverlay"></div>
+          <div class="padBody">
+            <div class="row">
+              <div class="card w-60">
+                <div class="t-md" style="font-weight:800; margin-bottom:10px;">Infographic</div>
+                <div class="row" style="align-items:center;">
+                  ${mini("👤","Users")}
+                  <div class="arrow">→</div>
+                  ${mini("🖥️","App VM","Web/API", "rgba(99,102,241,.10)","rgba(99,102,241,.26)")}
+                  <div class="arrow">→</div>
+                  ${mini("🗄️","Managed DB","backup/patch", "rgba(16,185,129,.10)","rgba(16,185,129,.26)")}
+                </div>
+                <div style="height:12px;"></div>
+                <div class="row">
+                  <div class="card2 grow t-md"><b>✅</b> DB มี backup/recovery อัตโนมัติ</div>
+                  <div class="card2 grow t-md"><b>❌</b> App ยังเป็น SPOF</div>
+                </div>
+              </div>
+
+              <div class="card w-40 glowA">
+                <div class="t-md" style="font-weight:800; margin-bottom:10px;">จุดคุ้มค่า</div>
+                <div class="t-md muted" style="line-height:1.4;">
+                  ยกภาระ “DB maintenance” ออกไปก่อน<br/>
+                  แล้วค่อยเพิ่ม HA/Scaling ที่ชั้น App
+                </div>
+                <div style="height:12px;"></div>
+                <div class="row wrap" style="gap:10px;">
+                  <span class="pill">Small Production</span>
+                  <span class="pill" style="border-color:rgba(16,185,129,.28); background:rgba(16,185,129,.10)">Safer DB</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        `
+      },
+
+      // 34 Topology 3
+      {
+        type:"content",
+        badge:"Topology 3",
+        title:"Load Balanced + Auto-Scaling (เริ่มจริงจังเรื่อง HA)",
+        html: `
+          <div class="gridOverlay"></div>
+          <div class="padBody">
+            <div class="card">
+              <div class="t-md" style="font-weight:800; margin-bottom:10px;">Infographic</div>
+              <div class="row" style="align-items:center;">
+                ${mini("👤","Users")}
+                <div class="arrow">→</div>
+                ${mini("⚖️","Load Balancer","health checks", "rgba(99,102,241,.10)","rgba(99,102,241,.26)")}
+                <div class="arrow">→</div>
+                ${mini("🖥️","App #1","AZ-spread")}
+                ${mini("🖥️","App #2","AZ-spread")}
+                ${mini("🖥️","App #3","AZ-spread")}
+              </div>
+
+              <div style="height:12px;"></div>
+              <div class="row">
+                <div class="card2 grow"><div class="t-md" style="font-weight:800;">✅</div><div class="t-sm muted">ไม่มี SPOF ที่ชั้น app • scale out ได้</div></div>
+                <div class="card2 grow"><div class="t-md" style="font-weight:800;">⚠️</div><div class="t-sm muted">เริ่มต้องมี DevOps/Monitoring</div></div>
+              </div>
+            </div>
+          </div>
+        `
+      },
+
+      // 35 Topology 4
+      {
+        type:"content",
+        badge:"Topology 4",
+        title:"Full Production (Enterprise Pattern)",
+        html: `
+          <div class="gridOverlay"></div>
+          <div class="padBody">
+            <div class="row">
+              <div class="card w-60 glowP">
+                <div class="t-md" style="font-weight:800; margin-bottom:10px;">Infographic: Edge → Core</div>
+                <div class="row">
+                  ${mini("🌍","CDN")}
+                  ${mini("🛡️","WAF")}
+                  ${mini("⚖️","LB")}
+                  ${mini("☸️","K8s")}
+                  ${mini("🗄️","DB/Cache/Queue")}
+                </div>
+                <div style="height:12px;"></div>
+                <div class="row">
+                  <div class="card2 grow t-md">⚡ Cache/Redis</div>
+                  <div class="card2 grow t-md">📨 Queue/Workers</div>
+                  <div class="card2 grow t-md">📈 Observability</div>
+                </div>
+              </div>
+
+              <div class="card w-40 glowA">
+                <div class="t-md" style="font-weight:800; margin-bottom:10px;">เหมาะกับ</div>
+                ${ok("ผู้ใช้เยอะมาก / critical")}
+                ${ok("ต้อง 99.99%+")}
+                ${ok("ทีม ops พร้อม")}
+                <div style="height:12px;"></div>
+                <div class="card2 t-md"><b>Trade-off:</b> ดีสุด แต่ “แพง+ซับซ้อน” สุด</div>
+              </div>
+            </div>
+          </div>
+        `
+      },
+
+      // 36 Matrix
+      {
+        type:"content",
+        badge:"Topology • Matrix",
+        title:"เทียบ 4 แบบ (ภาพรวมเร็ว)",
+        html: `
+          <div class="gridOverlay"></div>
+          <div class="padBody">
+            <div class="card">
+              <div class="row">
+                ${matrix("Single","$","Low","Low","Dev/Learning","rgba(255,255,255,.06)")}
+                ${matrix("Sep DB","$$","Med","Low","Small Prod","rgba(16,185,129,.08)")}
+                ${matrix("LB+ASG","$$$","High","Med","Prod HA","rgba(99,102,241,.10)")}
+                ${matrix("Enterprise","$$$$","Very High","High","Large Scale","rgba(236,72,153,.10)")}
+              </div>
+            </div>
+            <div style="height:12px;"></div>
+            <div class="card2 t-md"><b>หลักเลือก:</b> เริ่มจาก requirement (uptime/traffic/data) แล้วค่อยดูงบกับทีม</div>
+          </div>
+        `
+      },
+
+      // 37 Lab
+      {
+        type:"content",
+        badge:"Lab • Prep",
+        title:"Lab ท้ายคาบ: ออกแบบ Deployment สำหรับ Task Board System",
+        html: `
+          <div class="gridOverlay"></div>
+          <div class="padBody">
+            <div class="row">
+              ${lab("🗺️","Lab 1","วาด Deployment Diagram", ["Web","API","DB","Cache/Queue"], "var(--p)")}
+              ${lab("⚖️","Lab 2","เทียบ Trade-offs", ["Cost","HA","Latency"], "var(--a)")}
+              ${lab("🧾","Lab 3","เขียน ADR สั้น ๆ", ["Why this?","Why not others?"], "var(--s)")}
+            </div>
+            <div style="height:12px;"></div>
+            <div class="card2 t-md"><b>คำเตือน:</b> อย่าเลือกเพราะ “เท่” — เลือกเพราะ <b>Requirements</b> เท่านั้น</div>
+          </div>
+        `
+      },
+
+      // 38 Wrap-up
+      {
+        type:"content",
+        badge:"Wrap-up",
+        title:"สรุป Week 7 + เตรียมสอบกลางภาค",
+        html: `
+          <div class="gridOverlay"></div>
+          <div class="padBody">
+            <div class="row">
+              <div class="card w-60 glowA">
+                <div class="t-md" style="font-weight:800; margin-bottom:10px;">Key Takeaways</div>
+                <div class="row wrap" style="gap:12px;">
+                  <div class="card2" style="width: calc(50% - 6px);">☁️ Cloud = self-service + elasticity + metering</div>
+                  <div class="card2" style="width: calc(50% - 6px);">🍕 IaaS/PaaS/SaaS = responsibility</div>
+                  <div class="card2" style="width: calc(50% - 6px);">🧠 12-Factor = portable + scalable</div>
+                  <div class="card2" style="width: calc(50% - 6px);">🐳 Container = deploy ได้เหมือนกันทุกที่</div>
+                </div>
+              </div>
+
+              <div class="card w-40 glowS">
+                <div class="t-md" style="font-weight:800; margin-bottom:10px;">Midterm Scope (Week 1–7)</div>
+                ${ok("Styles/Patterns")}
+                ${ok("C4 Model")}
+                ${ok("ADD-Lite + ADR")}
+                ${ok("Cloud & Containers")}
+                <div style="height:12px;"></div>
+                <div class="card2 t-md"><b>คำถามชวนคิด:</b><br/>“ถ้า user โต 10× คุณจะยก topology ตอนไหน?”</div>
+              </div>
+            </div>
+
+            <div style="height:12px;"></div>
+            <div class="t-lg muted" style="text-align:center; font-style:italic;">
+              “Architecture ที่ดี ไม่ใช่แค่สวย… แต่ deploy แล้วอยู่รอด”
+            </div>
+          </div>
+        `
+      },
+
+      // 39 Q&A End
+      {
+        type:"title",
+        kicker:"ENGSE207 • Q&A",
+        title:"ขอบคุณครับ<br/>Q & A",
+        subtitle:"ต่อด้วย Lab / Workshop",
+        footerLeft:"Software Architecture",
+        footerRight:"End",
+        bg: `
+          radial-gradient(900px 540px at 35% 35%, rgba(16,185,129,.22), transparent 60%),
+          radial-gradient(900px 540px at 75% 45%, rgba(34,211,238,.18), transparent 60%),
+          linear-gradient(135deg, rgba(99,102,241,.18), rgba(236,72,153,.10))
+        `,
+        html: `
+          <div class="gridOverlay"></div>
+          <div class="sectionCenter">
+            <div class="badge"><span class="dot"></span><span class="t-xs">Ask • Discuss • Decide</span></div>
+            <div class="title t-3xl" style="margin-top:14px;">ขอบคุณครับ</div>
+            <div class="t-2xl muted" style="margin-top:10px;">Q & A และเริ่มทำ Lab กันเลย 🚀</div>
+            <div class="row wrap center" style="margin-top:18px; gap:10px;">
+              <span class="pill">Cloud</span>
+              <span class="pill">12-Factor</span>
+              <span class="pill">Docker</span>
+              <span class="pill">Kubernetes</span>
+              <span class="pill">Topology</span>
+            </div>
+          </div>
+        `
+      },
+
+      // 40 (Optional spare / buffer)
+      {
+        type:"content",
+        badge:"Exit Ticket",
+        title:"คำถามก่อนจบ (Exit Ticket)",
+        html: `
+          <div class="gridOverlay"></div>
+          <div class="padBody">
+            <div class="row">
+              <div class="card w-50 glowP">
+                <div class="t-xl title">Q1</div>
+                <div class="t-lg" style="margin-top:8px;">ระบบของคุณ “ต้องการ Cloud model แบบไหน” และเพราะอะไร?</div>
+                <div style="height:12px;"></div>
+                <div class="row wrap" style="gap:10px;">
+                  <span class="pill">Public</span><span class="pill">Private</span><span class="pill">Hybrid</span>
+                </div>
+              </div>
+              <div class="card w-50 glowA">
+                <div class="t-xl title">Q2</div>
+                <div class="t-lg" style="margin-top:8px;">ถ้าทราฟฟิกพุ่ง 10× คุณจะ “ยก topology” จุดไหนก่อน?</div>
+                <div style="height:12px;"></div>
+                <div class="row wrap" style="gap:10px;">
+                  <span class="pill">DB</span><span class="pill">LB</span><span class="pill">Cache</span><span class="pill">Queue</span>
+                </div>
+              </div>
+            </div>
+
+            <div style="height:12px;"></div>
+            <div class="card2 t-md"><b>ส่งคำตอบ:</b> 2–3 บรรทัด / คน • ใช้เหตุผลจาก quality attributes</div>
+          </div>
+        `
+      },
+    ];
+
+    // --------- Render helpers (pure JS) ----------
+    const root = document.getElementById("root");
+    const progressBar = document.getElementById("progressBar");
+
+    let current = 0;
+    let fontScale = 100;
+
+    function wrapSlide(inner, idx){
+      return `
+        <div class="slide" id="slide-${idx}">
+          <div class="gridOverlay"></div>
+          ${inner}
+          <div class="bottombar">
+            <div>Software Architecture Lecture Series</div>
+            <div class="muted">Slide ${idx+1} / ${slides.length} • ←/→, Space, F, Home/End</div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderSlide(s, idx){
+      if(s.type === "section"){
+        const html = `
+          <div class="sectionCenter">
+            <div class="badge"><span class="dot"></span><span class="t-xs">Section Break</span></div>
+            <div class="title t-3xl" style="margin-top:14px;">${s.title}</div>
+            <div class="t-xl muted" style="margin-top:10px;">${s.subtitle || ""}</div>
+            <div class="card2 t-sm" style="margin-top:18px;">Slide ${idx+1} / ${slides.length}</div>
+          </div>
+        `;
+        return wrapSlide(html, idx);
+      }
+
+      if(s.type === "title"){
+        const html = `
+          <div style="position:absolute; inset:0; background:${s.bg || ""};"></div>
+          <div class="gridOverlay"></div>
+          <div class="sectionCenter" style="position:relative;">
+            <div class="badge"><span class="dot"></span><span class="t-xs">${s.kicker || ""}</span></div>
+            <div class="title t-3xl" style="margin-top:14px;">${s.title || ""}</div>
+            <div class="t-xl muted" style="margin-top:10px;">${s.subtitle || ""}</div>
+          </div>
+          <div class="bottombar">
+            <div>${s.footerLeft || "ENGSE207"}</div>
+            <div class="muted">Slide ${idx+1} / ${slides.length} • ${s.footerRight || ""}</div>
+          </div>
+        `;
+        return `<div class="slide" id="slide-${idx}">${html}</div>`;
+      }
+
+      // content slide
+      const html = `
+        <div class="topbar">
+          <div>
+            <div class="badge"><span class="dot"></span><span>${s.badge || ""}</span></div>
+            <div class="title t-2xl" style="margin-top:10px;">${s.title || ""}</div>
+          </div>
+          <div style="text-align:right;">
+            <div class="badge"><span class="dot"></span><span class="t-xs">ENGSE207 • Week 7</span></div>
+            <div class="t-xs muted" style="margin-top:8px;">Slide ${idx+1} / ${slides.length}</div>
+          </div>
+        </div>
+        ${s.html || ""}
+      `;
+      return wrapSlide(html, idx);
+    }
+
+    function renderAll(){
+      root.innerHTML = slides.map((s, idx)=>renderSlide(s, idx)).join("");
+      show(0);
+    }
+
+    function show(i){
+      const all = document.querySelectorAll(".slide");
+      all.forEach(el=>el.classList.remove("active"));
+      const el = document.getElementById(`slide-${i}`);
+      if(!el) return;
+      el.classList.add("active");
+      current = i;
+      updateProgress();
+    }
+
+    function updateProgress(){
+      const pct = ((current+1)/slides.length)*100;
+      progressBar.style.width = pct + "%";
+    }
+
+    function next(){ if(current < slides.length-1) show(current+1); }
+    function prev(){ if(current > 0) show(current-1); }
+    function first(){ show(0); }
+    function last(){ show(slides.length-1); }
+
+    function setScale(delta){
+      fontScale = Math.max(85, Math.min(150, fontScale + delta));
+      const scale = fontScale / 100;
+      document.documentElement.style.setProperty("--ui-scale", scale);
+    }
+
+    function toggleFullScreen(){
+      if(!document.fullscreenElement){
+        document.documentElement.requestFullscreen?.();
+      } else {
+        document.exitFullscreen?.();
+      }
+    }
+
+    // ---------- UI hooks ----------
+    document.getElementById("btnNext").addEventListener("click", next);
+    document.getElementById("btnPrev").addEventListener("click", prev);
+    document.getElementById("btnFontUp").addEventListener("click", ()=>setScale(+5));
+    document.getElementById("btnFontDown").addEventListener("click", ()=>setScale(-5));
+    document.getElementById("btnFS").addEventListener("click", toggleFullScreen);
+
+    document.addEventListener("keydown", (e)=>{
+      if(e.key === "ArrowRight" || e.key === " "){ e.preventDefault(); next(); }
+      if(e.key === "ArrowLeft"){ e.preventDefault(); prev(); }
+      if(e.key.toLowerCase() === "f"){ toggleFullScreen(); }
+      if(e.key === "Home"){ first(); }
+      if(e.key === "End"){ last(); }
+    });
+
+    // swipe
+    let sx=0, sy=0, t0=0;
+    document.addEventListener("touchstart", (e)=>{
+      const t = e.touches[0]; sx=t.clientX; sy=t.clientY; t0=Date.now();
+    }, {passive:true});
+    document.addEventListener("touchend", (e)=>{
+      const dt = Date.now()-t0;
+      if(dt>650) return;
+      const t = e.changedTouches[0];
+      const dx = t.clientX - sx;
+      const dy = t.clientY - sy;
+      if(Math.abs(dx) > 60 && Math.abs(dy) < 60){
+        if(dx < 0) next(); else prev();
+      }
+    }, {passive:true});
+
+    // --------- Mini UI builders ----------
+    function pill(text, bg="rgba(255,255,255,.055)", border="rgba(255,255,255,.14)"){
+      return `<span class="pill" style="background:${bg}; border-color:${border};">${text}</span>`;
+    }
+
+    function kpi(label, value="", bg, width="72%"){
+      return `
+        <div class="kpi" style="margin:10px 0;">
+          <div class="t-sm muted" style="width:140px;">${label}</div>
+          <div class="bar"><i style="--w:${width}; --bg:${bg};"></i></div>
+          <div class="t-sm" style="width:70px; text-align:right; font-weight:800;">${value || width}</div>
+        </div>
+      `;
+    }
+
+    function serviceCol(title, color, items, note=""){
+      const you = items.filter(x=>x[1]==="You").map(x=>x[0]);
+      const prov = items.filter(x=>x[1]==="Provider").map(x=>x[0]);
+
+      return `
+        <div class="card2 grow">
+          <div class="t-md" style="font-weight:900; text-align:center; color:${color}; margin-bottom:10px;">${title}</div>
+          ${you.map(x=>`<div class="pill" style="display:block; margin:8px 0;">${x} • You</div>`).join("")}
+          ${prov.map(x=>`<div class="pill" style="display:block; margin:8px 0; background:rgba(99,102,241,.10); border-color:rgba(99,102,241,.26)">${x} • Provider</div>`).join("")}
+          ${note ? `<div class="t-xs muted" style="margin-top:10px;">${note}</div>` : ``}
+        </div>
+      `;
+    }
+
+    function pizza(title, desc, emo){
+      return `
+        <div class="card2 between" style="margin:10px 0;">
+          <div>
+            <div class="t-md" style="font-weight:900;">${title}</div>
+            <div class="t-xs muted">${desc}</div>
+          </div>
+          <div class="icon">${emo}</div>
+        </div>
+      `;
+    }
+
+    function deployCard(title, emo, desc, color, pillsHtml){
+      return `
+        <div class="card grow ${color === "var(--p)" ? "glowP" : color === "var(--a)" ? "glowA" : "glowS"}">
+          <div class="row" style="align-items:center;">
+            <div class="icon">${emo}</div>
+            <div class="col" style="gap:4px;">
+              <div class="t-md" style="font-weight:900;">${title}</div>
+              <div class="t-xs muted">${desc}</div>
+            </div>
+          </div>
+          <div style="height:10px;"></div>
+          <div class="row wrap" style="gap:10px;">
+            ${pillsHtml.join("")}
+          </div>
+        </div>
+      `;
+    }
+
+    function starItem(title, desc){
+      return `
+        <div class="card2 between" style="padding:12px; margin:10px 0;">
+          <div>
+            <div class="t-md" style="font-weight:900;">${title}</div>
+            <div class="t-sm muted">${desc}</div>
+          </div>
+          <div class="pill" style="width:44px; height:44px; border-radius:999px; padding:0; display:flex; align-items:center; justify-content:center; border-color:rgba(251,191,36,.40); background:rgba(251,191,36,.08)">★</div>
+        </div>
+      `;
+    }
+
+    function miniFlow(items, good=false){
+      const left = items[0], right = items[1];
+      return `
+        <div class="row" style="align-items:center; margin:10px 0;">
+          <span class="pill">${left}</span>
+          <div class="arrow">→</div>
+          <span class="pill" style="${good ? "border-color:rgba(16,185,129,.28); background:rgba(16,185,129,.10)" : ""}">${right}</span>
+        </div>
+      `;
+    }
+
+    function kv(k,v){
+      return `<div class="card2 between" style="margin:10px 0;"><span class="t-md" style="font-weight:900;">${k}</span><span class="pill">${v}</span></div>`;
+    }
+    function phase(emo, title, sub){
+      return `<div class="card2 grow center col" style="gap:6px;">
+        <div class="icon">${emo}</div>
+        <div class="t-md" style="font-weight:900;">${title}</div>
+        <div class="t-xs muted">${sub}</div>
+      </div>`;
+    }
+    function ok(text){ return `<div class="card2 t-md" style="margin:10px 0;">${text}</div>`; }
+    function warn(text){ return `<div class="card2 t-md" style="margin:10px 0;">⚠️ ${text}</div>`; }
+
+    function gapCard(emo, title, desc, color){
+      const glow = color === "var(--p)" ? "glowP" : color === "var(--a)" ? "glowA" : "glowS";
+      return `<div class="card grow ${glow}">
+        <div class="icon">${emo}</div>
+        <div class="t-xl title" style="margin-top:8px;">${title}</div>
+        <div class="t-sm muted">${desc}</div>
+      </div>`;
+    }
+
+    function envBox(name, stack){
+      return `<div class="card2 grow"><div class="t-md" style="font-weight:900;">${name}</div><div class="t-sm muted">${stack}</div></div>`;
+    }
+
+    function flowBox(emo, label){
+      return `<div class="card2 grow center col" style="gap:6px; text-align:center;">
+        <div class="icon">${emo}</div><div class="t-sm">${label}</div></div>`;
+    }
+
+    function row2(k,v){
+      return `<div class="card2 between" style="margin:10px 0;"><span class="t-md" style="font-weight:900;">${k}</span><span class="t-sm muted">${v}</span></div>`;
+    }
+
+    function step(emo, title, sub, highlight=false){
+      const style = highlight ? `border-color:rgba(34,211,238,.30); background:rgba(34,211,238,.08);` : ``;
+      return `<div class="card2 center col" style="gap:6px; min-width:170px; text-align:center; ${style}">
+        <div class="icon">${emo}</div>
+        <div class="t-md" style="font-weight:900;">${title}</div>
+        <div class="t-xs muted">${sub}</div>
+      </div>`;
+    }
+
+    function check(label, tag){
+      return `<div class="card2 between" style="width: calc(50% - 7px);">
+        <span class="t-md" style="font-weight:900;">${label}</span>
+        <span class="pill">${tag}</span>
+      </div>`;
+    }
+
+    function mini(emo, title, sub="", bg="", border=""){
+      const style = bg ? `background:${bg}; border-color:${border};` : ``;
+      return `<div class="card2 grow center col" style="gap:6px; text-align:center; ${style}">
+        <div class="icon">${emo}</div>
+        <div class="t-md" style="font-weight:900;">${title}</div>
+        ${sub ? `<div class="t-xs muted">${sub}</div>` : ``}
+      </div>`;
+    }
+
+    function stack(lines, highlightBg, highlightBorder){
+      return `
+        <div class="col" style="gap:10px;">
+          ${lines.map((x, i)=>{
+            const hi = x.includes("Guest OS") || x.includes("Runtime");
+            const style = hi ? `background:${highlightBg}; border-color:${highlightBorder};` : ``;
+            return `<div class="card2 center t-md" style="font-weight:900; ${style}">${x}</div>`;
+          }).join("")}
+        </div>
+      `;
+    }
+
+    function nodeBox(name){
+      return `<div class="card2 grow" style="text-align:center;">
+        <div class="t-md" style="font-weight:900;">${name}</div>
+        <div style="height:10px;"></div>
+        <div class="col" style="gap:10px;">
+          <div class="pill">Pod 🐳</div>
+          <div class="pill">Pod 🐳</div>
+        </div>
+        <div style="height:10px;"></div>
+        <div class="t-xs muted">kubelet + networking</div>
+      </div>`;
+    }
+
+    function objCard(title, desc, tags, color){
+      const glow = color === "var(--a)" ? "glowA" : color === "var(--p)" ? "glowP" : "glowS";
+      return `<div class="card grow ${glow}">
+        <div class="t-xl title">${title}</div>
+        <div class="t-sm muted">${desc}</div>
+        <div style="height:10px;"></div>
+        <div class="row wrap" style="gap:10px;">
+          ${tags.map(t=>`<span class="pill">${t}</span>`).join("")}
+        </div>
+      </div>`;
+    }
+
+    function matrix(name, cost, av, comp, best, bg){
+      return `<div class="card2 grow" style="background:${bg};">
+        <div class="between">
+          <div class="t-md" style="font-weight:900;">${name}</div>
+          <span class="pill">${cost}</span>
+        </div>
+        <div style="height:10px;"></div>
+        <div class="between"><span class="t-xs muted">Availability</span><span class="t-md" style="font-weight:900;">${av}</span></div>
+        <div class="between"><span class="t-xs muted">Complexity</span><span class="t-md" style="font-weight:900;">${comp}</span></div>
+        <div class="between"><span class="t-xs muted">Best for</span><span class="t-md" style="font-weight:900;">${best}</span></div>
+      </div>`;
+    }
+
+    function lab(emo, title, desc, tags, color){
+      const glow = color === "var(--p)" ? "glowP" : color === "var(--a)" ? "glowA" : "glowS";
+      return `<div class="card grow ${glow}">
+        <div class="icon">${emo}</div>
+        <div class="t-xl title" style="margin-top:8px;">${title}</div>
+        <div class="t-sm muted">${desc}</div>
+        <div style="height:10px;"></div>
+        <div class="row wrap" style="gap:10px;">
+          ${tags.map(t=>`<span class="pill">${t}</span>`).join("")}
+        </div>
+      </div>`;
+    }
+
+    // ---------- Navigation ----------
+    function updateProgress(){
+      progressBar.style.width = (((current+1)/slides.length)*100) + "%";
+    }
+    function show(i){
+      document.querySelectorAll(".slide").forEach(s=>s.classList.remove("active"));
+      const el = document.getElementById("slide-"+i);
+      if(!el) return;
+      el.classList.add("active");
+      current = i;
+      updateProgress();
+    }
+    function next(){ if(current < slides.length-1) show(current+1); }
+    function prev(){ if(current > 0) show(current-1); }
+    function first(){ show(0); }
+    function last(){ show(slides.length-1); }
+
+    // Scale buttons
+    function setScale(delta){
+      fontScale = Math.max(85, Math.min(150, fontScale + delta));
+      document.documentElement.style.setProperty("--ui-scale", (fontScale/100));
+    }
+
+    function toggleFullScreen(){
+      if(!document.fullscreenElement) document.documentElement.requestFullscreen?.();
+      else document.exitFullscreen?.();
+    }
+
+    document.getElementById("btnNext").addEventListener("click", next);
+    document.getElementById("btnPrev").addEventListener("click", prev);
+    document.getElementById("btnFontUp").addEventListener("click", ()=>setScale(+5));
+    document.getElementById("btnFontDown").addEventListener("click", ()=>setScale(-5));
+    document.getElementById("btnFS").addEventListener("click", toggleFullScreen);
+
+    document.addEventListener("keydown", (e)=>{
+      if(e.key === "ArrowRight" || e.key === " "){ e.preventDefault(); next(); }
+      if(e.key === "ArrowLeft"){ e.preventDefault(); prev(); }
+      if(e.key.toLowerCase() === "f"){ toggleFullScreen(); }
+      if(e.key === "Home"){ first(); }
+      if(e.key === "End"){ last(); }
+    });
+
+ 
+    // render
+    renderAll();
+  </script>
+</body>
+</html>

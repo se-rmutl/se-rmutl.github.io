@@ -1,0 +1,1413 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>ENGSE207 Week 7 Lab — Deploy TaskBoard to Railway (3-Tier)</title>
+
+  <style>
+    /* =========================
+       Base Theme (No Tailwind)
+       ========================= */
+    :root{
+      --bg0:#070A12;
+      --bg1:#0B1220;
+      --glass: rgba(255,255,255,.06);
+      --glass2: rgba(255,255,255,.09);
+      --stroke: rgba(255,255,255,.14);
+      --stroke2: rgba(255,255,255,.10);
+      --text:#EAF0FF;
+      --muted: rgba(234,240,255,.72);
+      --muted2: rgba(234,240,255,.55);
+      --accent:#7C5CFF;
+      --accent2:#2EE6A6;
+      --warn:#FFB020;
+      --danger:#FF4D6D;
+      --ok:#41F29A;
+      --shadow: 0 18px 55px rgba(0,0,0,.45);
+      --radius: 22px;
+
+      /* Slide sizing */
+      --pad: 26px;
+      --scale: 1;            /* user zoom */
+      --slideW: min(92vw, 1520px);
+      --slideH: calc(var(--slideW) * 9 / 16);
+      --maxH: 90vh;
+
+      /* typography base */
+      --base: 18px;
+      --h1: clamp(34px, 3.2vw, 54px);
+      --h2: clamp(22px, 2.1vw, 34px);
+      --h3: clamp(18px, 1.6vw, 24px);
+      --p:  clamp(16px, 1.2vw, 20px);
+      --small: clamp(13px, 1vw, 16px);
+    }
+
+    *{ box-sizing:border-box; }
+    html,body{ height:100%; }
+    body{
+      margin:0;
+      color:var(--text);
+      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, "Noto Sans Thai", "Noto Sans", sans-serif;
+      background:
+        radial-gradient(900px 600px at 20% 15%, rgba(124,92,255,.28), transparent 60%),
+        radial-gradient(800px 600px at 80% 35%, rgba(46,230,166,.18), transparent 60%),
+        radial-gradient(900px 700px at 55% 90%, rgba(255,176,32,.10), transparent 60%),
+        linear-gradient(180deg, var(--bg0), var(--bg1));
+      overflow:hidden;
+    }
+
+    /* stage */
+    .stage{
+      height:100%;
+      display:grid;
+      place-items:center;
+      padding:18px;
+    }
+
+    .deck{
+      width: var(--slideW);
+      height: min(var(--slideH), var(--maxH));
+      transform: scale(var(--scale));
+      transform-origin: center;
+      position:relative;
+      border-radius: var(--radius);
+      background: linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.03));
+      border:1px solid var(--stroke);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+    }
+
+    /* subtle inner border */
+    .deck::before{
+      content:"";
+      position:absolute; inset:10px;
+      border-radius: calc(var(--radius) - 10px);
+      border:1px solid var(--stroke2);
+      pointer-events:none;
+    }
+
+    /* slides */
+    .slides{ height:100%; }
+    .slide{
+      position:absolute;
+      inset:0;
+      padding: var(--pad);
+      display:none;
+      opacity:0;
+      transform: translateY(10px);
+      transition: opacity .25s ease, transform .25s ease;
+    }
+    .slide.active{
+      display:block;
+      opacity:1;
+      transform: translateY(0);
+    }
+
+    /* header / footer */
+    .topbar{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:16px;
+      margin-bottom:16px;
+    }
+    .badge{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:8px 12px;
+      border-radius:999px;
+      background:rgba(255,255,255,.07);
+      border:1px solid var(--stroke2);
+      font-size: var(--small);
+      color: var(--muted);
+      user-select:none;
+      backdrop-filter: blur(8px);
+    }
+    .dot{
+      width:10px; height:10px; border-radius:50%;
+      background: var(--accent);
+      box-shadow: 0 0 0 4px rgba(124,92,255,.18);
+    }
+    .meta{
+      display:flex;
+      flex-direction:column;
+      align-items:flex-end;
+      gap:6px;
+      text-align:right;
+      user-select:none;
+    }
+    .meta .course{
+      display:inline-flex;
+      align-items:center;
+      gap:10px;
+      padding:8px 12px;
+      border-radius:999px;
+      background:rgba(255,255,255,.07);
+      border:1px solid var(--stroke2);
+      font-size: var(--small);
+      color: var(--muted);
+    }
+    .meta .count{
+      font-size: var(--small);
+      color: var(--muted2);
+    }
+
+    h1{ margin:6px 0 8px 0; font-size: var(--h1); letter-spacing:-.02em; }
+    h2{ margin:6px 0 8px 0; font-size: var(--h2); letter-spacing:-.01em; }
+    h3{ margin:6px 0 8px 0; font-size: var(--h3); }
+    p{ margin:0; font-size: var(--p); color: var(--muted); line-height:1.45; }
+    .lead{ font-size: calc(var(--p) * 1.05); color: rgba(234,240,255,.78); }
+
+    /* layouts */
+    .grid{
+      display:grid;
+      gap:14px;
+    }
+    .g2{ grid-template-columns: 1.05fr .95fr; }
+    .g3{ grid-template-columns: 1fr 1fr 1fr; }
+    .g121{ grid-template-columns: 1.1fr .9fr; }
+    .g22{ grid-template-columns: 1fr 1fr; }
+    .full{ height: calc(100% - 74px); }
+
+    .card{
+      background: rgba(255,255,255,.06);
+      border:1px solid var(--stroke2);
+      border-radius: 18px;
+      padding: 16px;
+      backdrop-filter: blur(10px);
+    }
+    .card.soft{
+      background: rgba(255,255,255,.045);
+    }
+    .card h3{ margin-top:0; }
+    .muted{ color: var(--muted2); }
+    .tiny{ font-size: var(--small); color: var(--muted2); }
+
+    /* checklist */
+    .checklist{
+      display:grid;
+      gap:10px;
+      margin-top:10px;
+    }
+    .item{
+      display:flex;
+      gap:10px;
+      align-items:flex-start;
+      padding:10px 12px;
+      border-radius:14px;
+      background: rgba(255,255,255,.05);
+      border:1px solid rgba(255,255,255,.10);
+    }
+    .tick{
+      width:18px; height:18px; border-radius:6px;
+      border:1px solid rgba(255,255,255,.28);
+      background: rgba(0,0,0,.15);
+      margin-top:2px;
+      flex:0 0 auto;
+    }
+    .item b{ color:var(--text); }
+
+    /* pill tags */
+    .pills{ display:flex; flex-wrap:wrap; gap:8px; }
+    .pill{
+      padding:7px 10px;
+      border-radius:999px;
+      font-size: var(--small);
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.06);
+      color: var(--muted);
+      user-select:none;
+      display:inline-flex; align-items:center; gap:8px;
+    }
+    .pill .miniDot{ width:8px; height:8px; border-radius:99px; background:var(--accent2); opacity:.9; }
+
+    /* arrows */
+    .flow{
+      display:grid;
+      grid-template-columns: 1fr auto 1fr auto 1fr;
+      gap:12px;
+      align-items:stretch;
+      margin-top:10px;
+    }
+    .node{
+      border-radius:16px;
+      background: rgba(255,255,255,.055);
+      border:1px solid rgba(255,255,255,.12);
+      padding:12px;
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+      min-height:94px;
+    }
+    .node .k{ font-size: var(--small); color: var(--muted2); }
+    .node .v{ font-size: calc(var(--p) * 1.02); color: var(--text); font-weight:700; }
+    .node .d{ font-size: var(--small); color: var(--muted); }
+    .arrow{
+      display:grid; place-items:center;
+      width:54px;
+      border-radius:14px;
+      background: rgba(255,255,255,.04);
+      border:1px dashed rgba(255,255,255,.18);
+      color: rgba(234,240,255,.70);
+      font-size: 26px;
+    }
+
+    /* infographic boxes */
+    .kpi{
+      display:grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap:12px;
+      margin-top:10px;
+    }
+    .kpi .box{
+      border-radius:16px;
+      padding:14px 14px 12px;
+      background: rgba(255,255,255,.055);
+      border:1px solid rgba(255,255,255,.12);
+    }
+    .kpi .num{
+      font-size: clamp(28px, 2.2vw, 40px);
+      font-weight: 900;
+      letter-spacing:-.02em;
+    }
+    .kpi .lbl{
+      font-size: var(--small);
+      color: var(--muted);
+      margin-top:4px;
+    }
+
+    /* big center section slide */
+    .center{
+      height: calc(100% - 74px);
+      display:grid;
+      place-items:center;
+      text-align:center;
+      padding: 10px;
+    }
+    .center .section{
+      max-width: 980px;
+      padding: 26px 22px;
+      border-radius: 22px;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.06);
+    }
+    .center .sub{
+      margin-top:10px;
+      font-size: var(--p);
+      color: rgba(234,240,255,.72);
+    }
+
+    /* bottom */
+    .bottombar{
+      position:absolute;
+      left:0; right:0; bottom:0;
+      padding:12px 14px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+    }
+    .hint{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      padding:8px 12px;
+      border-radius:999px;
+      background: rgba(0,0,0,.22);
+      border:1px solid rgba(255,255,255,.10);
+      color: rgba(234,240,255,.72);
+      font-size: var(--small);
+      user-select:none;
+      backdrop-filter: blur(8px);
+    }
+
+    /* controls */
+    .controls{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      user-select:none;
+    }
+    .btn{
+      width:44px; height:44px;
+      display:grid; place-items:center;
+      border-radius: 14px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.06);
+      color: rgba(234,240,255,.82);
+      cursor:pointer;
+      box-shadow: 0 10px 25px rgba(0,0,0,.20);
+      transition: transform .12s ease, background .12s ease;
+    }
+    .btn:hover{ transform: translateY(-1px); background: rgba(255,255,255,.08); }
+    .btn:active{ transform: translateY(0); }
+    .btn.wide{ width:auto; padding:0 14px; gap:10px; display:flex; font-size: var(--small); }
+
+    .progress{
+      position:absolute;
+      left:0; right:0; bottom:0;
+      height:4px;
+      background: rgba(255,255,255,.08);
+      overflow:hidden;
+    }
+    .bar{
+      height:100%;
+      width:0%;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      box-shadow: 0 0 18px rgba(124,92,255,.35);
+    }
+
+    /* responsive: keep slide readable on smaller screens */
+    @media (max-width: 980px){
+      :root{ --pad: 18px; }
+      .g2, .g121, .g22{ grid-template-columns: 1fr; }
+      .flow{ grid-template-columns: 1fr; }
+      .arrow{ display:none; }
+      .kpi{ grid-template-columns: 1fr; }
+    }
+
+    /* printable mode (optional) */
+    @media print{
+      body{ overflow:visible; }
+      .stage{ display:block; padding:0; }
+      .deck{ transform:none; width:100%; height:auto; box-shadow:none; }
+      .slide{ position:relative; display:block; opacity:1; transform:none; page-break-after:always; }
+      .bottombar, .progress{ display:none; }
+    }
+
+    /* mini SVG look */
+    svg{ max-width:100%; height:auto; }
+    .svgCard{
+      border-radius:18px;
+      background: rgba(255,255,255,.045);
+      border:1px solid rgba(255,255,255,.10);
+      padding:12px;
+    }
+
+    /* highlight colors */
+    .hl-a{ color: var(--accent2); font-weight:800; }
+    .hl-b{ color: var(--warn); font-weight:800; }
+    .hl-c{ color: var(--accent); font-weight:800; }
+    .danger{ color: var(--danger); font-weight:800; }
+    .ok{ color: var(--ok); font-weight:800; }
+  </style>
+</head>
+
+<body>
+  <div class="stage">
+    <div class="deck" id="deck" aria-label="Slide Deck 16:9">
+      <div class="slides" id="slides">
+
+        <!-- 1 -->
+        <section class="slide active" data-title="Title">
+          <div class="topbar">
+            <div class="badge"><span class="dot"></span> Lab • Week 7 • Cloud & Containerization</div>
+            <div class="meta">
+              <div class="course"><span class="dot" style="background:var(--accent2);box-shadow:0 0 0 4px rgba(46,230,166,.16)"></span> ENGSE207 • Software Architecture</div>
+              <div class="count" id="countTop"></div>
+            </div>
+          </div>
+
+          <div class="center">
+            <div class="section">
+              <h1>Deploy TaskBoard to Cloud<br/>บน Railway (3-Tier)</h1>
+              <p class="sub">จาก Week 6: Docker Local → Week 7: PaaS Cloud Deployment</p>
+
+              <div class="kpi" style="margin-top:18px;">
+                <div class="box">
+                  <div class="num">3</div>
+                  <div class="lbl">Services (Frontend, API, PostgreSQL)</div>
+                </div>
+                <div class="box">
+                  <div class="num">3h</div>
+                  <div class="lbl">Lab Time (เป้าหมายในห้อง)</div>
+                </div>
+                <div class="box">
+                  <div class="num">PaaS</div>
+                  <div class="lbl">Deploy จาก GitHub + Auto SSL + Logs/Metrics</div>
+                </div>
+              </div>
+
+              <div class="pills" style="justify-content:center;margin-top:14px;">
+                <span class="pill"><span class="miniDot"></span>GitHub</span>
+                <span class="pill"><span class="miniDot"></span>Railway</span>
+                <span class="pill"><span class="miniDot"></span>PostgreSQL</span>
+                <span class="pill"><span class="miniDot"></span>ENV Variables</span>
+                <span class="pill"><span class="miniDot"></span>Logs & Metrics</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 2 -->
+        <section class="slide" data-title="Learning Objectives">
+          <div class="topbar">
+            <div class="badge"><span class="dot"></span> Objectives</div>
+            <div class="meta">
+              <div class="course">ENGSE207 • Week 7 Lab</div>
+              <div class="count" id="countTop2"></div>
+            </div>
+          </div>
+
+          <div class="grid g2 full">
+            <div class="card">
+              <h2>เมื่อจบ Lab นี้ นักศึกษาจะทำได้</h2>
+              <div class="checklist">
+                <div class="item"><span class="tick"></span><div><b>Deploy 3-Tier App</b> ขึ้น Cloud (PaaS) ได้จริง</div></div>
+                <div class="item"><span class="tick"></span><div><b>ตั้งค่า ENV</b> และเชื่อมต่อบริการ (API ↔ DB)</div></div>
+                <div class="item"><span class="tick"></span><div><b>อ่าน Logs / Metrics</b> บน Cloud Dashboard ได้</div></div>
+                <div class="item"><span class="tick"></span><div><b>อธิบายความต่าง</b> Docker Local vs Cloud PaaS</div></div>
+                <div class="item"><span class="tick"></span><div><b>เชื่อมโยง 12-Factor</b> จากประสบการณ์จริง</div></div>
+              </div>
+
+              <div class="pills" style="margin-top:12px;">
+                <span class="pill"><span class="miniDot"></span>CLO4</span>
+                <span class="pill"><span class="miniDot"></span>CLO14</span>
+                <span class="pill"><span class="miniDot"></span>Hands-on Deployment</span>
+              </div>
+            </div>
+
+            <div class="card soft">
+              <h2>ภาพรวมเวลา (แนะนำ)</h2>
+              <div class="flow" style="grid-template-columns:1fr auto 1fr auto 1fr;">
+                <div class="node">
+                  <div class="k">Part 1</div><div class="v">Setup Railway</div><div class="d">สมัคร + สร้าง Project</div>
+                </div>
+                <div class="arrow">➜</div>
+                <div class="node">
+                  <div class="k">Part 2–4</div><div class="v">Deploy 3 Services</div><div class="d">DB → API → Frontend</div>
+                </div>
+                <div class="arrow">➜</div>
+                <div class="node">
+                  <div class="k">Part 5–6</div><div class="v">Test & Reflect</div><div class="d">CRUD + Logs/Metrics + 12-Factor</div>
+                </div>
+              </div>
+
+              <div class="card" style="margin-top:12px;">
+                <h3 style="margin-top:0;">กติกาสำคัญ</h3>
+                <p class="lead"><span class="danger">ต้อง Cleanup Project หลังเสร็จ</span> เพื่อไม่ให้ credits หมด</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 3 -->
+        <section class="slide" data-title="Week 6 → Week 7">
+          <div class="topbar">
+            <div class="badge"><span class="dot"></span> Recap: Week 6 → Week 7</div>
+            <div class="meta">
+              <div class="course">Docker Local → Cloud PaaS</div>
+              <div class="count"></div>
+            </div>
+          </div>
+
+          <div class="grid g121 full">
+            <div class="card">
+              <h2>From Local to Cloud (แนวคิดเดียวกัน)</h2>
+              <p class="lead">โครงสร้างยังเป็น 3-Tier แต่ “คนดูแล” เปลี่ยนจากเรา → แพลตฟอร์ม</p>
+
+              <div class="svgCard" style="margin-top:12px;">
+                <svg viewBox="0 0 980 320" role="img" aria-label="Local vs Cloud Diagram">
+                  <defs>
+                    <linearGradient id="g" x1="0" x2="1">
+                      <stop offset="0" stop-color="rgba(124,92,255,.55)"/>
+                      <stop offset="1" stop-color="rgba(46,230,166,.45)"/>
+                    </linearGradient>
+                  </defs>
+
+                  <rect x="16" y="16" width="452" height="288" rx="18" fill="rgba(255,255,255,.04)" stroke="rgba(255,255,255,.12)"/>
+                  <text x="40" y="52" fill="rgba(234,240,255,.85)" font-size="20" font-weight="800">Week 6: Docker on Local</text>
+
+                  <rect x="48" y="78" width="388" height="70" rx="14" fill="rgba(255,255,255,.05)" stroke="rgba(255,255,255,.12)"/>
+                  <text x="70" y="120" fill="rgba(234,240,255,.82)" font-size="18" font-weight="800">docker-compose up</text>
+                  <text x="70" y="142" fill="rgba(234,240,255,.58)" font-size="14">localhost / network / volumes</text>
+
+                  <rect x="48" y="164" width="120" height="90" rx="14" fill="rgba(255,255,255,.05)" stroke="rgba(255,255,255,.12)"/>
+                  <text x="70" y="204" fill="rgba(234,240,255,.82)" font-size="16" font-weight="800">Frontend</text>
+                  <text x="70" y="226" fill="rgba(234,240,255,.58)" font-size="13">Static</text>
+
+                  <rect x="184" y="164" width="120" height="90" rx="14" fill="rgba(255,255,255,.05)" stroke="rgba(255,255,255,.12)"/>
+                  <text x="206" y="204" fill="rgba(234,240,255,.82)" font-size="16" font-weight="800">API</text>
+                  <text x="206" y="226" fill="rgba(234,240,255,.58)" font-size="13">Node.js</text>
+
+                  <rect x="320" y="164" width="116" height="90" rx="14" fill="rgba(255,255,255,.05)" stroke="rgba(255,255,255,.12)"/>
+                  <text x="340" y="204" fill="rgba(234,240,255,.82)" font-size="16" font-weight="800">DB</text>
+                  <text x="340" y="226" fill="rgba(234,240,255,.58)" font-size="13">Postgres</text>
+
+                  <path d="M480 160 C520 160 540 160 580 160" stroke="url(#g)" stroke-width="6" fill="none"/>
+                  <polygon points="580,160 565,150 565,170" fill="rgba(46,230,166,.7)"/>
+
+                  <rect x="512" y="16" width="452" height="288" rx="18" fill="rgba(255,255,255,.04)" stroke="rgba(255,255,255,.12)"/>
+                  <text x="536" y="52" fill="rgba(234,240,255,.85)" font-size="20" font-weight="800">Week 7: Railway Cloud (PaaS)</text>
+
+                  <rect x="544" y="78" width="388" height="70" rx="14" fill="rgba(255,255,255,.05)" stroke="rgba(255,255,255,.12)"/>
+                  <text x="566" y="120" fill="rgba(234,240,255,.82)" font-size="18" font-weight="800">GitHub → Auto Deploy</text>
+                  <text x="566" y="142" fill="rgba(234,240,255,.58)" font-size="14">Public URL / Auto SSL / Logs</text>
+
+                  <rect x="544" y="164" width="120" height="90" rx="14" fill="rgba(255,255,255,.05)" stroke="rgba(255,255,255,.12)"/>
+                  <text x="566" y="204" fill="rgba(234,240,255,.82)" font-size="16" font-weight="800">Frontend</text>
+                  <text x="566" y="226" fill="rgba(234,240,255,.58)" font-size="13">Service</text>
+
+                  <rect x="680" y="164" width="120" height="90" rx="14" fill="rgba(255,255,255,.05)" stroke="rgba(255,255,255,.12)"/>
+                  <text x="702" y="204" fill="rgba(234,240,255,.82)" font-size="16" font-weight="800">API</text>
+                  <text x="702" y="226" fill="rgba(234,240,255,.58)" font-size="13">Service</text>
+
+                  <rect x="816" y="164" width="116" height="90" rx="14" fill="rgba(255,255,255,.05)" stroke="rgba(255,255,255,.12)"/>
+                  <text x="836" y="204" fill="rgba(234,240,255,.82)" font-size="16" font-weight="800">DB</text>
+                  <text x="836" y="226" fill="rgba(234,240,255,.58)" font-size="13">Managed</text>
+                </svg>
+              </div>
+
+              <div class="pills" style="margin-top:10px;">
+                <span class="pill"><span class="miniDot"></span>docker-compose.yml → Railway Services</span>
+                <span class="pill"><span class="miniDot"></span>.env → Railway Variables</span>
+                <span class="pill"><span class="miniDot"></span>localhost → Public URL</span>
+                <span class="pill"><span class="miniDot"></span>Self SSL → Auto SSL</span>
+              </div>
+            </div>
+
+            <div class="card soft">
+              <h2>คำถามชวนคิด</h2>
+              <div class="checklist">
+                <div class="item"><span class="tick"></span><div><b>อะไรคือสิ่งที่ “เราควบคุม” ลดลง</b> เมื่อย้ายไป PaaS?</div></div>
+                <div class="item"><span class="tick"></span><div><b>อะไรคือสิ่งที่ “เห็นง่ายขึ้น”</b> เช่น Logs, Deploy history?</div></div>
+                <div class="item"><span class="tick"></span><div><b>ความเสี่ยงใหม่</b> ของ Cloud: credits, vendor lock-in, config mistakes?</div></div>
+              </div>
+              <div class="card" style="margin-top:12px;">
+                <h3 style="margin-top:0;">วันนี้เราจะทำให้ “ใช้งานได้บน Internet จริง”</h3>
+                <p class="muted">Frontend URL เปิดได้ • API URL ตอบได้ • DB อยู่หลัง internal network</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 4 -->
+        <section class="slide" data-title="Architecture">
+          <div class="topbar">
+            <div class="badge"><span class="dot"></span> Architecture: 3 Services</div>
+            <div class="meta">
+              <div class="course">TaskBoard on Railway</div>
+              <div class="count"></div>
+            </div>
+          </div>
+
+          <div class="grid g2 full">
+            <div class="card">
+              <h2>3-Tier ที่จะสร้างวันนี้</h2>
+              <p class="lead">หลักการ: <span class="hl-c">UI</span> เรียก <span class="hl-a">API</span> และ <span class="hl-b">API</span> เชื่อม <span class="hl-a">DB</span></p>
+
+              <div class="svgCard" style="margin-top:12px;">
+                <svg viewBox="0 0 920 360" role="img" aria-label="3-tier on Railway diagram">
+                  <defs>
+                    <linearGradient id="g2" x1="0" x2="1">
+                      <stop offset="0" stop-color="rgba(124,92,255,.55)"/>
+                      <stop offset="1" stop-color="rgba(46,230,166,.45)"/>
+                    </linearGradient>
+                  </defs>
+
+                  <text x="24" y="36" fill="rgba(234,240,255,.80)" font-size="16">🌐 Internet</text>
+
+                  <rect x="24" y="60" width="250" height="120" rx="16" fill="rgba(255,255,255,.05)" stroke="rgba(255,255,255,.14)"/>
+                  <text x="44" y="96" fill="rgba(234,240,255,.86)" font-size="18" font-weight="800">🎨 Frontend</text>
+                  <text x="44" y="118" fill="rgba(234,240,255,.62)" font-size="14">Static site</text>
+                  <text x="44" y="144" fill="rgba(234,240,255,.55)" font-size="13">Public URL</text>
+
+                  <rect x="334" y="60" width="250" height="120" rx="16" fill="rgba(255,255,255,.05)" stroke="rgba(255,255,255,.14)"/>
+                  <text x="354" y="96" fill="rgba(234,240,255,.86)" font-size="18" font-weight="800">⚙️ Backend API</text>
+                  <text x="354" y="118" fill="rgba(234,240,255,.62)" font-size="14">Node.js / Express</text>
+                  <text x="354" y="144" fill="rgba(234,240,255,.55)" font-size="13">Public URL</text>
+
+                  <rect x="644" y="60" width="250" height="120" rx="16" fill="rgba(255,255,255,.05)" stroke="rgba(255,255,255,.14)"/>
+                  <text x="664" y="96" fill="rgba(234,240,255,.86)" font-size="18" font-weight="800">🐘 PostgreSQL</text>
+                  <text x="664" y="118" fill="rgba(234,240,255,.62)" font-size="14">Managed DB</text>
+                  <text x="664" y="144" fill="rgba(234,240,255,.55)" font-size="13">Internal only</text>
+
+                  <path d="M274 120 C300 120 306 120 334 120" stroke="url(#g2)" stroke-width="6" fill="none"/>
+                  <polygon points="334,120 320,110 320,130" fill="rgba(46,230,166,.7)"/>
+
+                  <path d="M584 120 C610 120 616 120 644 120" stroke="url(#g2)" stroke-width="6" fill="none"/>
+                  <polygon points="644,120 630,110 630,130" fill="rgba(46,230,166,.7)"/>
+
+                  <rect x="24" y="214" width="870" height="120" rx="18" fill="rgba(255,255,255,.035)" stroke="rgba(255,255,255,.10)"/>
+                  <text x="44" y="248" fill="rgba(234,240,255,.80)" font-size="16" font-weight="800">Railway Internal Network</text>
+                  <text x="44" y="274" fill="rgba(234,240,255,.58)" font-size="13">API เชื่อม DB ด้วย DATABASE_URL (internal host)</text>
+                  <text x="44" y="300" fill="rgba(234,240,255,.58)" font-size="13">Frontend เรียก API ผ่าน public URL (HTTPS)</text>
+                </svg>
+              </div>
+            </div>
+
+            <div class="card soft">
+              <h2>สิ่งที่ต้องเตรียม (ก่อนเริ่ม)</h2>
+              <div class="checklist">
+                <div class="item"><span class="tick"></span><div><b>GitHub account</b> login ได้</div></div>
+                <div class="item"><span class="tick"></span><div><b>Week 6 repoพร้อม</b> มี <code>api/</code> <code>frontend/</code> <code>database/</code></div></div>
+                <div class="item"><span class="tick"></span><div><b>Internet</b> ความเร็วพอประมาณ</div></div>
+              </div>
+
+              <div class="card" style="margin-top:12px;">
+                <h3 style="margin-top:0;">Checkpoint mindset</h3>
+                <p class="muted">ทำทีละส่วน: DB ✅ → API ✅ → Frontend ✅ → CRUD ✅</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 5 -->
+        <section class="slide" data-title="Part 1">
+          <div class="topbar">
+            <div class="badge"><span class="dot"></span> Part 1 • Setup Railway</div>
+            <div class="meta">
+              <div class="course">~30 นาที</div>
+              <div class="count"></div>
+            </div>
+          </div>
+          <div class="grid g2 full">
+            <div class="card">
+              <h2>1) สมัคร + สร้าง Project</h2>
+
+              <div class="flow" style="grid-template-columns:1fr auto 1fr;">
+                <div class="node">
+                  <div class="k">Step 1.1</div>
+                  <div class="v">Login Railway</div>
+                  <div class="d">Login with GitHub → authorize</div>
+                </div>
+                <div class="arrow">➜</div>
+                <div class="node">
+                  <div class="k">Step 1.3</div>
+                  <div class="v">New Project</div>
+                  <div class="d">Empty Project → name: taskboard-cloud</div>
+                </div>
+              </div>
+
+              <div class="card" style="margin-top:12px;">
+                <h3 style="margin-top:0;">Quick Tip</h3>
+                <p class="muted">ไปที่ Settings → Billing ตรวจสอบ Free credits ($5/เดือน)</p>
+              </div>
+            </div>
+
+            <div class="card soft">
+              <h2>Checkpoint 1 ✅</h2>
+              <div class="checklist">
+                <div class="item"><span class="tick"></span><div>เข้าหน้า Dashboard ได้</div></div>
+                <div class="item"><span class="tick"></span><div>เห็น credits (Free trial)</div></div>
+                <div class="item"><span class="tick"></span><div>สร้าง Empty Project แล้ว</div></div>
+              </div>
+
+              <div class="card" style="margin-top:12px;">
+                <h3 style="margin-top:0;">ปัญหาที่พบบ่อย</h3>
+                <p class="muted">Authorize GitHub ไม่ครบสิทธิ์ → logout แล้ว login ใหม่ / กดยืนยัน permissions</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 6 -->
+        <section class="slide" data-title="Part 2">
+          <div class="topbar">
+            <div class="badge"><span class="dot"></span> Part 2 • Deploy PostgreSQL</div>
+            <div class="meta">
+              <div class="course">~20 นาที</div>
+              <div class="count"></div>
+            </div>
+          </div>
+
+          <div class="grid g2 full">
+            <div class="card">
+              <h2>2) Add PostgreSQL (Managed DB)</h2>
+              <div class="flow">
+                <div class="node">
+                  <div class="k">Step 2.1</div>
+                  <div class="v">+ New → Database</div>
+                  <div class="d">เลือก PostgreSQL</div>
+                </div>
+                <div class="arrow">➜</div>
+                <div class="node">
+                  <div class="k">Step 2.2</div>
+                  <div class="v">Variables</div>
+                  <div class="d">เห็น <b>DATABASE_URL</b> (auto)</div>
+                </div>
+                <div class="arrow">➜</div>
+                <div class="node">
+                  <div class="k">Step 2.3</div>
+                  <div class="v">Run SQL</div>
+                  <div class="d">สร้างตาราง tasks + sample rows</div>
+                </div>
+              </div>
+
+              <div class="pills" style="margin-top:12px;">
+                <span class="pill"><span class="miniDot"></span>DB Credentials auto-generated</span>
+                <span class="pill"><span class="miniDot"></span>Internal network by default</span>
+                <span class="pill"><span class="miniDot"></span>เหมาะกับ 12-Factor (Backing Service)</span>
+              </div>
+            </div>
+
+            <div class="card soft">
+              <h2>SQL ที่ต้องรัน (แนวคิด)</h2>
+              <p class="lead">สร้างตาราง + insert ตัวอย่าง → verify ด้วย SELECT</p>
+              <div class="card" style="margin-top:12px;">
+                <p class="tiny"><b>จำ:</b> ตาราง <span class="hl-a">tasks</span> + fields (title, desc, status, priority, timestamps)</p>
+                <div class="checklist" style="margin-top:10px;">
+                  <div class="item"><span class="tick"></span><div>CREATE TABLE IF NOT EXISTS …</div></div>
+                  <div class="item"><span class="tick"></span><div>INSERT 3 rows (ตัวอย่าง)</div></div>
+                  <div class="item"><span class="tick"></span><div>SELECT * FROM tasks;</div></div>
+                </div>
+              </div>
+
+              <div class="card" style="margin-top:12px;">
+                <h3 style="margin-top:0;">Checkpoint 2 ✅</h3>
+                <p class="muted">เห็น 3 rows ใน Data/Query Result</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 7 -->
+        <section class="slide" data-title="Part 3 Overview">
+          <div class="topbar">
+            <div class="badge"><span class="dot"></span> Part 3 • Deploy Backend API</div>
+            <div class="meta">
+              <div class="course">~45 นาที</div>
+              <div class="count"></div>
+            </div>
+          </div>
+
+          <div class="grid g2 full">
+            <div class="card">
+              <h2>เป้าหมาย: API รันบน Railway + ต่อ DB ได้</h2>
+              <p class="lead">จุดสำคัญคือ <span class="hl-b">DATABASE_URL</span> และ <span class="hl-c">Root Directory = /api</span></p>
+
+              <div class="kpi">
+                <div class="box">
+                  <div class="num">/api</div>
+                  <div class="lbl">Root Directory ตอน Deploy</div>
+                </div>
+                <div class="box">
+                  <div class="num">ENV</div>
+                  <div class="lbl">DATABASE_URL, NODE_ENV, PORT</div>
+                </div>
+                <div class="box">
+                  <div class="num">URL</div>
+                  <div class="lbl">Generate Domain เพื่อทดสอบ public API</div>
+                </div>
+              </div>
+
+              <div class="card" style="margin-top:12px;">
+                <h3 style="margin-top:0;">Why?</h3>
+                <p class="muted">Railway auto build (Nixpacks) จาก package.json → start command</p>
+              </div>
+            </div>
+
+            <div class="card soft">
+              <h2>Infographic: Data Flow</h2>
+              <div class="svgCard" style="margin-top:12px;">
+                <svg viewBox="0 0 860 300" role="img" aria-label="API connect DB and expose endpoints">
+                  <defs>
+                    <linearGradient id="g3" x1="0" x2="1">
+                      <stop offset="0" stop-color="rgba(46,230,166,.50)"/>
+                      <stop offset="1" stop-color="rgba(124,92,255,.45)"/>
+                    </linearGradient>
+                  </defs>
+
+                  <rect x="20" y="40" width="260" height="200" rx="18" fill="rgba(255,255,255,.05)" stroke="rgba(255,255,255,.14)"/>
+                  <text x="44" y="86" fill="rgba(234,240,255,.88)" font-size="18" font-weight="900">API Service</text>
+                  <text x="44" y="112" fill="rgba(234,240,255,.60)" font-size="14">Node.js / Express</text>
+                  <text x="44" y="142" fill="rgba(234,240,255,.60)" font-size="14">GET /api/health</text>
+                  <text x="44" y="164" fill="rgba(234,240,255,.60)" font-size="14">GET /api/tasks</text>
+
+                  <rect x="320" y="72" width="220" height="62" rx="14" fill="rgba(255,255,255,.04)" stroke="rgba(255,255,255,.12)"/>
+                  <text x="340" y="110" fill="rgba(234,240,255,.72)" font-size="14">DATABASE_URL</text>
+
+                  <rect x="580" y="40" width="260" height="200" rx="18" fill="rgba(255,255,255,.05)" stroke="rgba(255,255,255,.14)"/>
+                  <text x="604" y="86" fill="rgba(234,240,255,.88)" font-size="18" font-weight="900">PostgreSQL</text>
+                  <text x="604" y="112" fill="rgba(234,240,255,.60)" font-size="14">Managed DB (internal)</text>
+                  <text x="604" y="142" fill="rgba(234,240,255,.60)" font-size="14">tables: tasks</text>
+
+                  <path d="M280 140 C340 140 520 140 580 140" stroke="url(#g3)" stroke-width="6" fill="none"/>
+                  <polygon points="580,140 566,130 566,150" fill="rgba(46,230,166,.7)"/>
+
+                  <rect x="20" y="252" width="820" height="36" rx="12" fill="rgba(255,255,255,.035)" stroke="rgba(255,255,255,.10)"/>
+                  <text x="44" y="276" fill="rgba(234,240,255,.58)" font-size="13">Public URL เปิดที่ API Service (Networking) เพื่อทดสอบจากภายนอก</text>
+                </svg>
+              </div>
+
+              <div class="card" style="margin-top:12px;">
+                <h3 style="margin-top:0;">Checkpoint 3 ✅</h3>
+                <p class="muted">curl /api/health ได้ + /api/tasks เห็นข้อมูล</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 8 -->
+        <section class="slide" data-title="Part 3 Prep Code">
+          <div class="topbar">
+            <div class="badge"><span class="dot"></span> Part 3 • เตรียมโค้ด (สำคัญ)</div>
+            <div class="meta">
+              <div class="course">ก่อน Deploy API</div>
+              <div class="count"></div>
+            </div>
+          </div>
+
+          <div class="grid g2 full">
+            <div class="card">
+              <h2>ปรับ DB Config ให้รองรับ Railway</h2>
+              <p class="lead">Logic: ถ้ามี <span class="hl-b">DATABASE_URL</span> → ใช้ connectionString (Cloud)</p>
+
+              <div class="checklist">
+                <div class="item"><span class="tick"></span><div><b>Support DATABASE_URL</b> (Railway) + fallback env เดิม (Docker)</div></div>
+                <div class="item"><span class="tick"></span><div><b>SSL ใน production</b> (rejectUnauthorized:false สำหรับ Lab)</div></div>
+                <div class="item"><span class="tick"></span><div><b>มี healthCheck</b> เพื่อ debug ได้ง่าย</div></div>
+              </div>
+
+              <div class="card" style="margin-top:12px;">
+                <h3 style="margin-top:0;">Mini checklist ก่อน push</h3>
+                <p class="muted">แก้ไฟล์ → commit → push (main)</p>
+              </div>
+            </div>
+
+            <div class="card soft">
+              <h2>CORS (สำหรับให้ Frontend เรียก API)</h2>
+              <p class="lead">ง่ายสุดสำหรับ Lab: allow Railway domain</p>
+              <div class="checklist" style="margin-top:10px;">
+                <div class="item"><span class="tick"></span><div>อนุญาต origin: localhost + *.railway.app</div></div>
+                <div class="item"><span class="tick"></span><div>หรือเปิดกว้างชั่วคราวเพื่อ Lab (ถ้าติด CORS)</div></div>
+              </div>
+
+              <div class="card" style="margin-top:12px;">
+                <h3 style="margin-top:0;">คำถามชวนคิด</h3>
+                <p class="muted">ใน production จริง ควรเปิด CORS กว้างแบบนี้ไหม? เพราะอะไร?</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 9 -->
+        <section class="slide" data-title="Part 3 Deploy API">
+          <div class="topbar">
+            <div class="badge"><span class="dot"></span> Part 3 • Deploy API (จาก GitHub)</div>
+            <div class="meta">
+              <div class="course">Railway → +New → GitHub Repo</div>
+              <div class="count"></div>
+            </div>
+          </div>
+
+          <div class="grid g2 full">
+            <div class="card">
+              <h2>Deploy API Service</h2>
+              <div class="flow" style="grid-template-columns:1fr auto 1fr auto 1fr;">
+                <div class="node">
+                  <div class="k">Step 3.2</div>
+                  <div class="v">Deploy from GitHub</div>
+                  <div class="d">เลือก repo Week6</div>
+                </div>
+                <div class="arrow">➜</div>
+                <div class="node">
+                  <div class="k">สำคัญ!</div>
+                  <div class="v">Root Directory</div>
+                  <div class="d"><b>/api</b></div>
+                </div>
+                <div class="arrow">➜</div>
+                <div class="node">
+                  <div class="k">Settings</div>
+                  <div class="v">Public Networking</div>
+                  <div class="d">Generate Domain</div>
+                </div>
+              </div>
+
+              <div class="card" style="margin-top:12px;">
+                <h3 style="margin-top:0;">Variables ที่ต้องตั้ง</h3>
+                <div class="pills">
+                  <span class="pill"><span class="miniDot"></span>DATABASE_URL = reference จาก Postgres</span>
+                  <span class="pill"><span class="miniDot"></span>NODE_ENV=production</span>
+                  <span class="pill"><span class="miniDot"></span>PORT=3000 (หรือปล่อยให้ platform set)</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="card soft">
+              <h2>Checkpoint 3 ✅ (ทดสอบ)</h2>
+              <div class="checklist">
+                <div class="item"><span class="tick"></span><div>เปิด API URL ได้ (HTTPS)</div></div>
+                <div class="item"><span class="tick"></span><div>GET <b>/api/health</b> ตอบว่า healthy</div></div>
+                <div class="item"><span class="tick"></span><div>GET <b>/api/tasks</b> เห็น 3 rows</div></div>
+              </div>
+
+              <div class="card" style="margin-top:12px;">
+                <h3 style="margin-top:0;">ถ้าไม่ผ่าน?</h3>
+                <p class="muted">ดู Build logs → Runtime logs (API Service → Logs)</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 10 -->
+        <section class="slide" data-title="Part 4 Overview">
+          <div class="topbar">
+            <div class="badge"><span class="dot"></span> Part 4 • Deploy Frontend</div>
+            <div class="meta">
+              <div class="course">~45 นาที</div>
+              <div class="count"></div>
+            </div>
+          </div>
+
+          <div class="grid g2 full">
+            <div class="card">
+              <h2>เป้าหมาย: Frontend เปิดได้และเห็น Tasks</h2>
+              <p class="lead">จุดสำคัญคือ <span class="hl-c">API_BASE URL</span> + <span class="hl-b">Root Directory = /frontend</span></p>
+
+              <div class="flow" style="grid-template-columns:1fr auto 1fr auto 1fr;">
+                <div class="node">
+                  <div class="k">Step 4.1</div>
+                  <div class="v">ตั้ง API URL</div>
+                  <div class="d">frontend/js/app.js → API_BASE</div>
+                </div>
+                <div class="arrow">➜</div>
+                <div class="node">
+                  <div class="k">Step 4.2</div>
+                  <div class="v">Deploy Frontend</div>
+                  <div class="d">Root Directory: /frontend</div>
+                </div>
+                <div class="arrow">➜</div>
+                <div class="node">
+                  <div class="k">Step 4.4</div>
+                  <div class="v">Generate Domain</div>
+                  <div class="d">เปิด URL แล้วทดสอบ</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="card soft">
+              <h2>ทำไมต้องมี “Static Hosting” config?</h2>
+              <div class="checklist">
+                <div class="item"><span class="tick"></span><div>Railway บางครั้ง detect เป็น Node app ต้องสั่ง serve static</div></div>
+                <div class="item"><span class="tick"></span><div>แนวทางง่าย: ใส่ package.json + start = <b>serve -s .</b></div></div>
+              </div>
+
+              <div class="card" style="margin-top:12px;">
+                <h3 style="margin-top:0;">Checkpoint 4 ✅</h3>
+                <p class="muted">เปิด Frontend URL เห็น UI และ tasks โหลดจาก API</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 11 -->
+        <section class="slide" data-title="Part 4 Deploy Frontend">
+          <div class="topbar">
+            <div class="badge"><span class="dot"></span> Part 4 • Deploy Frontend (GitHub)</div>
+            <div class="meta">
+              <div class="course">Root = /frontend</div>
+              <div class="count"></div>
+            </div>
+          </div>
+
+          <div class="grid g2 full">
+            <div class="card">
+              <h2>Deploy Frontend Service</h2>
+              <div class="checklist">
+                <div class="item"><span class="tick"></span><div>+New → GitHub Repo → เลือก repo เดิม</div></div>
+                <div class="item"><span class="tick"></span><div><b>Root Directory = /frontend</b></div></div>
+                <div class="item"><span class="tick"></span><div>Settings → Networking → Generate Domain</div></div>
+              </div>
+
+              <div class="card" style="margin-top:12px;">
+                <h3 style="margin-top:0;">Config static ง่ายๆ</h3>
+                <p class="muted">เพิ่ม <b>frontend/package.json</b> แล้ว start ด้วย serve</p>
+                <div class="pills" style="margin-top:10px;">
+                  <span class="pill"><span class="miniDot"></span>dependencies: serve</span>
+                  <span class="pill"><span class="miniDot"></span>scripts.start: serve -s . -l $PORT</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="card soft">
+              <h2>Checklist การเชื่อม API</h2>
+              <div class="checklist">
+                <div class="item"><span class="tick"></span><div>API_BASE ชี้ไป <b>https://YOUR-API.../api</b></div></div>
+                <div class="item"><span class="tick"></span><div>เปิด DevTools → Network ตรวจว่าเรียก /api/tasks ได้</div></div>
+                <div class="item"><span class="tick"></span><div>ถ้า CORS error → กลับไปดู CORS ใน API</div></div>
+              </div>
+              <div class="card" style="margin-top:12px;">
+                <h3 style="margin-top:0;">Checkpoint 4 ✅</h3>
+                <p class="muted">Refresh หน้าแล้วข้อมูลยังอยู่ (มาจาก DB)</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 12 -->
+        <section class="slide" data-title="Part 5 Test CRUD">
+          <div class="topbar">
+            <div class="badge"><span class="dot"></span> Part 5 • Test CRUD + Cloud Features</div>
+            <div class="meta">
+              <div class="course">~30 นาที</div>
+              <div class="count"></div>
+            </div>
+          </div>
+
+          <div class="grid g2 full">
+            <div class="card">
+              <h2>CRUD ที่ต้องทดสอบ</h2>
+              <div class="flow" style="grid-template-columns:1fr auto 1fr auto 1fr auto 1fr;">
+                <div class="node"><div class="k">Create</div><div class="v">Add Task</div><div class="d">Task ใหม่โผล่</div></div>
+                <div class="arrow">➜</div>
+                <div class="node"><div class="k">Read</div><div class="v">Refresh</div><div class="d">ข้อมูลยังอยู่</div></div>
+                <div class="arrow">➜</div>
+                <div class="node"><div class="k">Update</div><div class="v">Change Status</div><div class="d">TODO→IN_PROGRESS→DONE</div></div>
+                <div class="arrow">➜</div>
+                <div class="node"><div class="k">Delete</div><div class="v">Remove</div><div class="d">Task หาย</div></div>
+              </div>
+
+              <div class="card" style="margin-top:12px;">
+                <h3 style="margin-top:0;">สัญญาณว่า “เชื่อม DB จริง”</h3>
+                <p class="muted">สร้างแล้ว refresh ยังอยู่ • ลบแล้วหายจริง • เปิดจากเครื่องอื่นก็เห็น</p>
+              </div>
+            </div>
+
+            <div class="card soft">
+              <h2>Cloud Dashboard ที่ต้องลอง</h2>
+              <div class="checklist">
+                <div class="item"><span class="tick"></span><div><b>Logs</b> ของ API: เห็น request GET/POST</div></div>
+                <div class="item"><span class="tick"></span><div><b>Metrics</b>: CPU/Memory/Network</div></div>
+                <div class="item"><span class="tick"></span><div><b>Deployments</b>: มี history + redeploy</div></div>
+              </div>
+              <div class="card" style="margin-top:12px;">
+                <h3 style="margin-top:0;">Checkpoint 5 ✅</h3>
+                <p class="muted">ถ่าย screenshot หลักฐานก่อน cleanup</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 13 -->
+        <section class="slide" data-title="Part 6 Concepts">
+          <div class="topbar">
+            <div class="badge"><span class="dot"></span> Part 6 • เชื่อมโยง Concepts</div>
+            <div class="meta">
+              <div class="course">Service Models + 12-Factor</div>
+              <div class="count"></div>
+            </div>
+          </div>
+
+          <div class="grid g2 full">
+            <div class="card">
+              <h2>Railway อยู่ตรงไหนใน Cloud Models?</h2>
+              <div class="svgCard" style="margin-top:12px;">
+                <svg viewBox="0 0 920 260" role="img" aria-label="IaaS PaaS SaaS diagram">
+                  <rect x="20" y="40" width="270" height="180" rx="18" fill="rgba(255,255,255,.05)" stroke="rgba(255,255,255,.14)"/>
+                  <text x="44" y="78" fill="rgba(234,240,255,.88)" font-size="18" font-weight="900">IaaS</text>
+                  <text x="44" y="104" fill="rgba(234,240,255,.60)" font-size="13">คุณดูแล OS/runtime มาก</text>
+                  <text x="44" y="134" fill="rgba(234,240,255,.62)" font-size="14">ตัวอย่าง: EC2</text>
+
+                  <rect x="325" y="24" width="270" height="212" rx="18" fill="rgba(124,92,255,.16)" stroke="rgba(255,255,255,.18)"/>
+                  <text x="349" y="78" fill="rgba(234,240,255,.90)" font-size="18" font-weight="900">PaaS (Railway)</text>
+                  <text x="349" y="104" fill="rgba(234,240,255,.66)" font-size="13">คุณโฟกัสที่ code + config</text>
+                  <text x="349" y="134" fill="rgba(234,240,255,.66)" font-size="13">platform ดูแล infra/ssl</text>
+
+                  <rect x="630" y="40" width="270" height="180" rx="18" fill="rgba(255,255,255,.05)" stroke="rgba(255,255,255,.14)"/>
+                  <text x="654" y="78" fill="rgba(234,240,255,.88)" font-size="18" font-weight="900">SaaS</text>
+                  <text x="654" y="104" fill="rgba(234,240,255,.60)" font-size="13">แค่ใช้งาน ไม่ deploy</text>
+                  <text x="654" y="134" fill="rgba(234,240,255,.62)" font-size="14">ตัวอย่าง: Gmail</text>
+                </svg>
+              </div>
+
+              <div class="card" style="margin-top:12px;">
+                <h3 style="margin-top:0;">ถามตัวเอง</h3>
+                <p class="muted">ถ้าเป็น IaaS เราต้องทำอะไรเพิ่มอีกบ้าง? (4 ข้อ)</p>
+              </div>
+            </div>
+
+            <div class="card soft">
+              <h2>12-Factor ที่ “เห็นได้” จาก Lab</h2>
+              <div class="checklist">
+                <div class="item"><span class="tick"></span><div><b>Config</b>: Variables tab (DATABASE_URL)</div></div>
+                <div class="item"><span class="tick"></span><div><b>Backing Services</b>: Add PostgreSQL</div></div>
+                <div class="item"><span class="tick"></span><div><b>Logs</b>: stdout → Logs tab</div></div>
+                <div class="item"><span class="tick"></span><div><b>Build/Release/Run</b>: Deployments history</div></div>
+              </div>
+
+              <div class="card" style="margin-top:12px;">
+                <h3 style="margin-top:0;">Mini Reflection</h3>
+                <p class="muted">อะไรทำให้ deploy “ง่ายขึ้น”? อะไรทำให้ “พลาดง่ายขึ้น”?</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 14 -->
+        <section class="slide" data-title="Submission">
+          <div class="topbar">
+            <div class="badge"><span class="dot"></span> ใบงาน: Cloud Deployment Analysis</div>
+            <div class="meta">
+              <div class="course">สิ่งที่ต้องส่ง</div>
+              <div class="count"></div>
+            </div>
+          </div>
+
+          <div class="grid g2 full">
+            <div class="card">
+              <h2>ต้องส่งอะไรบ้าง?</h2>
+              <div class="kpi">
+                <div class="box"><div class="num">50</div><div class="lbl">CLOUD_DEPLOYMENT.md</div></div>
+                <div class="box"><div class="num">10</div><div class="lbl">Screenshots 5 รูป</div></div>
+                <div class="box"><div class="num">60</div><div class="lbl">คะแนนรวม</div></div>
+              </div>
+
+              <div class="card" style="margin-top:12px;">
+                <h3 style="margin-top:0;">5 รูปที่ต้องมี</h3>
+                <div class="checklist">
+                  <div class="item"><span class="tick"></span><div>Dashboard เห็น 3 services</div></div>
+                  <div class="item"><span class="tick"></span><div>Frontend บน browser</div></div>
+                  <div class="item"><span class="tick"></span><div>API health response</div></div>
+                  <div class="item"><span class="tick"></span><div>Logs แสดง request</div></div>
+                  <div class="item"><span class="tick"></span><div>Metrics แสดง CPU/Memory</div></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="card soft">
+              <h2>Checklist เนื้อหาในไฟล์ MD</h2>
+              <div class="checklist">
+                <div class="item"><span class="tick"></span><div>URLs ของ Frontend + API</div></div>
+                <div class="item"><span class="tick"></span><div>เปรียบเทียบ Docker vs Railway</div></div>
+                <div class="item"><span class="tick"></span><div>Service Model (PaaS) + เหตุผล</div></div>
+                <div class="item"><span class="tick"></span><div>12-Factor 5 ข้อ + เห็นจากไหน</div></div>
+                <div class="item"><span class="tick"></span><div>Reflection: ปัญหาและวิธีแก้</div></div>
+              </div>
+
+              <div class="card" style="margin-top:12px;">
+                <h3 style="margin-top:0;">เกณฑ์ง่ายๆ</h3>
+                <p class="muted">เขียนจาก “สิ่งที่ทำจริง” + อธิบายให้คนอ่านทำตามได้</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 15 -->
+        <section class="slide" data-title="Cleanup">
+          <div class="topbar">
+            <div class="badge"><span class="dot"></span> Cleanup (สำคัญมาก!)</div>
+            <div class="meta">
+              <div class="course">หยุดการใช้ credits</div>
+              <div class="count"></div>
+            </div>
+          </div>
+
+          <div class="grid g2 full">
+            <div class="card">
+              <h1>🧹 ลบ Project หลังทำเสร็จ</h1>
+              <p class="lead"><span class="danger">ถ้าไม่ลบ</span> 3 services รัน 24/7 → credits หมดไว</p>
+
+              <div class="flow" style="margin-top:14px;">
+                <div class="node">
+                  <div class="k">Step</div><div class="v">Project Settings</div><div class="d">ไปที่ ⚙️</div>
+                </div>
+                <div class="arrow">➜</div>
+                <div class="node">
+                  <div class="k">Step</div><div class="v">Delete Project</div><div class="d">scroll ลงล่างสุด</div>
+                </div>
+                <div class="arrow">➜</div>
+                <div class="node">
+                  <div class="k">Step</div><div class="v">Confirm</div><div class="d">พิมพ์ชื่อ project</div>
+                </div>
+              </div>
+
+              <div class="card" style="margin-top:12px;">
+                <h3 style="margin-top:0;">อย่าลืม</h3>
+                <p class="muted">Screenshot หลักฐานให้ครบก่อนลบ</p>
+              </div>
+            </div>
+
+            <div class="card soft">
+              <h2>คำถามท้ายแลบ</h2>
+              <div class="checklist">
+                <div class="item"><span class="tick"></span><div>ถ้าต้องการระบบ “ใช้งานจริง” จะทำ cleanup ยังไง? (Billing/plan/limits)</div></div>
+                <div class="item"><span class="tick"></span><div>อะไรควรทำให้ “ปลอดภัยขึ้น” ก่อน deploy production? (CORS, secrets, backups)</div></div>
+                <div class="item"><span class="tick"></span><div>ถ้าย้ายจาก Railway ไปผู้ให้บริการอื่น ยากตรงไหน? (Vendor lock-in)</div></div>
+              </div>
+
+              <div class="card" style="margin-top:12px;">
+                <h3 style="margin-top:0;">จบ Lab 🎉</h3>
+                <p class="muted">คุณทำ 3-Tier Cloud Deployment ได้แล้ว</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 16 -->
+        <section class="slide" data-title="Troubleshooting">
+          <div class="topbar">
+            <div class="badge"><span class="dot"></span> Troubleshooting (Quick)</div>
+            <div class="meta">
+              <div class="course">แก้ปัญหาเบื้องต้น</div>
+              <div class="count"></div>
+            </div>
+          </div>
+
+          <div class="grid g2 full">
+            <div class="card">
+              <h2>API ต่อ DB ไม่ได้</h2>
+              <div class="checklist">
+                <div class="item"><span class="tick"></span><div>ตรวจ <b>DATABASE_URL</b> ใช้ reference จาก Postgres หรือยัง</div></div>
+                <div class="item"><span class="tick"></span><div>ดู API Logs: error message อะไร (auth/host/ssl)</div></div>
+                <div class="item"><span class="tick"></span><div>ลอง redeploy หลังแก้ Variables</div></div>
+              </div>
+
+              <h2 style="margin-top:14px;">Frontend ไม่เห็น Tasks</h2>
+              <div class="checklist">
+                <div class="item"><span class="tick"></span><div>API_BASE URL ถูกไหม (มี /api ท้ายสุด)</div></div>
+                <div class="item"><span class="tick"></span><div>เปิด DevTools → Console/Network ดู status code</div></div>
+                <div class="item"><span class="tick"></span><div>ถ้า CORS: กลับไปปรับ CORS ใน API</div></div>
+              </div>
+            </div>
+
+            <div class="card soft">
+              <h2>Deploy fail</h2>
+              <div class="checklist">
+                <div class="item"><span class="tick"></span><div>Root Directory ถูกต้องไหม? (<b>/api</b> vs <b>/frontend</b>)</div></div>
+                <div class="item"><span class="tick"></span><div>มี package.json ครบ + start command ทำงานได้</div></div>
+                <div class="item"><span class="tick"></span><div>อ่าน Build Logs ก่อนเสมอ</div></div>
+              </div>
+
+              <div class="card" style="margin-top:12px;">
+                <h3 style="margin-top:0;">หลักการ debug บน Cloud</h3>
+                <p class="muted"><span class="hl-a">Logs</span> คือสิ่งแรก • <span class="hl-c">Variables</span> คือสิ่งที่พลาดบ่อย • <span class="hl-b">Root dir</span> คืออันดับ 1</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+      </div>
+
+      <!-- bottom UI -->
+      <div class="bottombar">
+        <div class="hint" id="hint">
+          ⟵/⟶, Space, Home/End • Swipe ได้ • F = Fullscreen • +/- = Zoom
+        </div>
+
+        <div class="controls">
+          <button class="btn" id="zoomOut" title="Zoom Out ( - )">A−</button>
+          <button class="btn" id="zoomIn"  title="Zoom In ( + )">A+</button>
+          <button class="btn" id="prevBtn" title="Previous ( ← )">‹</button>
+          <button class="btn" id="nextBtn" title="Next ( → )">›</button>
+          <button class="btn" id="fsBtn" title="Fullscreen ( F )">⛶</button>
+        </div>
+      </div>
+
+      <div class="progress" aria-hidden="true">
+        <div class="bar" id="bar"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // =========================
+    // Slide Engine (No Tailwind)
+    // =========================
+    const slides = Array.from(document.querySelectorAll(".slide"));
+    const bar = document.getElementById("bar");
+    const countTop = document.getElementById("countTop");
+    const deck = document.getElementById("deck");
+
+    const prevBtn = document.getElementById("prevBtn");
+    const nextBtn = document.getElementById("nextBtn");
+    const zoomIn = document.getElementById("zoomIn");
+    const zoomOut = document.getElementById("zoomOut");
+    const fsBtn = document.getElementById("fsBtn");
+
+    let idx = 0;
+    let scale = 1;
+
+    function updateCounts(){
+      const txt = `Slide ${idx+1} / ${slides.length}`;
+      const metas = document.querySelectorAll(".meta .count");
+      metas.forEach(el => el.textContent = txt);
+      if (countTop) countTop.textContent = txt;
+      const pct = ((idx+1)/slides.length)*100;
+      bar.style.width = pct.toFixed(2) + "%";
+      document.title = `(${idx+1}/${slides.length}) ENGSE207 Week 7 Lab — Railway`;
+    }
+
+    function show(i){
+      idx = Math.max(0, Math.min(slides.length-1, i));
+      slides.forEach((s, n) => s.classList.toggle("active", n===idx));
+      updateCounts();
+    }
+
+    function next(){ show(idx+1); }
+    function prev(){ show(idx-1); }
+
+    function setScale(newScale){
+      scale = Math.max(0.85, Math.min(1.35, newScale));
+      document.documentElement.style.setProperty("--scale", scale.toFixed(2));
+    }
+
+    // fullscreen
+    function toggleFullscreen(){
+      const el = document.documentElement;
+      if (!document.fullscreenElement){
+        el.requestFullscreen?.();
+      } else {
+        document.exitFullscreen?.();
+      }
+    }
+
+    // events
+    prevBtn.addEventListener("click", prev);
+    nextBtn.addEventListener("click", next);
+    zoomIn.addEventListener("click", () => setScale(scale + 0.06));
+    zoomOut.addEventListener("click", () => setScale(scale - 0.06));
+    fsBtn.addEventListener("click", toggleFullscreen);
+
+    // keyboard
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowRight" || e.key === " " || e.key === "PageDown") { e.preventDefault(); next(); }
+      if (e.key === "ArrowLeft"  || e.key === "PageUp") { e.preventDefault(); prev(); }
+      if (e.key === "Home") { e.preventDefault(); show(0); }
+      if (e.key === "End")  { e.preventDefault(); show(slides.length-1); }
+      if (e.key === "f" || e.key === "F") { e.preventDefault(); toggleFullscreen(); }
+      if (e.key === "+" || e.key === "=") { e.preventDefault(); setScale(scale + 0.06); }
+      if (e.key === "-" || e.key === "_") { e.preventDefault(); setScale(scale - 0.06); }
+    }, { passive:false });
+
+    // swipe
+    (() => {
+      let sx=0, sy=0, t0=0;
+      document.addEventListener("touchstart", (e) => {
+        const t = e.touches[0];
+        sx = t.clientX; sy = t.clientY; t0 = Date.now();
+      }, { passive:true });
+
+      document.addEventListener("touchend", (e) => {
+        const dt = Date.now() - t0;
+        if (dt > 650) return;
+        const t = e.changedTouches[0];
+        const dx = t.clientX - sx;
+        const dy = t.clientY - sy;
+        if (Math.abs(dx) > 60 && Math.abs(dy) < 60){
+          if (dx < 0) next(); else prev();
+        }
+      }, { passive:true });
+    })();
+
+    // init
+    updateCounts();
+
+    // quality-of-life: fit a bit larger in fullscreen on big displays
+    document.addEventListener("fullscreenchange", () => {
+      if (document.fullscreenElement) setScale(1.15);
+      else setScale(1.00);
+    });
+
+    // optional: click on left/right half to navigate
+    deck.addEventListener("click", (e) => {
+      const r = deck.getBoundingClientRect();
+      const x = e.clientX - r.left;
+      if (x < r.width * 0.40) prev();
+      else if (x > r.width * 0.60) next();
+    });
+  </script>
+</body>
+</html>

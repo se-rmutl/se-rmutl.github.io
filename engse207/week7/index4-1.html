@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ENGSE207 - Week 7: Cloud & Containerization</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --secondary: #ec4899;
+            --accent: #10b981;
+            --dark: #0f172a;
+            --light: #f8fafc;
+        }
+        body {
+            font-family: 'Kanit', sans-serif;
+            background-color: var(--dark);
+            color: var(--light);
+            margin: 0;
+            overflow: hidden;
+        }
+        .slide-container {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            perspective: 1000px;
+        }
+        .slide {
+            width: 90vw;
+            height: calc(90vw * 9 / 16);
+            max-width: 1280px;
+            max-height: 720px;
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            border-radius: 1.5rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            position: relative;
+            padding: 2.5rem;
+            display: none;
+            flex-direction: column;
+            border: 1px solid rgba(255,255,255,0.1);
+            transition: all 0.5s ease;
+        }
+        .slide.active {
+            display: flex;
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .progress-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            height: 6px;
+            background: linear-gradient(to right, var(--primary), var(--secondary));
+            transition: width 0.3s ease;
+            z-index: 50;
+        }
+        .controls {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            display: flex;
+            gap: 0.5rem;
+            z-index: 100;
+        }
+        .btn {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 0.6rem;
+            border-radius: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn:hover { background: var(--primary); transform: scale(1.1); }
+        .infographic-box {
+            background: rgba(255, 255, 255, 0.03);
+            border-left: 4px solid var(--primary);
+            padding: 1rem;
+            border-radius: 0.5rem;
+        }
+        code { font-family: 'Fira Code', monospace; color: #fbbf24; }
+        .badge {
+            display: inline-block;
+            padding: 0.2rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+        .comparison-table th { background: rgba(255,255,255,0.1); padding: 0.5rem; text-align: left; }
+        .comparison-table td { border-bottom: 1px solid rgba(255,255,255,0.05); padding: 0.5rem; }
+    </style>
+</head>
+<body>
+
+    <div class="progress-bar" id="progressBar"></div>
+    <div class="slide-container" id="slideContainer"></div>
+
+    <div class="controls">
+        <button class="btn" onclick="prevSlide()"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg></button>
+        <button class="btn" onclick="nextSlide()"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg></button>
+    </div>
+
+    <script>
+        const slideData = [
+            {
+                type: "title",
+                title: "ENGSE207 สถาปัตยกรรมซอฟต์แวร์",
+                subtitle: "สัปดาห์ที่ 7: Cloud & Containerization",
+                author: "วิศวกรรมซอฟต์แวร์ | มทร.ล้านนา (อาจารย์ธนิต เกตุแก้ว)",
+                bg: "linear-gradient(rgba(99, 102, 241, 0.4), rgba(15, 23, 42, 0.9))"
+            },
+            {
+                type: "content",
+                badge: "Learning Objectives",
+                title: "สิ่งที่คุณจะได้รับในสัปดาห์นี้",
+                content: `
+                    <div class="grid grid-cols-2 gap-6 mt-4">
+                        <ul class="space-y-3 text-lg">
+                            <li class="flex items-start gap-2"><span>✅</span> เข้าใจ NIST Cloud Characteristics ทั้ง 5 ประการ</li>
+                            <li class="flex items-start gap-2"><span>✅</span> แยกแยะ IaaS, PaaS, SaaS และ Deployment Models</li>
+                            <li class="flex items-start gap-2"><span>✅</span> ออกแบบแอปตามหลัก 12-Factor App</li>
+                        </ul>
+                        <ul class="space-y-3 text-lg">
+                            <li class="flex items-start gap-2"><span>✅</span> เข้าใจความแตกต่างระหว่าง VM และ Container</li>
+                            <li class="flex items-start gap-2"><span>✅</span> รู้จัก Kubernetes (K8s) ในระดับ Overview</li>
+                            <li class="flex items-start gap-2"><span>✅</span> ออกแบบ Basic Deployment Topologies</li>
+                        </ul>
+                    </div>
+                    <div class="mt-8 p-4 bg-primary/10 border border-primary/20 rounded-xl">
+                        <p class="text-sm font-bold text-primary">ความเชื่อมโยงกับ CLO:</p>
+                        <p class="text-xs text-gray-400 italic">เน้น CLO4 (Modern Tech), CLO6 (Design), และ CLO14 (DevOps Tools)</p>
+                    </div>
+                `
+            },
+            {
+                type: "section",
+                title: "1. Cloud Computing Fundamentals",
+                subtitle: "NIST Definition & Service Models"
+            },
+            {
+                type: "content",
+                badge: "Cloud Characteristics",
+                title: "5 คุณลักษณะสำคัญของ Cloud (NIST SP 800-145)",
+                content: `
+                    <div class="grid grid-cols-5 gap-3 mt-6">
+                        <div class="p-3 bg-white/5 border border-white/10 rounded-lg text-center">
+                            <div class="text-2xl mb-2">🔄</div>
+                            <h4 class="font-bold text-xs text-primary mb-1">On-demand Self-service</h4>
+                            <p class="text-[10px] text-gray-400">จัดสรรทรัพยากรเองได้ทันที</p>
+                        </div>
+                        <div class="p-3 bg-white/5 border border-white/10 rounded-lg text-center">
+                            <div class="text-2xl mb-2">🌐</div>
+                            <h4 class="font-bold text-xs text-primary mb-1">Broad Network Access</h4>
+                            <p class="text-[10px] text-gray-400">เข้าถึงได้จากทุกที่ ทุกอุปกรณ์</p>
+                        </div>
+                        <div class="p-3 bg-white/5 border border-white/10 rounded-lg text-center">
+                            <div class="text-2xl mb-2">🏊</div>
+                            <h4 class="font-bold text-xs text-primary mb-1">Resource Pooling</h4>
+                            <p class="text-[10px] text-gray-400">แชร์ทรัพยากร (Multi-tenant)</p>
+                        </div>
+                        <div class="p-3 bg-white/5 border border-white/10 rounded-lg text-center">
+                            <div class="text-2xl mb-2">⚡</div>
+                            <h4 class="font-bold text-xs text-primary mb-1">Rapid Elasticity</h4>
+                            <p class="text-[10px] text-gray-400">ขยาย/ลดขนาดได้รวดเร็ว</p>
+                        </div>
+                        <div class="p-3 bg-white/5 border border-white/10 rounded-lg text-center">
+                            <div class="text-2xl mb-2">📊</div>
+                            <h4 class="font-bold text-xs text-primary mb-1">Measured Service</h4>
+                            <p class="text-[10px] text-gray-400">จ่ายตามการใช้งานจริง</p>
+                        </div>
+                    </div>
+                `
+            },
+            {
+                type: "content",
+                badge: "Service Models",
+                title: "Pizza as a Service: ความรับผิดชอบที่ต่างกัน",
+                content: `
+                    <div class="grid grid-cols-4 gap-2 mt-4 text-[10px]">
+                        <div class="flex flex-col gap-1 border border-white/10 p-2 rounded">
+                            <h4 class="font-bold text-blue-400 text-center">On-Premises</h4>
+                            <div class="bg-gray-600 p-1 text-center">Apps</div>
+                            <div class="bg-gray-600 p-1 text-center">Data</div>
+                            <div class="bg-gray-600 p-1 text-center">Runtime</div>
+                            <div class="bg-gray-600 p-1 text-center">OS</div>
+                            <div class="bg-gray-600 p-1 text-center">Virtualization</div>
+                            <div class="bg-gray-600 p-1 text-center">Servers</div>
+                            <p class="text-center mt-2 text-gray-500 italic text-[8px]">"ทำเองทุกอย่าง"</p>
+                        </div>
+                        <div class="flex flex-col gap-1 border border-white/10 p-2 rounded">
+                            <h4 class="font-bold text-green-400 text-center">IaaS</h4>
+                            <div class="bg-gray-600 p-1 text-center">Apps</div>
+                            <div class="bg-gray-600 p-1 text-center">Data</div>
+                            <div class="bg-gray-600 p-1 text-center">Runtime</div>
+                            <div class="bg-gray-600 p-1 text-center">OS</div>
+                            <div class="bg-primary/50 p-1 text-center italic">Provider Manages</div>
+                            <div class="bg-primary/50 p-1 text-center italic">Provider Manages</div>
+                            <p class="text-center mt-2 text-gray-500 italic text-[8px]">"ซื้อวัตถุดิบ"</p>
+                        </div>
+                        <div class="flex flex-col gap-1 border border-white/10 p-2 rounded">
+                            <h4 class="font-bold text-yellow-400 text-center">PaaS</h4>
+                            <div class="bg-gray-600 p-1 text-center">Apps</div>
+                            <div class="bg-gray-600 p-1 text-center">Data</div>
+                            <div class="bg-primary/50 p-1 text-center italic">Runtime (Provider)</div>
+                            <div class="bg-primary/50 p-1 text-center italic">OS (Provider)</div>
+                            <div class="bg-primary/50 p-1 text-center italic">...Provider...</div>
+                            <div class="bg-primary/50 p-1 text-center italic">...Provider...</div>
+                            <p class="text-center mt-2 text-gray-500 italic text-[8px]">"ซื้อพิซซ่าสำเร็จ"</p>
+                        </div>
+                        <div class="flex flex-col gap-1 border border-white/10 p-2 rounded">
+                            <h4 class="font-bold text-red-400 text-center">SaaS</h4>
+                            <div class="bg-primary/50 p-1 text-center italic">Every Layer</div>
+                            <div class="bg-primary/50 p-1 text-center italic">is managed</div>
+                            <div class="bg-primary/50 p-1 text-center italic">by the</div>
+                            <div class="bg-primary/50 p-1 text-center italic">Service</div>
+                            <div class="bg-primary/50 p-1 text-center italic">Provider</div>
+                            <div class="bg-primary/50 p-1 text-center italic">SaaS (Slack/Gmail)</div>
+                            <p class="text-center mt-2 text-gray-500 italic text-[8px]">"กินที่ร้าน"</p>
+                        </div>
+                    </div>
+                `
+            },
+            {
+                type: "content",
+                badge: "Case Study",
+                title: "Cloud ในประเทศไทย (Real-world Examples)",
+                content: `
+                    <div class="grid grid-cols-2 gap-4 mt-4">
+                        <div class="infographic-box border-blue-500">
+                            <h4 class="font-bold text-blue-400 text-sm">🏥 หมอพร้อม (MorPrompt)</h4>
+                            <p class="text-xs text-gray-300">ใช้ <b>AWS Thailand</b> พร้อมระบบ <b>Auto-scaling</b> เพื่อรับมือคนลงทะเบียนวัคซีนหลายล้านคนพร้อมกัน</p>
+                        </div>
+                        <div class="infographic-box border-green-500">
+                            <h4 class="font-bold text-green-400 text-sm">🛒 Shopee Thailand</h4>
+                            <p class="text-xs text-gray-300">ใช้ <b>Multi-cloud</b> (AWS + GCP) เพื่อรองรับ Flash Sale 11.11 และ 12.12 พร้อมกระจายข้อมูลผ่าน CDN</p>
+                        </div>
+                        <div class="infographic-box border-yellow-500">
+                            <h4 class="font-bold text-yellow-400 text-sm">🏦 SCB Easy / K PLUS</h4>
+                            <p class="text-xs text-gray-300">ใช้ <b>Hybrid Cloud</b> ข้อมูลสำคัญอยู่ Private Cloud ส่วนระบบหน้าบ้านสเกลบน Public Cloud</p>
+                        </div>
+                        <div class="infographic-box border-red-500">
+                            <h4 class="font-bold text-red-400 text-sm">🚗 Grab Thailand</h4>
+                            <p class="text-xs text-gray-300">ใช้ AWS เป็นหลักสำหรับ <b>Real-time Tracking</b> และ Machine Learning เพื่อจับคู่คนขับ</p>
+                        </div>
+                    </div>
+                `
+            },
+            {
+                type: "section",
+                title: "2. The 12-Factor App",
+                subtitle: "คัมภีร์การออกแบบ Cloud-Native Applications"
+            },
+            {
+                type: "content",
+                badge: "Factor 3: Config",
+                title: "03. Config: เก็บค่าตัวแปรไว้ใน Environment",
+                content: `
+                    <div class="grid grid-cols-2 gap-6 mt-4">
+                        <div>
+                            <p class="text-red-400 font-bold text-sm mb-2">❌ BAD: Hardcoded</p>
+                            <pre class="bg-black p-3 rounded text-[10px]"><code>const db = "mongodb://localhost:27017";
+const apiKey = "sk-12345-secret";</code></pre>
+                            <p class="text-[10px] mt-2 text-gray-500 italic">เสี่ยงความลับรั่วไหล และย้าย Environment ลำบาก</p>
+                        </div>
+                        <div>
+                            <p class="text-green-400 font-bold text-sm mb-2">✅ GOOD: ENV Variables</p>
+                            <pre class="bg-black p-3 rounded text-[10px]"><code>const db = process.env.DATABASE_URL;
+const apiKey = process.env.API_KEY;</code></pre>
+                            <p class="text-[10px] mt-2 text-gray-500 italic">Codebase เดียวกัน รันได้ทั้ง Dev/Staging/Prod</p>
+                        </div>
+                    </div>
+                `
+            },
+            {
+                type: "content",
+                badge: "Factor 6: Stateless",
+                title: "06. Processes: แอปต้อง Stateless",
+                content: `
+                    <div class="infographic-box border-red-500 mb-6">
+                        <p class="text-sm">ห้ามเก็บ Session หรือไฟล์ไว้ในตัว App Instance (Memory/Local Disk) เพราะ Cloud สามารถฆ่าและรันตัวใหม่ได้ตลอดเวลา</p>
+                    </div>
+                    <div class="flex items-center justify-around text-center mt-6">
+                        <div class="w-1/3 bg-white/5 p-4 rounded-xl border border-white/10">
+                            <p class="text-xs mb-2">App Instance</p>
+                            <div class="text-2xl animate-pulse">🐳</div>
+                        </div>
+                        <div class="text-2xl">➡️</div>
+                        <div class="w-1/3 bg-blue-900/30 p-4 rounded-xl border border-blue-400">
+                            <p class="text-xs mb-2 text-blue-400">External Store (Redis/DB)</p>
+                            <p class="text-[10px]">Session Data / State</p>
+                        </div>
+                    </div>
+                `
+            },
+            {
+                type: "content",
+                badge: "Comparison",
+                title: "Traditional vs Cloud-Native (12-Factor)",
+                content: `
+                    <table class="w-full text-xs mt-4 comparison-table">
+                        <thead>
+                            <tr><th>ด้าน</th><th>Traditional App</th><th>12-Factor App</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td><b>Scaling</b></td><td>Scale Up (เครื่องใหญ่ขึ้น)</td><td>Scale Out (เพิ่ม Instance)</td></tr>
+                            <tr><td><b>State</b></td><td>เก็บใน memory/disk</td><td>Stateless (External Stores)</td></tr>
+                            <tr><td><b>Logs</b></td><td>เขียนลงไฟล์</td><td>stdout stream</td></tr>
+                            <tr><td><b>Deploy</b></td><td>Manual (มี Downtime)</td><td>Automated (Zero-downtime)</td></tr>
+                        </tbody>
+                    </table>
+                `
+            },
+            {
+                type: "section",
+                title: "3. Containers & Docker",
+                subtitle: "Lightweight, Portable, Reliable"
+            },
+            {
+                type: "content",
+                badge: "Docker Workflow",
+                title: "ขั้นตอนการทำงานของ Docker",
+                content: `
+                    <div class="flex justify-between items-center mt-8 gap-4">
+                        <div class="flex-1 p-4 bg-white/5 border border-white/10 rounded-xl text-center">
+                            <h4 class="font-bold text-primary mb-2">1. Dockerfile</h4>
+                            <p class="text-[10px] text-gray-400">"Recipe/พิมพ์เขียว"</p>
+                        </div>
+                        <div class="text-xl">➡️</div>
+                        <div class="flex-1 p-4 bg-white/5 border border-white/10 rounded-xl text-center">
+                            <h4 class="font-bold text-secondary mb-2">2. Image</h4>
+                            <p class="text-[10px] text-gray-400">"แพ็กเกจพร้อมรัน"</p>
+                        </div>
+                        <div class="text-xl">➡️</div>
+                        <div class="flex-1 p-4 bg-primary/20 border border-primary rounded-xl text-center">
+                            <h4 class="font-bold text-accent mb-2">3. Container</h4>
+                            <p class="text-[10px] text-gray-400">"รันงานจริง"</p>
+                        </div>
+                    </div>
+                    <div class="mt-8 bg-black p-4 rounded-xl text-xs">
+                        <code># Build and Run Example</code><br>
+                        <code>docker build -t myapp:1.0 .</code><br>
+                        <code>docker run -d -p 3000:3000 myapp:1.0</code>
+                    </div>
+                `
+            },
+            {
+                type: "section",
+                title: "4. Deployment Topologies",
+                subtitle: "เลือกโครงสร้างที่เหมาะสมกับงบประมาณและงาน"
+            },
+            {
+                type: "content",
+                badge: "Topology 1 & 2",
+                title: "Single Server vs Separated Database",
+                content: `
+                    <div class="grid grid-cols-2 gap-6 mt-4">
+                        <div class="bg-white/5 p-4 rounded border-t-4 border-blue-500">
+                            <h4 class="font-bold text-sm">Topology 1: Single Server</h4>
+                            <p class="text-[10px] text-gray-400 mt-1">App + DB ในเครื่องเดียว</p>
+                            <ul class="text-[9px] mt-2 space-y-1">
+                                <li>✅ ราคาถูก ($5/mo)</li>
+                                <li>❌ ล่มแล้วล่มเลย (SPOF)</li>
+                            </ul>
+                        </div>
+                        <div class="bg-white/5 p-4 rounded border-t-4 border-green-500">
+                            <h4 class="font-bold text-sm">Topology 2: Separated DB</h4>
+                            <p class="text-[10px] text-gray-400 mt-1">แยก App VM กับ Managed DB (RDS)</p>
+                            <ul class="text-[9px] mt-2 space-y-1">
+                                <li>✅ DB มี Backup/Recovery</li>
+                                <li>❌ ราคาสูงขึ้น ($30-100/mo)</li>
+                            </ul>
+                        </div>
+                    </div>
+                `
+            },
+            {
+                type: "content",
+                badge: "Topology 3 & 4",
+                title: "High Availability & Enterprise Grade",
+                content: `
+                    <div class="grid grid-cols-2 gap-6 mt-4">
+                        <div class="bg-white/5 p-4 rounded border-t-4 border-purple-500">
+                            <h4 class="font-bold text-sm text-purple-400">Topology 3: Load Balanced</h4>
+                            <p class="text-[10px] text-gray-400 mt-1">มี Load Balancer + หลาย App Instance</p>
+                            <ul class="text-[9px] mt-2 space-y-1">
+                                <li>✅ No Single Point of Failure</li>
+                                <li>❌ ซับซ้อนและแพง ($200-500/mo)</li>
+                            </ul>
+                        </div>
+                        <div class="bg-primary/10 p-4 rounded border-t-4 border-accent">
+                            <h4 class="font-bold text-sm text-accent">Topology 4: Full Production</h4>
+                            <p class="text-[10px] text-gray-400 mt-1">CDN + WAF + Cache + Queue + K8s</p>
+                            <ul class="text-[9px] mt-2 space-y-1">
+                                <li>✅ สเกลได้ไม่จำกัด (Enterprise)</li>
+                                <li>❌ ค่าใช้จ่ายหลักหมื่น/แสนต่อเดือน</li>
+                            </ul>
+                        </div>
+                    </div>
+                `
+            },
+            {
+                type: "content",
+                badge: "Decision Tree",
+                title: "จะเลือก Topology ไหนดี?",
+                content: `
+                    <div class="flex flex-col gap-3 mt-6 text-sm">
+                        <div class="flex items-center gap-4 bg-white/5 p-3 rounded-lg border border-white/10">
+                            <div class="bg-blue-500 w-2 h-2 rounded-full"></div>
+                            <p><b>Dev/Learning:</b> Single Server ($5-20)</p>
+                        </div>
+                        <div class="flex items-center gap-4 bg-white/5 p-3 rounded-lg border border-white/10">
+                            <div class="bg-green-500 w-2 h-2 rounded-full"></div>
+                            <p><b>Small Production (< 1000 users):</b> Separated DB ($30-100)</p>
+                        </div>
+                        <div class="flex items-center gap-4 bg-white/5 p-3 rounded-lg border border-white/10">
+                            <div class="bg-accent w-2 h-2 rounded-full"></div>
+                            <p><b>High Uptime Required (99.9%+):</b> Load Balanced / Full Production</p>
+                        </div>
+                    </div>
+                `
+            },
+            {
+                type: "content",
+                badge: "Conclusion",
+                title: "สรุปบทเรียนและเตรียมตัวสอบ",
+                content: `
+                    <div class="grid grid-cols-2 gap-8 mt-4">
+                        <div class="space-y-3">
+                            <h4 class="font-bold text-primary">Key Takeaways</h4>
+                            <ul class="text-xs space-y-2">
+                                <li>📌 Cloud = Elasticity + Pay-per-use</li>
+                                <li>📌 Container = Lightweight Unit of Software</li>
+                                <li>📌 12-Factor = มาตรฐานแอปบน Cloud</li>
+                            </ul>
+                        </div>
+                        <div class="bg-red-900/20 p-4 border border-red-500/50 rounded-xl">
+                            <h4 class="font-bold text-red-400 text-sm">⚠️ สอบกลางภาคสัปดาห์หน้า!</h4>
+                            <p class="text-[10px] text-gray-400 mt-2">ขอบเขต: สัปดาห์ที่ 1-7 (Architecture Styles, C4 Model, ADD-Lite, ADR, Cloud)</p>
+                        </div>
+                    </div>
+                    <div class="mt-6 text-center italic text-sm text-gray-500">
+                        "เจอกันใน Lab ท้ายคาบ: ออกแบบ Deployment สำหรับ Task Board System!"
+                    </div>
+                `
+            }
+        ];
+
+        let currentSlide = 0;
+        const slideContainer = document.getElementById('slideContainer');
+        const progressBar = document.getElementById('progressBar');
+
+        function renderSlides() {
+            slideData.forEach((data, index) => {
+                const slideDiv = document.createElement('div');
+                slideDiv.className = `slide ${index === 0 ? 'active' : ''}`;
+                slideDiv.id = `slide-${index}`;
+                
+                if (data.type === 'title') {
+                    slideDiv.style.background = data.bg;
+                    slideDiv.innerHTML = `
+                        <div class="h-full flex flex-col items-center justify-center text-center">
+                            <h1 class="text-5xl font-extrabold mb-4 leading-tight">${data.title}</h1>
+                            <p class="text-2xl text-gray-300 mb-12">${data.subtitle}</p>
+                            <div class="w-16 h-1 bg-primary mb-8"></div>
+                            <p class="text-lg font-bold text-white/70">${data.author}</p>
+                        </div>
+                    `;
+                } else if (data.type === 'section') {
+                    slideDiv.innerHTML = `
+                        <div class="h-full flex flex-col items-center justify-center text-center">
+                            <span class="badge bg-secondary text-white">CHAPTER ${Math.floor(index/2)+1}</span>
+                            <h2 class="text-5xl font-bold mb-4">${data.title}</h2>
+                            <p class="text-xl text-gray-400 italic">${data.subtitle}</p>
+                        </div>
+                    `;
+                } else {
+                    slideDiv.innerHTML = `
+                        <div class="flex flex-col h-full">
+                            <div class="flex justify-between items-start mb-4">
+                                <div>
+                                    <span class="badge bg-primary text-white">${data.badge}</span>
+                                    <h2 class="text-3xl font-bold">${data.title}</h2>
+                                </div>
+                                <span class="text-gray-500 font-mono text-xs">ENGSE207 • Slide ${index + 1}</span>
+                            </div>
+                            <div class="flex-grow">
+                                ${data.content}
+                            </div>
+                        </div>
+                    `;
+                }
+                slideContainer.appendChild(slideDiv);
+            });
+            updateProgress();
+        }
+
+        function showSlide(index) {
+            document.querySelectorAll('.slide').forEach(s => s.classList.remove('active'));
+            document.getElementById(`slide-${index}`).classList.add('active');
+            currentSlide = index;
+            updateProgress();
+        }
+
+        function nextSlide() { if (currentSlide < slideData.length - 1) showSlide(currentSlide + 1); }
+        function prevSlide() { if (currentSlide > 0) showSlide(currentSlide - 1); }
+        function updateProgress() { progressBar.style.width = `${((currentSlide + 1) / slideData.length) * 100}%`; }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === ' ') nextSlide();
+            if (e.key === 'ArrowLeft') prevSlide();
+        });
+
+        renderSlides();
+    </script>
+</body>
+</html>

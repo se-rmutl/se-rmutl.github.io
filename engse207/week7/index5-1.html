@@ -1,0 +1,2133 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ENGSE207 • Week 7 • Cloud & Containerization (Single HTML Slide)</title>
+
+  <!-- Tailwind (CDN) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      --bg0:#070a12;
+      --bg1:#0b1222;
+      --card:#0f172a;
+      --line:rgba(255,255,255,.10);
+      --line2:rgba(255,255,255,.16);
+      --txt:#eaf0ff;
+      --muted:rgba(234,240,255,.68);
+
+      --p:#6366f1;   /* indigo */
+      --s:#ec4899;   /* pink */
+      --a:#10b981;   /* emerald */
+      --w:#fbbf24;   /* amber */
+      --r:#fb7185;   /* rose */
+      --c:#22d3ee;   /* cyan */
+    }
+
+    html, body { height: 100%; }
+    body{
+      margin:0;
+      overflow:hidden;
+      font-family:'Kanit', sans-serif;
+      background: radial-gradient(1200px 700px at 20% 20%, rgba(99,102,241,.20), transparent 55%),
+                  radial-gradient(900px 600px at 80% 30%, rgba(236,72,153,.16), transparent 55%),
+                  radial-gradient(900px 700px at 60% 85%, rgba(16,185,129,.10), transparent 55%),
+                  linear-gradient(180deg, var(--bg0), var(--bg1));
+      color: var(--txt);
+    }
+
+    /* stage */
+    .stage{
+      width:100vw; height:100vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding: 18px;
+    }
+
+    /* slide (16:9) */
+    .slide{
+      width: min(92vw, 1280px);
+      height: calc(min(92vw, 1280px) * 9 / 16);
+      max-height: min(92vh, 720px);
+      background: linear-gradient(135deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      box-shadow: 0 30px 80px rgba(0,0,0,.45);
+      position: relative;
+      overflow:hidden;
+      display:none;
+      transform: translateY(10px);
+      opacity:0;
+      transition: opacity .35s ease, transform .35s ease;
+    }
+    .slide.active{
+      display:block;
+      opacity:1;
+      transform: translateY(0);
+    }
+
+    /* subtle grid */
+    .gridOverlay{
+      position:absolute; inset:0;
+      background-image:
+        linear-gradient(to right, rgba(255,255,255,.06) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255,255,255,.05) 1px, transparent 1px);
+      background-size: 44px 44px;
+      opacity:.08;
+      pointer-events:none;
+    }
+
+    /* header/footer */
+    .topbar{
+      display:flex; align-items:flex-start; justify-content:space-between;
+      gap:12px;
+      padding: 20px 22px 12px 22px;
+    }
+    .bottombar{
+      display:flex; align-items:center; justify-content:space-between;
+      padding: 10px 22px 16px 22px;
+      border-top: 1px solid rgba(255,255,255,.08);
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    /* progress */
+    .progressWrap{
+      position: fixed;
+      left: 0; bottom: 0;
+      width: 100%;
+      height: 6px;
+      background: rgba(255,255,255,.06);
+      z-index: 60;
+    }
+    .progressBar{
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--p), var(--s));
+      transition: width .25s ease;
+    }
+
+    /* controls */
+    .controls{
+      position: fixed;
+      right: 18px;
+      bottom: 18px;
+      display:flex;
+      gap:10px;
+      z-index: 100;
+    }
+    .btn{
+      display:flex; align-items:center; justify-content:center;
+      width: 44px; height: 44px;
+      border-radius: 14px;
+      background: rgba(255,255,255,.08);
+      border: 1px solid rgba(255,255,255,.14);
+      backdrop-filter: blur(10px);
+      cursor:pointer;
+      transition: transform .15s ease, background .15s ease;
+      user-select:none;
+    }
+    .btn:hover{ transform: scale(1.06); background: rgba(99,102,241,.22); }
+    .btn:active{ transform: scale(.98); }
+
+    /* typography scale */
+    #slideRoot{
+      font-size: 100%;
+    }
+    .kicker{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding: 6px 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.16);
+      background: rgba(255,255,255,.06);
+      font-size: 12px;
+      color: rgba(234,240,255,.82);
+      letter-spacing:.2px;
+    }
+    .badge{
+      display:inline-flex; align-items:center; justify-content:center;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      border: 1px solid rgba(255,255,255,.16);
+      background: rgba(255,255,255,.06);
+    }
+    .title{
+      font-weight: 800;
+      letter-spacing:.2px;
+      line-height: 1.08;
+    }
+    .muted{ color: var(--muted); }
+
+    /* cards */
+    .card{
+      background: rgba(15,23,42,.52);
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 18px;
+      padding: 14px 14px;
+    }
+    .card2{
+      background: rgba(255,255,255,.05);
+      border: 1px solid rgba(255,255,255,.10);
+      border-radius: 18px;
+      padding: 14px;
+    }
+    .glowP{ box-shadow: 0 0 0 1px rgba(99,102,241,.20), 0 18px 60px rgba(99,102,241,.16); }
+    .glowS{ box-shadow: 0 0 0 1px rgba(236,72,153,.18), 0 18px 60px rgba(236,72,153,.12); }
+    .glowA{ box-shadow: 0 0 0 1px rgba(16,185,129,.18), 0 18px 60px rgba(16,185,129,.12); }
+
+    /* mini infographic bits */
+    .pill{
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.05);
+      font-size: 12px;
+    }
+    .arrow{
+      width: 44px; height: 44px;
+      display:flex; align-items:center; justify-content:center;
+      border-radius: 999px;
+      border: 1px dashed rgba(255,255,255,.20);
+      color: rgba(234,240,255,.80);
+    }
+
+    /* code */
+    code, pre { font-family: 'Fira Code', monospace; }
+    pre{
+      background: rgba(0,0,0,.55);
+      border: 1px solid rgba(255,255,255,.10);
+      border-radius: 16px;
+      padding: 12px 12px;
+      overflow:auto;
+      font-size: 12px;
+      line-height: 1.35;
+    }
+
+    /* toast */
+    .hint{
+      position: fixed;
+      left: 18px; bottom: 18px;
+      z-index: 100;
+      padding: 10px 12px;
+      border-radius: 14px;
+      background: rgba(0,0,0,.45);
+      border: 1px solid rgba(255,255,255,.12);
+      color: rgba(234,240,255,.78);
+      font-size: 12px;
+      backdrop-filter: blur(8px);
+      display:flex; gap:10px; align-items:center;
+    }
+
+    /* responsive safe */
+    @media (max-height: 640px){
+      .topbar{ padding: 14px 16px 8px 16px; }
+      .bottombar{ padding: 8px 16px 12px 16px; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="progressWrap"><div class="progressBar" id="progressBar"></div></div>
+
+  <div class="stage">
+    <div id="slideRoot" class="w-full h-full flex items-center justify-center"></div>
+  </div>
+
+  <!-- Controls -->
+  <div class="controls">
+    <div class="btn" id="btnFontDown" title="ลดขนาดตัวอักษร (A-)">
+      <span class="font-extrabold">A-</span>
+    </div>
+    <div class="btn" id="btnFontUp" title="เพิ่มขนาดตัวอักษร (A+)">
+      <span class="font-extrabold">A+</span>
+    </div>
+    <div class="btn" id="btnPrev" title="สไลด์ก่อนหน้า (←)">
+      <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path d="M15 18l-6-6 6-6"/>
+      </svg>
+    </div>
+    <div class="btn" id="btnNext" title="สไลด์ถัดไป (→ / Space)">
+      <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path d="M9 18l6-6-6-6"/>
+      </svg>
+    </div>
+    <div class="btn" id="btnFS" title="Full Screen (F)">
+      <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M8 21H5a2 2 0 0 1-2-2v-3M16 21h3a2 2 0 0 0 2-2v-3"/>
+      </svg>
+    </div>
+  </div>
+
+  <div class="hint">
+    <span class="badge" style="border-color: rgba(99,102,241,.35); background: rgba(99,102,241,.14);">Tips</span>
+    <span>←/→, Space, F, Home/End • Swipe บนมือถือได้</span>
+  </div>
+
+  <script>
+    // ---------- Helpers (infographic building blocks) ----------
+    const svgCloud = (color="var(--c)") => `
+      <svg width="54" height="54" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M7.5 18a4.5 4.5 0 0 1 0-9 5.5 5.5 0 0 1 10.63 1.5A3.75 3.75 0 0 1 18.75 18H7.5Z"
+          stroke="${color}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    `;
+
+    const svgCube = (color="var(--p)") => `
+      <svg width="54" height="54" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M12 2 3 6.5V17.5L12 22l9-4.5V6.5L12 2Z" stroke="${color}" stroke-width="1.8" stroke-linejoin="round"/>
+        <path d="M12 22V12.2" stroke="${color}" stroke-width="1.8" stroke-linecap="round"/>
+        <path d="M21 6.5 12 12.2 3 6.5" stroke="${color}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    `;
+
+    const svgShip = (color="var(--a)") => `
+      <svg width="54" height="54" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M3 16.5 12 20l9-3.5" stroke="${color}" stroke-width="1.8" stroke-linecap="round"/>
+        <path d="M4 14.5 12 17.5l8-3" stroke="${color}" stroke-width="1.8" stroke-linecap="round"/>
+        <path d="M12 3v14.5" stroke="${color}" stroke-width="1.8" stroke-linecap="round"/>
+        <path d="M12 3 18 7v5l-6 3-6-3V7l6-4Z" stroke="${color}" stroke-width="1.8" stroke-linejoin="round"/>
+      </svg>
+    `;
+
+    const metricBar = (label, w, color) => `
+      <div class="flex items-center gap-3">
+        <div class="w-28 text-xs muted">${label}</div>
+        <div class="flex-1 h-3 rounded-full" style="background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.10); overflow:hidden">
+          <div class="h-full" style="width:${w}%; background:${color};"></div>
+        </div>
+      </div>
+    `;
+
+    const chip = (t, color="rgba(255,255,255,.06)", border="rgba(255,255,255,.14)") =>
+      `<span class="pill" style="background:${color}; border-color:${border};">${t}</span>`;
+
+    // ---------- Slide Data (38 slides) ----------
+    const slides = [
+      // 1
+      {
+        type:"title",
+        kicker:"ENGSE207 • Software Architecture",
+        title:"สัปดาห์ที่ 7<br/>Cloud & Containerization",
+        subtitle:"จาก “ออกแบบสถาปัตยกรรม” → “Deploy ให้สเกลได้จริง”",
+        footerLeft:"ภาควิชาวิศวกรรมซอฟต์แวร์",
+        footerRight:"Week 7",
+        bg: `
+          radial-gradient(900px 540px at 30% 30%, rgba(99,102,241,.28), transparent 60%),
+          radial-gradient(900px 540px at 75% 40%, rgba(236,72,153,.22), transparent 60%),
+          linear-gradient(135deg, rgba(255,255,255,.08), rgba(255,255,255,.02))
+        `,
+        body: `
+          <div class="gridOverlay"></div>
+          <div class="h-full flex flex-col items-center justify-center text-center px-10">
+            <div class="kicker mb-4">${svgCloud()} <span>Modern Deployment • Cloud-Native • DevOps Basics</span></div>
+            <div class="title text-5xl md:text-6xl" style="text-shadow:0 18px 60px rgba(99,102,241,.20);">
+              สถาปัตยกรรมสำหรับ Cloud<br/> & Containerization
+            </div>
+            <div class="mt-5 text-xl md:text-2xl muted">${"Deploy • Scale • Observe • Recover"}</div>
+
+            <div class="mt-10 grid grid-cols-3 gap-4 w-full max-w-5xl">
+              <div class="card glowP text-left">
+                <div class="flex items-center gap-3">
+                  ${svgCloud("var(--p)")}
+                  <div>
+                    <div class="font-bold">Cloud Fundamentals</div>
+                    <div class="text-sm muted">NIST, Service/Deployment Models</div>
+                  </div>
+                </div>
+              </div>
+              <div class="card glowS text-left">
+                <div class="flex items-center gap-3">
+                  ${svgShip("var(--s)")}
+                  <div>
+                    <div class="font-bold">12-Factor App</div>
+                    <div class="text-sm muted">Design for portability & scale</div>
+                  </div>
+                </div>
+              </div>
+              <div class="card glowA text-left">
+                <div class="flex items-center gap-3">
+                  ${svgCube("var(--a)")}
+                  <div>
+                    <div class="font-bold">Containers & K8s</div>
+                    <div class="text-sm muted">Docker → Orchestration</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="mt-10 text-sm muted">
+              กด <b>Space</b> เพื่อเริ่ม • <b>F</b> เข้า Full Screen
+            </div>
+          </div>
+        `
+      },
+
+      // 2 recap week6
+      {
+        type:"content",
+        badge:"Recap • Week 6",
+        title:"ทบทวน: ADD-Lite & ADR (สัปดาห์ที่ 6)",
+        body: `
+          <div class="gridOverlay"></div>
+          <div class="px-6 pb-4">
+            <div class="grid grid-cols-12 gap-4">
+              <div class="col-span-7 card">
+                <div class="font-bold mb-2">Architectural Design Process (ADD-Lite)</div>
+                <div class="grid grid-cols-5 gap-2 items-center text-center">
+                  <div class="card2">
+                    <div class="text-2xl">🧩</div>
+                    <div class="text-xs font-bold">Reqs</div>
+                  </div>
+                  <div class="arrow">→</div>
+                  <div class="card2">
+                    <div class="text-2xl">🎯</div>
+                    <div class="text-xs font-bold">Drivers</div>
+                  </div>
+                  <div class="arrow">→</div>
+                  <div class="card2">
+                    <div class="text-2xl">🏗️</div>
+                    <div class="text-xs font-bold">Design</div>
+                  </div>
+                </div>
+                <div class="mt-3 grid grid-cols-5 gap-2 items-center text-center">
+                  <div class="card2">
+                    <div class="text-2xl">⚖️</div>
+                    <div class="text-xs font-bold">Compare</div>
+                  </div>
+                  <div class="arrow">→</div>
+                  <div class="card2">
+                    <div class="text-2xl">🧾</div>
+                    <div class="text-xs font-bold">ADR</div>
+                  </div>
+                  <div class="col-span-2 card2 text-left">
+                    <div class="text-xs font-bold">Idea</div>
+                    <div class="text-xs muted">ทำ 2–3 candidates แล้วเทียบ trade-offs</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="col-span-5 card glowP">
+                <div class="font-bold mb-2">สะพานสู่ Week 7</div>
+                <div class="text-sm muted">
+                  Week 6 = “ออกแบบ”<br/>
+                  Week 7 = “เอาไป Deploy บน Cloud ให้สเกล/ทนทาน”
+                </div>
+
+                <div class="mt-4 grid grid-cols-2 gap-2">
+                  <div class="card2">
+                    <div class="text-xs font-bold">Input</div>
+                    <div class="text-xs muted">Architecture + Quality Attributes</div>
+                  </div>
+                  <div class="card2">
+                    <div class="text-xs font-bold">Output</div>
+                    <div class="text-xs muted">Deployment Topology + Ops Plan</div>
+                  </div>
+                </div>
+
+                <div class="mt-4 flex flex-wrap gap-2">
+                  ${chip("Scalability", "rgba(16,185,129,.10)","rgba(16,185,129,.25)")}
+                  ${chip("Availability", "rgba(34,211,238,.10)","rgba(34,211,238,.25)")}
+                  ${chip("Security", "rgba(251,191,36,.10)","rgba(251,191,36,.25)")}
+                  ${chip("Cost", "rgba(251,113,133,.10)","rgba(251,113,133,.25)")}
+                </div>
+              </div>
+            </div>
+          </div>
+        `
+      },
+
+      // 3 objectives
+      {
+        type:"content",
+        badge:"Objectives • Week 7",
+        title:"เป้าหมายของสัปดาห์นี้ (เรียนแล้วทำได้อะไร?)",
+        body: `
+          <div class="gridOverlay"></div>
+          <div class="px-6 pb-4">
+            <div class="grid grid-cols-12 gap-4">
+              <div class="col-span-7 card glowA">
+                <div class="grid grid-cols-2 gap-3">
+                  <div class="card2">
+                    <div class="text-2xl mb-1">☁️</div>
+                    <div class="font-bold">Cloud (NIST)</div>
+                    <div class="text-sm muted">5 characteristics + models</div>
+                  </div>
+                  <div class="card2">
+                    <div class="text-2xl mb-1">🍕</div>
+                    <div class="font-bold">IaaS/PaaS/SaaS</div>
+                    <div class="text-sm muted">รู้ “ใครรับผิดชอบอะไร”</div>
+                  </div>
+                  <div class="card2">
+                    <div class="text-2xl mb-1">🧠</div>
+                    <div class="font-bold">12-Factor App</div>
+                    <div class="text-sm muted">ทำให้ย้าย/สเกลง่าย</div>
+                  </div>
+                  <div class="card2">
+                    <div class="text-2xl mb-1">🐳</div>
+                    <div class="font-bold">Containers & K8s</div>
+                    <div class="text-sm muted">Docker → Orchestrate</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="col-span-5 card">
+                <div class="font-bold mb-2">CLO ที่แตะชัดๆ</div>
+                <div class="text-sm muted leading-relaxed">
+                  CLO4 (Modern Tech) • CLO6 (Design) • CLO14 (DevOps Tools)<br/>
+                  + เชื่อม CLO3 (Quality Attributes) และ CLO13 (Capacity/Load)
+                </div>
+
+                <div class="mt-4 card2">
+                  <div class="text-xs font-bold mb-1">คำถามนำ</div>
+                  <div class="text-sm">
+                    “สถาปัตยกรรมเดิม ถ้าโดนทราฟฟิกพุ่ง 10× จะรอดไหม?”
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        `
+      },
+
+      // 4 section cloud fundamentals
+      { type:"section", title:"Part 1 • Cloud Fundamentals", subtitle:"NIST • Service Models • Deployment Models" },
+
+      // 5 NIST 5 chars
+      {
+        type:"content",
+        badge:"Cloud • NIST",
+        title:"Cloud = 5 Essential Characteristics (NIST)",
+        body: `
+          <div class="gridOverlay"></div>
+          <div class="px-6 pb-4">
+            <div class="grid grid-cols-5 gap-3">
+              ${[
+                ["🔄","On-demand","สั่งใช้ได้ทันที"],
+                ["🌐","Broad Access","เข้าถึงได้ทุกที่"],
+                ["🏊","Resource Pooling","multi-tenant แชร์ทรัพยากร"],
+                ["⚡","Rapid Elasticity","สเกลขึ้นลงไว"],
+                ["📊","Measured Service","จ่ายตามใช้จริง"]
+              ].map(([emo,h,t])=>`
+                <div class="card2 text-center">
+                  <div class="text-3xl">${emo}</div>
+                  <div class="font-bold mt-1">${h}</div>
+                  <div class="text-sm muted">${t}</div>
+                </div>
+              `).join("")}
+            </div>
+
+            <div class="mt-5 grid grid-cols-12 gap-4">
+              <div class="col-span-7 card">
+                <div class="font-bold mb-2">Infographic: “Cloud Behavior”</div>
+                ${metricBar("Elasticity", 88, "linear-gradient(90deg, var(--a), rgba(16,185,129,.25))")}
+                <div class="h-3"></div>
+                ${metricBar("Automation", 78, "linear-gradient(90deg, var(--p), rgba(99,102,241,.25))")}
+                <div class="h-3"></div>
+                ${metricBar("Pay-per-use", 70, "linear-gradient(90deg, var(--w), rgba(251,191,36,.25))")}
+              </div>
+
+              <div class="col-span-5 card glowP">
+                <div class="font-bold mb-2">จำง่ายแบบวิศวกร</div>
+                <div class="card2 text-sm">
+                  Cloud ไม่ใช่ “เครื่องเช่า” อย่างเดียว<br/>
+                  แต่คือ “ระบบที่สั่ง-สเกล-วัด-จ่าย” ได้
+                </div>
+                <div class="mt-3 flex flex-wrap gap-2">
+                  ${chip("Auto-scaling")}
+                  ${chip("Self-service")}
+                  ${chip("Metering")}
+                  ${chip("API-driven")}
+                </div>
+              </div>
+            </div>
+          </div>
+        `
+      },
+
+      // 6 Service models (responsibility stack)
+      {
+        type:"content",
+        badge:"Cloud • Service Models",
+        title:"IaaS / PaaS / SaaS = “ใครดูแลอะไร?”",
+        body: `
+          <div class="gridOverlay"></div>
+          <div class="px-6 pb-4">
+            <div class="grid grid-cols-12 gap-4">
+              <div class="col-span-7 card">
+                <div class="font-bold mb-2">Responsibility Stack</div>
+                <div class="grid grid-cols-3 gap-3">
+                  <div class="card2">
+                    <div class="font-bold text-center mb-2" style="color:var(--a)">IaaS</div>
+                    ${["App","Data","Runtime","OS"].map(x=>`<div class="pill mb-2">${x} • You</div>`).join("")}
+                    ${["Virtualization","Servers","Network","Storage"].map(x=>`<div class="pill mb-2" style="background:rgba(99,102,241,.10); border-color:rgba(99,102,241,.25)">${x} • Provider</div>`).join("")}
+                  </div>
+                  <div class="card2">
+                    <div class="font-bold text-center mb-2" style="color:var(--w)">PaaS</div>
+                    ${["App","Data"].map(x=>`<div class="pill mb-2">${x} • You</div>`).join("")}
+                    ${["Runtime","OS","Infra"].map(x=>`<div class="pill mb-2" style="background:rgba(236,72,153,.10); border-color:rgba(236,72,153,.25)">${x} • Provider</div>`).join("")}
+                    <div class="text-xs muted mt-2">เน้น deploy เร็ว ลด ops burden</div>
+                  </div>
+                  <div class="card2">
+                    <div class="font-bold text-center mb-2" style="color:var(--s)">SaaS</div>
+                    <div class="pill mb-2" style="background:rgba(16,185,129,.10); border-color:rgba(16,185,129,.25)">Use • You</div>
+                    <div class="mt-2 grid grid-cols-2 gap-2">
+                      ${["App","Data","Runtime","OS","Infra","Security Patches"].map(x=>`
+                        <div class="pill" style="background:rgba(255,255,255,.05)">${x}</div>
+                      `).join("")}
+                    </div>
+                    <div class="text-xs muted mt-2">คุณ “ใช้” มากกว่า “ดูแล”</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="col-span-5 card glowS">
+                <div class="font-bold mb-2">Pizza as a Service 🍕 (จำให้ติดหัว)</div>
+                <div class="grid gap-3">
+                  <div class="card2 flex items-center justify-between">
+                    <div>
+                      <div class="font-bold">On-Prem</div>
+                      <div class="text-sm muted">ทำเองทุกอย่าง</div>
+                    </div>
+                    <div class="text-2xl">👨‍🍳</div>
+                  </div>
+                  <div class="card2 flex items-center justify-between">
+                    <div>
+                      <div class="font-bold">IaaS</div>
+                      <div class="text-sm muted">ซื้อวัตถุดิบ/เตา</div>
+                    </div>
+                    <div class="text-2xl">🧺</div>
+                  </div>
+                  <div class="card2 flex items-center justify-between">
+                    <div>
+                      <div class="font-bold">PaaS</div>
+                      <div class="text-sm muted">ซื้อพิซซ่าสำเร็จ</div>
+                    </div>
+                    <div class="text-2xl">📦</div>
+                  </div>
+                  <div class="card2 flex items-center justify-between">
+                    <div>
+                      <div class="font-bold">SaaS</div>
+                      <div class="text-sm muted">กินที่ร้าน</div>
+                    </div>
+                    <div class="text-2xl">🍽️</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        `
+      },
+
+      // 7 Deployment models
+      {
+        type:"content",
+        badge:"Cloud • Deployment Models",
+        title:"Public / Private / Hybrid (เลือก “ที่อยู่ของงาน”)",
+        body: `
+          <div class="gridOverlay"></div>
+          <div class="px-6 pb-4">
+            <div class="grid grid-cols-3 gap-4">
+              <div class="card glowP">
+                <div class="flex items-center gap-3">
+                  ${svgCloud("var(--c)")}
+                  <div>
+                    <div class="font-bold">Public Cloud</div>
+                    <div class="text-sm muted">สเกลง่าย • cost-effective</div>
+                  </div>
+                </div>
+                <div class="mt-3 flex flex-wrap gap-2">
+                  ${chip("AWS / Azure / GCP","rgba(34,211,238,.10)","rgba(34,211,238,.25)")}
+                  ${chip("Multi-tenant")}
+                </div>
+              </div>
+
+              <div class="card glowA">
+                <div class="flex items-center gap-3">
+                  <div class="text-4xl">🏢</div>
+                  <div>
+                    <div class="font-bold">Private Cloud</div>
+                    <div class="text-sm muted">control สูง • compliance</div>
+                  </div>
+                </div>
+                <div class="mt-3 flex flex-wrap gap-2">
+                  ${chip("On-prem / Dedicated")}
+                  ${chip("Policy/Compliance","rgba(16,185,129,.10)","rgba(16,185,129,.25)")}
+                </div>
+              </div>
+
+              <div class="card glowS">
+                <div class="flex items-center gap-3">
+                  <div class="text-4xl">🔗</div>
+                  <div>
+                    <div class="font-bold">Hybrid Cloud</div>
+                    <div class="text-sm muted">best of both • แต่ซับซ้อน</div>
+                  </div>
+                </div>
+                <div class="mt-3 flex flex-wrap gap-2">
+                  ${chip("Sensitive → Private","rgba(251,191,36,.10)","rgba(251,191,36,.25)")}
+                  ${chip("Scale → Public","rgba(99,102,241,.10)","rgba(99,102,241,.25)")}
+                </div>
+              </div>
+            </div>
+
+            <div class="mt-5 card">
+              <div class="font-bold mb-2">Quick Decision</div>
+              <div class="grid grid-cols-3 gap-3 text-sm">
+                <div class="card2">
+                  <div class="font-bold">เริ่มต้นไว</div>
+                  <div class="muted">→ Public</div>
+                </div>
+                <div class="card2">
+                  <div class="font-bold">ข้อกำกับสูง</div>
+                  <div class="muted">→ Private/Hybrid</div>
+                </div>
+                <div class="card2">
+                  <div class="font-bold">ต้องสเกล/โลก</div>
+                  <div class="muted">→ Public + CDN</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        `
+      },
+
+      // 8 Thailand examples
+      {
+        type:"content",
+        badge:"Case • Thailand",
+        title:"ตัวอย่างในไทย (มองภาพสถาปัตยกรรม)",
+        body: `
+          <div class="gridOverlay"></div>
+          <div class="px-6 pb-4">
+            <div class="grid grid-cols-2 gap-4">
+              <div class="card glowP">
+                <div class="flex items-center justify-between">
+                  <div>
+                    <div class="font-bold">🏥 หมอพร้อม</div>
+                    <div class="text-sm muted">Auto-scaling รับโหลดพุ่ง</div>
+                  </div>
+                  <span class="badge" style="border-color:rgba(99,102,241,.35); background:rgba(99,102,241,.14)">Scale</span>
+                </div>
+                <div class="mt-3 flex gap-2 flex-wrap">
+                  ${chip("Load Spike")}
+                  ${chip("Auto-healing","rgba(16,185,129,.10)","rgba(16,185,129,.25)")}
+                  ${chip("Managed Services")}
+                </div>
+              </div>
+
+              <div class="card glowS">
+                <div class="flex items-center justify-between">
+                  <div>
+                    <div class="font-bold">🛒 e-Commerce (Flash Sale)</div>
+                    <div class="text-sm muted">CDN + cache + scale out</div>
+                  </div>
+                  <span class="badge" style="border-color:rgba(236,72,153,.35); background:rgba(236,72,153,.14)">Perf</span>
+                </div>
+                <div class="mt-3 flex gap-2 flex-wrap">
+                  ${chip("CDN","rgba(34,211,238,.10)","rgba(34,211,238,.25)")}
+                  ${chip("Caching")}
+                  ${chip("Queue","rgba(251,191,36,.10)","rgba(251,191,36,.25)")}
+                </div>
+              </div>
+
+              <div class="card glowA">
+                <div class="flex items-center justify-between">
+                  <div>
+                    <div class="font-bold">🏦 Mobile Banking</div>
+                    <div class="text-sm muted">Hybrid: ข้อมูลสำคัญแยก</div>
+                  </div>
+                  <span class="badge" style="border-color:rgba(16,185,129,.35); background:rgba(16,185,129,.14)">Sec</span>
+                </div>
+                <div class="mt-3 flex gap-2 flex-wrap">
+                  ${chip("Compliance")}
+                  ${chip("Private Zone")}
+                  ${chip("Public Edge","rgba(99,102,241,.10)","rgba(99,102,241,.25)")}
+                </div>
+              </div>
+
+              <div class="card">
+                <div class="flex items-center justify-between">
+                  <div>
+                    <div class="font-bold">🚗 Real-time Tracking</div>
+                    <div class="text-sm muted">latency + event streaming</div>
+                  </div>
+                  <span class="badge" style="border-color:rgba(34,211,238,.35); background:rgba(34,211,238,.14)">RT</span>
+                </div>
+                <div class="mt-3 flex gap-2 flex-wrap">
+                  ${chip("Streaming")}
+                  ${chip("Observability","rgba(251,191,36,.10)","rgba(251,191,36,.25)")}
+                  ${chip("Multi-AZ")}
+                </div>
+              </div>
+            </div>
+
+            <div class="mt-5 card2 text-sm">
+              <b>สังเกต:</b> งานสเกลจริงมักมี “Cache/Queue/Auto-scale/Monitoring” โผล่มาเสมอ
+            </div>
+          </div>
+        `
+      },
+
+      // 9 mini quiz cloud
+      {
+        type:"content",
+        badge:"Quick Check",
+        title:"เช็คความเข้าใจ: Cloud แบบไหนเหมาะสุด?",
+        body: `
+          <div class="gridOverlay"></div>
+          <div class="px-6 pb-4">
+            <div class="grid grid-cols-12 gap-4">
+              <div class="col-span-7 card">
+                <div class="font-bold mb-2">Scenario Cards</div>
+                <div class="grid grid-cols-2 gap-3">
+                  <div class="card2">
+                    <div class="font-bold">A) เว็บโปรเจกต์วิชา</div>
+                    <div class="text-sm muted">อยาก deploy เร็ว งบจำกัด</div>
+                    <div class="mt-2 flex gap-2 flex-wrap">${chip("Public")} ${chip("PaaS")}</div>
+                  </div>
+                  <div class="card2">
+                    <div class="font-bold">B) ข้อมูลสุขภาพ</div>
+                    <div class="text-sm muted">ต้อง compliance สูง</div>
+                    <div class="mt-2 flex gap-2 flex-wrap">${chip("Private/Hybrid")} ${chip("Security")}</div>
+                  </div>
+                  <div class="card2">
+                    <div class="font-bold">C) Flash sale 10 นาที</div>
+                    <div class="text-sm muted">ทราฟฟิกพุ่งเร็วมาก</div>
+                    <div class="mt-2 flex gap-2 flex-wrap">${chip("Auto-scale")} ${chip("CDN")}</div>
+                  </div>
+                  <div class="card2">
+                    <div class="font-bold">D) Legacy OS แปลกๆ</div>
+                    <div class="text-sm muted">ต้องคุม OS เอง</div>
+                    <div class="mt-2 flex gap-2 flex-wrap">${chip("IaaS")} ${chip("VM")}</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="col-span-5 card glowP">
+                <div class="font-bold mb-2">คำตอบแบบสถาปนิก</div>
+                <div class="text-sm muted">
+                  ไม่ได้มี “คำตอบเดียว”<br/>
+                  ให้เลือกจาก <b>Requirements</b> + <b>Trade-offs</b>
+                </div>
+                <div class="mt-4 card2">
+                  <div class="text-xs font-bold mb-1">Rule of Thumb</div>
+                  <div class="text-sm">เริ่มที่ “ง่ายที่สุด” ที่ยังตอบโจทย์ แล้วค่อยขยาย</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        `
+      },
+
+      // 10 section 12-factor
+      { type:"section", title:"Part 2 • 12-Factor App", subtitle:"หลักคิดออกแบบแอปให้ “ย้ายง่าย-สเกลง่าย”" },
+
+      // 11 12-factor overview grid 12
+      {
+        type:"content",
+        badge:"12-Factor • Overview",
+        title:"12 ข้อ = แผนที่สู่ Cloud-Native",
+        body: `
+          <div class="gridOverlay"></div>
+          <div class="px-6 pb-4">
+            <div class="grid grid-cols-12 gap-4">
+              <div class="col-span-7 card">
+                <div class="font-bold mb-3">Infographic: 12 Factors</div>
+                <div class="grid grid-cols-6 gap-2">
+                  ${Array.from({length:12}).map((_,i)=>`
+                    <div class="card2 text-center">
+                      <div class="text-lg font-extrabold" style="color:rgba(234,240,255,.92)">${i+1}</div>
+                      <div class="text-[11px] muted">${["Codebase","Deps","Config","Backing","Build/Release/Run","Processes","Port","Concurrency","Disposability","Dev/Prod","Logs","Admin"][i]}</div>
+                    </div>
+                  `).join("")}
+                </div>
+
+                <div class="mt-4 card2 text-sm">
+                  <b>เป้าหมาย:</b> Deploy ได้เร็ว • scale out ได้ • เปลี่ยน env ไม่ต้องแก้โค้ด
+                </div>
+              </div>
+
+              <div class="col-span-5 card glowS">
+                <div class="font-bold mb-2">5 ข้อที่ “ต้องรู้” ก่อนลงสนาม</div>
+                <div class="grid gap-2">
+                  ${[
+                    ["3","Config in ENV","Secrets/config อย่า hardcode"],
+                    ["6","Stateless","state ไปอยู่ DB/Redis/S3"],
+                    ["9","Disposability","start/stop เร็ว, graceful shutdown"],
+                    ["10","Dev/Prod Parity","สภาพแวดล้อมใกล้กันที่สุด"],
+                    ["11","Logs to stdout","รวม log จากหลาย instance"]
+                  ].map(([n,t,d])=>`
+                    <div class="card2 flex items-center justify-between">
+                      <div>
+                        <div class="font-bold">${n}. ${t}</div>
+                        <div class="text-sm muted">${d}</div>
+                      </div>
+                      <div class="badge" style="border-color:rgba(251,191,36,.35); background:rgba(251,191,36,.12)">⭐</div>
+                    </div>
+                  `).join("")}
+                </div>
+              </div>
+            </div>
+          </div>
+        `
+      },
+
+      // 12 Factor 3 infographic
+      {
+        type:"content",
+        badge:"12-Factor • #3 Config",
+        title:"Config ต้องอยู่ใน ENV (ไม่อยู่ในโค้ด)",
+        body: `
+          <div class="gridOverlay"></div>
+          <div class="px-6 pb-4">
+            <div class="grid grid-cols-2 gap-4">
+              <div class="card glowS">
+                <div class="font-bold mb-2">❌ Bad</div>
+                <pre><code>const DB = "mongodb://localhost:27017";
+const API_KEY = "sk-xxxx-secret";</code></pre>
+                <div class="mt-2 text-sm muted">ปัญหา: secret รั่ว / ย้าย env ยาก / deploy ซ้ำหลายที่พัง</div>
+              </div>
+              <div class="card glowA">
+                <div class="font-bold mb-2">✅ Good</div>
+                <pre><code>const DB = process.env.DATABASE_URL;
+const API_KEY = process.env.API_KEY;</code></pre>
+                <div class="mt-2 text-sm muted">ผลลัพธ์: codebase เดียว deploy ได้หลาย env</div>
+              </div>
+            </div>
+
+            <div class="mt-4 card2 text-sm">
+              <b>Insight:</b> Cloud = เปลี่ยนเครื่องได้ตลอดเวลา → config ต้อง “attach” ได้ ไม่ใช่ “ฝัง” อยู่ในโค้ด
+            </div>
+          </div>
+        `
+      },
+
+      // 13 Factor 6 stateless infographic
+      {
+        type:"content",
+        badge:"12-Factor • #6 Processes",
+        title:"Stateless: อย่าฝากชีวิตไว้ที่ instance",
+        body: `
+          <div class="gridOverlay"></div>
+          <div class="px-6 pb-4">
+            <div class="grid grid-cols-12 gap-4">
+              <div class="col-span-7 card">
+                <div class="font-bold mb-2">Infographic: Stateful vs Stateless</div>
+                <div class="grid grid-cols-2 gap-3">
+                  <div class="card2">
+                    <div class="font-bold">Stateful ❌</div>
+                    <div class="mt-2 flex items-center justify-between">
+                      <div class="pill">LB</div>
+                      <div class="arrow">→</div>
+                      <div class="pill">App #1 (session)</div>
+                    </div>
+                    <div class="mt-2 flex items-center justify-between">
+                      <div class="pill">LB</div>
+                      <div class="arrow">→</div>
+                      <div class="pill">App #2 (ไม่มี)</div>
+                    </div>
+                    <div class="mt-2 text-sm muted">ไปคนละเครื่องแล้ว “หลุด login”</div>
+                  </div>
+
+                  <div class="card2">
+                    <div class="font-bold">Stateless ✅</div>
+                    <div class="mt-2 flex items-center justify-between">
+                      <div class="pill">App #1</div>
+                      <div class="arrow">→</div>
+                      <div class="pill" style="border-color:rgba(16,185,129,.28); background:rgba(16,185,129,.10)">Redis/DB</div>
+                    </div>
+                    <div class="mt-2 flex items-center justify-between">
+                      <div class="pill">App #2</div>
+                      <div class="arrow">→</div>
+                      <div class="pill" style="border-color:rgba(16,185,129,.28); background:rgba(16,185,129,.10)">Redis/DB</div>
+                    </div>
+                    <div class="mt-2 text-sm muted">ทุก instance เข้าถึง state ได้</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="col-span-5 card glowP">
+                <div class="font-bold mb-2">เอา state ไปไว้ไหน?</div>
+                <div class="grid gap-2">
+                  <div class="card2 flex items-center justify-between"><span>🧠 Session</span><span class="pill">Redis</span></div>
+                  <div class="card2 flex items-center justify-between"><span>🗃️ Data</span><span class="pill">DB</span></div>
+                  <div class="card2 flex items-center justify-between"><span>🖼️ Files</span><span class="pill">Object Storage</span></div>
+                  <div class="card2 flex items-center justify-between"><span>⚡ Cache</span><span class="pill">Redis/CDN</span></div>
+                </div>
+
+                <div class="mt-3 card2 text-sm">
+                  <b>Principle:</b> Instance คือ “ของใช้แล้วทิ้ง”
+                </div>
+              </div>
+            </div>
+          </div>
+        `
+      },
+
+      // 14 Factor 9 disposability
+      {
+        type:"content",
+        badge:"12-Factor • #9 Disposability",
+        title:"Start/Stop เร็ว + Shutdown สวย = รอดใน Cloud",
+        body: `
+          <div class="gridOverlay"></div>
+          <div class="px-6 pb-4">
+            <div class="grid grid-cols-12 gap-4">
+              <div class="col-span-7 card">
+                <div class="font-bold mb-2">Lifecycle (ภาพรวม)</div>
+                <div class="grid grid-cols-3 gap-3 text-center">
+                  <div class="card2">
+                    <div class="text-3xl">🚀</div>
+                    <div class="font-bold">Startup</div>
+                    <div class="text-sm muted">&lt; 10s</div>
+                  </div>
+                  <div class="card2">
+                    <div class="text-3xl">🏃</div>
+                    <div class="font-bold">Running</div>
+                    <div class="text-sm muted">health checks</div>
+                  </div>
+                  <div class="card2">
+                    <div class="text-3xl">🛑</div>
+                    <div class="font-bold">Shutdown</div>
+                    <div class="text-sm muted">graceful</div>
+                  </div>
+                </div>
+
+                <div class="mt-3 card2 text-sm">
+                  Cloud/K8s ส่ง <b>SIGTERM</b> → ปิดรับ request → เคลียร์งาน → ปิด connection
+                </div>
+              </div>
+
+              <div class="col-span-5 card glowA">
+                <div class="font-bold mb-2">ผลลัพธ์ที่ได้</div>
+                <div class="grid gap-2 text-sm">
+                  <div class="card2">✅ Auto-scaling ทำงานทัน</div>
+                  <div class="card2">✅ Rolling update ไม่ล่ม</div>
+                  <div class="card2">✅ Crash แล้วฟื้นเร็ว</div>
+                </div>
+                <div class="mt-3 card2 text-sm">
+                  <b>ข้อสังเกต:</b> ถ้า startup ช้า → สเกลไม่ทัน → user รอ/timeout
+                </div>
+              </div>
+            </div>
+          </div>
+        `
+      },
+
+      // 15 Factor 10 parity
+      {
+        type:"content",
+        badge:"12-Factor • #10 Dev/Prod Parity",
+        title:"Dev ≈ Prod: ลด “สามช่องว่าง”",
+        body: `
+          <div class="gridOverlay"></div>
+          <div class="px-6 pb-4">
+            <div class="grid grid-cols-3 gap-4">
+              <div class="card glowP">
+                <div class="text-3xl">⏱️</div>
+                <div class="font-bold">Time Gap</div>
+                <div class="text-sm muted">deploy ถี่/เล็ก</div>
+              </div>
+              <div class="card glowS">
+                <div class="text-3xl">👥</div>
+                <div class="font-bold">Personnel Gap</div>
+                <div class="text-sm muted">DevOps culture</div>
+              </div>
+              <div class="card glowA">
+                <div class="text-3xl">🧰</div>
+                <div class="font-bold">Tools Gap</div>
+                <div class="text-sm muted">stack เหมือนกัน</div>
+              </div>
+            </div>
+
+            <div class="mt-5 card">
+              <div class="font-bold mb-2">Infographic: Same Stack</div>
+              <div class="grid grid-cols-3 gap-3 text-sm">
+                <div class="card2">
+                  <div class="font-bold">Dev</div>
+                  <div class="muted">Docker + Postgres + Redis</div>
+                </div>
+                <div class="card2">
+                  <div class="font-bold">Staging</div>
+                  <div class="muted">Docker + Postgres + Redis</div>
+                </div>
+                <div class="card2">
+                  <div class="font-bold">Prod</div>
+                  <div class="muted">Docker + Postgres + Redis</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        `
+      },
+
+      // 16 Factor 11 logs
+      {
+        type:"content",
+        badge:"12-Factor • #11 Logs",
+        title:"Logs = Event Stream (รวมจากหลาย instance)",
+        body: `
+          <div class="gridOverlay"></div>
+          <div class="px-6 pb-4">
+            <div class="grid grid-cols-12 gap-4">
+              <div class="col-span-7 card">
+                <div class="font-bold mb-2">Infographic: Log Flow</div>
+                <div class="flex items-center justify-between gap-2">
+                  <div class="card2 flex-1 text-center">
+                    <div class="text-2xl">🐳</div>
+                    <div class="text-sm">App stdout</div>
+                  </div>
+                  <div class="arrow">→</div>
+                  <div class="card2 flex-1 text-center">
+                    <div class="text-2xl">☸️</div>
+                    <div class="text-sm">Docker/K8s</div>
+                  </div>
+                  <div class="arrow">→</div>
+                  <div class="card2 flex-1 text-center">
+                    <div class="text-2xl">📦</div>
+                    <div class="text-sm">Aggregator</div>
+                  </div>
+                  <div class="arrow">→</div>
+                  <div class="card2 flex-1 text-center">
+                    <div class="text-2xl">📊</div>
+                    <div class="text-sm">Dashboard/Alert</div>
+                  </div>
+                </div>
+
+                <div class="mt-4 grid grid-cols-2 gap-3">
+                  <div class="card2">
+                    <div class="font-bold">❌ อย่าเขียนไฟล์</div>
+                    <div class="text-sm muted">container restart = ไฟล์หาย</div>
+                  </div>
+                  <div class="card2">
+                    <div class="font-bold">✅ stdout</div>
+                    <div class="text-sm muted">รวม/ค้นหา/แจ้งเตือนได้</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="col-span-5 card glowP">
+                <div class="font-bold mb-2">Mini Pattern</div>
+                <pre><code>console.log(JSON.stringify({
+  ts: new Date().toISOString(),
+  level: "info",
+  msg: "user_login",
+  userId: 123
+}))</code></pre>
+                <div class="text-sm muted">structured log = query ได้ง่าย</div>
+              </div>
+            </div>
+          </div>
+        `
+      },
+
+      // 17 compare traditional vs 12-factor
+      {
+        type:"content",
+        badge:"Comparison",
+        title:"Traditional vs 12-Factor (สรุปแบบภาพ)",
+        body: `
+          <div class="gridOverlay"></div>
+          <div class="px-6 pb-4">
+            <div class="grid grid-cols-2 gap-4">
+              <div class="card glowS">
+                <div class="font-bold mb-2">Traditional</div>
+                <div class="grid gap-2 text-sm">
+                  <div class="card2 flex justify-between"><span>Config</span><span class="muted">ไฟล์/Hardcode</span></div>
+                  <div class="card2 flex justify-between"><span>State</span><span class="muted">memory/disk</span></div>
+                  <div class="card2 flex justify-between"><span>Logs</span><span class="muted">เขียนไฟล์</span></div>
+                  <div class="card2 flex justify-between"><span>Scaling</span><span class="muted">scale up</span></div>
+                </div>
+              </div>
+
+              <div class="card glowA">
+                <div class="font-bold mb-2">12-Factor</div>
+                <div class="grid gap-2 text-sm">
+                  <div class="card2 flex justify-between"><span>Config</span><span class="muted">ENV</span></div>
+                  <div class="card2 flex justify-between"><span>State</span><span class="muted">external stores</span></div>
+                  <div class="card2 flex justify-between"><span>Logs</span><span class="muted">stdout stream</span></div>
+                  <div class="card2 flex justify-between"><span>Scaling</span><span class="muted">scale out</span></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="mt-4 card2 text-sm">
+              <b>Takeaway:</b> ถ้าจะขึ้น Cloud/Containers ให้รอด → “คิดแบบ 12-Factor” ก่อน
+            </div>
+          </div>
+        `
+      },
+
+      // 18 section containers
+      { type:"section", title:"Part 3 • Containers & Docker", subtitle:"จาก “works on my machine” → “works everywhere”" },
+
+      // 19 VM vs Container
+      {
+        type:"content",
+        badge:"Containers • Concept",
+        title:"VM vs Container (ดูเป็นชั้น ๆ)",
+        body: `
+          <div class="gridOverlay"></div>
+          <div class="px-6 pb-4">
+            <div class="grid grid-cols-2 gap-4">
+              <div class="card glowP">
+                <div class="font-bold mb-2">Virtual Machine</div>
+                <div class="grid gap-2 text-center text-sm">
+                  <div class="card2">App</div>
+                  <div class="card2">Bins/Libs</div>
+                  <div class="card2" style="border-color:rgba(251,191,36,.25); background:rgba(251,191,36,.08)">Guest OS (หนัก)</div>
+                  <div class="card2">Hypervisor</div>
+                  <div class="card2">Host Infra</div>
+                </div>
+                <div class="mt-3 text-sm muted">เริ่มช้า • ขนาดใหญ่ • isolation แข็งแรง</div>
+              </div>
+
+              <div class="card glowA">
+                <div class="font-bold mb-2">Container</div>
+                <div class="grid gap-2 text-center text-sm">
+                  <div class="grid grid-cols-2 gap-2">
+                    <div class="card2">App A</div>
+                    <div class="card2">App B</div>
+                  </div>
+                  <div class="card2">Bins/Libs</div>
+                  <div class="card2" style="border-color:rgba(16,185,129,.25); background:rgba(16,185,129,.08)">Container Runtime (เบา)</div>
+                  <div class="card2">Host OS</div>
+                  <div class="card2">Host Infra</div>
+                </div>
+                <div class="mt-3 text-sm muted">เริ่มไว • เบา • portability สูงมาก</div>
+              </div>
+            </div>
+
+            <div class="mt-4 card2 text-sm">
+              <b>จำง่าย:</b> VM = “ยก OS ไปด้วย” • Container = “แชร์ OS แล้วแพ็กแอป”
+            </div>
+          </div>
+        `
+      },
+
+      // 20 table-like infographic
+      {
+        type:"content",
+        badge:"Comparison",
+        title:"VM vs Container (สรุปสั้นแบบ Metric)",
+        body: `
+          <div class="gridOverlay"></div>
+          <div class="px-6 pb-4">
+            <div class="grid grid-cols-12 gap-4">
+              <div class="col-span-6 card">
+                <div class="font-bold mb-2">Virtual Machine</div>
+                ${metricBar("Size", 75, "linear-gradient(90deg, var(--w), rgba(251,191,36,.20))")}
+                <div class="h-3"></div>
+                ${metricBar("Start time", 70, "linear-gradient(90deg, var(--r), rgba(251,113,133,.20))")}
+                <div class="h-3"></div>
+                ${metricBar("Density", 35, "linear-gradient(90deg, rgba(234,240,255,.65), rgba(234,240,255,.15))")}
+                <div class="h-3"></div>
+                ${metricBar("Isolation", 85, "linear-gradient(90deg, var(--c), rgba(34,211,238,.20))")}
+              </div>
+
+              <div class="col-span-6 card glowA">
+                <div class="font-bold mb-2">Container</div>
+                ${metricBar("Size", 25, "linear-gradient(90deg, var(--a), rgba(16,185,129,.20))")}
+                <div class="h-3"></div>
+                ${metricBar("Start time", 20, "linear-gradient(90deg, var(--a), rgba(16,185,129,.20))")}
+                <div class="h-3"></div>
+                ${metricBar("Density", 82, "linear-gradient(90deg, var(--p), rgba(99,102,241,.20))")}
+                <div class="h-3"></div>
+                ${metricBar("Portability", 92, "linear-gradient(90deg, var(--s), rgba(236,72,153,.20))")}
+              </div>
+            </div>
+          </div>
+        `
+      },
+
+      // 21 Docker workflow
+      {
+        type:"content",
+        badge:"Docker • Workflow",
+        title:"Docker: Build → Ship → Run (ภาพรวม)",
+        body: `
+          <div class="gridOverlay"></div>
+          <div class="px-6 pb-4">
+            <div class="grid grid-cols-12 gap-4">
+              <div class="col-span-7 card">
+                <div class="font-bold mb-2">Pipeline</div>
+                <div class="flex items-center justify-between gap-2">
+                  <div class="card2 flex-1 text-center">
+                    <div class="text-3xl">📄</div>
+                    <div class="font-bold">Dockerfile</div>
+                    <div class="text-sm muted">recipe</div>
+                  </div>
+                  <div class="arrow">→</div>
+                  <div class="card2 flex-1 text-center">
+                    <div class="text-3xl">📦</div>
+                    <div class="font-bold">Image</div>
+                    <div class="text-sm muted">artifact</div>
+                  </div>
+                  <div class="arrow">→</div>
+                  <div class="card2 flex-1 text-center">
+                    <div class="text-3xl">🐳</div>
+                    <div class="font-bold">Container</div>
+                    <div class="text-sm muted">running</div>
+                  </div>
+                </div>
+
+                <div class="mt-4 grid grid-cols-2 gap-3">
+                  <div class="card2">
+                    <div class="font-bold">Key Idea</div>
+                    <div class="text-sm muted">Image = read-only template</div>
+                  </div>
+                  <div class="card2">
+                    <div class="font-bold">Why it matters</div>
+                    <div class="text-sm muted">deploy ซ้ำได้ “เหมือนเดิม” ทุกครั้ง</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="col-span-5 card glowP">
+                <div class="font-bold mb-2">คำสั่งจำเป็น (3 บรรทัด)</div>
+                <pre><code>docker build -t myapp:1.0 .
+docker run -d -p 3000:3000 myapp:1.0
+docker logs -f &lt;container&gt;</code></pre>
+                <div class="text-sm muted">พอเข้าใจ flow ก็พร้อมต่อยอดไป K8s</div>
+              </div>
+            </div>
+          </div>
+        `
+      },
+
+      // 22 Dockerfile example
+      {
+        type:"content",
+        badge:"Docker • Dockerfile",
+        title:"ตัวอย่าง Dockerfile (Node.js) แบบเล็กและชัด",
+        body: `
+          <div class="gridOverlay"></div>
+          <div class="px-6 pb-4">
+            <div class="grid grid-cols-12 gap-4">
+              <div class="col-span-7 card glowA">
+                <pre><code># ใช้ base image ที่เล็ก
+FROM node:18-alpine
+WORKDIR /app
+
+# แยก copy เพื่อลดเวลาบิลด์ (cache)
+COPY package*.json ./
+RUN npm ci --only=production
+
+COPY . .
+EXPOSE 3000
+CMD ["node","server.js"]</code></pre>
+              </div>
+
+              <div class="col-span-5 card">
+                <div class="font-bold mb-2">Micro-Checklist ✅</div>
+                <div class="grid gap-2 text-sm">
+                  <div class="card2 flex justify-between"><span>base image</span><span class="muted">เล็ก/ปลอดภัย</span></div>
+                  <div class="card2 flex justify-between"><span>env config</span><span class="muted">process.env</span></div>
+                  <div class="card2 flex justify-between"><span>logs</span><span class="muted">stdout</span></div>
+                  <div class="card2 flex justify-between"><span>stateless</span><span class="muted">no local state</span></div>
+                </div>
+
+                <div class="mt-3 card2 text-sm">
+                  <b>เชื่อม 12-Factor:</b> Config/Logs/Stateless ทำให้ container “อยู่ได้” บน Cloud
+                </div>
+              </div>
+            </div>
+          </div>
+        `
+      },
+
+      // 23 Docker registry
+      {
+        type:"content",
+        badge:"Docker • Registry",
+        title:"Image ต้องไปอยู่ที่ไหน? (Registry)",
+        body: `
+          <div class="gridOverlay"></div>
+          <div class="px-6 pb-4">
+            <div class="card">
+              <div class="font-bold mb-2">Infographic: Push / Pull</div>
+              <div class="flex items-center justify-between gap-2">
+                <div class="card2 flex-1 text-center">
+                  <div class="text-3xl">👩‍💻</div>
+                  <div class="font-bold">Developer</div>
+                  <div class="text-sm muted">build</div>
+                </div>
+                <div class="arrow">→</div>
+                <div class="card2 flex-1 text-center glowP">
+                  <div class="text-3xl">📦</div>
+                  <div class="font-bold">Registry</div>
+                  <div class="text-sm muted">Docker Hub / ECR / GCR</div>
+                </div>
+                <div class="arrow">→</div>
+                <div class="card2 flex-1 text-center">
+                  <div class="text-3xl">🖥️</div>
+                  <div class="font-bold">Runtime</div>
+                  <div class="text-sm muted">server / cluster</div>
+                </div>
+              </div>
+
+              <div class="mt-4 grid grid-cols-2 gap-3 text-sm">
+                <div class="card2"><b>Push</b> = ส่ง artifact ที่ “immutable”</div>
+                <div class="card2"><b>Pull</b> = เอาเวอร์ชันเดิมไป deploy ได้ซ้ำ</div>
+              </div>
+            </div>
+          </div>
+        `
+      },
+
+      // 24 section orchestration
+      { type:"section", title:"Part 4 • Orchestration (Kubernetes)", subtitle:"ถ้ามีคอนเทนเนอร์ “หลักร้อย-พัน” ใครดูแล?" },
+
+      // 25 problem statement
+      {
+        type:"content",
+        badge:"Orchestration • Problem",
+        title:"เมื่อมีคอนเทนเนอร์เยอะ… ปัญหาจะมาเป็นแพ็ก",
+        body: `
+          <div class="gridOverlay"></div>
+          <div class="px-6 pb-4">
+            <div class="grid grid-cols-2 gap-4">
+              <div class="card glowS">
+                <div class="text-4xl">😵‍💫</div>
+                <div class="font-bold mt-2">Operational Problems</div>
+                <div class="mt-3 grid gap-2 text-sm">
+                  <div class="card2">ใคร restart ตัวที่ล่ม?</div>
+                  <div class="card2">ใครกระจายโหลด?</div>
+                  <div class="card2">ใครอัปเดตแบบไม่ downtime?</div>
+                  <div class="card2">ใครรักษา “จำนวนที่ต้องการ” ให้คงอยู่?</div>
+                </div>
+              </div>
+
+              <div class="card glowP flex flex-col items-center justify-center text-center">
+                <div class="text-5xl">☸️</div>
+                <div class="title text-4xl mt-2">Kubernetes</div>
+                <div class="text-lg muted mt-2">
+                  “บอก Desired State แล้วให้ระบบจัดการ”
+                </div>
+                <div class="mt-4 flex gap-2 flex-wrap justify-center">
+                  ${chip("Self-healing","rgba(16,185,129,.10)","rgba(16,185,129,.25)")}
+                  ${chip("Scaling")}
+                  ${chip("Rolling Update","rgba(99,102,241,.10)","rgba(99,102,241,.25)")}
+                  ${chip("Service Discovery","rgba(34,211,238,.10)","rgba(34,211,238,.25)")}
+                </div>
+              </div>
+            </div>
+          </div>
+        `
+      },
+
+      // 26 K8s architecture simplified
+      {
+        type:"content",
+        badge:"K8s • Architecture",
+        title:"Kubernetes (ภาพสถาปัตยกรรมแบบสั้น)",
+        body: `
+          <div class="gridOverlay"></div>
+          <div class="px-6 pb-4">
+            <div class="grid grid-cols-12 gap-4">
+              <div class="col-span-5 card glowP">
+                <div class="font-bold mb-2">Control Plane</div>
+                <div class="grid gap-2 text-sm">
+                  <div class="card2 flex justify-between"><span>API Server</span><span class="muted">entrypoint</span></div>
+                  <div class="card2 flex justify-between"><span>Scheduler</span><span class="muted">วาง pod</span></div>
+                  <div class="card2 flex justify-between"><span>Controller</span><span class="muted">รักษา state</span></div>
+                  <div class="card2 flex justify-between"><span>etcd</span><span class="muted">config store</span></div>
+                </div>
+              </div>
+
+              <div class="col-span-7 card">
+                <div class="font-bold mb-2">Worker Nodes</div>
+                <div class="grid grid-cols-3 gap-3 text-center text-sm">
+                  ${["Node A","Node B","Node C"].map(n=>`
+                    <div class="card2">
+                      <div class="font-bold">${n}</div>
+                      <div class="mt-2 grid gap-2">
+                        <div class="pill">Pod 🐳</div>
+                        <div class="pill">Pod 🐳</div>
+                      </div>
+                      <div class="mt-2 text-xs muted">kubelet + networking</div>
+                    </div>
+                  `).join("")}
+                </div>
+
+                <div class="mt-3 card2 text-sm">
+                  <b>คำสำคัญ:</b> Pod • Deployment • Service • Ingress • ConfigMap/Secret
+                </div>
+              </div>
+            </div>
+          </div>
+        `
+      },
+
+      // 27 K8s objects
+      {
+        type:"content",
+        badge:"K8s • Objects",
+        title:"K8s Objects ที่เจอบ่อย (จำเป็นต่อการอ่าน Diagram)",
+        body: `
+          <div class="gridOverlay"></div>
+          <div class="px-6 pb-4">
+            <div class="grid grid-cols-3 gap-4">
+              <div class="card glowA">
+                <div class="font-bold">Pod</div>
+                <div class="text-sm muted">หน่วยรันเล็กสุด (1+ containers)</div>
+                <div class="mt-3 flex gap-2">
+                  <div class="pill">app</div>
+                  <div class="pill">sidecar</div>
+                </div>
+              </div>
+              <div class="card glowP">
+                <div class="font-bold">Deployment</div>
+                <div class="text-sm muted">จัดการ replicas + rolling update</div>
+                <div class="mt-3 flex gap-2">
+                  <div class="pill">replicas</div>
+                  <div class="pill">strategy</div>
+                </div>
+              </div>
+              <div class="card glowS">
+                <div class="font-bold">Service / Ingress</div>
+                <div class="text-sm muted">รับ traffic + load balance + routing</div>
+                <div class="mt-3 flex gap-2">
+                  <div class="pill">DNS</div>
+                  <div class="pill">Routes</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="mt-4 card2 text-sm">
+              <b>สังเกต:</b> เวลาวาดสถาปัตยกรรม Cloud-Native ให้แยก “App (Pods)” ออกจาก “Traffic Entry (Ingress/LB)”
+            </div>
+          </div>
+        `
+      },
+
+      // 28 Managed K8s
+      {
+        type:"content",
+        badge:"K8s • Managed",
+        title:"Managed Kubernetes (ภาพรวมตลาด)",
+        body: `
+          <div class="gridOverlay"></div>
+          <div class="px-6 pb-4">
+            <div class="grid grid-cols-4 gap-4">
+              ${[
+                ["AWS","EKS","integration แน่น"],
+                ["Azure","AKS","สะดวกกับ .NET"],
+                ["GCP","GKE","K8s เจ้าเดิม"],
+                ["DO","DOKS","ง่าย/คุ้ม"]
+              ].map(([p,t,d])=>`
+                <div class="card2 text-center">
+                  <div class="text-3xl">☸️</div>
+                  <div class="font-bold">${p}</div>
+                  <div class="text-sm">${t}</div>
+                  <div class="text-xs muted mt-1">${d}</div>
+                </div>
+              `).join("")}
+            </div>
+
+            <div class="mt-5 card glowP">
+              <div class="font-bold mb-2">Rule of Thumb</div>
+              <div class="text-sm muted">
+                ถ้ายังใหม่ → เริ่มจาก managed (ลดภาระ control plane) แล้วโฟกัสที่ app + deployment pattern
+              </div>
+            </div>
+          </div>
+        `
+      },
+
+      // 29 section deployment topologies
+      { type:"section", title:"Part 5 • Deployment Topologies", subtitle:"เลือกโครงสร้างให้เหมาะกับ “โหลด-งบ-ความเสี่ยง”" },
+
+      // 30 Topology 1
+      {
+        type:"content",
+        badge:"Topology 1",
+        title:"Single Server (ง่ายสุดสำหรับเรียน/ทดลอง)",
+        body: `
+          <div class="gridOverlay"></div>
+          <div class="px-6 pb-4">
+            <div class="grid grid-cols-12 gap-4">
+              <div class="col-span-7 card">
+                <div class="font-bold mb-2">Infographic</div>
+                <div class="flex items-center justify-between gap-2 text-center">
+                  <div class="card2 flex-1">
+                    <div class="text-3xl">👤</div>
+                    <div class="text-sm">Users</div>
+                  </div>
+                  <div class="arrow">→</div>
+                  <div class="card2 flex-[1.4] glowP">
+                    <div class="text-3xl">🖥️</div>
+                    <div class="font-bold">1 VM</div>
+                    <div class="text-sm muted">Web + API + DB</div>
+                  </div>
+                </div>
+
+                <div class="mt-4 grid grid-cols-2 gap-3 text-sm">
+                  <div class="card2">
+                    <div class="font-bold">✅ ดี</div>
+                    <div class="muted">ถูก • ง่าย • เหมาะกับ dev</div>
+                  </div>
+                  <div class="card2">
+                    <div class="font-bold">❌ เสี่ยง</div>
+                    <div class="muted">SPOF • scale ยาก</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="col-span-5 card glowA">
+                <div class="font-bold mb-2">เหมาะกับ</div>
+                <div class="grid gap-2 text-sm">
+                  <div class="card2">โปรเจกต์เรียน</div>
+                  <div class="card2">prototype / demo</div>
+                  <div class="card2">โหลดน้อย</div>
+                </div>
+                <div class="mt-3 card2 text-sm">
+                  <b>Mindset:</b> เริ่มง่าย → เก็บข้อมูลจริง → ค่อย “ยก topology”
+                </div>
+              </div>
+            </div>
+          </div>
+        `
+      },
+
+      // 31 Topology 2
+      {
+        type:"content",
+        badge:"Topology 2",
+        title:"Separated Database (แยก DB เป็น Managed)",
+        body: `
+          <div class="gridOverlay"></div>
+          <div class="px-6 pb-4">
+            <div class="grid grid-cols-12 gap-4">
+              <div class="col-span-7 card">
+                <div class="font-bold mb-2">Infographic</div>
+                <div class="flex items-center justify-between gap-2 text-center">
+                  <div class="card2 flex-1">
+                    <div class="text-3xl">👤</div>
+                    <div class="text-sm">Users</div>
+                  </div>
+                  <div class="arrow">→</div>
+                  <div class="card2 flex-1 glowP">
+                    <div class="text-3xl">🖥️</div>
+                    <div class="font-bold">App VM</div>
+                    <div class="text-sm muted">Web/API</div>
+                  </div>
+                  <div class="arrow">→</div>
+                  <div class="card2 flex-1" style="border-color:rgba(16,185,129,.25); background:rgba(16,185,129,.08)">
+                    <div class="text-3xl">🗄️</div>
+                    <div class="font-bold">Managed DB</div>
+                    <div class="text-sm muted">backup/patch</div>
+                  </div>
+                </div>
+
+                <div class="mt-4 grid grid-cols-2 gap-3 text-sm">
+                  <div class="card2"><b>✅</b> DB มี backup/recovery อัตโนมัติ</div>
+                  <div class="card2"><b>❌</b> App ยังเป็น SPOF</div>
+                </div>
+              </div>
+
+              <div class="col-span-5 card glowA">
+                <div class="font-bold mb-2">จุดคุ้มค่า</div>
+                <div class="text-sm muted">
+                  ยกภาระ “DB maintenance” ออกไปก่อน<br/>
+                  แล้วค่อยเพิ่ม HA/Scaling ที่ชั้น App
+                </div>
+                <div class="mt-3 flex flex-wrap gap-2">
+                  ${chip("Small Production")}
+                  ${chip("Safer DB","rgba(16,185,129,.10)","rgba(16,185,129,.25)")}
+                </div>
+              </div>
+            </div>
+          </div>
+        `
+      },
+
+      // 32 Topology 3
+      {
+        type:"content",
+        badge:"Topology 3",
+        title:"Load Balanced + Auto-Scaling (เริ่มจริงจังเรื่อง HA)",
+        body: `
+          <div class="gridOverlay"></div>
+          <div class="px-6 pb-4">
+            <div class="card">
+              <div class="font-bold mb-2">Infographic</div>
+              <div class="grid grid-cols-12 gap-3 items-center">
+                <div class="col-span-2 card2 text-center">
+                  <div class="text-2xl">👤</div>
+                  <div class="text-sm">Users</div>
+                </div>
+                <div class="col-span-1 text-center muted">→</div>
+                <div class="col-span-3 card2 text-center glowP">
+                  <div class="text-2xl">⚖️</div>
+                  <div class="font-bold">Load Balancer</div>
+                  <div class="text-xs muted">health checks</div>
+                </div>
+                <div class="col-span-1 text-center muted">→</div>
+                <div class="col-span-5 grid grid-cols-3 gap-2">
+                  ${["App #1","App #2","App #3"].map(s=>`
+                    <div class="card2 text-center">
+                      <div class="text-2xl">🖥️</div>
+                      <div class="text-sm">${s}</div>
+                      <div class="text-xs muted">AZ-spread</div>
+                    </div>
+                  `).join("")}
+                </div>
+              </div>
+
+              <div class="mt-4 grid grid-cols-2 gap-3 text-sm">
+                <div class="card2">
+                  <div class="font-bold">✅</div>
+                  <div class="muted">ไม่มี SPOF ที่ชั้น app • scale out ได้</div>
+                </div>
+                <div class="card2">
+                  <div class="font-bold">⚠️</div>
+                  <div class="muted">เริ่มต้องมี DevOps/Monitoring</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        `
+      },
+
+      // 33 Topology 4
+      {
+        type:"content",
+        badge:"Topology 4",
+        title:"Full Production (Enterprise Pattern)",
+        body: `
+          <div class="gridOverlay"></div>
+          <div class="px-6 pb-4">
+            <div class="grid grid-cols-12 gap-4">
+              <div class="col-span-8 card glowP">
+                <div class="font-bold mb-2">Infographic: Edge → Core</div>
+                <div class="grid grid-cols-5 gap-2 text-center text-sm">
+                  <div class="card2"><div class="text-2xl">🌍</div>CDN</div>
+                  <div class="card2"><div class="text-2xl">🛡️</div>WAF</div>
+                  <div class="card2"><div class="text-2xl">⚖️</div>LB</div>
+                  <div class="card2"><div class="text-2xl">☸️</div>K8s</div>
+                  <div class="card2"><div class="text-2xl">🗄️</div>DB/Cache/Queue</div>
+                </div>
+
+                <div class="mt-3 grid grid-cols-3 gap-2 text-sm">
+                  <div class="card2">⚡ Cache/Redis</div>
+                  <div class="card2">📨 Queue/Workers</div>
+                  <div class="card2">📈 Observability</div>
+                </div>
+              </div>
+
+              <div class="col-span-4 card glowA">
+                <div class="font-bold mb-2">เหมาะกับ</div>
+                <div class="grid gap-2 text-sm">
+                  <div class="card2">ผู้ใช้เยอะมาก / critical</div>
+                  <div class="card2">ต้อง 99.99%+</div>
+                  <div class="card2">ทีม ops พร้อม</div>
+                </div>
+                <div class="mt-3 card2 text-sm">
+                  <b>Trade-off:</b> ดีสุด แต่ “แพง+ซับซ้อน” สุด
+                </div>
+              </div>
+            </div>
+          </div>
+        `
+      },
+
+      // 34 Topology matrix
+      {
+        type:"content",
+        badge:"Topology • Matrix",
+        title:"เทียบ 4 แบบ (ภาพรวมเร็ว)",
+        body: `
+          <div class="gridOverlay"></div>
+          <div class="px-6 pb-4">
+            <div class="grid grid-cols-12 gap-4">
+              <div class="col-span-12 card">
+                <div class="grid grid-cols-4 gap-3 text-sm">
+                  ${[
+                    ["Single","$","Low","Low","Dev/Learning","rgba(255,255,255,.06)"],
+                    ["Sep DB","$$","Med","Low","Small Prod","rgba(16,185,129,.08)"],
+                    ["LB+ASG","$$$","High","Med","Prod HA","rgba(99,102,241,.10)"],
+                    ["Enterprise","$$$$","Very High","High","Large Scale","rgba(236,72,153,.10)"]
+                  ].map(([n,cost,av,cmp,bf,bg])=>`
+                    <div class="card2" style="background:${bg}">
+                      <div class="flex items-center justify-between">
+                        <div class="font-bold">${n}</div>
+                        <div class="pill">${cost}</div>
+                      </div>
+                      <div class="mt-2 grid gap-2">
+                        <div class="flex justify-between"><span class="muted">Availability</span><span>${av}</span></div>
+                        <div class="flex justify-between"><span class="muted">Complexity</span><span>${cmp}</span></div>
+                        <div class="flex justify-between"><span class="muted">Best for</span><span>${bf}</span></div>
+                      </div>
+                    </div>
+                  `).join("")}
+                </div>
+              </div>
+            </div>
+
+            <div class="mt-4 card2 text-sm">
+              <b>หลักเลือก:</b> เริ่มจาก requirement (uptime/traffic/data) แล้วค่อยดูงบกับทีม
+            </div>
+          </div>
+        `
+      },
+
+      // 35 Decision tree
+      {
+        type:"content",
+        badge:"Topology • Decision",
+        title:"Decision Tree (เลือกแบบไหนดี?)",
+        body: `
+          <div class="gridOverlay"></div>
+          <div class="px-6 pb-4">
+            <div class="card glowP">
+              <div class="grid grid-cols-12 gap-3 items-center text-sm">
+                <div class="col-span-12 card2 text-center">
+                  <b>Start</b> → งานเรียน/Dev อย่างเดียว?
+                </div>
+
+                <div class="col-span-5 card2 text-center">
+                  ✅ ใช่ → <b>Single Server</b>
+                </div>
+                <div class="col-span-2 text-center muted">|</div>
+                <div class="col-span-5 card2 text-center">
+                  ❌ ไม่ใช่ → ผู้ใช้น้อย (&lt; 1000) ?
+                </div>
+
+                <div class="col-span-5 card2 text-center">
+                  ✅ ใช่ → <b>Separated DB</b>
+                </div>
+                <div class="col-span-2 text-center muted">|</div>
+                <div class="col-span-5 card2 text-center">
+                  ❌ ไม่ใช่ → ต้อง 99.9%+ ?
+                </div>
+
+                <div class="col-span-5 card2 text-center">
+                  ✅ ใช่ → <b>LB + Auto-Scaling</b>
+                </div>
+                <div class="col-span-2 text-center muted">|</div>
+                <div class="col-span-5 card2 text-center">
+                  ✅ ต้องสูงมาก/ใหญ่ → <b>Full Production</b>
+                </div>
+              </div>
+            </div>
+
+            <div class="mt-4 card2 text-sm">
+              <b>ข้อสังเกต:</b> “Topology” คือการตัดสินใจเชิงสถาปัตยกรรม → เขียน ADR ได้เลย
+            </div>
+          </div>
+        `
+      },
+
+      // 36 Cloud economics
+      {
+        type:"content",
+        badge:"Cloud • Economics",
+        title:"Cloud Economics: ค่าใช้จ่ายที่คนชอบพลาด",
+        body: `
+          <div class="gridOverlay"></div>
+          <div class="px-6 pb-4">
+            <div class="grid grid-cols-12 gap-4">
+              <div class="col-span-7 card glowS">
+                <div class="font-bold mb-2">Hidden Costs</div>
+                <div class="grid gap-2 text-sm">
+                  <div class="card2 flex justify-between"><span>📤 Egress</span><span class="muted">ส่งข้อมูลออก</span></div>
+                  <div class="card2 flex justify-between"><span>💾 Backup/Snapshot</span><span class="muted">เก็บนาน = แพง</span></div>
+                  <div class="card2 flex justify-between"><span>🧩 Managed Fees</span><span class="muted">สะดวกแต่มีราคา</span></div>
+                  <div class="card2 flex justify-between"><span>📈 Monitoring</span><span class="muted">Log/metric เยอะ = ค่าใช้จ่าย</span></div>
+                </div>
+              </div>
+
+              <div class="col-span-5 card">
+                <div class="font-bold mb-2">Infographic: TCO Idea</div>
+                ${metricBar("On-prem (3y)", 78, "linear-gradient(90deg, rgba(234,240,255,.55), rgba(234,240,255,.15))")}
+                <div class="h-3"></div>
+                ${metricBar("Cloud (optimized)", 55, "linear-gradient(90deg, var(--a), rgba(16,185,129,.18))")}
+                <div class="h-3"></div>
+                ${metricBar("Cloud (waste)", 92, "linear-gradient(90deg, var(--r), rgba(251,113,133,.18))")}
+                <div class="mt-3 text-sm muted">Cloud คุ้มเมื่อ “optimize” ไม่ใช่ย้ายขึ้นไปเฉย ๆ</div>
+              </div>
+            </div>
+          </div>
+        `
+      },
+
+      // 37 Lab prep
+      {
+        type:"content",
+        badge:"Lab • Prep",
+        title:"Lab ท้ายคาบ: ออกแบบ Deployment สำหรับ Task Board System",
+        body: `
+          <div class="gridOverlay"></div>
+          <div class="px-6 pb-4">
+            <div class="grid grid-cols-3 gap-4">
+              <div class="card glowP">
+                <div class="text-3xl">🗺️</div>
+                <div class="font-bold">Lab 1</div>
+                <div class="text-sm muted">วาด Deployment Diagram</div>
+                <div class="mt-3 flex flex-wrap gap-2">
+                  ${chip("Web")}
+                  ${chip("API")}
+                  ${chip("DB")}
+                  ${chip("Cache/Queue")}
+                </div>
+              </div>
+
+              <div class="card glowA">
+                <div class="text-3xl">⚖️</div>
+                <div class="font-bold">Lab 2</div>
+                <div class="text-sm muted">เทียบ Trade-offs</div>
+                <div class="mt-3 flex flex-wrap gap-2">
+                  ${chip("Cost")}
+                  ${chip("HA")}
+                  ${chip("Latency")}
+                </div>
+              </div>
+
+              <div class="card glowS">
+                <div class="text-3xl">🧾</div>
+                <div class="font-bold">Lab 3</div>
+                <div class="text-sm muted">เขียน ADR สั้น ๆ</div>
+                <div class="mt-3 card2 text-sm">
+                  “เลือก topology เพราะอะไร?”<br/>“ไม่เลือกแบบอื่นเพราะอะไร?”
+                </div>
+              </div>
+            </div>
+
+            <div class="mt-4 card2 text-sm">
+              <b>คำเตือน:</b> อย่าเลือกเพราะ “เท่” — เลือกเพราะ <b>Requirements</b> เท่านั้น
+            </div>
+          </div>
+        `
+      },
+
+      // 38 wrap-up & midterm
+      {
+        type:"content",
+        badge:"Wrap-up",
+        title:"สรุป Week 7 + เตรียมสอบกลางภาค",
+        body: `
+          <div class="gridOverlay"></div>
+          <div class="px-6 pb-4">
+            <div class="grid grid-cols-12 gap-4">
+              <div class="col-span-7 card glowA">
+                <div class="font-bold mb-2">Key Takeaways</div>
+                <div class="grid grid-cols-2 gap-3 text-sm">
+                  <div class="card2">☁️ Cloud = self-service + elasticity + metering</div>
+                  <div class="card2">🍕 IaaS/PaaS/SaaS = responsibility</div>
+                  <div class="card2">🧠 12-Factor = portable + scalable</div>
+                  <div class="card2">🐳 Container = deploy ได้เหมือนกันทุกที่</div>
+                </div>
+              </div>
+
+              <div class="col-span-5 card glowS">
+                <div class="font-bold mb-2">Midterm Scope (Week 1–7)</div>
+                <div class="grid gap-2 text-sm">
+                  <div class="card2">Styles/Patterns</div>
+                  <div class="card2">C4 Model</div>
+                  <div class="card2">ADD-Lite + ADR</div>
+                  <div class="card2">Cloud & Containers</div>
+                </div>
+                <div class="mt-3 card2 text-sm">
+                  <b>คำถามชวนคิด:</b><br/>
+                  “ถ้า user โต 10× คุณจะยก topology ตอนไหน?”
+                </div>
+              </div>
+            </div>
+
+            <div class="mt-4 text-center text-lg italic muted">
+              “Architecture ที่ดี ไม่ใช่แค่สวย… แต่ deploy แล้วอยู่รอด”
+            </div>
+          </div>
+        `
+      },
+
+      // 39 end slide (optional but keep within 35-40: now 39 total? actually we have 38; add end title as 39? requirement 35-40 yes. We'll add 39.)
+      {
+        type:"title",
+        kicker:"ENGSE207 • Q&A",
+        title:"ขอบคุณครับ<br/>Q & A",
+        subtitle:"ต่อด้วย Lab / Workshop",
+        footerLeft:"Software Architecture",
+        footerRight:"End",
+        bg: `
+          radial-gradient(900px 540px at 35% 35%, rgba(16,185,129,.22), transparent 60%),
+          radial-gradient(900px 540px at 75% 45%, rgba(34,211,238,.18), transparent 60%),
+          linear-gradient(135deg, rgba(99,102,241,.18), rgba(236,72,153,.10))
+        `,
+        body: `
+          <div class="gridOverlay"></div>
+          <div class="h-full flex flex-col items-center justify-center text-center px-10">
+            <div class="kicker mb-4">${svgShip("var(--c)")} <span>Ask • Discuss • Decide</span></div>
+            <div class="title text-6xl">ขอบคุณครับ</div>
+            <div class="mt-4 text-2xl muted">Q & A และเริ่มทำ Lab กันเลย 🚀</div>
+            <div class="mt-10 flex gap-3 flex-wrap justify-center">
+              ${chip("Cloud")} ${chip("12-Factor")} ${chip("Docker")} ${chip("Kubernetes")} ${chip("Topology")}
+            </div>
+          </div>
+        `
+      }
+    ];
+
+    // NOTE: slides count = 39 (meets 35-40)
+
+    // ---------- Render ----------
+    const slideRoot = document.getElementById("slideRoot");
+    const progressBar = document.getElementById("progressBar");
+
+    let current = 0;
+    let fontScale = 100;
+
+    function slideShell({badge, title, body}, idx){
+      return `
+        <div class="slide" id="slide-${idx}">
+          <div class="gridOverlay"></div>
+          <div class="topbar">
+            <div>
+              <div class="badge" style="border-color:rgba(99,102,241,.35); background:rgba(99,102,241,.14)">${badge || ""}</div>
+              <div class="title text-4xl mt-2">${title || ""}</div>
+            </div>
+            <div class="text-right">
+              <div class="kicker">
+                <span style="display:inline-flex; width:10px; height:10px; border-radius:999px; background: linear-gradient(90deg, var(--p), var(--s));"></span>
+                <span>ENGSE207 • Week 7</span>
+              </div>
+              <div class="mt-2 text-xs muted" id="counter-${idx}">Slide ${idx+1} / ${slides.length}</div>
+            </div>
+          </div>
+          <div class="px-2">${body || ""}</div>
+          <div class="bottombar">
+            <div>Software Architecture Lecture Series</div>
+            <div class="muted">←/→, Space, F, Home/End</div>
+          </div>
+        </div>
+      `;
+    }
+
+    function sectionShell({title, subtitle}, idx){
+      return `
+        <div class="slide" id="slide-${idx}" style="background:linear-gradient(135deg, rgba(255,255,255,.07), rgba(255,255,255,.02));">
+          <div class="gridOverlay"></div>
+          <div class="h-full flex flex-col items-center justify-center text-center px-10">
+            <div class="kicker mb-4">
+              <span style="display:inline-flex; width:12px; height:12px; border-radius:999px; background: var(--s); box-shadow:0 0 40px rgba(236,72,153,.35);"></span>
+              <span>Section Break</span>
+            </div>
+            <div class="title text-6xl">${title}</div>
+            <div class="mt-4 text-2xl muted">${subtitle || ""}</div>
+            <div class="mt-10 card2 text-sm">
+              Slide ${idx+1} / ${slides.length}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function titleShell(s, idx){
+      return `
+        <div class="slide" id="slide-${idx}" style="background:${s.bg || "linear-gradient(135deg, rgba(255,255,255,.06), rgba(255,255,255,.02))"}">
+          ${s.body || ""}
+          <div class="bottombar" style="position:absolute; left:0; right:0; bottom:0;">
+            <div>${s.footerLeft || "ENGSE207"}</div>
+            <div class="muted">Slide ${idx+1} / ${slides.length} • ${s.footerRight || ""}</div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderAll(){
+      slideRoot.innerHTML = `<div class="w-full h-full flex items-center justify-center" id="frame"></div>`;
+      const frame = document.getElementById("frame");
+
+      const wrap = document.createElement("div");
+      wrap.className = "w-full h-full flex items-center justify-center";
+      wrap.innerHTML = slides.map((s, idx)=>{
+        if(s.type==="section") return sectionShell(s, idx);
+        if(s.type==="title") return titleShell(s, idx);
+        return slideShell(s, idx);
+      }).join("");
+      frame.appendChild(wrap);
+
+      show(0);
+    }
+
+    function show(i){
+      const all = document.querySelectorAll(".slide");
+      all.forEach(el=>el.classList.remove("active"));
+      const el = document.getElementById(`slide-${i}`);
+      if(!el) return;
+      el.classList.add("active");
+      current = i;
+      updateProgress();
+    }
+
+    function updateProgress(){
+      const pct = ((current+1)/slides.length)*100;
+      progressBar.style.width = pct + "%";
+    }
+
+    function next(){ if(current < slides.length-1) show(current+1); }
+    function prev(){ if(current > 0) show(current-1); }
+    function first(){ show(0); }
+    function last(){ show(slides.length-1); }
+
+    function setFontScale(delta){
+      fontScale = Math.max(80, Math.min(130, fontScale + delta));
+      slideRoot.style.fontSize = fontScale + "%";
+    }
+
+    function toggleFullScreen(){
+      if(!document.fullscreenElement){
+        document.documentElement.requestFullscreen?.();
+      } else {
+        document.exitFullscreen?.();
+      }
+    }
+
+    // ---------- Controls ----------
+    document.getElementById("btnNext").addEventListener("click", next);
+    document.getElementById("btnPrev").addEventListener("click", prev);
+    document.getElementById("btnFontUp").addEventListener("click", ()=>setFontScale(+5));
+    document.getElementById("btnFontDown").addEventListener("click", ()=>setFontScale(-5));
+    document.getElementById("btnFS").addEventListener("click", toggleFullScreen);
+
+    // Keyboard
+    document.addEventListener("keydown", (e)=>{
+      if(e.key === "ArrowRight" || e.key === " "){ e.preventDefault(); next(); }
+      if(e.key === "ArrowLeft"){ e.preventDefault(); prev(); }
+      if(e.key.toLowerCase() === "f"){ toggleFullScreen(); }
+      if(e.key === "Home"){ first(); }
+      if(e.key === "End"){ last(); }
+    });
+
+    // Touch / Swipe
+    let sx=0, sy=0, t0=0;
+    document.addEventListener("touchstart", (e)=>{
+      const t = e.touches[0]; sx=t.clientX; sy=t.clientY; t0=Date.now();
+    }, {passive:true});
+    document.addEventListener("touchend", (e)=>{
+      const dt = Date.now()-t0;
+      if(dt>650) return;
+      const t = e.changedTouches[0];
+      const dx = t.clientX - sx;
+      const dy = t.clientY - sy;
+      if(Math.abs(dx) > 60 && Math.abs(dy) < 60){
+        if(dx < 0) next(); else prev();
+      }
+    }, {passive:true});
+
+    // Init
+    renderAll();
+  </script>
+</body>
+</html>
