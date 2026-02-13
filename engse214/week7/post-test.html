@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ENGSE214: Certified Web Security Exam</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&family=Sarabun:wght@300;400;600&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+    <style>
+        :root {
+            --neon-green: #00ff41;
+            --dark-bg: #0d1117;
+            --glass: rgba(22, 27, 34, 0.85);
+            --border: rgba(48, 54, 61, 0.8);
+        }
+
+        body {
+            font-family: 'Sarabun', sans-serif;
+            background-color: var(--dark-bg);
+            background-image: 
+                linear-gradient(rgba(0, 255, 65, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 255, 65, 0.03) 1px, transparent 1px);
+            background-size: 30px 30px;
+            color: #c9d1d9;
+            min-height: 100vh;
+        }
+
+        .font-tech { font-family: 'Rajdhani', sans-serif; }
+
+        .glass-panel {
+            background: var(--glass);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border);
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+        }
+
+        .btn-option {
+            transition: all 0.2s;
+            border-left: 3px solid transparent;
+        }
+        .btn-option:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-left-color: #58a6ff;
+        }
+        .btn-option.selected {
+            background: rgba(0, 255, 65, 0.1);
+            border-left-color: var(--neon-green);
+            color: var(--neon-green);
+            font-weight: 600;
+        }
+
+        /* Animation for Save Button */
+        @keyframes pulse-green {
+            0% { box-shadow: 0 0 0 0 rgba(0, 255, 65, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(0, 255, 65, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(0, 255, 65, 0); }
+        }
+        .btn-glow {
+            animation: pulse-green 2s infinite;
+        }
+
+        /* Certificate Style Capture Zone */
+        #certificate-node {
+            background: radial-gradient(circle at center, #161b22 0%, #010409 100%);
+            border: 2px solid #30363d;
+            position: relative;
+        }
+        #certificate-node::before {
+            content: "";
+            position: absolute;
+            top: 10px; left: 10px; right: 10px; bottom: 10px;
+            border: 1px dashed rgba(0, 255, 65, 0.3);
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center p-4">
+
+    <div id="screen-login" class="w-full max-w-md z-10">
+        <div class="glass-panel rounded-xl p-8 text-center relative overflow-hidden">
+            <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-green-500 to-blue-500"></div>
+            
+            <div class="mb-6">
+                <i class="fa-solid fa-shield-cat text-5xl text-green-500 mb-2"></i>
+                <h1 class="text-3xl font-tech font-bold text-white uppercase tracking-wider">Cyber Security Exam</h1>
+                <p class="text-xs text-slate-500 font-tech tracking-[0.2em]">ENGSE214 • WEEK 7 • OWASP</p>
+            </div>
+
+            <div class="space-y-4 text-left">
+                <div>
+                    <label class="text-xs text-green-500 uppercase font-bold ml-1">Candidate Name</label>
+                    <input type="text" id="inp-name" class="w-full bg-black/50 border border-slate-700 rounded p-3 text-white focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500 transition" placeholder="ชื่อ-นามสกุล">
+                </div>
+                <div>
+                    <label class="text-xs text-green-500 uppercase font-bold ml-1">Student ID</label>
+                    <input type="text" id="inp-id" class="w-full bg-black/50 border border-slate-700 rounded p-3 text-white font-tech tracking-widest focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500 transition" placeholder="XXXXXXXX">
+                </div>
+                <button onclick="startExam()" class="w-full bg-green-600 hover:bg-green-500 text-black font-bold py-3 rounded mt-4 transition uppercase font-tech tracking-widest">
+                    Initialize Assessment
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="screen-exam" class="hidden w-full max-w-6xl z-10">
+        <div class="flex justify-between items-end mb-6 border-b border-slate-800 pb-2">
+            <div>
+                <div class="text-xs text-slate-500 uppercase font-tech">Candidate Identity</div>
+                <div class="text-xl font-bold text-white" id="disp-name">Loading...</div>
+                <div class="text-sm text-green-500 font-tech" id="disp-id">ID: ...</div>
+            </div>
+            <div class="text-right">
+                <div class="text-xs text-slate-500 uppercase font-tech">Status</div>
+                <div class="text-2xl font-tech font-bold text-white"><span id="q-current">01</span><span class="text-slate-600">/20</span></div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            <div class="lg:col-span-7 space-y-6">
+                <div class="glass-panel p-6 rounded-lg min-h-[120px] flex items-center">
+                    <h2 id="q-text" class="text-xl font-semibold leading-relaxed">Question text loading...</h2>
+                </div>
+
+                <div id="option-list" class="space-y-3">
+                    </div>
+
+                <div class="flex justify-between pt-4">
+                    <button id="btn-prev" onclick="move(-1)" class="px-6 py-2 rounded border border-slate-700 text-slate-400 hover:bg-slate-800 disabled:opacity-30">
+                        <i class="fa-solid fa-chevron-left mr-2"></i> PREV
+                    </button>
+                    <button id="btn-next" onclick="move(1)" class="px-6 py-2 rounded bg-slate-700 text-white hover:bg-slate-600 hover:text-green-400 font-bold transition">
+                        NEXT <i class="fa-solid fa-chevron-right ml-2"></i>
+                    </button>
+                    <button id="btn-finish" onclick="submitExam()" class="hidden px-6 py-2 rounded bg-green-600 text-black font-bold hover:bg-green-500 transition shadow-[0_0_15px_rgba(0,255,65,0.4)]">
+                        SUBMIT EXAM <i class="fa-solid fa-paper-plane ml-2"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="lg:col-span-5">
+                <div class="glass-panel p-1 rounded-lg h-full min-h-[400px] flex flex-col">
+                    <div class="bg-[#010409] flex-1 rounded border border-slate-800 relative overflow-hidden flex items-center justify-center p-6 group">
+                        <div class="absolute top-0 left-0 w-full h-[1px] bg-green-500/20"></div>
+                        <div class="absolute bottom-0 right-0 w-full h-[1px] bg-green-500/20"></div>
+                        
+                        <div id="visual-content" class="w-full"></div>
+                    </div>
+                    <div class="p-4 border-t border-slate-800">
+                        <div class="flex items-start gap-3">
+                            <i class="fa-solid fa-lightbulb text-yellow-500 mt-1"></i>
+                            <div>
+                                <div class="text-xs text-slate-500 uppercase font-bold mb-1">Knowledge Base</div>
+                                <p id="visual-desc" class="text-sm text-slate-300">...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="screen-result" class="hidden w-full max-w-3xl z-10 pb-10">
+        
+        <div id="certificate-node" class="rounded-xl p-8 mb-8 text-center">
+            
+            <div class="mb-8 relative z-10">
+                <div class="w-20 h-20 mx-auto bg-slate-800 rounded-full flex items-center justify-center border-2 border-slate-600 mb-4" id="res-icon-container">
+                    <i id="res-icon" class="fa-solid fa-spinner text-4xl text-slate-400"></i>
+                </div>
+                <h2 id="res-title" class="text-4xl font-tech font-bold text-white mb-2 uppercase">Analyzing...</h2>
+                <p id="res-msg" class="text-slate-400">Processing results...</p>
+            </div>
+
+            <div class="relative z-10 bg-black/40 border border-slate-700 rounded-lg p-6 max-w-sm mx-auto mb-8 backdrop-blur-sm">
+                <div class="text-xs text-slate-500 uppercase tracking-widest mb-2">Final Score</div>
+                <div class="text-6xl font-tech font-bold text-white mb-2" id="res-score">0/20</div>
+                <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+                    <div id="res-bar" class="h-full bg-green-500 w-0 transition-all duration-1000"></div>
+                </div>
+            </div>
+
+            <div class="relative z-10 flex justify-center gap-8 text-left mb-8 border-t border-slate-800 pt-6">
+                <div>
+                    <p class="text-[10px] text-slate-500 uppercase font-bold">Candidate</p>
+                    <p id="cert-name" class="text-lg font-bold text-white">Name</p>
+                </div>
+                <div>
+                    <p class="text-[10px] text-slate-500 uppercase font-bold">Student ID</p>
+                    <p id="cert-id" class="text-lg font-tech text-green-400">XXXXXXXX</p>
+                </div>
+                <div>
+                    <p class="text-[10px] text-slate-500 uppercase font-bold">Date</p>
+                    <p id="cert-date" class="text-lg font-tech text-slate-300">YYYY-MM-DD</p>
+                </div>
+            </div>
+
+            <div class="relative z-10 text-left bg-black/20 rounded p-4 max-h-60 overflow-y-auto border border-slate-800/50 scrollbar-thin">
+                <h3 class="text-xs text-slate-500 uppercase font-bold mb-3 border-b border-slate-800 pb-2">Threat Analysis Log</h3>
+                <div id="review-container" class="space-y-2 text-sm"></div>
+            </div>
+
+            <div class="absolute bottom-2 right-4 text-[10px] text-slate-700 font-tech opacity-50">
+                ENGSE214 SECURITY CERTIFICATION SYSTEM
+            </div>
+        </div>
+
+        <div class="flex gap-4">
+            <button onclick="location.reload()" class="flex-1 bg-slate-700 hover:bg-slate-600 text-white font-bold py-4 rounded-lg transition uppercase tracking-wider">
+                <i class="fa-solid fa-power-off mr-2"></i> Restart
+            </button>
+            <button id="btn-save" onclick="saveToPNG()" class="hidden flex-1 bg-green-600 hover:bg-green-500 text-black font-bold py-4 rounded-lg transition uppercase tracking-wider btn-glow shadow-lg shadow-green-500/30">
+                <i class="fa-solid fa-download mr-2"></i> Save Certificate (PNG)
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // --- Questions Database (From Lecture 7) ---
+        const questions = [
+            { q: "OWASP คืออะไร?", a: "องค์กรไม่แสวงหากำไรที่เน้นเรื่องความปลอดภัยซอฟต์แวร์", opts: ["โปรแกรมสแกนไวรัส", "องค์กรไม่แสวงหากำไรที่เน้นเรื่องความปลอดภัยซอฟต์แวร์", "หน่วยงานรัฐบาลสหรัฐฯ", "ชื่อไวรัสคอมพิวเตอร์ชนิดหนึ่ง"], info: "Open Worldwide Application Security Project เป็นมาตรฐานสากล", type: "shield" },
+            { q: "อันดับ 1 ของ OWASP Top 10:2025 คือ?", a: "Broken Access Control", opts: ["Injection", "Cryptographic Failures", "Broken Access Control", "Insecure Design"], info: "การเข้าถึงข้อมูลหรือฟังก์ชันที่ไม่ได้รับอนุญาตเป็นปัญหาใหญ่ที่สุด", type: "chart" },
+            { q: "SQL Injection เกิดจากอะไร?", a: "การไม่ตรวจสอบ Input ก่อนนำไปใช้ใน SQL Query", opts: ["Server ทำงานหนักเกินไป", "การไม่ตรวจสอบ Input ก่อนนำไปใช้ใน SQL Query", "การตั้งรหัสผ่านง่ายเกินไป", "การไม่เข้ารหัสข้อมูล HTTPS"], info: "Attacker แทรกคำสั่ง SQL ผ่านช่องกรอกข้อมูล", type: "code-sql" },
+            { q: "Payload `' OR '1'='1` ทำงานอย่างไร?", a: "ทำให้เงื่อนไขเป็นจริงเสมอ (Always True)", opts: ["ลบฐานข้อมูลทิ้ง", "ทำให้เงื่อนไขเป็นจริงเสมอ (Always True)", "ขโมย Cookie", "ปิดการทำงานของ Firewall"], info: "ใช้สำหรับ Bypass Login หรือดึงข้อมูลทั้งหมด", type: "logic" },
+            { q: "วิธีป้องกัน SQL Injection ที่ดีที่สุด?", a: "Prepared Statements (Parameterized Queries)", opts: ["Input Validation แบบ Blacklist", "ซ่อน Error Message", "Prepared Statements (Parameterized Queries)", "เข้ารหัส Base64"], info: "แยกโครงสร้างคำสั่ง SQL ออกจากข้อมูลอย่างชัดเจน", type: "shield-db" },
+            { q: "XSS (Cross-Site Scripting) คือ?", a: "การฝัง Script อันตรายไปรันที่เครื่องผู้ใช้", opts: ["การโจมตี Server ให้ล่ม", "การฝัง Script อันตรายไปรันที่เครื่องผู้ใช้", "การเดารหัสผ่าน", "การดักจับข้อมูลเครือข่าย"], info: "เป้าหมายคือ Browser ของเหยื่อ ไม่ใช่ Server", type: "browser" },
+            { q: "Stored XSS ต่างจาก Reflected XSS อย่างไร?", a: "Script ถูกบันทึกไว้ใน Database ถาวร", opts: ["Script มาทาง URL เท่านั้น", "Script ถูกบันทึกไว้ใน Database ถาวร", "เกิดเฉพาะบนมือถือ", "ไม่อันตรายเท่า Reflected"], info: "Stored XSS อันตรายกว่าเพราะเหยื่อทุกคนที่เปิดหน้าเว็บจะโดนโจมตี", type: "db-risk" },
+            { q: "ฟังก์ชัน `htmlspecialchars()` ใน PHP ช่วยป้องกันอะไร?", a: "XSS", opts: ["SQL Injection", "XSS", "CSRF", "Brute Force"], info: "แปลงอักขระพิเศษเป็น HTML Entities (เช่น < เป็น &lt;)", type: "code-php" },
+            { q: "HTTPS (TLS) ช่วยป้องกันเรื่องใด?", a: "Data in Transit (การดักฟังระหว่างทาง)", opts: ["SQL Injection", "XSS", "Data in Transit (การดักฟังระหว่างทาง)", "Server Hacking"], info: "เข้ารหัสข้อมูลขณะส่งผ่านเครือข่าย", type: "lock" },
+            { q: "OWASP A03:2025 คือ?", a: "Software Supply Chain Failures", opts: ["Injection", "Software Supply Chain Failures", "SSRF", "Logging Failures"], info: "ความเสี่ยงจาก Library หรือ 3rd Party ที่เรานำมาใช้", type: "supply" },
+            { q: "Least Privilege Principle คือ?", a: "ให้สิทธิ์เท่าที่จำเป็นต่อการทำงาน", opts: ["ให้สิทธิ์ทุกคนเท่าเทียมกัน", "ให้สิทธิ์เท่าที่จำเป็นต่อการทำงาน", "ให้สิทธิ์ Admin แก่ทุกคน", "ห้ามให้สิทธิ์ใครเลย"], info: "จำกัดความเสียหายหาก Account ถูกแฮก", type: "key" },
+            { q: "Input Validation แบบ Whitelist คือ?", a: "อนุญาตเฉพาะสิ่งที่รู้ว่าปลอดภัย", opts: ["บล็อกสิ่งที่รู้ว่าอันตราย", "อนุญาตเฉพาะสิ่งที่รู้ว่าปลอดภัย", "รับทุกอย่างเพื่อความสะดวก", "ตรวจสอบเฉพาะความยาว"], info: "ปลอดภัยกว่า Blacklist เพราะครอบคลุมสิ่งที่ไม่รู้จัก", type: "filter" },
+            { q: "HttpOnly Cookie ช่วยป้องกันอะไร?", a: "JavaScript เข้าถึง Cookie (ลดความเสี่ยง XSS)", opts: ["การดักฟัง Network", "JavaScript เข้าถึง Cookie (ลดความเสี่ยง XSS)", "การแก้ไข Cookie", "SQL Injection"], info: "Attacker ไม่สามารถใช้ document.cookie ได้", type: "cookie" },
+            { q: "Security Misconfiguration มักเกิดจาก?", a: "ใช้ Default Password / เปิดฟีเจอร์ไม่จำเป็น", opts: ["Code มี Bug", "ใช้ Default Password / เปิดฟีเจอร์ไม่จำเป็น", "Network ช้า", "User ลืมรหัสผ่าน"], info: "ควร Hardening ระบบและเปลี่ยนค่า Default เสมอ", type: "gear" },
+            { q: "Blind SQL Injection สังเกตจากอะไร?", a: "Time Delay หรือ Error Message ที่เปลี่ยนไป", opts: ["ข้อมูลที่แสดงออกมาตรงๆ", "Time Delay หรือ Error Message ที่เปลี่ยนไป", "หน้าจอสีฟ้า", "Pop-up โฆษณา"], info: "ไม่เห็นผลลัพธ์ข้อมูล แต่เดาจากพฤติกรรมระบบ", type: "eye-slash" },
+            { q: "Content Security Policy (CSP) ใช้ทำอะไร?", a: "กำหนดแหล่งที่มาของ Content ที่อนุญาตให้โหลด", opts: ["เข้ารหัส Database", "กำหนดแหล่งที่มาของ Content ที่อนุญาตให้โหลด", "ป้องกัน DDoS", "จัดการ User Session"], info: "ป้องกัน XSS โดยจำกัดการโหลด Script ภายนอก", type: "shield-web" },
+            { q: "Insecure Design คือ?", a: "ข้อบกพร่องตั้งแต่การออกแบบสถาปัตยกรรม", opts: ["เขียน Code ผิด Syntax", "ข้อบกพร่องตั้งแต่การออกแบบสถาปัตยกรรม", "ลืมอัปเดต Windows", "Server เก่าเกินไป"], info: "ต้องแก้ที่ Design, Patch ทีหลังไม่ได้", type: "blueprint" },
+            { q: "Software Composition Analysis (SCA) ใช้ทำอะไร?", a: "ตรวจหาช่องโหว่ใน Library/Dependencies", opts: ["ตรวจหาไวรัสในเครื่อง", "ตรวจหาช่องโหว่ใน Library/Dependencies", "ตรวจสอบความเร็วเว็บ", "ตรวจสอบสิทธิ์ผู้ใช้"], info: "เครื่องมือเช่น OWASP Dependency Check", type: "scan" },
+            { q: "Golden Rule ของ Web Security คือ?", a: "Never Trust User Input", opts: ["Always Trust Admin", "Never Trust User Input", "Encryption is Enough", "Obscurity is Security"], info: "ข้อมูลจากผู้ใช้ต้องถูกตรวจสอบเสมอ", type: "warning" },
+            { q: "Broken Authentication เสี่ยงต่ออะไร?", a: "Account Takeover (การยึดบัญชี)", opts: ["Server ล่ม", "Account Takeover (การยึดบัญชี)", "SQL Injection", "XSS"], info: "เกิดจากรหัสผ่านง่าย, ไม่มี MFA, Session ไม่หมดอายุ", type: "user-lock" }
+        ];
+
+        // --- State ---
+        let state = {
+            name: '',
+            id: '',
+            currIdx: 0,
+            answers: Array(questions.length).fill(null),
+            score: 0
+        };
+
+        // --- Logic ---
+        function startExam() {
+            const n = document.getElementById('inp-name').value.trim();
+            const i = document.getElementById('inp-id').value.trim();
+            if(!n || !i) return alert("Please identify yourself!");
+            
+            state.name = n;
+            state.id = i;
+            
+            document.getElementById('screen-login').classList.add('hidden');
+            document.getElementById('screen-exam').classList.remove('hidden');
+            
+            document.getElementById('disp-name').innerText = n;
+            document.getElementById('disp-id').innerText = `ID: ${i}`;
+            
+            loadQ(0);
+        }
+
+        function move(dir) {
+            const next = state.currIdx + dir;
+            if(next >= 0 && next < questions.length) {
+                state.currIdx = next;
+                loadQ(next);
+            }
+        }
+
+        function loadQ(idx) {
+            const q = questions[idx];
+            document.getElementById('q-current').innerText = (idx + 1).toString().padStart(2, '0');
+            document.getElementById('q-text').innerText = `${idx+1}. ${q.q}`;
+            document.getElementById('visual-desc').innerText = q.info;
+            
+            // Buttons
+            const optsDiv = document.getElementById('option-list');
+            optsDiv.innerHTML = '';
+            q.opts.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.className = `btn-option w-full text-left p-4 rounded bg-slate-800/50 border border-slate-700 text-slate-300 ${state.answers[idx] === opt ? 'selected' : ''}`;
+                btn.onclick = () => {
+                    state.answers[idx] = opt;
+                    loadQ(idx); // re-render to update selection
+                };
+                btn.innerText = opt;
+                optsDiv.appendChild(btn);
+            });
+
+            // Nav State
+            document.getElementById('btn-prev').disabled = idx === 0;
+            if(idx === questions.length - 1) {
+                document.getElementById('btn-next').classList.add('hidden');
+                document.getElementById('btn-finish').classList.remove('hidden');
+                // Enable submit only if answered
+                document.getElementById('btn-finish').disabled = !state.answers[idx];
+            } else {
+                document.getElementById('btn-next').classList.remove('hidden');
+                document.getElementById('btn-finish').classList.add('hidden');
+                document.getElementById('btn-next').disabled = !state.answers[idx];
+            }
+
+            renderVisual(q.type);
+        }
+
+        function renderVisual(type) {
+            const container = document.getElementById('visual-content');
+            let html = '';
+            
+            // Generate visual based on type
+            if(type === 'code-sql') {
+                html = `
+                    <div class="w-full max-w-xs bg-[#0d1117] border border-slate-700 rounded p-3 font-mono text-xs shadow-lg">
+                        <div class="text-purple-400">SELECT <span class="text-white">*</span> FROM <span class="text-blue-400">users</span></div>
+                        <div class="text-purple-400">WHERE <span class="text-blue-400">user</span> = <span class="text-orange-400">'input'</span>;</div>
+                    </div>`;
+            } else if (type === 'browser') {
+                html = `
+                    <div class="w-full max-w-xs bg-slate-200 rounded-t h-32 relative overflow-hidden border border-slate-400">
+                        <div class="bg-slate-300 h-6 w-full flex items-center px-2 space-x-1">
+                            <div class="w-2 h-2 bg-red-400 rounded-full"></div>
+                            <div class="w-2 h-2 bg-yellow-400 rounded-full"></div>
+                        </div>
+                        <div class="absolute top-10 left-10 bg-white border border-slate-400 shadow-xl rounded p-4 text-black text-center animate-bounce">
+                            <div class="font-bold text-red-600 mb-1"><i class="fa-solid fa-triangle-exclamation"></i> HACKED</div>
+                            <div class="text-[10px]">Session Stolen!</div>
+                        </div>
+                    </div>`;
+            } else if (type === 'chart') {
+                html = `
+                    <div class="flex items-end space-x-2 h-32">
+                        <div class="w-8 bg-red-600 h-full rounded-t relative group"><span class="absolute -top-5 left-0 w-full text-center text-xs font-bold text-red-500">1</span></div>
+                        <div class="w-8 bg-orange-500 h-[70%] rounded-t"></div>
+                        <div class="w-8 bg-yellow-500 h-[50%] rounded-t"></div>
+                        <div class="w-8 bg-blue-500 h-[30%] rounded-t"></div>
+                    </div>`;
+            } else if (type === 'code-php') {
+                html = `
+                    <div class="w-full max-w-xs bg-[#1e1e1e] border border-slate-700 rounded p-3 font-mono text-xs text-blue-300">
+                        &lt;?php<br>
+                        <span class="text-yellow-300">echo</span> <span class="text-green-300">htmlspecialchars</span>(<span class="text-white">$input</span>);<br>
+                        ?&gt;
+                    </div>`;
+            } else {
+                // Generic Icons
+                let iconClass = 'fa-shield-halved';
+                if(type === 'lock') iconClass = 'fa-lock';
+                if(type === 'key') iconClass = 'fa-key';
+                if(type === 'filter') iconClass = 'fa-filter';
+                if(type === 'supply') iconClass = 'fa-boxes-stacked';
+                
+                html = `<i class="fa-solid ${iconClass} text-8xl text-green-500/20 drop-shadow-[0_0_15px_rgba(0,255,65,0.5)]"></i>`;
+            }
+            container.innerHTML = `<div class="flex items-center justify-center h-full w-full">${html}</div>`;
+        }
+
+        function submitExam() {
+            if(!confirm("Submit answers?")) return;
+            
+            let score = 0;
+            const reviewDiv = document.getElementById('review-container');
+            reviewDiv.innerHTML = '';
+
+            questions.forEach((q, i) => {
+                const userAns = state.answers[i];
+                const isCorrect = userAns === q.a;
+                if(isCorrect) score++;
+
+                const row = document.createElement('div');
+                row.className = `p-2 rounded border-l-4 ${isCorrect ? 'bg-green-900/10 border-green-500' : 'bg-red-900/10 border-red-500'}`;
+                row.innerHTML = `
+                    <div class="flex justify-between text-xs font-bold mb-1">
+                        <span class="text-slate-400">Q${i+1}</span>
+                        <span class="${isCorrect?'text-green-500':'text-red-500'}">${isCorrect?'PASS':'FAIL'}</span>
+                    </div>
+                    <div class="mb-1 text-slate-300">${q.q}</div>
+                    ${!isCorrect ? `<div class="text-[10px] text-green-600">Correct: ${q.a}</div>` : ''}
+                `;
+                reviewDiv.appendChild(row);
+            });
+
+            // UI Switch
+            document.getElementById('screen-exam').classList.add('hidden');
+            document.getElementById('screen-result').classList.remove('hidden');
+
+            // Set Data
+            document.getElementById('cert-name').innerText = state.name;
+            document.getElementById('cert-id').innerText = state.id;
+            document.getElementById('cert-date').innerText = new Date().toLocaleDateString();
+            document.getElementById('res-score').innerText = `${score}/20`;
+            setTimeout(() => {
+                document.getElementById('res-bar').style.width = `${(score/20)*100}%`;
+            }, 100);
+
+            // Pass/Fail Logic
+            const icon = document.getElementById('res-icon');
+            const cont = document.getElementById('res-icon-container');
+            const title = document.getElementById('res-title');
+            const msg = document.getElementById('res-msg');
+            const btnSave = document.getElementById('btn-save');
+
+            if(score >= 17) {
+                // PASS
+                cont.className = "w-20 h-20 mx-auto bg-green-500/10 rounded-full flex items-center justify-center border-2 border-green-500 mb-4 shadow-[0_0_30px_rgba(0,255,65,0.4)]";
+                icon.className = "fa-solid fa-check text-4xl text-green-500";
+                title.innerText = "CERTIFIED";
+                title.className = "text-5xl font-tech font-bold text-green-500 mb-2 uppercase drop-shadow-[0_0_10px_rgba(0,255,65,0.8)]";
+                msg.innerText = "Congratulations! You have demonstrated comprehensive knowledge of Web Security.";
+                btnSave.classList.remove('hidden');
+            } else {
+                // FAIL
+                cont.className = "w-20 h-20 mx-auto bg-red-500/10 rounded-full flex items-center justify-center border-2 border-red-500 mb-4";
+                icon.className = "fa-solid fa-xmark text-4xl text-red-500";
+                title.innerText = "FAILED";
+                title.className = "text-5xl font-tech font-bold text-red-500 mb-2 uppercase";
+                msg.innerText = "Score below threshold (17/20). Please review the curriculum and retry.";
+                btnSave.classList.add('hidden');
+            }
+        }
+
+        function saveToPNG() {
+            const node = document.getElementById('certificate-node');
+            
+            // Adjust styling for capture to remove scrollbars or max-height limits
+            const originalMaxHeight = node.querySelector('.max-h-60')?.style.maxHeight;
+            const scrollDiv = node.querySelector('.overflow-y-auto');
+            
+            if(scrollDiv) {
+                scrollDiv.style.overflow = 'visible';
+                scrollDiv.style.maxHeight = 'none';
+            }
+
+            html2canvas(node, {
+                backgroundColor: "#0d1117",
+                scale: 2 // High Quality
+            }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = `ENGSE214_CERT_${state.id}.png`;
+                link.href = canvas.toDataURL("image/png");
+                link.click();
+
+                // Restore styles
+                if(scrollDiv) {
+                    scrollDiv.style.overflow = '';
+                    scrollDiv.style.maxHeight = '';
+                }
+            });
+        }
+    </script>
+</body>
+</html>
