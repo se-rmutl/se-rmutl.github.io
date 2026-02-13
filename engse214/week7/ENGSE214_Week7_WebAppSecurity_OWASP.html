@@ -1,0 +1,2044 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ENGSE214 Week 7 — Web Application Security & OWASP</title>
+  <style>
+:root{
+  --bg:#0b1220;
+  --bg2:#0f1a33;
+  --panel:rgba(255,255,255,.06);
+  --panel2:rgba(255,255,255,.08);
+  --stroke:rgba(255,255,255,.16);
+  --text:#eaf0ff;
+  --muted:rgba(234,240,255,.74);
+  --accent:#5eead4;
+  --accent2:#60a5fa;
+  --warn:#fb7185;
+  --ok:#34d399;
+  --shadow:0 20px 60px rgba(0,0,0,.45);
+  --radius:22px;
+  --scale:1;
+  --font: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans Thai", "Noto Sans", sans-serif;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+*{box-sizing:border-box}
+html,body{height:100%; margin:0; background:radial-gradient(1200px 700px at 20% 10%, #1b2a5c 0%, transparent 60%),
+radial-gradient(900px 650px at 80% 0%, #114a4a 0%, transparent 55%),
+linear-gradient(180deg, var(--bg) 0%, var(--bg2) 100%); color:var(--text); font-family:var(--font); overflow:hidden}
+a{color:inherit}
+button{font-family:inherit}
+
+#app{
+  height:100%;
+  display:flex;
+  flex-direction:column;
+}
+
+#stage{
+  position:relative;
+  flex:1;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:24px;
+}
+
+.deck{
+  width:min(1400px, 96vw);
+  aspect-ratio: 16/9;
+  position:relative;
+  transform:scale(var(--scale));
+  transform-origin:center center;
+  transition:transform .15s ease;
+}
+
+.slide{
+  position:absolute;
+  inset:0;
+  display:flex;
+  flex-direction:column;
+  padding:56px 64px 64px;
+  border-radius:var(--radius);
+  background:linear-gradient(160deg, rgba(255,255,255,.09) 0%, rgba(255,255,255,.05) 40%, rgba(255,255,255,.03) 100%);
+  box-shadow:var(--shadow);
+  border:1px solid var(--stroke);
+  opacity:0;
+  pointer-events:none;
+  transform:translateY(8px) scale(.995);
+  transition:opacity .22s ease, transform .22s ease;
+  overflow:hidden;
+}
+
+.slide.active{
+  opacity:1;
+  pointer-events:auto;
+  transform:translateY(0) scale(1);
+}
+
+.bgOrbs:before,.bgOrbs:after{
+  content:"";
+  position:absolute;
+  inset:auto;
+  width:460px; height:460px;
+  border-radius:999px;
+  filter:blur(42px);
+  opacity:.22;
+  pointer-events:none;
+}
+.bgOrbs:before{
+  left:-120px; top:-160px;
+  background:radial-gradient(circle at 30% 30%, var(--accent) 0%, transparent 60%);
+}
+.bgOrbs:after{
+  right:-160px; bottom:-180px;
+  background:radial-gradient(circle at 30% 30%, var(--accent2) 0%, transparent 60%);
+}
+
+.header{
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap:18px;
+  padding-bottom:18px;
+  border-bottom:1px solid rgba(255,255,255,.12);
+  margin-bottom:22px;
+}
+
+.hTitle{
+  font-size:40px;
+  line-height:1.12;
+  letter-spacing:-.02em;
+  margin:0;
+}
+.hSub{
+  font-size:18px;
+  margin-top:10px;
+  color:var(--muted);
+}
+
+.meta{
+  text-align:right;
+  color:var(--muted);
+  font-size:14px;
+  min-width:220px;
+}
+.meta .chipSmall{
+  display:inline-flex; align-items:center; gap:8px;
+  padding:7px 10px;
+  border-radius:999px;
+  border:1px solid rgba(255,255,255,.14);
+  background:rgba(0,0,0,.15);
+  margin-bottom:8px;
+  white-space:nowrap;
+}
+
+.content{
+  flex:1;
+  display:block;
+  font-size:22px;
+  line-height:1.35;
+}
+
+.muted{color:var(--muted)}
+.small{font-size:16px}
+.kbd{font-family:var(--mono); padding:2px 6px; border-radius:10px; background:rgba(0,0,0,.22); border:1px solid rgba(255,255,255,.12)}
+
+.hero{display:flex; flex-direction:column; gap:18px}
+.kpis{display:grid; grid-template-columns:repeat(3, 1fr); gap:14px; margin-top:8px}
+.kpi{background:var(--panel); border:1px solid rgba(255,255,255,.14); border-radius:18px; padding:16px}
+.kpiTop{font-size:14px; color:var(--muted)}
+.kpiVal{font-size:26px; margin-top:6px; font-weight:750; letter-spacing:-.02em}
+
+.callout{
+  display:flex; gap:14px; align-items:flex-start;
+  border-radius:18px; padding:18px;
+  background:linear-gradient(135deg, rgba(94,234,212,.16) 0%, rgba(96,165,250,.12) 100%);
+  border:1px solid rgba(255,255,255,.16);
+}
+.calloutIcon{font-size:28px}
+.calloutTitle{font-weight:800; font-size:18px}
+.calloutText{color:var(--muted); margin-top:6px}
+
+.grid2{display:grid; grid-template-columns:repeat(2, 1fr); gap:16px}
+.grid3{display:grid; grid-template-columns:repeat(3, 1fr); gap:14px}
+
+.card{
+  background:var(--panel);
+  border:1px solid rgba(255,255,255,.14);
+  border-radius:18px;
+  padding:18px;
+}
+.cardTitle{font-weight:850; font-size:22px; margin-bottom:10px}
+.focus{background:linear-gradient(160deg, rgba(255,255,255,.10), rgba(255,255,255,.04));}
+.badgeRow{display:flex; flex-wrap:wrap; gap:10px}
+.badge{
+  padding:8px 12px;
+  border-radius:999px;
+  border:1px solid rgba(255,255,255,.14);
+  background:rgba(0,0,0,.18);
+  font-size:16px;
+}
+
+.bullets{margin:0; padding-left:22px}
+.bullets li{margin:7px 0; color:var(--muted)}
+.steps{margin:0; padding-left:22px}
+.steps li{margin:10px 0}
+
+.split{display:grid; grid-template-columns: 1.05fr .95fr; gap:16px; align-items:stretch}
+.infobox{
+  background:linear-gradient(180deg, rgba(0,0,0,.18), rgba(0,0,0,.10));
+  border:1px solid rgba(255,255,255,.14);
+  border-radius:18px;
+  padding:16px;
+  overflow:hidden;
+}
+.miniTitle{font-weight:800; color:rgba(255,255,255,.86); margin-bottom:12px}
+.svg{width:100%; height:auto; display:block}
+.svgT{font-size:18px; fill:rgba(255,255,255,.92); font-weight:800; font-family:var(--font)}
+.svgS{font-size:14px; fill:rgba(234,240,255,.78); font-family:var(--font)}
+.hint{margin-top:12px; color:var(--muted)}
+.bigIdea{font-size:26px; font-weight:750; letter-spacing:-.02em; margin-top:10px}
+
+.quote{
+  display:flex; gap:14px;
+  background:linear-gradient(135deg, rgba(96,165,250,.15), rgba(94,234,212,.12));
+  border:1px solid rgba(255,255,255,.14);
+  border-radius:18px;
+  padding:18px;
+}
+.qmark{font-size:28px}
+.quoteTitle{font-size:22px; font-weight:850}
+.quoteText{color:var(--muted); margin-top:8px}
+
+.pill{
+  display:flex; justify-content:space-between; gap:12px; align-items:center;
+  padding:14px 14px;
+  border-radius:16px;
+  background:rgba(255,255,255,.05);
+  border:1px solid rgba(255,255,255,.12);
+}
+.pill b{font-size:18px}
+.pill span{color:var(--muted); font-size:16px}
+
+.banner{
+  display:flex; gap:14px; align-items:flex-start;
+  padding:16px 18px;
+  border-radius:18px;
+  border:1px solid rgba(255,255,255,.14);
+  background:rgba(0,0,0,.16);
+  margin-top:16px;
+}
+.bannerIcon{font-size:26px}
+.bannerTitle{font-weight:850; font-size:18px}
+.bannerText{color:var(--muted); margin-top:6px}
+.banner.warn{background:linear-gradient(135deg, rgba(251,113,133,.14), rgba(0,0,0,.14)); border-color:rgba(251,113,133,.32)}
+
+.note{
+  margin-top:12px;
+  padding:12px 14px;
+  border-radius:14px;
+  border:1px dashed rgba(255,255,255,.18);
+  background:rgba(0,0,0,.12);
+  color:var(--muted);
+}
+.note.small{font-size:16px}
+
+.top10{display:grid; grid-template-columns:1fr; gap:10px}
+.top10row{
+  display:grid; grid-template-columns: 64px 56px 330px 1fr;
+  gap:10px; align-items:center;
+  padding:12px 14px;
+  border-radius:16px;
+  background:rgba(255,255,255,.05);
+  border:1px solid rgba(255,255,255,.12);
+}
+.top10row .rank{font-weight:900; color:rgba(255,255,255,.92)}
+.top10row .ticon{font-size:22px}
+.top10row .tname{font-weight:850}
+.top10row .tdesc{color:var(--muted)}
+.top10row.hi{background:linear-gradient(135deg, rgba(94,234,212,.12), rgba(96,165,250,.10)); border-color:rgba(94,234,212,.26)}
+
+.codeBox{
+  border-radius:16px;
+  overflow:hidden;
+  border:1px solid rgba(255,255,255,.14);
+  background:rgba(0,0,0,.22);
+}
+.codeHead{
+  padding:10px 12px;
+  font-size:14px;
+  color:rgba(234,240,255,.8);
+  border-bottom:1px solid rgba(255,255,255,.10);
+  background:rgba(255,255,255,.05);
+}
+.codeHead.good{color:rgba(52,211,153,.95)}
+.code{
+  margin:0;
+  padding:12px;
+  font-family:var(--mono);
+  font-size:14px;
+  line-height:1.35;
+  color:rgba(234,240,255,.92);
+  white-space:pre-wrap;
+}
+.hl{color:var(--warn); font-weight:800}
+
+.timeline{
+  display:flex; align-items:center; justify-content:space-between;
+  gap:10px; margin-top:10px;
+}
+.timeline.v{flex-direction:column; align-items:stretch}
+.tstep{
+  display:flex; gap:12px; align-items:center;
+  background:rgba(255,255,255,.05);
+  border:1px solid rgba(255,255,255,.12);
+  padding:12px 14px;
+  border-radius:16px;
+  min-width:180px;
+}
+.timeline.v .tstep{min-width:auto}
+.ticon{
+  width:42px; height:42px; border-radius:14px;
+  display:grid; place-items:center;
+  background:linear-gradient(135deg, rgba(94,234,212,.18), rgba(96,165,250,.12));
+  border:1px solid rgba(255,255,255,.14);
+  font-size:18px;
+}
+.tname{font-weight:850}
+.td{color:var(--muted); font-size:16px; margin-top:2px}
+.tline{
+  flex:1;
+  height:3px;
+  background:linear-gradient(90deg, rgba(94,234,212,.6), rgba(96,165,250,.6));
+  opacity:.55;
+  border-radius:99px;
+}
+.timeline.v .tline{height:18px; width:3px; margin:6px auto;}
+
+.checklist{display:grid; grid-template-columns:repeat(2, 1fr); gap:16px}
+.checkCol{background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.12); border-radius:18px; padding:16px}
+.checkTitle{font-weight:900; margin-bottom:10px}
+.chk{display:flex; gap:10px; align-items:flex-start; margin:8px 0; color:var(--muted); font-size:18px}
+.chk input{width:18px; height:18px; margin-top:3px; accent-color: var(--accent);}
+
+.tableWrap{border-radius:18px; overflow:hidden; border:1px solid rgba(255,255,255,.14); background:rgba(0,0,0,.14)}
+.tbl{width:100%; border-collapse:collapse; font-size:18px}
+.tbl th, .tbl td{padding:14px 16px; border-bottom:1px solid rgba(255,255,255,.10); vertical-align:top}
+.tbl th{background:rgba(255,255,255,.06); text-align:left; font-weight:900}
+.tbl td{color:rgba(234,240,255,.82)}
+.tbl tr:last-child td{border-bottom:none}
+
+.quiz .q{font-weight:900; margin-top:10px}
+.quiz .a{color:var(--muted); margin:6px 0; display:flex; gap:10px; align-items:flex-start}
+.quiz .opt{display:inline-grid; place-items:center; width:22px; height:22px; border-radius:8px;
+  border:1px solid rgba(255,255,255,.14); background:rgba(0,0,0,.18); font-family:var(--mono); font-size:13px; flex:0 0 auto}
+.quiz .hr{height:1px; background:rgba(255,255,255,.10); margin:12px 0}
+
+.kTake{display:grid; grid-template-columns:repeat(2, 1fr); gap:14px; margin-top:8px}
+.kt{display:flex; gap:12px; align-items:flex-start; padding:14px; border-radius:18px;
+  background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.12)}
+.num{width:34px; height:34px; border-radius:14px; display:grid; place-items:center; font-weight:900;
+  background:linear-gradient(135deg, rgba(94,234,212,.22), rgba(96,165,250,.16)); border:1px solid rgba(255,255,255,.14)}
+
+.infographic{height:100%; display:flex; flex-direction:column; gap:16px}
+.igTop{padding:16px 18px; border-radius:18px; background:linear-gradient(135deg, rgba(94,234,212,.14), rgba(96,165,250,.12)); border:1px solid rgba(255,255,255,.14)}
+.igTitle{font-size:28px; font-weight:950; letter-spacing:-.02em}
+.igSub{color:var(--muted); margin-top:6px}
+.igGrid{display:grid; grid-template-columns:repeat(3, 1fr); gap:14px; flex:1}
+.igCard{border-radius:18px; padding:16px; background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.12)}
+.igHead{font-weight:950; font-size:20px}
+.igBody{color:var(--muted); margin-top:10px; font-size:18px}
+.igBottom{padding:12px 14px; border-radius:16px; border:1px dashed rgba(255,255,255,.18); background:rgba(0,0,0,.12); color:var(--muted)}
+
+/* Controls */
+#toolbar{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:10px 14px;
+  gap:10px;
+  background:rgba(0,0,0,.28);
+  border-top:1px solid rgba(255,255,255,.12);
+  backdrop-filter: blur(10px);
+}
+
+.group{display:flex; align-items:center; gap:8px; flex-wrap:wrap}
+.btn{
+  border:1px solid rgba(255,255,255,.14);
+  background:rgba(255,255,255,.06);
+  color:rgba(255,255,255,.92);
+  padding:9px 12px;
+  border-radius:14px;
+  cursor:pointer;
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  transition:transform .06s ease, background .15s ease, border-color .15s ease;
+  user-select:none;
+}
+.btn:hover{background:rgba(255,255,255,.10)}
+.btn:active{transform:translateY(1px)}
+.btn.primary{background:linear-gradient(135deg, rgba(94,234,212,.18), rgba(96,165,250,.14)); border-color:rgba(94,234,212,.26)}
+.btn.warn{background:linear-gradient(135deg, rgba(251,113,133,.18), rgba(0,0,0,.12)); border-color:rgba(251,113,133,.32)}
+.pillInfo{
+  padding:9px 12px;
+  border-radius:999px;
+  border:1px solid rgba(255,255,255,.14);
+  color:rgba(234,240,255,.78);
+  background:rgba(0,0,0,.18);
+  font-size:14px;
+  font-family:var(--mono);
+}
+#progressWrap{
+  flex:1;
+  height:10px;
+  border-radius:999px;
+  background:rgba(255,255,255,.08);
+  border:1px solid rgba(255,255,255,.10);
+  overflow:hidden;
+  min-width:160px;
+}
+#progress{
+  height:100%;
+  width:0%;
+  background:linear-gradient(90deg, var(--accent), var(--accent2));
+}
+
+#help{
+  position:absolute;
+  inset:auto 24px 24px auto;
+  width:min(520px, 92vw);
+  border-radius:18px;
+  background:rgba(0,0,0,.72);
+  border:1px solid rgba(255,255,255,.16);
+  padding:14px 16px;
+  box-shadow:var(--shadow);
+  backdrop-filter: blur(14px);
+  display:none;
+}
+#help.show{display:block}
+#help h3{margin:0 0 8px; font-size:16px}
+#help ul{margin:0; padding-left:18px; color:rgba(234,240,255,.82); font-size:14px}
+#help .closeRow{display:flex; justify-content:space-between; align-items:center; gap:10px; margin-top:10px}
+#help .closeRow .muted{font-size:13px}
+
+@media (max-width: 980px){
+  .slide{padding:38px 38px 44px}
+  .hTitle{font-size:34px}
+  .content{font-size:20px}
+  .grid3{grid-template-columns:1fr}
+  .split{grid-template-columns:1fr}
+  .kpis{grid-template-columns:1fr}
+  .top10row{grid-template-columns: 58px 48px 1fr}
+  .top10row .tdesc{grid-column:1/-1}
+}
+</style>
+</head>
+<body>
+  <div id="app">
+    <div id="stage" aria-label="Slide stage">
+      <div class="deck" role="region" aria-roledescription="slide deck" aria-label="ENGSE214 Week 7 Slide Deck">
+        
+<section class="slide bgOrbs" data-index="1">
+  <div class="header">
+    <div>
+      <h1 class="hTitle">Week 7: Web Application Security &amp; OWASP Overview</h1>
+      <div class="hSub">ENGSE214 – ความมั่นคงปลอดภัยทางไซเบอร์เบื้องต้น</div>
+    </div>
+    <div class="meta">
+      <div class="chipSmall">ENGSE214 • Week 7</div>
+      <div class="chipSmall">Web App Security</div>
+      <div class="chipSmall">OWASP Overview</div>
+    </div>
+  </div>
+  <div class="content"><div class="hero">
+        <div class="kpis">
+          <div class="kpi"><div class="kpiTop">เวลาเรียน</div><div class="kpiVal">2–3 ชั่วโมง</div></div>
+          <div class="kpi"><div class="kpiTop">CLO</div><div class="kpiVal">CLO2 • CLO3</div></div>
+          <div class="kpi"><div class="kpiTop">Theme</div><div class="kpiVal">Secure Coding Mindset</div></div>
+        </div>
+        <div class="callout">
+          <div class="calloutIcon">🛡️</div>
+          <div>
+            <div class="calloutTitle">เป้าหมายวันนี้</div>
+            <div class="calloutText">เข้าใจ “ช่องโหว่บนแอป” ที่ทำให้ HTTPS อย่างเดียวไม่พอ + เริ่มต้นใช้ OWASP เป็นมาตรฐานในการพัฒนา</div>
+          </div>
+        </div>
+      </div></div>
+</section>
+
+
+<section class="slide bgOrbs" data-index="2">
+  <div class="header">
+    <div>
+      <h1 class="hTitle">Roadmap ของคาบนี้</h1>
+      
+    </div>
+    <div class="meta">
+      <div class="chipSmall">ENGSE214 • Week 7</div>
+      <div class="chipSmall">Web App Security</div>
+      <div class="chipSmall">OWASP Overview</div>
+    </div>
+  </div>
+  <div class="content"><div class="grid2">
+  <div class="card">
+    <div class="cardTitle">Part 1</div>
+    <ul class="bullets">
+      <li>ทบทวน Week 6 → เชื่อมสู่ App Security</li>
+      <li>OWASP คืออะไร? ทำไม Top 10 ถึงสำคัญ</li>
+    </ul>
+  </div>
+  <div class="card">
+    <div class="cardTitle">Part 2</div>
+    <ul class="bullets">
+      <li>ภาพรวม OWASP Top 10:2025</li>
+      <li>Focus: Injection + XSS + Input Validation</li>
+    </ul>
+  </div>
+  <div class="card">
+    <div class="cardTitle">Part 3</div>
+    <ul class="bullets">
+      <li>Secure Coding: Parameterized Query, Output Encoding, CSP</li>
+      <li>Checklist ที่เอาไปใช้กับโปรเจคได้จริง</li>
+    </ul>
+  </div>
+  <div class="card">
+    <div class="cardTitle">Part 4</div>
+    <ul class="bullets">
+      <li>Lab (สภาพแวดล้อมปลอดภัย) + Report</li>
+      <li>Quiz + Discussion + Key Takeaways</li>
+    </ul>
+  </div>
+</div></div>
+</section>
+
+
+<section class="slide bgOrbs" data-index="3">
+  <div class="header">
+    <div>
+      <h1 class="hTitle">ทบทวน Week 6: Cryptography Basics</h1>
+      <div class="hSub">เรารู้อะไรแล้ว และยัง “ขาดอะไร”</div>
+    </div>
+    <div class="meta">
+      <div class="chipSmall">ENGSE214 • Week 7</div>
+      <div class="chipSmall">Web App Security</div>
+      <div class="chipSmall">OWASP Overview</div>
+    </div>
+  </div>
+  <div class="content"><div class="split">
+  <div>
+    <div class="badgeRow">
+      <span class="badge">Symmetric (AES)</span>
+      <span class="badge">Asymmetric (RSA/ECC)</span>
+      <span class="badge">Hash (SHA-256)</span>
+      <span class="badge">PKI & Certificate</span>
+    </div>
+    <div class="bigIdea">
+      Crypto ช่วยปกป้อง <b>Data in Transit</b> (เช่น HTTPS) และตรวจสอบ <b>Integrity</b>
+    </div>
+    <div class="hint">แต่ถ้า “โค้ดแอป” มีช่องโหว่ → ผู้โจมตีข้ามชั้นการป้องกันได้</div>
+  </div>
+  <div class="infobox">
+    <div class="miniTitle">Infographic: Secure Channel ≠ Secure App</div>
+    <svg class="svg" viewBox="0 0 520 300" role="img" aria-label="crypto vs app security diagram">
+      <defs>
+        <linearGradient id="g1" x1="0" x2="1">
+          <stop offset="0" stop-color="var(--accent)"/>
+          <stop offset="1" stop-color="var(--accent2)"/>
+        </linearGradient>
+      </defs>
+      <rect x="25" y="45" rx="18" ry="18" width="210" height="90" fill="rgba(255,255,255,.06)" stroke="rgba(255,255,255,.18)"/>
+      <text x="45" y="80" class="svgT">Browser</text>
+      <text x="45" y="110" class="svgS">User / Victim</text>
+      <rect x="285" y="45" rx="18" ry="18" width="210" height="90" fill="rgba(255,255,255,.06)" stroke="rgba(255,255,255,.18)"/>
+      <text x="305" y="80" class="svgT">Web App</text>
+      <text x="305" y="110" class="svgS">Server / API</text>
+      <path d="M235 90 L285 90" stroke="url(#g1)" stroke-width="10" stroke-linecap="round"/>
+      <text x="235" y="70" class="svgS">HTTPS</text>
+
+      <rect x="25" y="170" rx="18" ry="18" width="470" height="105" fill="rgba(255,255,255,.06)" stroke="rgba(255,255,255,.18)"/>
+      <text x="45" y="205" class="svgT">ช่องโหว่ระดับ Application</text>
+      <text x="45" y="235" class="svgS">เช่น Injection, XSS, Access Control, Misconfiguration</text>
+      <path d="M420 205 C460 205 460 245 420 245" stroke="var(--warn)" stroke-width="8" fill="none"/>
+      <text x="438" y="255" class="svgS" fill="var(--warn)">Bypass</text>
+    </svg>
+  </div>
+</div></div>
+</section>
+
+
+<section class="slide bgOrbs" data-index="4">
+  <div class="header">
+    <div>
+      <h1 class="hTitle">คำถามชวนคิด</h1>
+      <div class="hSub">ทำไมเว็บที่มี 🔒 HTTPS ยังถูก Hack ได้?</div>
+    </div>
+    <div class="meta">
+      <div class="chipSmall">ENGSE214 • Week 7</div>
+      <div class="chipSmall">Web App Security</div>
+      <div class="chipSmall">OWASP Overview</div>
+    </div>
+  </div>
+  <div class="content"><div class="quote">
+  <div class="qmark">🤔</div>
+  <div>
+    <div class="quoteTitle">HTTPS ป้องกัน “ระหว่างทาง” ไม่ได้ป้องกัน “ตรรกะของแอป”</div>
+    <div class="quoteText">
+      หากแอปรับอินพุตผิดวิธี / ตรวจสิทธิ์ไม่ครบ / ตั้งค่าผิด → ผู้โจมตีอาจเข้าถึงข้อมูลได้โดยตรง
+    </div>
+  </div>
+</div>
+<div class="grid3">
+  <div class="pill"><b>Injection</b><span>แทรกคำสั่งผ่านอินพุต</span></div>
+  <div class="pill"><b>XSS</b><span>สคริปต์ทำงานในเบราว์เซอร์</span></div>
+  <div class="pill"><b>Access Control</b><span>เข้าถึงของคนอื่นได้</span></div>
+  <div class="pill"><b>Misconfig</b><span>เปิด debug / เปิดสิทธิ์เกิน</span></div>
+  <div class="pill"><b>Outdated</b><span>ใช้ library ที่มีช่องโหว่</span></div>
+  <div class="pill"><b>Logging</b><span>ไม่มีหลักฐาน/แจ้งเตือน</span></div>
+</div></div>
+</section>
+
+
+<section class="slide bgOrbs" data-index="5">
+  <div class="header">
+    <div>
+      <h1 class="hTitle">Learning Objectives (Week 7)</h1>
+      
+    </div>
+    <div class="meta">
+      <div class="chipSmall">ENGSE214 • Week 7</div>
+      <div class="chipSmall">Web App Security</div>
+      <div class="chipSmall">OWASP Overview</div>
+    </div>
+  </div>
+  <div class="content"><div class="card">
+  <ol class="steps">
+    <li>อธิบาย <b>OWASP</b> และความสำคัญของ <b>OWASP Top 10</b></li>
+    <li>เข้าใจแนวคิด <b>Injection</b> และ <b>XSS</b> (เน้น “หลักการ” และ “ผลกระทบ”)</li>
+    <li>นำไปใช้: <b>Input Validation</b>, <b>Parameterized Query</b>, <b>Output Encoding</b></li>
+    <li>สร้าง <b>Secure Coding Checklist</b> สำหรับโปรเจคของตนเอง</li>
+    <li>ทำ Lab ในสภาพแวดล้อมปลอดภัย + รายงานผลอย่างมีจริยธรรม</li>
+  </ol>
+</div></div>
+</section>
+
+
+<section class="slide bgOrbs" data-index="6">
+  <div class="header">
+    <div>
+      <h1 class="hTitle">OWASP คืออะไร?</h1>
+      <div class="hSub">Open Worldwide Application Security Project</div>
+    </div>
+    <div class="meta">
+      <div class="chipSmall">ENGSE214 • Week 7</div>
+      <div class="chipSmall">Web App Security</div>
+      <div class="chipSmall">OWASP Overview</div>
+    </div>
+  </div>
+  <div class="content"><div class="split">
+  <div class="card">
+    <div class="cardTitle">OWASP Foundation</div>
+    <ul class="bullets">
+      <li>องค์กรไม่แสวงหากำไร (non-profit)</li>
+      <li>โฟกัส “ความปลอดภัยของซอฟต์แวร์”</li>
+      <li>ผลงาน/เครื่องมือจำนวนมากเป็น Open Source</li>
+    </ul>
+    <div class="note">
+      <b>เป้าหมายของเราในฐานะวิศวกรซอฟต์แวร์:</b> ใช้ OWASP เป็น baseline ในการออกแบบ/พัฒนา/ทดสอบ
+    </div>
+  </div>
+  <div class="infobox">
+    <div class="miniTitle">OWASP Ecosystem</div>
+    <div class="chips">
+      <span class="chip">Top 10</span>
+      <span class="chip">Cheat Sheets</span>
+      <span class="chip">ASVS</span>
+      <span class="chip">ZAP</span>
+      <span class="chip">Juice Shop</span>
+      <span class="chip">Dependency-Check</span>
+    </div>
+    <svg class="svg" viewBox="0 0 520 280" role="img" aria-label="OWASP ecosystem graphic">
+      <circle cx="260" cy="140" r="62" fill="rgba(255,255,255,.08)" stroke="rgba(255,255,255,.18)"/>
+      <text x="260" y="145" text-anchor="middle" class="svgT">OWASP</text>
+      <g>
+        <circle cx="120" cy="70" r="42" fill="rgba(255,255,255,.06)" stroke="rgba(255,255,255,.18)"/>
+        <text x="120" y="75" text-anchor="middle" class="svgS">Top 10</text>
+        <line x1="160" y1="90" x2="210" y2="120" stroke="var(--accent)" stroke-width="6" stroke-linecap="round"/>
+      </g>
+      <g>
+        <circle cx="400" cy="70" r="42" fill="rgba(255,255,255,.06)" stroke="rgba(255,255,255,.18)"/>
+        <text x="400" y="75" text-anchor="middle" class="svgS">ASVS</text>
+        <line x1="360" y1="90" x2="310" y2="120" stroke="var(--accent)" stroke-width="6" stroke-linecap="round"/>
+      </g>
+      <g>
+        <circle cx="90" cy="215" r="44" fill="rgba(255,255,255,.06)" stroke="rgba(255,255,255,.18)"/>
+        <text x="90" y="210" text-anchor="middle" class="svgS">ZAP</text>
+        <text x="90" y="232" text-anchor="middle" class="svgS">Scanner</text>
+        <line x1="135" y1="200" x2="205" y2="165" stroke="var(--accent)" stroke-width="6" stroke-linecap="round"/>
+      </g>
+      <g>
+        <circle cx="430" cy="215" r="44" fill="rgba(255,255,255,.06)" stroke="rgba(255,255,255,.18)"/>
+        <text x="430" y="210" text-anchor="middle" class="svgS">Cheat</text>
+        <text x="430" y="232" text-anchor="middle" class="svgS">Sheets</text>
+        <line x1="385" y1="200" x2="315" y2="165" stroke="var(--accent)" stroke-width="6" stroke-linecap="round"/>
+      </g>
+    </svg>
+    <div class="muted">Tip: ใช้ “Cheat Sheets” เป็นคู่มือ Secure Coding ตอนทำโปรเจค</div>
+  </div>
+</div></div>
+</section>
+
+
+<section class="slide bgOrbs" data-index="7">
+  <div class="header">
+    <div>
+      <h1 class="hTitle">ทำไม OWASP Top 10 ถึงสำคัญ?</h1>
+      
+    </div>
+    <div class="meta">
+      <div class="chipSmall">ENGSE214 • Week 7</div>
+      <div class="chipSmall">Web App Security</div>
+      <div class="chipSmall">OWASP Overview</div>
+    </div>
+  </div>
+  <div class="content"><div class="grid2">
+  <div class="card">
+    <div class="cardTitle">ใช้เป็น Baseline/Standard</div>
+    <ul class="bullets">
+      <li>Checklist ขั้นต่ำสำหรับ Web Security</li>
+      <li>ใช้คุยกับทีม/ลูกค้า/ผู้ตรวจประเมินได้</li>
+      <li>ช่วยจัดลำดับ “ต้องแก้อะไรก่อน”</li>
+    </ul>
+  </div>
+  <div class="card">
+    <div class="cardTitle">ใช้กับการเรียน/งานจริง</div>
+    <ul class="bullets">
+      <li>Dev: Secure-by-Design</li>
+      <li>QA: Security test cases</li>
+      <li>Ops: Hardening & monitoring</li>
+    </ul>
+  </div>
+</div>
+<div class="banner">
+  <div class="bannerIcon">🎯</div>
+  <div>
+    <div class="bannerTitle">มุมมองวิศวกรรมซอฟต์แวร์</div>
+    <div class="bannerText">OWASP ช่วย “แปลง security ให้เป็น requirement ที่ตรวจสอบได้”</div>
+  </div>
+</div></div>
+</section>
+
+
+<section class="slide bgOrbs" data-index="8">
+  <div class="header">
+    <div>
+      <h1 class="hTitle">OWASP Top 10:2025 (ภาพรวม)</h1>
+      <div class="hSub">รายการช่องโหว่สำคัญที่พบบ่อยใน Web App</div>
+    </div>
+    <div class="meta">
+      <div class="chipSmall">ENGSE214 • Week 7</div>
+      <div class="chipSmall">Web App Security</div>
+      <div class="chipSmall">OWASP Overview</div>
+    </div>
+  </div>
+  <div class="content"><div class="top10">
+  <div class="top10row"><span class="rank">#1</span><span class="ticon">🔓</span><span class="tname">Broken Access Control</span><span class="tdesc">เข้าถึงข้อมูล/ฟังก์ชันที่ไม่ได้รับอนุญาต</span></div>
+  <div class="top10row"><span class="rank">#2</span><span class="ticon">⚙️</span><span class="tname">Security Misconfiguration</span><span class="tdesc">ตั้งค่าความปลอดภัยผิด/ไม่ครบ</span></div>
+  <div class="top10row"><span class="rank">#3</span><span class="ticon">📦</span><span class="tname">Software Supply Chain Failures</span><span class="tdesc">ช่องโหว่จาก dependencies/third-party</span></div>
+  <div class="top10row"><span class="rank">#4</span><span class="ticon">🔐</span><span class="tname">Cryptographic Failures</span><span class="tdesc">ใช้ crypto ผิด/อ่อนแอ</span></div>
+  <div class="top10row hi"><span class="rank">#5</span><span class="ticon">💉</span><span class="tname">Injection (SQL, XSS, Command)</span><span class="tdesc">แทรกคำสั่งผ่านอินพุต</span></div>
+  <div class="top10row"><span class="rank">#6</span><span class="ticon">📐</span><span class="tname">Insecure Design</span><span class="tdesc">ข้อบกพร่องตั้งแต่ขั้นออกแบบ</span></div>
+  <div class="top10row"><span class="rank">#7</span><span class="ticon">🔑</span><span class="tname">Authentication & Session Failures</span><span class="tdesc">ปัญหา login/session management</span></div>
+  <div class="top10row"><span class="rank">#8</span><span class="ticon">🧩</span><span class="tname">Vulnerable & Outdated Components</span><span class="tdesc">ใช้ library เก่า/มีช่องโหว่</span></div>
+  <div class="top10row"><span class="rank">#9</span><span class="ticon">📝</span><span class="tname">Security Logging & Alerting Failures</span><span class="tdesc">ไม่มี log/alert ที่เพียงพอ</span></div>
+  <div class="top10row"><span class="rank">#10</span><span class="ticon">⚠️</span><span class="tname">Mishandling of Exceptional Conditions</span><span class="tdesc">จัดการ error/exception ไม่เหมาะสม</span></div>
+</div>
+<div class="muted small">หมายเหตุ: เนื้อหาในสไลด์อ้างอิงตามเอกสารสอนของรายวิชา (อัปเดต ก.พ. 2026)</div></div>
+</section>
+
+
+<section class="slide bgOrbs" data-index="9">
+  <div class="header">
+    <div>
+      <h1 class="hTitle">การเปลี่ยนแปลง 2021 → 2025</h1>
+      <div class="hSub">เพื่อเห็น “เทรนด์ความเสี่ยง” ที่เพิ่มขึ้น</div>
+    </div>
+    <div class="meta">
+      <div class="chipSmall">ENGSE214 • Week 7</div>
+      <div class="chipSmall">Web App Security</div>
+      <div class="chipSmall">OWASP Overview</div>
+    </div>
+  </div>
+  <div class="content"><div class="split">
+  <div class="card">
+    <div class="cardTitle">Trend ที่เห็นชัด</div>
+    <ul class="bullets">
+      <li><b>Supply Chain</b> สำคัญขึ้น (dependencies กลายเป็นจุดเสี่ยงหลัก)</li>
+      <li>Misconfiguration ยังพบบ่อย เพราะระบบซับซ้อนขึ้น (cloud, container)</li>
+      <li>Injection ยังอยู่ เพราะ “โค้ดรับอินพุต” ยังผิดบ่อย</li>
+    </ul>
+  </div>
+  <div class="infobox">
+    <div class="miniTitle">Visual Shift</div>
+    <svg class="svg" viewBox="0 0 520 280" role="img" aria-label="OWASP shift arrow">
+      <text x="70" y="55" class="svgT">2021</text>
+      <text x="360" y="55" class="svgT">2025</text>
+      <g>
+        <rect x="50" y="80" width="160" height="30" rx="10" fill="rgba(255,255,255,.06)" stroke="rgba(255,255,255,.18)"/>
+        <text x="130" y="101" text-anchor="middle" class="svgS">Misconfig</text>
+        <path d="M210 95 L310 95" stroke="var(--accent)" stroke-width="6" stroke-linecap="round"/>
+        <rect x="310" y="80" width="160" height="30" rx="10" fill="rgba(255,255,255,.06)" stroke="rgba(255,255,255,.18)"/>
+        <text x="390" y="101" text-anchor="middle" class="svgS">Misconfig ↑</text>
+      </g>
+      <g>
+        <rect x="50" y="130" width="160" height="30" rx="10" fill="rgba(255,255,255,.06)" stroke="rgba(255,255,255,.18)"/>
+        <text x="130" y="151" text-anchor="middle" class="svgS">Integrity</text>
+        <path d="M210 145 L310 145" stroke="var(--accent)" stroke-width="6" stroke-linecap="round"/>
+        <rect x="310" y="130" width="160" height="30" rx="10" fill="rgba(255,255,255,.06)" stroke="rgba(255,255,255,.18)"/>
+        <text x="390" y="151" text-anchor="middle" class="svgS">Supply Chain 🆕</text>
+      </g>
+      <g>
+        <rect x="50" y="180" width="160" height="30" rx="10" fill="rgba(255,255,255,.06)" stroke="rgba(255,255,255,.18)"/>
+        <text x="130" y="201" text-anchor="middle" class="svgS">Injection</text>
+        <path d="M210 195 L310 195" stroke="var(--accent)" stroke-width="6" stroke-linecap="round"/>
+        <rect x="310" y="180" width="160" height="30" rx="10" fill="rgba(255,255,255,.06)" stroke="rgba(255,255,255,.18)"/>
+        <text x="390" y="201" text-anchor="middle" class="svgS">Injection</text>
+      </g>
+    </svg>
+  </div>
+</div></div>
+</section>
+
+
+<section class="slide bgOrbs" data-index="10">
+  <div class="header">
+    <div>
+      <h1 class="hTitle">Focus ของ Week 7</h1>
+      <div class="hSub">วันนี้เน้น 3 แกน: Injection + XSS + Secure Coding</div>
+    </div>
+    <div class="meta">
+      <div class="chipSmall">ENGSE214 • Week 7</div>
+      <div class="chipSmall">Web App Security</div>
+      <div class="chipSmall">OWASP Overview</div>
+    </div>
+  </div>
+  <div class="content"><div class="grid3">
+  <div class="card focus">
+    <div class="cardTitle">A05: Injection</div>
+    <div class="muted">SQLi / XSS / Command (แนวคิด)</div>
+    <ul class="bullets">
+      <li>แยก “โค้ด” ออกจาก “ข้อมูล”</li>
+      <li>ลดผลกระทบด้วยสิทธิ์ต่ำ + logging</li>
+    </ul>
+  </div>
+  <div class="card focus">
+    <div class="cardTitle">Input Validation</div>
+    <div class="muted">Allowlist-first</div>
+    <ul class="bullets">
+      <li>ตรวจชนิด/รูปแบบ/ความยาว</li>
+      <li>Validate ฝั่ง server เสมอ</li>
+    </ul>
+  </div>
+  <div class="card focus">
+    <div class="cardTitle">Output Security</div>
+    <div class="muted">Output Encoding + CSP</div>
+    <ul class="bullets">
+      <li>ปิดช่องทาง execute script</li>
+      <li>ลดความเสียหายถ้าเกิด XSS</li>
+    </ul>
+  </div>
+</div>
+<div class="note">⏭️ Week ถัด ๆ ไปจะลงลึกเรื่อง Access Control, Misconfiguration และการตรวจประเมิน (VA/Pentest)</div></div>
+</section>
+
+
+<section class="slide bgOrbs" data-index="11">
+  <div class="header">
+    <div>
+      <h1 class="hTitle">Web App Threat Model (ฉบับเร็ว)</h1>
+      <div class="hSub">ก่อนพูดช่องโหว่ ต้องเห็นภาพระบบ</div>
+    </div>
+    <div class="meta">
+      <div class="chipSmall">ENGSE214 • Week 7</div>
+      <div class="chipSmall">Web App Security</div>
+      <div class="chipSmall">OWASP Overview</div>
+    </div>
+  </div>
+  <div class="content"><div class="split">
+  <div class="card">
+    <div class="cardTitle">ถาม 4 คำถามนี้เสมอ</div>
+    <ol class="steps">
+      <li><b>Asset</b> ที่ต้องปกป้องคืออะไร? (ข้อมูลผู้ใช้, เงิน, token)</li>
+      <li><b>Entry point</b> เข้ามาทางไหน? (form, API, upload, webhook)</li>
+      <li><b>Trust boundary</b> อยู่ตรงไหน? (browser ↔ server ↔ DB)</li>
+      <li><b>Worst-case impact</b> คืออะไร? (รั่วไหล/ยึดบัญชี/หยุดบริการ)</li>
+    </ol>
+  </div>
+  <div class="infobox">
+    <div class="miniTitle">Trust Boundaries</div>
+    <svg class="svg" viewBox="0 0 520 290" role="img" aria-label="trust boundary diagram">
+      <rect x="35" y="55" width="150" height="75" rx="16" fill="rgba(255,255,255,.06)" stroke="rgba(255,255,255,.18)"/>
+      <text x="110" y="90" text-anchor="middle" class="svgT">Browser</text>
+      <text x="110" y="112" text-anchor="middle" class="svgS">Untrusted</text>
+
+      <rect x="210" y="40" width="280" height="220" rx="18" fill="rgba(255,255,255,.04)" stroke="rgba(255,255,255,.16)"/>
+      <text x="225" y="65" class="svgS">Server-side (Trusted Zone)</text>
+
+      <rect x="235" y="80" width="230" height="70" rx="16" fill="rgba(255,255,255,.06)" stroke="rgba(255,255,255,.18)"/>
+      <text x="350" y="113" text-anchor="middle" class="svgT">Web/API</text>
+
+      <rect x="235" y="165" width="230" height="70" rx="16" fill="rgba(255,255,255,.06)" stroke="rgba(255,255,255,.18)"/>
+      <text x="350" y="198" text-anchor="middle" class="svgT">Database</text>
+
+      <path d="M185 92 L235 115" stroke="url(#g1)" stroke-width="8" stroke-linecap="round"/>
+      <text x="187" y="78" class="svgS">HTTP</text>
+      <path d="M350 150 L350 165" stroke="url(#g1)" stroke-width="8" stroke-linecap="round"/>
+      <text x="365" y="160" class="svgS">Query</text>
+
+      <path d="M205 75 L205 245" stroke="var(--warn)" stroke-width="4" stroke-dasharray="8 8"/>
+      <text x="35" y="260" class="svgS" fill="var(--warn)">Trust Boundary</text>
+    </svg>
+  </div>
+</div></div>
+</section>
+
+
+<section class="slide bgOrbs" data-index="12">
+  <div class="header">
+    <div>
+      <h1 class="hTitle">Request Lifecycle (ภาพรวม)</h1>
+      <div class="hSub">อินพุตเดินทางอย่างไรในระบบเว็บ</div>
+    </div>
+    <div class="meta">
+      <div class="chipSmall">ENGSE214 • Week 7</div>
+      <div class="chipSmall">Web App Security</div>
+      <div class="chipSmall">OWASP Overview</div>
+    </div>
+  </div>
+  <div class="content"><div class="timeline">
+  <div class="tstep"><div class="ticon">🧑‍💻</div><div><div class="tname">User Input</div><div class="td">Form / API payload / URL</div></div></div>
+  <div class="tline"></div>
+  <div class="tstep"><div class="ticon">✅</div><div><div class="tname">Validate</div><div class="td">type/length/format (server)</div></div></div>
+  <div class="tline"></div>
+  <div class="tstep"><div class="ticon">🧱</div><div><div class="tname">Business Logic</div><div class="td">authZ, rules, rate limit</div></div></div>
+  <div class="tline"></div>
+  <div class="tstep"><div class="ticon">🗄️</div><div><div class="tname">Data Access</div><div class="td">parameterized query / ORM</div></div></div>
+  <div class="tline"></div>
+  <div class="tstep"><div class="ticon">🖥️</div><div><div class="tname">Render Output</div><div class="td">encode + CSP + safe DOM</div></div></div>
+</div>
+<div class="note">หลักคิด: ช่องโหว่ส่วนมากเกิดที่ “Validate” และ “Render Output”</div></div>
+</section>
+
+
+<section class="slide bgOrbs" data-index="13">
+  <div class="header">
+    <div>
+      <h1 class="hTitle">Injection: แนวคิดสำคัญ</h1>
+      <div class="hSub">แยก “Code” ออกจาก “Data”</div>
+    </div>
+    <div class="meta">
+      <div class="chipSmall">ENGSE214 • Week 7</div>
+      <div class="chipSmall">Web App Security</div>
+      <div class="chipSmall">OWASP Overview</div>
+    </div>
+  </div>
+  <div class="content"><div class="split">
+  <div class="card">
+    <div class="cardTitle">Injection เกิดเมื่อ…</div>
+    <ul class="bullets">
+      <li>เรานำอินพุตไป “ประกอบเป็นคำสั่ง” (SQL/Command/Template)</li>
+      <li>ระบบตีความอินพุตเป็น “ส่วนหนึ่งของคำสั่ง”</li>
+    </ul>
+    <div class="note"><b>หลักป้องกัน:</b> ใช้กลไกที่ผูกค่าพารามิเตอร์ (parameter binding) แทนการต่อสตริง</div>
+  </div>
+  <div class="infobox">
+    <div class="miniTitle">Code vs Data</div>
+    <div class="codeBox">
+      <div class="codeHead">❌ Bad (string concatenation)</div>
+      <pre class="code">&lt;QUERY&gt; = "SELECT ... WHERE name = '" + <span class="hl">input</span> + "'"</pre>
+      <div class="codeHead good">✅ Good (parameter binding)</div>
+      <pre class="code">&lt;QUERY&gt; = "SELECT ... WHERE name = ?"<br/>params = [ <span class="hl">input</span> ]</pre>
+    </div>
+    <div class="muted small">สไลด์นี้เน้น “หลักการ” ไม่ใช่การโจมตีระบบจริง</div>
+  </div>
+</div></div>
+</section>
+
+
+<section class="slide bgOrbs" data-index="14">
+  <div class="header">
+    <div>
+      <h1 class="hTitle">SQL Injection: จุดที่ผิดบ่อย</h1>
+      <div class="hSub">มักผิดที่ “ประกอบ SQL ด้วยสตริง”</div>
+    </div>
+    <div class="meta">
+      <div class="chipSmall">ENGSE214 • Week 7</div>
+      <div class="chipSmall">Web App Security</div>
+      <div class="chipSmall">OWASP Overview</div>
+    </div>
+  </div>
+  <div class="content"><div class="grid2">
+  <div class="card">
+    <div class="cardTitle">Anti-pattern</div>
+    <div class="codeBox">
+      <div class="codeHead">❌ อย่าทำ</div>
+      <pre class="code">sql = "SELECT * FROM users WHERE username = '" + input + "'"</pre>
+    </div>
+    <ul class="bullets">
+      <li>อินพุตถูกตีความเป็นส่วนหนึ่งของ SQL</li>
+      <li>ยากต่อการดูแล + เสี่ยงรั่วไหลข้อมูล</li>
+    </ul>
+  </div>
+  <div class="card">
+    <div class="cardTitle">Best practice</div>
+    <div class="codeBox">
+      <div class="codeHead good">✅ ทำแบบนี้</div>
+      <pre class="code">sql = "SELECT * FROM users WHERE username = ?"
+db.execute(sql, [input])</pre>
+    </div>
+    <ul class="bullets">
+      <li>โครงสร้างคำสั่งคงที่</li>
+      <li>DB engine แยกค่าพารามิเตอร์เป็น “ข้อมูล”</li>
+    </ul>
+  </div>
+</div></div>
+</section>
+
+
+<section class="slide bgOrbs" data-index="15">
+  <div class="header">
+    <div>
+      <h1 class="hTitle">Parameterized Query: ทำไมปลอดภัยกว่า</h1>
+      
+    </div>
+    <div class="meta">
+      <div class="chipSmall">ENGSE214 • Week 7</div>
+      <div class="chipSmall">Web App Security</div>
+      <div class="chipSmall">OWASP Overview</div>
+    </div>
+  </div>
+  <div class="content"><div class="split">
+  <div class="card">
+    <div class="cardTitle">สิ่งที่เกิดขึ้นใน DB</div>
+    <ol class="steps">
+      <li>DB “compile” โครงสร้าง query ก่อน</li>
+      <li>ค่าที่ส่งเข้ามาถูก treat เป็น “value” ไม่ใช่ “syntax”</li>
+      <li>ลดโอกาส injection แบบคลาสสิกได้มาก</li>
+    </ol>
+    <div class="note">ยังต้องทำร่วมกับ validation + least privilege + logging</div>
+  </div>
+  <div class="infobox">
+    <div class="miniTitle">Flow Diagram</div>
+    <svg class="svg" viewBox="0 0 520 280" role="img" aria-label="parameter binding flow">
+      <rect x="40" y="60" rx="16" ry="16" width="160" height="70" fill="rgba(255,255,255,.06)" stroke="rgba(255,255,255,.18)"/>
+      <text x="120" y="95" text-anchor="middle" class="svgT">App</text>
+      <text x="120" y="117" text-anchor="middle" class="svgS">SQL + params</text>
+
+      <rect x="320" y="60" rx="16" ry="16" width="160" height="70" fill="rgba(255,255,255,.06)" stroke="rgba(255,255,255,.18)"/>
+      <text x="400" y="95" text-anchor="middle" class="svgT">DB</text>
+      <text x="400" y="117" text-anchor="middle" class="svgS">parse/plan</text>
+
+      <path d="M200 95 L320 95" stroke="url(#g1)" stroke-width="9" stroke-linecap="round"/>
+      <text x="260" y="78" text-anchor="middle" class="svgS">bind</text>
+
+      <rect x="120" y="170" rx="14" ry="14" width="280" height="80" fill="rgba(255,255,255,.05)" stroke="rgba(255,255,255,.16)"/>
+      <text x="260" y="202" text-anchor="middle" class="svgT">Query structure stays fixed</text>
+      <text x="260" y="228" text-anchor="middle" class="svgS">params are data values</text>
+    </svg>
+  </div>
+</div></div>
+</section>
+
+
+<section class="slide bgOrbs" data-index="16">
+  <div class="header">
+    <div>
+      <h1 class="hTitle">SQLi Prevention Checklist</h1>
+      <div class="hSub">เอาไปใช้กับโปรเจคได้ทันที</div>
+    </div>
+    <div class="meta">
+      <div class="chipSmall">ENGSE214 • Week 7</div>
+      <div class="chipSmall">Web App Security</div>
+      <div class="chipSmall">OWASP Overview</div>
+    </div>
+  </div>
+  <div class="content"><div class="checklist">
+  <div class="checkCol">
+    <div class="checkTitle">โค้ด/DB</div>
+    <label class="chk"><input type="checkbox" disabled> ใช้ Prepared Statements / ORM ที่เชื่อถือได้</label>
+    <label class="chk"><input type="checkbox" disabled> หลีกเลี่ยง dynamic SQL ที่ต่อสตริง</label>
+    <label class="chk"><input type="checkbox" disabled> ใช้ DB user สิทธิ์น้อยที่สุด (least privilege)</label>
+    <label class="chk"><input type="checkbox" disabled> จำกัดผลลัพธ์/หน้า (pagination) เพื่อลด impact</label>
+  </div>
+  <div class="checkCol">
+    <div class="checkTitle">การป้องกันเสริม</div>
+    <label class="chk"><input type="checkbox" disabled> Validate type/format/length ก่อน query</label>
+    <label class="chk"><input type="checkbox" disabled> Error handling: ไม่โชว์ stacktrace/SQL error ให้ผู้ใช้</label>
+    <label class="chk"><input type="checkbox" disabled> Logging + alert เมื่อมี pattern ผิดปกติ</label>
+    <label class="chk"><input type="checkbox" disabled> ทดสอบด้วย security test cases ใน CI</label>
+  </div>
+</div>
+<div class="note">แนวคิดนี้ช่วยลด “ทั้งช่องโหว่และผลกระทบ” พร้อมกัน</div></div>
+</section>
+
+
+<section class="slide bgOrbs" data-index="17">
+  <div class="header">
+    <div>
+      <h1 class="hTitle">XSS: แนวคิดสำคัญ</h1>
+      <div class="hSub">เมื่ออินพุตถูกแสดงผลเป็น HTML/JS โดยไม่ encode</div>
+    </div>
+    <div class="meta">
+      <div class="chipSmall">ENGSE214 • Week 7</div>
+      <div class="chipSmall">Web App Security</div>
+      <div class="chipSmall">OWASP Overview</div>
+    </div>
+  </div>
+  <div class="content"><div class="split">
+  <div class="card">
+    <div class="cardTitle">XSS คืออะไร?</div>
+    <ul class="bullets">
+      <li>ผู้โจมตีทำให้ “สคริปต์” ถูกรันในเบราว์เซอร์ของเหยื่อ</li>
+      <li>มักเกิดจากการแสดงผลข้อมูลที่ผู้ใช้กรอก โดยไม่ทำ output encoding</li>
+    </ul>
+    <div class="note">เป้าหมายของคาบนี้คือ “เข้าใจการป้องกัน” และฝึกใน lab ที่ปลอดภัยเท่านั้น</div>
+  </div>
+  <div class="infobox">
+    <div class="miniTitle">Attack Surface (แสดงตัวอย่างเชิงนามธรรม)</div>
+    <svg class="svg" viewBox="0 0 520 280" role="img" aria-label="XSS flow">
+      <rect x="40" y="55" width="150" height="70" rx="16" fill="rgba(255,255,255,.06)" stroke="rgba(255,255,255,.18)"/>
+      <text x="115" y="92" text-anchor="middle" class="svgT">Attacker</text>
+      <text x="115" y="113" text-anchor="middle" class="svgS">injects input</text>
+
+      <rect x="330" y="55" width="150" height="70" rx="16" fill="rgba(255,255,255,.06)" stroke="rgba(255,255,255,.18)"/>
+      <text x="405" y="92" text-anchor="middle" class="svgT">Server</text>
+      <text x="405" y="113" text-anchor="middle" class="svgS">stores/renders</text>
+
+      <rect x="190" y="170" width="150" height="70" rx="16" fill="rgba(255,255,255,.06)" stroke="rgba(255,255,255,.18)"/>
+      <text x="265" y="206" text-anchor="middle" class="svgT">Victim</text>
+      <text x="265" y="227" text-anchor="middle" class="svgS">browser executes</text>
+
+      <path d="M190 90 L330 90" stroke="url(#g1)" stroke-width="8" stroke-linecap="round"/>
+      <path d="M360 125 L280 170" stroke="var(--warn)" stroke-width="7" stroke-linecap="round"/>
+      <text x="360" y="155" class="svgS" fill="var(--warn)">unsafe output</text>
+    </svg>
+  </div>
+</div></div>
+</section>
+
+
+<section class="slide bgOrbs" data-index="18">
+  <div class="header">
+    <div>
+      <h1 class="hTitle">ประเภทของ XSS</h1>
+      <div class="hSub">Stored / Reflected / DOM-based</div>
+    </div>
+    <div class="meta">
+      <div class="chipSmall">ENGSE214 • Week 7</div>
+      <div class="chipSmall">Web App Security</div>
+      <div class="chipSmall">OWASP Overview</div>
+    </div>
+  </div>
+  <div class="content"><div class="grid3">
+  <div class="card">
+    <div class="cardTitle">Stored (Persistent)</div>
+    <ul class="bullets">
+      <li>ข้อมูลอันตรายถูกเก็บใน DB</li>
+      <li>กระทบผู้ใช้ทุกคนที่เปิดหน้านั้น</li>
+      <li>มักพบใน comment / profile / guestbook</li>
+    </ul>
+  </div>
+  <div class="card">
+    <div class="cardTitle">Reflected</div>
+    <ul class="bullets">
+      <li>สะท้อนจาก request (URL/form) กลับไปแสดงผลทันที</li>
+      <li>มักต้องหลอกให้คลิกลิงก์</li>
+      <li>พบบ่อยใน search/error page</li>
+    </ul>
+  </div>
+  <div class="card">
+    <div class="cardTitle">DOM-based</div>
+    <ul class="bullets">
+      <li>เกิดฝั่ง client (JS) โดยไม่ผ่าน server</li>
+      <li>มักมาจาก innerHTML / document.write</li>
+      <li>ตรวจจับยากถ้าไม่ทดสอบฝั่ง frontend</li>
+    </ul>
+  </div>
+</div></div>
+</section>
+
+
+<section class="slide bgOrbs" data-index="19">
+  <div class="header">
+    <div>
+      <h1 class="hTitle">ผลกระทบของ XSS</h1>
+      <div class="hSub">ทำไมถือว่า “ร้ายแรง”</div>
+    </div>
+    <div class="meta">
+      <div class="chipSmall">ENGSE214 • Week 7</div>
+      <div class="chipSmall">Web App Security</div>
+      <div class="chipSmall">OWASP Overview</div>
+    </div>
+  </div>
+  <div class="content"><div class="grid2">
+  <div class="card">
+    <div class="cardTitle">Impact ที่พบบ่อย</div>
+    <ul class="bullets">
+      <li>ขโมย session/token (ถ้า config ไม่ดี)</li>
+      <li>เปลี่ยนหน้าเว็บ/ปลอม UI เพื่อหลอกกรอกข้อมูล</li>
+      <li>ทำ CSRF-like actions ผ่าน session ของเหยื่อ</li>
+    </ul>
+  </div>
+  <div class="card">
+    <div class="cardTitle">สัญญาณเตือน</div>
+    <ul class="bullets">
+      <li>มีการใช้ <span class="kbd">innerHTML</span> กับข้อมูลจากผู้ใช้</li>
+      <li>แสดงผลค่าจาก URL/query ตรง ๆ</li>
+      <li>ไม่มี CSP และ cookie ไม่มี HttpOnly/SameSite</li>
+    </ul>
+  </div>
+</div>
+<div class="banner warn">
+  <div class="bannerIcon">⚠️</div>
+  <div>
+    <div class="bannerTitle">จำไว้</div>
+    <div class="bannerText">XSS คือ “โค้ดรันบนเครื่องผู้ใช้” → ผลกระทบไปไกลกว่าแค่หน้าเว็บพัง</div>
+  </div>
+</div></div>
+</section>
+
+
+<section class="slide bgOrbs" data-index="20">
+  <div class="header">
+    <div>
+      <h1 class="hTitle">XSS Prevention: Output Encoding</h1>
+      <div class="hSub">Encode ให้ถูก “ตามบริบท”</div>
+    </div>
+    <div class="meta">
+      <div class="chipSmall">ENGSE214 • Week 7</div>
+      <div class="chipSmall">Web App Security</div>
+      <div class="chipSmall">OWASP Overview</div>
+    </div>
+  </div>
+  <div class="content"><div class="split">
+  <div class="card">
+    <div class="cardTitle">Context-aware Encoding</div>
+    <ul class="bullets">
+      <li><b>HTML</b>: escape &lt; &gt; &amp; " '</li>
+      <li><b>Attribute</b>: escape + หลีกเลี่ยง event handlers</li>
+      <li><b>URL</b>: encodeURIComponent</li>
+      <li><b>JS string</b>: serialize อย่างปลอดภัย (เช่น JSON)</li>
+    </ul>
+    <div class="note">หลัก: “Encode ตอนออก” (output) ไม่ใช่แค่ sanitize ตอนเข้า</div>
+  </div>
+  <div class="infobox">
+    <div class="miniTitle">Safe DOM</div>
+    <div class="codeBox">
+      <div class="codeHead">✅ Prefer</div>
+      <pre class="code">el.textContent = userInput</pre>
+      <div class="codeHead">⚠️ Avoid</div>
+      <pre class="code">el.innerHTML = userInput</pre>
+    </div>
+  </div>
+</div></div>
+</section>
+
+
+<section class="slide bgOrbs" data-index="21">
+  <div class="header">
+    <div>
+      <h1 class="hTitle">CSP &amp; Cookie Flags</h1>
+      <div class="hSub">ลดความเสียหายแม้หลุด XSS</div>
+    </div>
+    <div class="meta">
+      <div class="chipSmall">ENGSE214 • Week 7</div>
+      <div class="chipSmall">Web App Security</div>
+      <div class="chipSmall">OWASP Overview</div>
+    </div>
+  </div>
+  <div class="content"><div class="grid2">
+  <div class="card">
+    <div class="cardTitle">Content Security Policy (CSP)</div>
+    <ul class="bullets">
+      <li>จำกัดแหล่งที่มาของ script/style/image</li>
+      <li>ลดโอกาสรันสคริปต์ที่ฝังมา</li>
+      <li>ช่วย report ผ่าน report-uri / report-to</li>
+    </ul>
+    <div class="note small">แนวทาง: ใช้ <b>script-src 'self'</b> + หลีกเลี่ยง inline script</div>
+  </div>
+  <div class="card">
+    <div class="cardTitle">Cookies (Session)</div>
+    <ul class="bullets">
+      <li><b>HttpOnly</b>: JS อ่าน cookie ไม่ได้</li>
+      <li><b>Secure</b>: ส่ง cookie เฉพาะ HTTPS</li>
+      <li><b>SameSite</b>: ลดความเสี่ยง CSRF</li>
+    </ul>
+    <div class="note small">Cookie ที่ดี = ลด blast radius เมื่อเกิดเหตุ</div>
+  </div>
+</div></div>
+</section>
+
+
+<section class="slide bgOrbs" data-index="22">
+  <div class="header">
+    <div>
+      <h1 class="hTitle">Input Validation: Golden Rule</h1>
+      <div class="hSub">Never Trust User Input</div>
+    </div>
+    <div class="meta">
+      <div class="chipSmall">ENGSE214 • Week 7</div>
+      <div class="chipSmall">Web App Security</div>
+      <div class="chipSmall">OWASP Overview</div>
+    </div>
+  </div>
+  <div class="content"><div class="quote">
+  <div class="qmark">🧩</div>
+  <div>
+    <div class="quoteTitle">Validate → Sanitize → Use</div>
+    <div class="quoteText">ตรวจสอบชนิด/รูปแบบ/ช่วงค่า/ความยาว ก่อนนำไปใช้ใน business logic หรือ query และอย่าลืม validate ฝั่ง server</div>
+  </div>
+</div>
+<div class="grid3">
+  <div class="pill"><b>Type</b><span>string / int / enum</span></div>
+  <div class="pill"><b>Length</b><span>min/max</span></div>
+  <div class="pill"><b>Format</b><span>regex / parser</span></div>
+  <div class="pill"><b>Range</b><span>0..100, date range</span></div>
+  <div class="pill"><b>Normalize</b><span>trim, unicode</span></div>
+  <div class="pill"><b>Reject</b><span>fail fast</span></div>
+</div></div>
+</section>
+
+
+<section class="slide bgOrbs" data-index="23">
+  <div class="header">
+    <div>
+      <h1 class="hTitle">Allowlist vs Denylist</h1>
+      <div class="hSub">ทำไม allowlist ถึงแนะนำ</div>
+    </div>
+    <div class="meta">
+      <div class="chipSmall">ENGSE214 • Week 7</div>
+      <div class="chipSmall">Web App Security</div>
+      <div class="chipSmall">OWASP Overview</div>
+    </div>
+  </div>
+  <div class="content"><div class="split">
+  <div class="card">
+    <div class="cardTitle">Allowlist (Whitelist) ✅</div>
+    <ul class="bullets">
+      <li>อนุญาตเฉพาะรูปแบบที่ “รู้ว่าปลอดภัย”</li>
+      <li>ลดช่องทาง bypass</li>
+      <li>ดูแลง่ายกว่าในระยะยาว</li>
+    </ul>
+  </div>
+  <div class="card">
+    <div class="cardTitle">Denylist (Blacklist) ⚠️</div>
+    <ul class="bullets">
+      <li>พยายามบล็อก “สิ่งที่รู้ว่าอันตราย”</li>
+      <li>มักโดนหลบด้วย encoding/variation</li>
+      <li>maintenance สูง</li>
+    </ul>
+  </div>
+</div>
+<div class="note">หลักปฏิบัติ: allowlist ก่อน แล้วค่อย “เสริม” ด้วย denylist เฉพาะกรณี</div></div>
+</section>
+
+
+<section class="slide bgOrbs" data-index="24">
+  <div class="header">
+    <div>
+      <h1 class="hTitle">Validation Examples (แนวคิด)</h1>
+      <div class="hSub">โค้ดตัวอย่างแบบปลอดภัย (ย่อ)</div>
+    </div>
+    <div class="meta">
+      <div class="chipSmall">ENGSE214 • Week 7</div>
+      <div class="chipSmall">Web App Security</div>
+      <div class="chipSmall">OWASP Overview</div>
+    </div>
+  </div>
+  <div class="content"><div class="grid2">
+  <div class="card">
+    <div class="cardTitle">Username</div>
+    <div class="codeBox">
+      <pre class="code">rules:
+- 3..20 chars
+- starts with letter
+- [a-zA-Z0-9_]</pre>
+    </div>
+    <div class="muted">ใช้ regex หรือ schema validator (เช่น zod/joi) ใน backend</div>
+  </div>
+  <div class="card">
+    <div class="cardTitle">Numeric / Enum</div>
+    <div class="codeBox">
+      <pre class="code">age = parseInt(input)
+if NaN → reject
+if age not in 0..150 → reject</pre>
+    </div>
+    <div class="muted">สำหรับ enum: allow เฉพาะชุดค่าที่กำหนด</div>
+  </div>
+</div></div>
+</section>
+
+
+<section class="slide bgOrbs" data-index="25">
+  <div class="header">
+    <div>
+      <h1 class="hTitle">Secure Coding Principles</h1>
+      <div class="hSub">หลักคิดที่ใช้ได้ทุกเทคโนโลยี</div>
+    </div>
+    <div class="meta">
+      <div class="chipSmall">ENGSE214 • Week 7</div>
+      <div class="chipSmall">Web App Security</div>
+      <div class="chipSmall">OWASP Overview</div>
+    </div>
+  </div>
+  <div class="content"><div class="grid2">
+  <div class="card">
+    <div class="cardTitle">Core Principles</div>
+    <ul class="bullets">
+      <li><b>Defense in Depth</b>: ไม่พึ่งชั้นเดียว</li>
+      <li><b>Least Privilege</b>: ให้สิทธิ์เท่าที่จำเป็น</li>
+      <li><b>Fail Securely</b>: default เป็น deny</li>
+      <li><b>KISS</b>: ระบบง่าย → bug น้อย</li>
+    </ul>
+  </div>
+  <div class="card">
+    <div class="cardTitle">Engineering Habits</div>
+    <ul class="bullets">
+      <li>Threat model สั้น ๆ ก่อนลงมือ</li>
+      <li>Security test cases ใน CI</li>
+      <li>Logs ที่ใช้สืบสวนได้ + alert ที่เหมาะสม</li>
+      <li>อัปเดต dependencies สม่ำเสมอ</li>
+    </ul>
+  </div>
+</div></div>
+</section>
+
+
+<section class="slide bgOrbs" data-index="26">
+  <div class="header">
+    <div>
+      <h1 class="hTitle">Mapping OWASP กับโค้ดที่นักศึกษามักเขียน</h1>
+      <div class="hSub">เห็น pattern → แก้ให้ถูกตั้งแต่ต้น</div>
+    </div>
+    <div class="meta">
+      <div class="chipSmall">ENGSE214 • Week 7</div>
+      <div class="chipSmall">Web App Security</div>
+      <div class="chipSmall">OWASP Overview</div>
+    </div>
+  </div>
+  <div class="content"><div class="tableWrap">
+  <table class="tbl">
+    <thead><tr><th>Pattern ที่พบบ่อย</th><th>ความเสี่ยง</th><th>แนวแก้</th></tr></thead>
+    <tbody>
+      <tr><td>ต่อสตริงใน SQL</td><td>Injection</td><td>Prepared/ORM + validate</td></tr>
+      <tr><td>แสดงค่าจาก URL ตรง ๆ</td><td>XSS</td><td>Encode output + safe DOM</td></tr>
+      <tr><td>Hard-coded secret / commit .env</td><td>Misconfiguration</td><td>Env vars + secret manager</td></tr>
+      <tr><td>ใช้ hash อ่อน/ไม่ใส่ salt</td><td>Crypto failures</td><td>bcrypt/argon2 + config ที่ถูก</td></tr>
+      <tr><td>ไม่มี access check</td><td>Broken access control</td><td>authorize ทุก endpoint</td></tr>
+      <tr><td>ignore error/exception</td><td>Exceptional conditions</td><td>handle + log + safe response</td></tr>
+    </tbody>
+  </table>
+</div></div>
+</section>
+
+
+<section class="slide bgOrbs" data-index="27">
+  <div class="header">
+    <div>
+      <h1 class="hTitle">Lab 3: Web Vulnerability Demo</h1>
+      <div class="hSub">ทดลองในสภาพแวดล้อมปลอดภัยเท่านั้น</div>
+    </div>
+    <div class="meta">
+      <div class="chipSmall">ENGSE214 • Week 7</div>
+      <div class="chipSmall">Web App Security</div>
+      <div class="chipSmall">OWASP Overview</div>
+    </div>
+  </div>
+  <div class="content"><div class="banner warn">
+  <div class="bannerIcon">🧪</div>
+  <div>
+    <div class="bannerTitle">กติกาความปลอดภัย & จริยธรรม</div>
+    <div class="bannerText">ทำเฉพาะใน Lab/VM/Container ที่จัดให้เท่านั้น ห้ามนำไปใช้กับระบบจริงโดยไม่ได้รับอนุญาต</div>
+  </div>
+</div>
+<div class="grid2">
+  <div class="card">
+    <div class="cardTitle">Objective</div>
+    <ul class="bullets">
+      <li>เห็นผลกระทบของช่องโหว่แบบควบคุม</li>
+      <li>เข้าใจว่า “โค้ดแบบไหน” ทำให้เกิดช่องโหว่</li>
+      <li>สรุป guideline เพื่อป้องกัน</li>
+    </ul>
+  </div>
+  <div class="card">
+    <div class="cardTitle">Tools</div>
+    <ul class="bullets">
+      <li>DVWA หรือ OWASP Juice Shop</li>
+      <li>รันบน Docker/VM (isolated)</li>
+      <li>ใช้ browser + devtools (option)</li>
+    </ul>
+  </div>
+</div></div>
+</section>
+
+
+<section class="slide bgOrbs" data-index="28">
+  <div class="header">
+    <div>
+      <h1 class="hTitle">Lab Setup (แนวทาง)</h1>
+      <div class="hSub">ตัวอย่างการเตรียม environment</div>
+    </div>
+    <div class="meta">
+      <div class="chipSmall">ENGSE214 • Week 7</div>
+      <div class="chipSmall">Web App Security</div>
+      <div class="chipSmall">OWASP Overview</div>
+    </div>
+  </div>
+  <div class="content"><div class="card">
+  <div class="cardTitle">ตัวเลือกที่ใช้ในห้อง Lab</div>
+  <div class="grid2">
+    <div class="pill"><b>Option A</b><span>DVWA บน Docker (ง่าย)</span></div>
+    <div class="pill"><b>Option B</b><span>Juice Shop บน Docker (ทันสมัย)</span></div>
+    <div class="pill"><b>Option C</b><span>VM แยกเครือข่าย (ปลอดภัยสูง)</span></div>
+    <div class="pill"><b>Option D</b><span>Online Academy (สำหรับฝึกเพิ่ม)</span></div>
+  </div>
+  <div class="note small">ในสไลด์นี้ไม่แจก “payload” โจมตีระบบจริง — เราโฟกัสการป้องกันและการวิเคราะห์ผลใน lab</div>
+</div></div>
+</section>
+
+
+<section class="slide bgOrbs" data-index="29">
+  <div class="header">
+    <div>
+      <h1 class="hTitle">Lab Exercises (ภาพรวม)</h1>
+      <div class="hSub">ทำอะไรบ้าง</div>
+    </div>
+    <div class="meta">
+      <div class="chipSmall">ENGSE214 • Week 7</div>
+      <div class="chipSmall">Web App Security</div>
+      <div class="chipSmall">OWASP Overview</div>
+    </div>
+  </div>
+  <div class="content"><div class="timeline v">
+  <div class="tstep"><div class="ticon">1️⃣</div><div><div class="tname">Observe</div><div class="td">ลองอินพุตปกติ → สังเกตผลลัพธ์</div></div></div>
+  <div class="tline"></div>
+  <div class="tstep"><div class="ticon">2️⃣</div><div><div class="tname">Identify Weak Spot</div><div class="td">ดูตำแหน่งที่รับอินพุต/แสดงผล</div></div></div>
+  <div class="tline"></div>
+  <div class="tstep"><div class="ticon">3️⃣</div><div><div class="tname">Controlled Demo</div><div class="td">ทำตามโจทย์ที่อาจารย์ให้ใน lab เท่านั้น</div></div></div>
+  <div class="tline"></div>
+  <div class="tstep"><div class="ticon">4️⃣</div><div><div class="tname">Fix Idea</div><div class="td">เขียน guideline: validate, parameterize, encode</div></div></div>
+  <div class="tline"></div>
+  <div class="tstep"><div class="ticon">5️⃣</div><div><div class="tname">Report</div><div class="td">อธิบาย “สาเหตุ–ผลกระทบ–วิธีป้องกัน”</div></div></div>
+</div></div>
+</section>
+
+
+<section class="slide bgOrbs" data-index="30">
+  <div class="header">
+    <div>
+      <h1 class="hTitle">Template รายงาน Lab (สรุป)</h1>
+      <div class="hSub">สิ่งที่ต้องส่ง</div>
+    </div>
+    <div class="meta">
+      <div class="chipSmall">ENGSE214 • Week 7</div>
+      <div class="chipSmall">Web App Security</div>
+      <div class="chipSmall">OWASP Overview</div>
+    </div>
+  </div>
+  <div class="content"><div class="card">
+  <div class="cardTitle">Lab Report Structure</div>
+  <ol class="steps">
+    <li>ข้อมูลนักศึกษา + environment ที่ใช้</li>
+    <li>Exercise 1: สิ่งที่ทดลอง + ผลที่สังเกต + วิเคราะห์สาเหตุ</li>
+    <li>Exercise 2: เช่นเดียวกัน</li>
+    <li>Exercise 3: เช่นเดียวกัน</li>
+    <li>สรุป Secure Coding Guidelines ของกลุ่ม/ตัวเอง</li>
+  </ol>
+  <div class="note">คะแนนเน้น “การวิเคราะห์และการป้องกัน” มากกว่าการทำให้โจมตีสำเร็จ</div>
+</div></div>
+</section>
+
+
+<section class="slide bgOrbs" data-index="31">
+  <div class="header">
+    <div>
+      <h1 class="hTitle">Group Activity</h1>
+      <div class="hSub">สร้าง Secure Coding Checklist (Poster/Slide 1 หน้า)</div>
+    </div>
+    <div class="meta">
+      <div class="chipSmall">ENGSE214 • Week 7</div>
+      <div class="chipSmall">Web App Security</div>
+      <div class="chipSmall">OWASP Overview</div>
+    </div>
+  </div>
+  <div class="content"><div class="grid2">
+  <div class="card">
+    <div class="cardTitle">โจทย์</div>
+    <ul class="bullets">
+      <li>กลุ่มละ 4–5 คน (20 นาที)</li>
+      <li>สรุป Checklist สำหรับนักศึกษาปี 2</li>
+      <li>ต้องครอบคลุม: SQLi, XSS, Best Practices อย่างละ ≥ 3 ข้อ</li>
+    </ul>
+  </div>
+  <div class="card">
+    <div class="cardTitle">Output</div>
+    <ul class="bullets">
+      <li>Poster/Slide 1 หน้า</li>
+      <li>นำเสนอ กลุ่มละ ~3 นาที</li>
+      <li>เพื่อนช่วย feedback: “ชัด, ใช้ได้จริง, วัดผลได้”</li>
+    </ul>
+  </div>
+</div></div>
+</section>
+
+
+<section class="slide bgOrbs" data-index="32">
+  <div class="header">
+    <div>
+      <h1 class="hTitle">ตัวอย่าง Secure Coding Checklist</h1>
+      <div class="hSub">เวอร์ชันเริ่มต้น (ปรับให้เข้ากับโปรเจค)</div>
+    </div>
+    <div class="meta">
+      <div class="chipSmall">ENGSE214 • Week 7</div>
+      <div class="chipSmall">Web App Security</div>
+      <div class="chipSmall">OWASP Overview</div>
+    </div>
+  </div>
+  <div class="content"><div class="checklist">
+  <div class="checkCol">
+    <div class="checkTitle">SQLi</div>
+    <label class="chk"><input type="checkbox" disabled> ใช้ prepared / ORM ทุก query</label>
+    <label class="chk"><input type="checkbox" disabled> validate type/length ก่อน query</label>
+    <label class="chk"><input type="checkbox" disabled> DB user สิทธิ์ต่ำ</label>
+    <label class="chk"><input type="checkbox" disabled> hide DB errors ใน production</label>
+  </div>
+  <div class="checkCol">
+    <div class="checkTitle">XSS</div>
+    <label class="chk"><input type="checkbox" disabled> output encoding ตาม context</label>
+    <label class="chk"><input type="checkbox" disabled> ใช้ textContent แทน innerHTML</label>
+    <label class="chk"><input type="checkbox" disabled> ตั้ง CSP + cookie flags</label>
+    <label class="chk"><input type="checkbox" disabled> sanitize HTML เฉพาะกรณีที่จำเป็น</label>
+  </div>
+</div></div>
+</section>
+
+
+<section class="slide bgOrbs" data-index="33">
+  <div class="header">
+    <div>
+      <h1 class="hTitle">Quiz (ทบทวนแนวคิด)</h1>
+      <div class="hSub">ตอบในใจ/ยกมือ/หรือทำ Kahoot</div>
+    </div>
+    <div class="meta">
+      <div class="chipSmall">ENGSE214 • Week 7</div>
+      <div class="chipSmall">Web App Security</div>
+      <div class="chipSmall">OWASP Overview</div>
+    </div>
+  </div>
+  <div class="content"><div class="quiz">
+  <div class="q">1) OWASP ย่อมาจากอะไร?</div>
+  <div class="a"><span class="opt">a</span> Open Web Application Security Project</div>
+  <div class="a"><span class="opt">b</span> Open Worldwide Application Security Project</div>
+  <div class="a"><span class="opt">c</span> Online Web Application Security Program</div>
+  <div class="hr"></div>
+  <div class="q">2) วิธีป้องกัน Injection ที่ “หลักสุด” คือ?</div>
+  <div class="a"><span class="opt">a</span> blacklist ตัวอักษรอันตราย</div>
+  <div class="a"><span class="opt">b</span> parameter binding / prepared statements</div>
+  <div class="a"><span class="opt">c</span> encrypt ทุก input</div>
+  <div class="hr"></div>
+  <div class="q">3) การใช้ innerHTML กับข้อมูลผู้ใช้เสี่ยงอะไร?</div>
+  <div class="a"><span class="opt">a</span> XSS</div>
+  <div class="a"><span class="opt">b</span> CSRF</div>
+  <div class="a"><span class="opt">c</span> DoS</div>
+</div>
+<div class="note small">เฉลยจะเปิดท้ายคาบหรือหลังอภิปราย</div></div>
+</section>
+
+
+<section class="slide bgOrbs" data-index="34">
+  <div class="header">
+    <div>
+      <h1 class="hTitle">คำถามอภิปราย</h1>
+      <div class="hSub">ชวนคิดแบบวิศวกร</div>
+    </div>
+    <div class="meta">
+      <div class="chipSmall">ENGSE214 • Week 7</div>
+      <div class="chipSmall">Web App Security</div>
+      <div class="chipSmall">OWASP Overview</div>
+    </div>
+  </div>
+  <div class="content"><div class="grid2">
+  <div class="card">
+    <div class="cardTitle">Discussion</div>
+    <ul class="bullets">
+      <li>ทำไม Injection ยังพบบ่อย ทั้ง ๆ ที่รู้มานาน?</li>
+      <li>Framework สมัยใหม่ช่วยอะไร และ “ยังต้องระวัง” อะไร?</li>
+      <li>ถ้าเป็น Tech Lead จะทำให้ทีมใส่ใจ secure coding อย่างไร?</li>
+      <li>Balance ระหว่าง Security vs Usability ควรทำยังไง?</li>
+    </ul>
+  </div>
+  <div class="card">
+    <div class="cardTitle">มุมมอง QA / Tester</div>
+    <ul class="bullets">
+      <li>เขียน test case สำหรับ input validation</li>
+      <li>ตรวจ header สำคัญ (CSP, cookie flags)</li>
+      <li>ทำ negative tests + abuse cases</li>
+      <li>สร้าง checklist ก่อน release</li>
+    </ul>
+  </div>
+</div></div>
+</section>
+
+
+<section class="slide bgOrbs" data-index="35">
+  <div class="header">
+    <div>
+      <h1 class="hTitle">Key Takeaways</h1>
+      <div class="hSub">สิ่งที่อยากให้จำกลับบ้าน</div>
+    </div>
+    <div class="meta">
+      <div class="chipSmall">ENGSE214 • Week 7</div>
+      <div class="chipSmall">Web App Security</div>
+      <div class="chipSmall">OWASP Overview</div>
+    </div>
+  </div>
+  <div class="content"><div class="kTake">
+  <div class="kt"><span class="num">1</span><span>OWASP Top 10 = baseline ที่ทุกคนในทีมควรรู้</span></div>
+  <div class="kt"><span class="num">2</span><span>Injection ป้องกันด้วย “parameter binding” ไม่ใช่ต่อสตริง</span></div>
+  <div class="kt"><span class="num">3</span><span>XSS ป้องกันด้วย output encoding + safe DOM + CSP</span></div>
+  <div class="kt"><span class="num">4</span><span>Validation แบบ allowlist-first และต้องทำฝั่ง server</span></div>
+  <div class="kt"><span class="num">5</span><span>Security ต้องคิดตั้งแต่ design: Secure-by-Design</span></div>
+  <div class="kt"><span class="num">6</span><span>Dependencies คือ risk ใหม่ที่ต้องบริหาร (supply chain)</span></div>
+</div>
+<div class="quote small"><span class="qmark">💡</span><span>“Never Trust User Input” — เป็นวัฒนธรรมการพัฒนา ไม่ใช่แค่เทคนิค</span></div></div>
+</section>
+
+
+<section class="slide bgOrbs" data-index="36">
+  <div class="header">
+    <div>
+      <h1 class="hTitle">สรุปแบบ Infographic</h1>
+      
+    </div>
+    <div class="meta">
+      <div class="chipSmall">ENGSE214 • Week 7</div>
+      <div class="chipSmall">Web App Security</div>
+      <div class="chipSmall">OWASP Overview</div>
+    </div>
+  </div>
+  <div class="content"><div class="infographic">
+  <div class="igTop">
+    <div class="igTitle">WEB APPLICATION SECURITY</div>
+    <div class="igSub">จากช่องโหว่ → สู่แนวทางป้องกันที่ทำได้จริง</div>
+  </div>
+  <div class="igGrid">
+    <div class="igCard">
+      <div class="igHead">💉 Injection</div>
+      <div class="igBody">ปัญหา: input ถูกตีความเป็นคำสั่ง</div>
+      <div class="igBody"><b>Solution:</b> prepared/ORM + validate + least privilege</div>
+    </div>
+    <div class="igCard">
+      <div class="igHead">🎭 XSS</div>
+      <div class="igBody">ปัญหา: input ถูกแสดงผลเป็น HTML/JS</div>
+      <div class="igBody"><b>Solution:</b> output encoding + safe DOM + CSP</div>
+    </div>
+    <div class="igCard">
+      <div class="igHead">🏆 OWASP Top 10</div>
+      <div class="igBody">ใช้เป็น baseline ในทีม</div>
+      <div class="igBody"><b>Focus วันนี้:</b> #5 Injection + secure coding</div>
+    </div>
+  </div>
+  <div class="igBottom">Remember: <b>Security is a process</b>, not a checkbox ✅</div>
+</div></div>
+</section>
+
+
+<section class="slide bgOrbs" data-index="37">
+  <div class="header">
+    <div>
+      <h1 class="hTitle">Preview Week 8</h1>
+      <div class="hSub">Midterm Examination</div>
+    </div>
+    <div class="meta">
+      <div class="chipSmall">ENGSE214 • Week 7</div>
+      <div class="chipSmall">Web App Security</div>
+      <div class="chipSmall">OWASP Overview</div>
+    </div>
+  </div>
+  <div class="content"><div class="grid2">
+  <div class="card">
+    <div class="cardTitle">รูปแบบข้อสอบ</div>
+    <ul class="bullets">
+      <li>ปรนัย + อัตนัย</li>
+      <li>ครอบคลุม Week 1–7</li>
+      <li>เน้น “เข้าใจ” มากกว่าท่องจำ</li>
+    </ul>
+  </div>
+  <div class="card">
+    <div class="cardTitle">หัวข้อที่ต้องทบทวน</div>
+    <ul class="bullets">
+      <li>CIA Triad, Threat/Vuln/Risk</li>
+      <li>Malware + Social Engineering</li>
+      <li>CVE/CVSS + Risk Assessment</li>
+      <li>OS/Network/Crypto basics</li>
+      <li>OWASP, Injection, XSS, Secure Coding</li>
+    </ul>
+  </div>
+</div></div>
+</section>
+
+
+<section class="slide bgOrbs" data-index="38">
+  <div class="header">
+    <div>
+      <h1 class="hTitle">Resources เพิ่มเติม</h1>
+      <div class="hSub">เรียนต่อได้เองแบบถูกทาง</div>
+    </div>
+    <div class="meta">
+      <div class="chipSmall">ENGSE214 • Week 7</div>
+      <div class="chipSmall">Web App Security</div>
+      <div class="chipSmall">OWASP Overview</div>
+    </div>
+  </div>
+  <div class="content"><div class="grid2">
+  <div class="card">
+    <div class="cardTitle">Official</div>
+    <ul class="bullets">
+      <li>OWASP Top 10</li>
+      <li>OWASP Cheat Sheet Series</li>
+      <li>OWASP Juice Shop</li>
+      <li>DVWA (lab)</li>
+    </ul>
+  </div>
+  <div class="card">
+    <div class="cardTitle">Practice</div>
+    <ul class="bullets">
+      <li>PortSwigger Web Security Academy</li>
+      <li>TryHackMe / HackTheBox (สายฝึก)</li>
+      <li>OWASP ZAP / Burp Suite (tooling)</li>
+    </ul>
+  </div>
+</div>
+<div class="quote small">
+  <span class="qmark">🧠</span>
+  <span>“Security is not a product, but a process.” — Bruce Schneier</span>
+</div></div>
+</section>
+
+
+<section class="slide bgOrbs" data-index="39">
+  <div class="header">
+    <div>
+      <h1 class="hTitle">จบคาบ</h1>
+      <div class="hSub">Checklist ก่อนกลับ</div>
+    </div>
+    <div class="meta">
+      <div class="chipSmall">ENGSE214 • Week 7</div>
+      <div class="chipSmall">Web App Security</div>
+      <div class="chipSmall">OWASP Overview</div>
+    </div>
+  </div>
+  <div class="content"><div class="card">
+  <div class="cardTitle">Exit Ticket (1 นาที)</div>
+  <ol class="steps">
+    <li>วันนี้คุณจะเอา guideline ข้อไหนไปใช้กับโปรเจคทันที?</li>
+    <li>จุดไหนที่ยังสับสนที่สุด (Injection / XSS / Validation / CSP)?</li>
+    <li>สัปดาห์หน้าคุณจะอ่าน/ฝึกอะไรเพิ่มก่อนสอบกลางภาค?</li>
+  </ol>
+</div></div>
+</section>
+
+      </div>
+
+      <div id="help" role="dialog" aria-modal="false" aria-label="Help">
+        <h3>คีย์ลัด</h3>
+        <ul>
+          <li><b>→ / Space / PageDown</b>: ถัดไป</li>
+          <li><b>← / PageUp</b>: ก่อนหน้า</li>
+          <li><b>Home / End</b>: ไปสไลด์แรก / สไลด์สุดท้าย</li>
+          <li><b>+</b> / <b>-</b> / <b>0</b>: ขยาย / ย่อ / รีเซ็ตขนาดตัวอักษร</li>
+          <li><b>F</b>: Fullscreen</li>
+          <li><b>?</b>: เปิด/ปิดหน้าช่วยเหลือ</li>
+        </ul>
+        <div class="closeRow">
+          <div class="muted">Tip: ใส่ #เลขสไลด์ ใน URL เพื่อกระโดดไปสไลด์นั้น เช่น #10</div>
+          <button class="btn" id="closeHelp" type="button">ปิด</button>
+        </div>
+      </div>
+
+      <div id="hint" style="position:absolute; left:24px; bottom:24px; padding:10px 12px; border-radius:14px; background:rgba(0,0,0,.55); border:1px solid rgba(255,255,255,.14); color:rgba(234,240,255,.82); font-size:14px; backdrop-filter: blur(10px); transition: opacity .4s ease, transform .4s ease;">
+        Tip: ใช้คีย์ลัด <b>→</b>/<b>←</b>, กด <b>F</b> fullscreen, กด <b>?</b> ดู help
+      </div>
+    </div>
+
+    <div id="toolbar" aria-label="Controls">
+      <div class="group">
+        <button class="btn primary" id="prev" type="button">⬅️ ก่อนหน้า</button>
+        <button class="btn primary" id="next" type="button">ถัดไป ➡️</button>
+        <div id="progressWrap" aria-label="progress"><div id="progress"></div></div>
+        <div class="pillInfo" id="counter">1/39</div>
+      </div>
+
+      <div class="group">
+        <button class="btn" id="zout" type="button" title="ย่อ ( - )">A−</button>
+        <button class="btn" id="zin" type="button" title="ขยาย ( + )">A+</button>
+        <button class="btn" id="zreset" type="button" title="รีเซ็ต ( 0 )">Reset</button>
+        <div class="pillInfo" id="scale">100%</div>
+        <button class="btn" id="fs" type="button" title="Fullscreen (F)">⛶ Fullscreen</button>
+        <button class="btn" id="helpBtn" type="button" title="Help (?)">❓ Help</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Hide hint
+    (function(){
+      const hint = document.getElementById('hint');
+      hint.classList.add = hint.classList.add || function(){};
+      setTimeout(()=>{
+        hint.style.opacity = '0';
+        hint.style.transform = 'translateY(6px)';
+        setTimeout(()=>{ hint.remove(); }, 600);
+      }, 4300);
+    })();
+  </script>
+  <script>
+(() => {
+  const slides = Array.from(document.querySelectorAll('.slide'));
+  const total = slides.length;
+  let idx = 0;
+
+  const elCounter = document.getElementById('counter');
+  const elProgress = document.getElementById('progress');
+  const elScale = document.getElementById('scale');
+  const help = document.getElementById('help');
+
+  function clamp(n,min,max){return Math.max(min, Math.min(max,n));}
+
+  function show(i){
+    idx = clamp(i, 0, total-1);
+    slides.forEach((s, k) => s.classList.toggle('active', k===idx));
+    elCounter.textContent = `${idx+1}/${total}`;
+    const pct = ((idx+1)/total)*100;
+    elProgress.style.width = pct.toFixed(2) + '%';
+    const hash = '#'+(idx+1);
+    if(location.hash !== hash) history.replaceState(null,'',hash);
+  }
+
+  function parseHash(){
+    const m = location.hash.match(/^#(\d+)$/);
+    if(m){
+      const n = parseInt(m[1],10);
+      if(!Number.isNaN(n)) return clamp(n-1, 0, total-1);
+    }
+    return 0;
+  }
+
+  function scaleBy(delta){
+    const root = document.documentElement;
+    const current = parseFloat(getComputedStyle(root).getPropertyValue('--scale')) || 1;
+    const next = clamp(current + delta, 0.75, 1.35);
+    root.style.setProperty('--scale', next.toFixed(2));
+    elScale.textContent = `${Math.round(next*100)}%`;
+  }
+
+  function resetScale(){
+    document.documentElement.style.setProperty('--scale', '1');
+    elScale.textContent = '100%';
+  }
+
+  async function toggleFullscreen(){
+    try{
+      if(!document.fullscreenElement){
+        await document.documentElement.requestFullscreen();
+      }else{
+        await document.exitFullscreen();
+      }
+    }catch(e){
+      console.warn('fullscreen failed', e);
+    }
+  }
+
+  function toggleHelp(){
+    help.classList.toggle('show');
+  }
+
+  // Buttons
+  document.getElementById('prev').addEventListener('click', ()=>show(idx-1));
+  document.getElementById('next').addEventListener('click', ()=>show(idx+1));
+  document.getElementById('fs').addEventListener('click', toggleFullscreen);
+  document.getElementById('zin').addEventListener('click', ()=>scaleBy(0.05));
+  document.getElementById('zout').addEventListener('click', ()=>scaleBy(-0.05));
+  document.getElementById('zreset').addEventListener('click', resetScale);
+  document.getElementById('helpBtn').addEventListener('click', toggleHelp);
+  document.getElementById('closeHelp').addEventListener('click', toggleHelp);
+
+  // Keyboard
+  window.addEventListener('keydown', (e)=>{
+    if(e.target && ['INPUT','TEXTAREA'].includes(e.target.tagName)) return;
+    const k = e.key;
+    if(k==='ArrowRight' || k==='PageDown' || k===' '){ e.preventDefault(); show(idx+1); }
+    else if(k==='ArrowLeft' || k==='PageUp'){ e.preventDefault(); show(idx-1); }
+    else if(k==='Home'){ e.preventDefault(); show(0); }
+    else if(k==='End'){ e.preventDefault(); show(total-1); }
+    else if(k==='f' || k==='F'){ toggleFullscreen(); }
+    else if(k==='+' || k==='='){ scaleBy(0.05); }
+    else if(k==='-' || k==='_'){ scaleBy(-0.05); }
+    else if(k==='0'){ resetScale(); }
+    else if(k==='?'){ toggleHelp(); }
+    else if(k==='Escape' && help.classList.contains('show')){ help.classList.remove('show'); }
+  }, {passive:false});
+
+  // Wheel navigation (trackpads)
+  let wheelAcc = 0;
+  let wheelTimer = null;
+  window.addEventListener('wheel', (e)=>{
+    // ignore if ctrl zoom
+    if(e.ctrlKey) return;
+    wheelAcc += e.deltaY;
+    clearTimeout(wheelTimer);
+    wheelTimer = setTimeout(()=>{
+      if(Math.abs(wheelAcc) > 80){
+        show(idx + (wheelAcc>0 ? 1 : -1));
+      }
+      wheelAcc = 0;
+    }, 80);
+  }, {passive:true});
+
+  // Touch swipe
+  let startX = 0, startY = 0, t0 = 0;
+  window.addEventListener('touchstart', (e)=>{
+    if(!e.touches || e.touches.length!==1) return;
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+    t0 = Date.now();
+  }, {passive:true});
+  window.addEventListener('touchend', (e)=>{
+    const dt = Date.now()-t0;
+    if(dt>600) return;
+    const touch = (e.changedTouches && e.changedTouches[0]) ? e.changedTouches[0] : null;
+    if(!touch) return;
+    const dx = touch.clientX - startX;
+    const dy = touch.clientY - startY;
+    if(Math.abs(dx) > 60 && Math.abs(dy) < 60){
+      show(idx + (dx<0 ? 1 : -1));
+    }
+  }, {passive:true});
+
+  // Init
+  const initial = parseHash();
+  show(initial);
+
+  // Hash change (manual)
+  window.addEventListener('hashchange', ()=>show(parseHash()));
+
+  // Show hint once (non-persistent)
+  const hint = document.getElementById('hint');
+  setTimeout(()=>hint.classList.add('hide'), 4200);
+})();
+</script>
+</body>
+</html>

