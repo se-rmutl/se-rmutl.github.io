@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ENGSE207 - Week 7: Event-Driven Architecture</title>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #4F46E5;
+            --secondary: #7C3AED;
+            --bg-color: #F3F4F6;
+            --text-main: #1F2937;
+            --text-light: #6B7280;
+            --white: #FFFFFF;
+            --accent: #F59E0B;
+            --font-base: 16px;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #000;
+            font-family: 'Prompt', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+            font-size: var(--font-base);
+        }
+
+        #presentation-container {
+            position: relative;
+            width: 100vw;
+            height: 56.25vw; /* 16:9 Aspect Ratio */
+            max-height: 100vh;
+            max-width: 177.78vh;
+            background-color: var(--bg-color);
+            box-shadow: 0 0 20px rgba(255,255,255,0.1);
+            overflow: hidden;
+            transition: font-size 0.3s ease;
+        }
+
+        .slide {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--white);
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.5s ease-in-out;
+            display: flex;
+            flex-direction: column;
+            padding: 3rem 4rem;
+            box-sizing: border-box;
+        }
+
+        .slide.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* Top Header Decor */
+        .slide::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 8px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+        }
+
+        .title-slide {
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            background: linear-gradient(135deg, #1e1b4b, #4338ca);
+            color: var(--white);
+        }
+        
+        .title-slide h1 { color: var(--white); font-size: 3.5em; margin-bottom: 0.2em;}
+        .title-slide h2 { color: #818cf8; font-size: 1.8em; font-weight: 300; margin-bottom: 1em;}
+
+        h1 { color: var(--primary); font-size: 2.5em; margin-top: 0; margin-bottom: 0.5em; border-bottom: 3px solid var(--accent); display: inline-block; padding-bottom: 10px;}
+        h2 { color: var(--secondary); font-size: 1.8em; margin-bottom: 0.5em;}
+        h3 { color: var(--text-main); font-size: 1.4em;}
+        p, li { color: var(--text-main); font-size: 1.2em; line-height: 1.6; margin-bottom: 0.5em;}
+        
+        .highlight { color: var(--primary); font-weight: 600; }
+        .alert { background: #FEF3C7; border-left: 4px solid var(--accent); padding: 10px 15px; margin: 15px 0; font-weight: 500;}
+
+        .content-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            flex-grow: 1;
+        }
+
+        .full-center {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+            text-align: center;
+        }
+
+        img {
+            max-width: 100%;
+            max-height: 60vh;
+            object-fit: contain;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .table-custom {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+        .table-custom th, .table-custom td {
+            border: 1px solid #E5E7EB;
+            padding: 12px;
+            text-align: left;
+            font-size: 1.1em;
+        }
+        .table-custom th { background-color: var(--primary); color: white; }
+        .table-custom tr:nth-child(even) { background-color: #F9FAFB; }
+
+        .citation {
+            font-size: 0.7em;
+            color: var(--text-light);
+            vertical-align: super;
+        }
+
+        /* Controls */
+        #controls {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(31, 41, 55, 0.9);
+            padding: 10px 20px;
+            border-radius: 30px;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            z-index: 100;
+        }
+
+        button {
+            background: none;
+            border: none;
+            color: white;
+            font-family: 'Prompt', sans-serif;
+            font-size: 1rem;
+            cursor: pointer;
+            padding: 5px 10px;
+            border-radius: 5px;
+            transition: background 0.3s;
+        }
+
+        button:hover { background: var(--primary); }
+        
+        .slide-number {
+            color: white;
+            font-weight: bold;
+            min-width: 50px;
+            text-align: center;
+        }
+
+        .badge {
+            background: var(--secondary);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            display: inline-block;
+            margin-bottom: 10px;
+        }
+
+        .insight-box {
+            background: #EFF6FF;
+            border: 1px solid #BFDBFE;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-top: 1rem;
+        }
+    </style>
+</head>
+<body>
+
+<div id="presentation-container">
+
+    <div class="slide title-slide active">
+        <span class="badge">ENGSE207 สถาปัตยกรรมซอฟต์แวร์ (Software Architecture)</span>
+        <h1>Term Project Week 7</h1>
+        <h2>Event-Driven Architecture, Message Broker และ Pub/Sub Pattern</h2>
+        <p style="color: #cbd5e1;">ทฤษฎีก่อนปฏิบัติ — เปลี่ยนจาก "ถาม-ตอบ" สู่การ "ประกาศ-รับฟัง"</p>
+        <div style="margin-top: 2rem; font-size: 1em; color: #94a3b8;">
+            <p>ผู้สอน: นายธนิต เกตุแก้ว <span class="citation"></span></p>
+        </div>
+    </div>
+
+    <div class="slide">
+        <h1>📌 ข้อมูลทั่วไปของการเรียนสัปดาห์นี้</h1>
+        <div class="content-grid">
+            <div>
+                <h3>รายละเอียดบทเรียน <span class="citation"></span></h3>
+                <ul>
+                    <li><strong>จำนวนชั่วโมง:</strong> บรรยาย 2 ชม. (ก่อนเข้า Lab 3 ชม.) <span class="citation"></span></li>
+                    <li><strong>ระดับชั้น:</strong> ปีที่ 2 วิศวกรรมซอฟต์แวร์ <span class="citation"></span></li>
+                    <li><strong>เอกสาร Lab ที่สอดคล้อง:</strong> <code>week7_lab_event_driven_rabbitmq.md</code> <span class="citation"></span></li>
+                </ul>
+                <div class="alert">
+                    💡 <strong>หัวใจสำคัญ:</strong> สัปดาห์นี้เปลี่ยนจากสถาปัตยกรรมแบบสื่อสารทันที (Synchronous) ไปสู่แบบไม่ประสานเวลา (Asynchronous)
+                </div>
+            </div>
+            <div>
+                <h3>CLO ที่เกี่ยวข้องหลัก <span class="citation"></span></h3>
+                <ul>
+                    <li><strong>CLO2 & CLO3:</strong> อธิบาย Architectural Styles, Patterns พื้นฐาน และ Quality Attributes <span class="citation"></span></li>
+                    <li><strong>CLO4 & CLO7:</strong> ประยุกต์ใช้เครื่องมือ (RabbitMQ) และออกแบบสถาปัตยกรรม <span class="citation"></span></li>
+                    <li><strong>CLO13:</strong> ตระหนักถึงความสำคัญของ Non-Functional Requirements (Async ไม่ได้ดีกว่า Sync เสมอไป) <span class="citation"></span></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="slide">
+        <h1>🎯 วัตถุประสงค์การสอน (1/2)</h1>
+        <h3>1.1 Synchronous vs Asynchronous Communication <span class="citation"></span></h3>
+        <ul>
+            <li>อธิบายความแตกต่าง และระบุข้อดีข้อเสียของแต่ละแบบ <span class="citation"></span></li>
+            <li>วิเคราะห์สถานการณ์และระบุได้ว่ากรณีใดควรใช้ Sync และกรณีใดควรใช้ Async <span class="citation"></span></li>
+        </ul>
+        <h3>1.2 Event-Driven Architecture <span class="citation"></span></h3>
+        <ul>
+            <li>อธิบายหลักการ Event-Driven Architecture และข้อแตกต่างจาก Request-Driven <span class="citation"></span></li>
+            <li>อธิบายแนวคิด Loose Coupling ที่ Event-Driven สร้างขึ้น <span class="citation"></span></li>
+        </ul>
+    </div>
+
+    <div class="slide">
+        <h1>🎯 วัตถุประสงค์การสอน (2/2)</h1>
+        <h3>1.3 Message Broker & RabbitMQ <span class="citation"></span></h3>
+        <ul>
+            <li>อธิบายบทบาทของ Message Broker ในฐานะตัวกลาง <span class="citation"></span></li>
+            <li>อธิบายองค์ประกอบของ RabbitMQ (Producer, Exchange, Queue, Consumer, Binding) <span class="citation"></span></li>
+        </ul>
+        <h3>1.4 Pub/Sub Pattern & Event Contract <span class="citation"></span></h3>
+        <ul>
+            <li>เปรียบเทียบ Publish/Subscribe กับ Point-to-Point <span class="citation"></span></li>
+            <li>ออกแบบ Event Contract/Schema ที่ชัดเจน <span class="citation"></span></li>
+        </ul>
+    </div>
+
+    <div class="slide">
+        <h1>🔙 ทบทวน: เส้นทางสถาปัตยกรรมของเรา</h1>
+        <div class="full-center">
+            <img src="week6_7_term_project_diagrams-Week 6-7 Architecture Evolution.jpg" alt="Architecture Evolution">
+            <p style="margin-top: 15px; font-size: 0.9em;">ภาพแสดงวิวัฒนาการจาก Week 3 (Monolith) สู่ Week 7 (Event-Driven) <span class="citation"></span></p>
+        </div>
+    </div>
+
+    <div class="slide">
+        <h1>⚠️ ปัญหาของระบบสัปดาห์ที่ 6 (Synchronous)</h1>
+        <div class="content-grid">
+            <div>
+                <h3>สิ่งที่ทำได้ดีแล้ว ✅ <span class="citation"></span></h3>
+                <ul>
+                    <li>Scale App ได้หลาย Instance (Horizontal Scaling) <span class="citation"></span></li>
+                    <li>Cache ลด DB Load (Redis) <span class="citation"></span></li>
+                    <li>Load Balance กระจาย Request (Nginx) <span class="citation"></span></li>
+                </ul>
+            </div>
+            <div>
+                <h3>ปัญหาที่เหลืออยู่ ❌ <span class="citation"></span></h3>
+                <ul>
+                    <li>ทุก Request ยัง Synchronous — Client ต้อง "รอ" จนทุกอย่างเสร็จ <span class="citation"></span></li>
+                    <li>ถ้าต้อง ส่ง Email + บันทึก Log หลังสร้าง Task Client ต้องรอทุกขั้นตอน → ช้า! <span class="citation"></span></li>
+                    <li>บริการส่ง Email ล่ม → ทั้ง API ล่ม (Tight Coupling) <span class="citation"></span></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="slide">
+        <h1>📞 1.1 Synchronous Communication</h1>
+        <div class="content-grid">
+            <div>
+                <h3>การสื่อสารแบบ Request/Response <span class="citation"></span></h3>
+                <p><strong>หลักการ:</strong> ผู้ส่งส่ง Request → รอ → ผู้รับประมวลผล → ส่ง Response กลับ <span class="citation"></span></p>
+                <div class="insight-box">
+                    <strong>เปรียบเทียบในชีวิตจริง: โทรศัพท์ 📞</strong> <span class="citation"></span>
+                    <ul>
+                        <li>ต้องรอให้อีกฝ่ายรับสาย <span class="citation"></span></li>
+                        <li>ถ้าไม่รับ → ไม่ได้คุย (fail) <span class="citation"></span></li>
+                        <li>ต้องจบเรื่องหนึ่งก่อน ถึงจะไปทำเรื่องต่อไป <span class="citation"></span></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="full-center" style="background: #f8fafc; border-radius: 8px;">
+                <p><em>Client ต้องรอทุกขั้นตอนเสร็จ (เช่น Insert DB + Send Email + Log) ก่อนได้ 201 Created</em> <span class="citation"></span></p>
+            </div>
+        </div>
+    </div>
+
+    <div class="slide">
+        <h1>💬 1.1 Asynchronous Communication</h1>
+        <div class="content-grid">
+            <div>
+                <h3>การสื่อสารแบบ Event-Based (ไม่ต้องรอ) <span class="citation"></span></h3>
+                <p><strong>หลักการ:</strong> ผู้ส่ง Publish Event → ไม่รอ → ผู้รับ Subscribe แล้วทำงานเอง <span class="citation"></span></p>
+                <div class="insight-box" style="background:#ECFDF5; border-color:#6EE7B7;">
+                    <strong>เปรียบเทียบในชีวิตจริง: ส่ง LINE 💬</strong> <span class="citation"></span>
+                    <ul>
+                        <li>ส่งข้อความแล้วก็จบ ไม่ต้องรอ <span class="citation"></span></li>
+                        <li>อีกฝ่ายมาอ่านเมื่อไหร่ก็ได้ <span class="citation"></span></li>
+                        <li>ปิดเครื่อง ข้อความยังอยู่ รอจนเปิดมาอ่าน <span class="citation"></span></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="full-center">
+                <p>Client ได้ Response ทันทีหลัง INSERT DB เสร็จ! ที่เหลือทำต่อเป็น Background <span class="citation"></span></p>
+            </div>
+        </div>
+    </div>
+
+    <div class="slide">
+        <h1>📊 เปรียบเทียบ Sync vs Async</h1>
+        <table class="table-custom">
+            <tr>
+                <th>หัวข้อ</th>
+                <th>Synchronous (Request/Response) <span class="citation"></span></th>
+                <th>Asynchronous (Event-Driven) <span class="citation"></span></th>
+            </tr>
+            <tr>
+                <td><strong>การทำงาน</strong></td>
+                <td>ส่ง → รอ → รับ <span class="citation"></span></td>
+                <td>ส่ง → ทำต่อเลย <span class="citation"></span></td>
+            </tr>
+            <tr>
+                <td><strong>Coupling</strong></td>
+                <td>Tight (ผูกแน่น) <span class="citation"></span></td>
+                <td>Loose (แยกจากกัน) <span class="citation"></span></td>
+            </tr>
+            <tr>
+                <td><strong>Failure Impact</strong></td>
+                <td>1 ล่ม = ทั้งหมดล่ม <span class="citation"></span></td>
+                <td>1 ล่ม = ที่เหลือยังทำงาน <span class="citation"></span></td>
+            </tr>
+            <tr>
+                <td><strong>Data Consistency</strong></td>
+                <td>Strong (ทันที) <span class="citation"></span></td>
+                <td>Eventual (สุดท้ายจะตรงกัน) <span class="citation"></span></td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="slide">
+        <h1>🤔 เมื่อไหร่ควรใช้แบบไหน?</h1>
+        <div class="content-grid">
+            <div style="background: #FEE2E2; padding: 20px; border-radius: 8px;">
+                <h3 style="color: #B91C1C;">ใชั Synchronous เมื่อ: <span class="citation"></span></h3>
+                <ul>
+                    <li>Client <strong>ต้องรู้ผลลัพธ์ทันที</strong> (เช่น โอนเงินสำเร็จหรือไม่?) <span class="citation"></span></li>
+                    <li>ต้องการ Strong Consistency (ข้อมูลต้องตรงกัน 100% ทันที) <span class="citation"></span></li>
+                    <li>ขั้นตอนถัดไปขึ้นกับผลลัพธ์ก่อนหน้า <span class="citation"></span></li>
+                </ul>
+            </div>
+            <div style="background: #D1FAE5; padding: 20px; border-radius: 8px;">
+                <h3 style="color: #047857;">ใช้ Asynchronous เมื่อ: <span class="citation"></span></h3>
+                <ul>
+                    <li>Client <strong>ไม่ต้องรอผลลัพธ์</strong> (เช่น ส่ง email แจ้งเตือน) <span class="citation"></span></li>
+                    <li>ต้องกระจายงานไปหลาย Services (เช่น แจ้งคลัง + ส่ง Email) <span class="citation"></span></li>
+                    <li>ต้องการ Fault Tolerance (Service ล่ม งานรอในคิวได้) <span class="citation"></span></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="slide">
+        <h1>📡 1.2 Event-Driven Architecture (EDA) คืออะไร?</h1>
+        <p>รูปแบบสถาปัตยกรรมที่ Services สื่อสารกันผ่าน <strong>Events</strong> (เหตุการณ์ที่เกิดขึ้น) แทนที่จะเรียกกันโดยตรง <span class="citation"></span></p>
+        <div class="content-grid">
+            <div>
+                <h3>แนวคิดหลัก (Hollywood Principle) <span class="citation"></span></h3>
+                <p><em>"Don't call us, we'll call you"</em> <span class="citation"></span></p>
+                <ul>
+                    <li><strong>แบบเก่า:</strong> Service A ต้องรู้จักและโทรหา Service B โดยตรง <span class="citation"></span></li>
+                    <li><strong>แบบใหม่:</strong> Service A ประกาศว่ามีอะไรเกิดขึ้น ใครสนใจก็รับไป <span class="citation"></span></li>
+                </ul>
+            </div>
+            <div class="full-center">
+                <br>
+                                <p style="font-size: 0.8em; margin-top:10px;">A ไม่ต้องรู้จัก B, C, D แค่ประกาศ Event ลง Broker</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="slide">
+        <h1>🧩 3 องค์ประกอบหลักของ EDA</h1>
+        <ol>
+            <li>
+                <strong>EVENT (เหตุการณ์)</strong> <span class="citation"></span>
+                <p>สิ่งที่เกิดขึ้นแล้ว (Past Tense) เป็น Immutable แก้ไขไม่ได้ เช่น <code>TaskCreated</code> <span class="citation"></span></p>
+            </li>
+            <li>
+                <strong>EVENT PRODUCER (ผู้ส่ง)</strong> <span class="citation"></span>
+                <p>Service ที่ "ประกาศ" ว่ามี Event เกิดขึ้น (ไม่ต้องรู้ว่าใครจะรับ) <span class="citation"></span></p>
+            </li>
+            <li>
+                <strong>EVENT CONSUMER (ผู้รับ)</strong> <span class="citation"></span>
+                <p>Service ที่ "สมัครรับฟัง" Events ที่สนใจ (ไม่ต้องรู้ว่า Event มาจากไหน) <span class="citation"></span></p>
+            </li>
+        </ol>
+    </div>
+
+    <div class="slide">
+        <h1>🔗 Loose Coupling — ข้อดีที่สำคัญที่สุด</h1>
+        <div class="content-grid">
+            <div style="background: #FAFAF9; padding: 15px; border-radius: 8px;">
+                <h3>❌ Tight Coupling (Week 6) <span class="citation"></span></h3>
+                <pre style="font-size: 0.8em; background:#E5E7EB; padding:10px; border-radius:5px;">
+async function createTask(data) {
+  const task = await db.insert(data);
+  await emailService.send(task);  ←
+  await auditService.log(task);   ←
+  return task;
+}</pre>
+                <p style="font-size:0.9em;">เพิ่ม Service ใหม่ = ต้องแก้โค้ด Task API เสมอ! <span class="citation"></span></p>
+            </div>
+            <div style="background: #FAFAF9; padding: 15px; border-radius: 8px;">
+                <h3>✅ Loose Coupling (Week 7) <span class="citation"></span></h3>
+                <pre style="font-size: 0.8em; background:#E5E7EB; padding:10px; border-radius:5px;">
+async function createTask(data){
+  const task = await db.insert(data);
+  publish('TASK_CREATED', task); ←
+  return task;
+}</pre>
+                <p style="font-size:0.9em;">เพิ่ม Consumer ใหม่เท่าไหร่ก็ได้ Task API ไม่ต้องแก้โค้ด! <span class="citation"></span></p>
+            </div>
+        </div>
+    </div>
+
+    <div class="slide">
+        <h1>🏪 ตัวอย่างจริงในระบบที่คุ้นเคย</h1>
+        <ul>
+            <li>
+                <strong>Shopee — สั่งซื้อสินค้า:</strong> <span class="citation"></span><br>
+                ลูกค้ากด "สั่งซื้อ" ➔ เห็น "สั่งซื้อสำเร็จ" ทันที ➔ เบื้องหลัง <code>OrderPlaced Event</code> ถูกส่งไปตัดสต็อก, ตัดเงิน, แจ้งร้านค้า <span class="citation"></span>
+            </li>
+            <li>
+                <strong>LINE — ส่งข้อความ:</strong> <span class="citation"></span><br>
+                ผู้ใช้ส่ง ➔ เห็นติ๊กถูก ✓ ทันที ➔ <code>MessageSent Event</code> ถูกส่งไปแจ้งเตือนปลายทาง, นับสถิติ <span class="citation"></span>
+            </li>
+            <li>
+                <strong>หมอพร้อม — จองวัคซีน:</strong> <span class="citation"></span><br>
+                จองสำเร็จ ➔ <code>AppointmentBooked Event</code> ➔ ส่ง SMS ยืนยัน, เพิ่มปฏิทิน, จองโควตา <span class="citation"></span>
+            </li>
+        </ul>
+    </div>
+
+    <div class="slide">
+        <h1>🐰 1.3 Message Broker คืออะไร?</h1>
+        <p>ตัวกลาง (Middleware) ที่รับ-ส่ง-จัดการ Messages ระหว่าง Services <span class="citation"></span></p>
+        <div class="content-grid">
+            <div>
+                <ul style="margin-top: 1rem;">
+                    <li>รับ Message จาก Producer <span class="citation"></span></li>
+                    <li>เก็บ Message ไว้ใน Queue (ไม่หายถ้า Service ปลายทางล่ม) <span class="citation"></span></li>
+                    <li>ส่ง Message ไปยัง Consumer ที่สมัครรับ <span class="citation"></span></li>
+                </ul>
+                <div class="alert">
+                    เหมือนระบบไปรษณีย์ 📮 คุณหย่อนจดหมายลงตู้ (Broker) เดี๋ยวไปรษณีย์จัดการส่งให้ถึงมือผู้รับเอง ไม่ต้องเดินไปส่งเอง <span class="citation"></span>
+                </div>
+            </div>
+            <div class="full-center">
+                            </div>
+        </div>
+    </div>
+
+    <div class="slide">
+        <h1>⚙️ RabbitMQ Architecture</h1>
+        <div class="full-center">
+            <img src="week6_7_term_project_diagrams-Week7 - Event-Driven Architecture.jpg" alt="RabbitMQ Architecture">
+            <p style="font-size: 0.8em; margin-top: 10px;">ภาพรวมสถาปัตยกรรม 5 ส่วน: Producer, Exchange, Queue, Binding, Consumer <span class="citation"></span></p>
+        </div>
+    </div>
+
+    <div class="slide">
+        <h1>📦 องค์ประกอบทั้ง 5 ของ RabbitMQ</h1>
+        <ul>
+            <li><strong>① Producer:</strong> Service ที่ส่ง Message เข้าสู่ Exchange <span class="citation"></span></li>
+            <li><strong>② Exchange:</strong> ตัวกระจาย Message ไปตามกฎ (เหมือนตู้ไปรษณีย์ส่วนกลาง) <span class="citation"></span></li>
+            <li><strong>③ Queue:</strong> คิวเก็บ Message รอ Consumer มารับ (เหมือนตู้จดหมายหน้าบ้าน) <span class="citation"></span></li>
+            <li><strong>④ Binding:</strong> กฎการ Route ที่เชื่อม Exchange กับ Queue <span class="citation"></span></li>
+            <li><strong>⑤ Consumer:</strong> Service ที่รับ Message ไปทำงาน แล้วส่ง ACK กลับ <span class="citation"></span></li>
+        </ul>
+    </div>
+
+    <div class="slide">
+        <h1>🔀 Exchange Types กฎการกระจายข้อความ</h1>
+        <div class="content-grid">
+            <div>
+                <h3 style="color: var(--secondary);">1. Fanout ⭐ (ใช้ใน Lab) <span class="citation"></span></h3>
+                <p>ส่ง Message ไปทุก Queue ที่ bind (เหมือนกระจายเสียงวิทยุ FM) <span class="citation"></span></p>
+                <h3 style="color: var(--secondary);">2. Direct <span class="citation"></span></h3>
+                <p>ส่งเฉพาะ Queue ที่มี routing key ตรงกันพอดี (ส่งจดหมายระบุชื่อ) <span class="citation"></span></p>
+                <h3 style="color: var(--secondary);">3. Topic <span class="citation"></span></h3>
+                <p>ส่งตาม pattern ของ routing key (เช่น <code>task.*</code>) <span class="citation"></span></p>
+            </div>
+            <div class="full-center">
+                <div class="insight-box" style="text-align:left;">
+                    <strong>ทำไม Lab นี้ใช้ Fanout?</strong><br>
+                    เพราะเราอยากให้ทุก Event (เช่น สร้าง Task) ส่งไปถึงทั้ง <code>Notification</code> และ <code>Audit</code> พร้อมๆ กัน <span class="citation"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="slide">
+        <h1>✅ Message Acknowledgement (ACK)</h1>
+        <p>การรับประกันว่า Message ถูกประมวลผล ไม่สูญหาย! <span class="citation"></span></p>
+        <ol>
+            <li>Queue ส่ง Message ให้ Consumer <span class="citation"></span></li>
+            <li>Consumer ประมวลผล Message สำเร็จ <span class="citation"></span></li>
+            <li>Consumer ส่ง <strong>ACK</strong> กลับ ➔ Queue ลบ Message ออก <span class="citation"></span></li>
+        </ol>
+        <div class="alert" style="background: #FEE2E2; border-color: #EF4444;">
+            💥 <strong>ถ้า Consumer ล่มก่อนส่ง ACK?</strong><br>
+            Queue รู้ว่างานยังไม่เสร็จ ➔ จะส่ง Message นั้นให้ Consumer ตัวอื่น หรือรอส่งให้ตัวเดิมเมื่อฟื้นคืนชีพ (Message ไม่มีวันหาย!) 🛡️ <span class="citation"></span>
+        </div>
+    </div>
+
+    <div class="slide">
+        <h1>🌊 Event Flow: POST /api/tasks</h1>
+        <div class="full-center">
+            <img src="week6_7_term_project_diagrams-Week7 - Event Flow Sequence.png" alt="Event Flow Sequence Diagram">
+            <p style="font-size: 0.8em; margin-top: 10px;">เส้นประสีแดงคือ Async Boundary – Client ได้ Response ทันที ที่เหลือทำอยู่เบื้องหลัง <span class="citation"></span></p>
+        </div>
+    </div>
+
+    <div class="slide">
+        <h1>📋 Event Contract (สัญญาการสื่อสาร)</h1>
+        <p>เพื่อไม่ให้ Consumer พัง เราต้องตกลงกันว่าโครงสร้าง (Schema) ของ Event หน้าตาเป็นอย่างไร <span class="citation"></span></p>
+        <pre style="background: #1F2937; color: #10B981; padding: 15px; border-radius: 8px; font-size: 0.85em; overflow-x: auto;">
+{
+  "id": "evt-1708600001-abc123",    // Unique ID
+  "type": "TASK_CREATED",           // Event Type (สำคัญมาก!)
+  "data": {                         // ข้อมูลจริงของ Event
+    "id": 8, "title": "ทำ Lab Week 7", "status": "TODO"
+  },
+  "metadata": {                     // ข้อมูล Meta
+    "timestamp": "2025-02-22T10:30:00Z",
+    "source": "task-service"
+  }
+}</pre>
+        <p style="font-size: 0.9em; margin-top: 5px;"><em>เปรียบเทียบ: เหมือนการตกลง JSON body schema ใน REST API</em> <span class="citation"></span></p>
+    </div>
+
+    <div class="slide">
+        <h1>⏳ Eventual Consistency</h1>
+        <p>ความสอดคล้องแบบ "สุดท้าย" - Trade-off ของ Async <span class="citation"></span></p>
+        <div class="content-grid">
+            <div style="background: #FFFBEB; padding: 15px; border-radius: 8px;">
+                <h3 style="color: #D97706;">ความหมาย</h3>
+                <p>"ถ้าไม่มี Event ใหม่เข้ามา สุดท้ายทุก Service จะมีข้อมูลตรงกัน แต่อาจมีช่วงเวลาสั้นๆ ที่ข้อมูลไม่ตรงกัน" <span class="citation"></span></p>
+            </div>
+            <div>
+                <ul style="margin-top: 1rem;">
+                    <li><strong>ตัวอย่าง:</strong> สั่ง Shopee เห็นสำเร็จทันที แต่อีเมลมาอีก 30 วินาทีหลัง <span class="citation"></span></li>
+                    <li><strong>ข้อระวัง:</strong> ใช้กับระบบโอนเงินไม่ได้ เพราะยอดต้องตรงทันที (Strong Consistency) <span class="citation"></span></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="slide">
+        <h1>⚖️ 1.5 Quality Attributes, Trade-offs</h1>
+        <table class="table-custom">
+            <tr>
+                <th>Quality Attribute</th>
+                <th>Week 6 (N-Tier) <span class="citation"></span></th>
+                <th>Week 7 (Event-Driven) <span class="citation"></span></th>
+            </tr>
+            <tr>
+                <td>Response Time</td>
+                <td>~2ms (รอทุกส่วน) <span class="citation"></span></td>
+                <td><strong style="color:green;">~50ms (Client ไม่ต้องรอ)</strong> <span class="citation"></span></td>
+            </tr>
+            <tr>
+                <td>Scalability / Availability</td>
+                <td>★★★★☆ <span class="citation"></span></td>
+                <td><strong style="color:green;">★★★★★ (Scale อิสระ, Event รอใน Queue ได้)</strong> <span class="citation"></span></td>
+            </tr>
+            <tr>
+                <td>Consistency</td>
+                <td>Strong (ทันที) <span class="citation"></span></td>
+                <td><strong style="color:red;">Eventual (ไม่ Sync ทันที)</strong> <span class="citation"></span></td>
+            </tr>
+            <tr>
+                <td>Complexity / Debugging</td>
+                <td>ปานกลาง <span class="citation"></span></td>
+                <td><strong style="color:red;">สูง (ต้อง Trace ข้าม Services)</strong> <span class="citation"></span></td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="slide">
+        <h1>📝 สรุปบทเรียนก่อนเข้า Lab</h1>
+        <h3>Checklist: สิ่งที่ต้องเข้าใจก่อนลงมือ <span class="citation"></span></h3>
+        <ul style="font-size: 0.9em; columns: 2;">
+            <li>✅ Sync = ส่ง-รอ-รับ / Async = ส่ง-ทำต่อเลย <span class="citation"></span></li>
+            <li>✅ Event = สิ่งที่เกิดขึ้นแล้ว เช่น TASK_CREATED <span class="citation"></span></li>
+            <li>✅ Producer ไม่ต้องรู้ว่าใครจะรับ <span class="citation"></span></li>
+            <li>✅ Consumer ไม่ต้องรู้ว่าใครส่ง <span class="citation"></span></li>
+            <li>✅ RabbitMQ = ตัวกลางเก็บและส่ง Message <span class="citation"></span></li>
+            <li>✅ Exchange (fanout) = กระจายทุก Queue <span class="citation"></span></li>
+            <li>✅ Queue = คิวเก็บรอ Consumer <span class="citation"></span></li>
+            <li>✅ ACK = ประมวลผลสำเร็จ ลบออกจากคิวได้ <span class="citation"></span></li>
+            <li>✅ Eventual Consistency = สุดท้ายจะตรงกัน <span class="citation"></span></li>
+        </ul>
+        <div class="alert" style="text-align:center; font-size:1.2em; margin-top:20px;">
+            🚀 พร้อมลงมือทำ Lab Week 7 หรือยังครับ?
+        </div>
+    </div>
+
+    <div id="controls">
+        <button onclick="prevSlide()">◀ Prev</button>
+        <span class="slide-number"><span id="currentSlide">1</span> / <span id="totalSlides">24</span></span>
+        <button onclick="nextSlide()">Next ▶</button>
+        <div style="width: 1px; height: 20px; background: #4B5563; margin: 0 5px;"></div>
+        <button onclick="changeFontSize(-1)">A-</button>
+        <button onclick="changeFontSize(1)">A+</button>
+        <button onclick="toggleFullScreen()">⛶ Full</button>
+    </div>
+
+</div>
+
+<script>
+    let currentSlideIndex = 0;
+    const slides = document.querySelectorAll('.slide');
+    const currentSlideDisplay = document.getElementById('currentSlide');
+    const totalSlidesDisplay = document.getElementById('totalSlides');
+    let baseFontSize = 16;
+    
+    totalSlidesDisplay.innerText = slides.length;
+
+    function showSlide(index) {
+        if(index >= slides.length) currentSlideIndex = slides.length - 1;
+        if(index < 0) currentSlideIndex = 0;
+        
+        slides.forEach((slide, i) => {
+            slide.classList.remove('active');
+            if (i === currentSlideIndex) {
+                slide.classList.add('active');
+            }
+        });
+        currentSlideDisplay.innerText = currentSlideIndex + 1;
+    }
+
+    function nextSlide() {
+        if(currentSlideIndex < slides.length - 1) {
+            currentSlideIndex++;
+            showSlide(currentSlideIndex);
+        }
+    }
+
+    function prevSlide() {
+        if(currentSlideIndex > 0) {
+            currentSlideIndex--;
+            showSlide(currentSlideIndex);
+        }
+    }
+
+    function changeFontSize(direction) {
+        baseFontSize += direction * 2;
+        if(baseFontSize < 10) baseFontSize = 10;
+        if(baseFontSize > 26) baseFontSize = 26;
+        document.documentElement.style.setProperty('--font-base', baseFontSize + 'px');
+    }
+
+    function toggleFullScreen() {
+        if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen().catch(err => {
+                alert(`Error attempting to enable full-screen mode: ${err.message}`);
+            });
+        } else {
+            document.exitFullscreen();
+        }
+    }
+
+    // Keyboard navigation
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowRight' || e.key === 'Space') nextSlide();
+        if (e.key === 'ArrowLeft') prevSlide();
+    });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ENGSE207: N-Tier, Caching & Load Balancing</title>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --slide-bg: #1e293b;
+            --text-main: #f8fafc;
+            --text-muted: #cbd5e1;
+            --primary: #3b82f6;
+            --secondary: #10b981;
+            --accent: #f59e0b;
+            --danger: #ef4444;
+            --base-font-size: 18px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Prompt', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            overflow: hidden;
+            font-size: var(--base-font-size);
+            transition: font-size 0.3s ease;
+        }
+
+        #presentation-container {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        .slide {
+            width: 100%;
+            max-width: 1280px;
+            aspect-ratio: 16 / 9;
+            background: var(--slide-bg);
+            border-radius: 12px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            padding: 3rem 4rem;
+            display: none;
+            flex-direction: column;
+            position: relative;
+            animation: fadeIn 0.5s ease-in-out;
+            overflow: hidden;
+        }
+
+        .slide.active {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        h1, h2, h3 { color: var(--primary); margin-bottom: 1rem; font-weight: 700; }
+        h1 { font-size: 2.5em; text-align: center; margin-top: auto; margin-bottom: 2rem;}
+        h2 { font-size: 2em; border-bottom: 2px solid var(--primary); padding-bottom: 0.5rem; display: inline-block; }
+        p { margin-bottom: 1rem; font-size: 1.2em; line-height: 1.6; color: var(--text-muted); }
+        ul, ol { margin-left: 2rem; margin-bottom: 1.5rem; font-size: 1.2em; line-height: 1.6; color: var(--text-muted); }
+        li { margin-bottom: 0.5rem; }
+
+        .highlight { color: var(--accent); font-weight: 600; }
+        .success { color: var(--secondary); font-weight: 600; }
+
+        /* Custom Components */
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; flex: 1; }
+        
+        .box-info {
+            background: rgba(59, 130, 246, 0.1);
+            border-left: 5px solid var(--primary);
+            padding: 1.5rem;
+            border-radius: 0 8px 8px 0;
+            margin: 1rem 0;
+        }
+
+        .box-question {
+            background: rgba(245, 158, 11, 0.1);
+            border-left: 5px solid var(--accent);
+            padding: 1.5rem;
+            border-radius: 0 8px 8px 0;
+            margin: 1rem 0;
+        }
+
+        .image-placeholder {
+            border: 2px dashed var(--text-muted);
+            border-radius: 12px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: rgba(0,0,0,0.2);
+            color: var(--text-muted);
+            font-size: 1.2em;
+            width: 100%;
+            height: 100%;
+            min-height: 200px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+            font-size: 1.1em;
+        }
+        th, td { border: 1px solid #475569; padding: 12px; text-align: left; }
+        th { background-color: rgba(255,255,255,0.05); color: var(--primary); }
+
+        /* Infographic simple CSS */
+        .architecture-diagram {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 2rem;
+            padding: 2rem;
+            background: #0f172a;
+            border-radius: 12px;
+        }
+        .node {
+            background: var(--primary);
+            color: white;
+            padding: 1rem 2rem;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: bold;
+        }
+        .node.db { background: var(--secondary); }
+        .node.cache { background: var(--accent); }
+        .arrow { color: var(--text-muted); font-size: 2rem; }
+
+        /* Controls */
+        #controls {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 15px;
+            background: rgba(15, 23, 42, 0.8);
+            padding: 10px 20px;
+            border-radius: 30px;
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+        }
+
+        button {
+            background: none;
+            border: none;
+            color: var(--text-main);
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: color 0.2s, transform 0.1s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+        }
+
+        button:hover { color: var(--primary); background: rgba(255,255,255,0.1); }
+        button:active { transform: scale(0.9); }
+        
+        #slide-counter {
+            display: flex;
+            align-items: center;
+            font-size: 1.2rem;
+            font-weight: 600;
+            padding: 0 10px;
+        }
+
+        .slide-number {
+            position: absolute;
+            bottom: 20px;
+            right: 30px;
+            font-size: 1em;
+            color: var(--text-muted);
+        }
+    </style>
+</head>
+<body>
+
+<div id="presentation-container">
+    
+    <div class="slide active">
+        <div style="text-align: center; margin: auto;">
+            <p style="color: var(--accent); font-size: 1.5em; font-weight: bold;">ENGSE207 สถาปัตยกรรมซอฟต์แวร์ (Software Architecture)</p>
+            <h1 style="font-size: 3.5em; margin: 20px 0;">ทฤษฎีก่อนปฏิบัติ Term Project Week 6</h1>
+            <p style="font-size: 1.8em; color: white;">N-Tier Architecture, Caching Strategy & Load Balancing</p>
+            <br>
+            <p><strong>ผู้สอน:</strong> นายธนิต เกตุแก้ว</p>
+            <p><strong>ระดับชั้น:</strong> ปีที่ 2 วิศวกรรมซอฟต์แวร์</p>
+        </div>
+    </div>
+
+    <div class="slide">
+        <h2>🎯 วัตถุประสงค์ของการเรียนวันนี้</h2>
+        <div class="grid-2">
+            <div>
+                <p>ก่อนที่เราจะไปลุย Lab 3 ชั่วโมงเต็ม เราต้องเข้าใจ <strong>"ทำไม"</strong> ก่อนที่จะรู้ว่า <strong>"ทำอย่างไร"</strong></p>
+                <ul>
+                    <li>แยกความต่างระหว่าง <strong>Layer</strong> (Code) และ <strong>Tier</strong> (Server)</li>
+                    <li>เข้าใจโครงสร้าง <strong>4-Tier Architecture</strong> สำหรับ Project</li>
+                    <li>แก้ปัญหาคอขวด (Bottleneck) ด้วย <strong>Caching (Redis)</strong></li>
+                    <li>กระจายภาระงานด้วย <strong>Load Balancer (Nginx)</strong></li>
+                </ul>
+            </div>
+            <div class="box-question">
+                <h3>❓ คำถามชวนคิด</h3>
+                <p>ทำไมระบบอย่าง Shopee หรือ Netflix ถึงไม่ล่มง่ายๆ เวลาจัดโปรโมชั่น 11.11? พวกเขาใช้เวทมนตร์อะไร หรือแค่สถาปัตยกรรมที่ดี?</p>
+            </div>
+        </div>
+        <div class="slide-number">2</div>
+    </div>
+
+    <div class="slide">
+        <div style="text-align: center; margin: auto;">
+            <h1 style="font-size: 4em; color: var(--secondary);">Part 1</h1>
+            <p style="font-size: 2em; color: white;">N-Tier Architecture</p>
+            <p>จาก Layer (Logical) สู่ Tier (Physical)</p>
+        </div>
+        <div class="slide-number">3</div>
+    </div>
+
+    <div class="slide">
+        <h2>🏗️ Layer vs Tier ต่างกันอย่างไร?</h2>
+        <div class="grid-2">
+            <div>
+                <h3 style="color: var(--accent);">Layer = Logical (มองไม่เห็นจับต้องไม่ได้)</h3>
+                <p>การจัดระเบียบ <strong>Code</strong> ภายในโปรเจกต์เดียวกัน</p>
+                <ul>
+                    <li>เช่น MVC (Model-View-Controller)</li>
+                    <li>อยู่ใน Server เครื่องเดียวกันหมด (Monolith)</li>
+                    <li>เน้นเรื่อง Separation of Concerns (SoC)</li>
+                </ul>
+            </div>
+            <div>
+                <h3 style="color: var(--secondary);">Tier = Physical (ทางกายภาพ)</h3>
+                <p>การแยก <strong>Deployment / Server</strong> ออกจากกัน</p>
+                <ul>
+                    <li>แยก Frontend Server, Backend Server, Database Server</li>
+                    <li>สื่อสารกันผ่าน Network (HTTP, TCP)</li>
+                    <li>เน้นเรื่อง Scalability & Security</li>
+                </ul>
+            </div>
+        </div>
+        <div class="slide-number">4</div>
+    </div>
+
+    <div class="slide">
+        <h2>ภาพรวม: เปลี่ยนจาก Layer เป็น Tier</h2>
+        <p>เพื่อให้นักศึกษาเห็นภาพชัดเจน การแยก Tier คือการนำเส้น Network มาคั่นระหว่าง Layer</p>
+        <div style="height: 60%; margin-top: 2rem;">
+            <div class="image-placeholder">
+                <i class="fas fa-image" style="font-size: 3rem; margin-right: 15px;"></i>
+                [แทรกรูปภาพ: Layer vs Tier Diagram จากเอกสาร]
+            </div>
+        </div>
+        <div class="slide-number">5</div>
+    </div>
+
+    <div class="slide">
+        <h2>🛠️ 4-Tier Architecture ใน Lab สัปดาห์นี้</h2>
+        <p>เรากำลังจะสร้างระบบจำลองที่รองรับผู้ใช้จำนวนมาก โดยแยกเป็น 4 ส่วนหลัก:</p>
+        
+        <div class="architecture-diagram">
+            <div class="node" style="background: #e2e8f0; color: #0f172a;">1. Client<br>(Browser/Postman)</div>
+            <i class="fas fa-arrow-right arrow"></i>
+            <div class="node">2. Nginx<br>(Load Balancer)</div>
+            <i class="fas fa-arrow-right arrow"></i>
+            <div class="node">3. Node.js App<br>(x3 Instances)</div>
+            <i class="fas fa-arrow-right arrow"></i>
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+                <div class="node cache">4a. Redis<br>(Cache)</div>
+                <div class="node db">4b. PostgreSQL<br>(Database)</div>
+            </div>
+        </div>
+        
+        <div class="box-info" style="margin-top: 2rem;">
+            <strong>💡 ข้อสังเกต:</strong> Docker Container ช่วยให้เราสร้าง "Tier" หรือ "Server จำลอง" หลายๆ เครื่องในคอมพิวเตอร์ของเราเครื่องเดียวได้อย่างง่ายดาย
+        </div>
+        <div class="slide-number">6</div>
+    </div>
+
+    <div class="slide">
+        <div style="text-align: center; margin: auto;">
+            <h1 style="font-size: 4em; color: var(--accent);">Part 2</h1>
+            <p style="font-size: 2em; color: white;">Caching Strategy</p>
+            <p>ทำไมต้อง Cache? และ Pattern ที่ได้รับความนิยม</p>
+        </div>
+        <div class="slide-number">7</div>
+    </div>
+
+    <div class="slide">
+        <h2>⚡ ทำไมต้องมี Caching?</h2>
+        <div class="grid-2">
+            <div>
+                <p>Database (เช่น PostgreSQL/MySQL) เก็บข้อมูลลง <strong>Harddisk (SSD)</strong> ซึ่งมีความเร็วระดับหนึ่ง แต่มักจะกลายเป็น <strong>คอขวด (Bottleneck)</strong> เมื่อมีคน Query ข้อมูลเดิมซ้ำๆ พร้อมกันหลักหมื่นคน</p>
+                <p><strong>ทางแก้:</strong> นำข้อมูลที่ถูกถามบ่อยๆ มาเก็บไว้ใน <strong>RAM</strong> ซึ่งอ่านเร็วกว่า Harddisk เป็นพันเท่า!</p>
+            </div>
+            <div class="box-question">
+                <h3>💡 Analogy (เปรียบเทียบ)</h3>
+                <p>เหมือนการท่องสูตรคูณ</p>
+                <ul>
+                    <li><strong>ไม่ใช้ Cache:</strong> ต้องหยิบสมุดมาเปิดดูทุกครั้ง (อ่านจาก Database)</li>
+                    <li><strong>ใช้ Cache:</strong> จำไว้ในหัว ถามปุ๊บตอบปั๊บ (อ่านจาก RAM / Redis)</li>
+                </ul>
+            </div>
+        </div>
+        <div class="slide-number">8</div>
+    </div>
+
+    <div class="slide">
+        <h2>🚀 รู้จักกับ Redis (REmote DIctionary Server)</h2>
+        <div class="grid-2">
+            <div>
+                <ul>
+                    <li>เป็น In-Memory Data Structure Store</li>
+                    <li>เก็บข้อมูลในรูปแบบ <strong>Key-Value</strong></li>
+                    <li>ทำงานบน RAM ทั้งหมด (ไวมาก)</li>
+                    <li>มักใช้ทำ Caching, Session Management, Message Broker</li>
+                </ul>
+            </div>
+            <div style="display: flex; justify-content: center; align-items: center;">
+                 <div class="image-placeholder">
+                    <i class="fas fa-database" style="font-size: 3rem; margin-right: 15px;"></i>
+                    [แทรกรูปโลโก้ Redis หรือการทำงานของ RAM vs Disk]
+                </div>
+            </div>
+        </div>
+        <div class="slide-number">9</div>
+    </div>
+
+    <div class="slide">
+        <h2>📖 Cache-Aside Pattern (จังหวะอ่านข้อมูล)</h2>
+        <p>เป็น Pattern ที่นิยมที่สุด ตัว Application จะเป็นคนควบคุมตรรกะทั้งหมด</p>
+        <ol>
+            <li>แอปพลิเคชันรับ Request</li>
+            <li><strong>ตรวจสอบ Cache ก่อน:</strong> มีข้อมูลไหม?
+                <ul>
+                    <li><span class="success">มี (Cache Hit):</span> ส่งข้อมูลกลับให้ User เลย (จบกระบวนการ ไวมาก)</li>
+                    <li><span class="danger">ไม่มี (Cache Miss):</span> ไปต่อข้อ 3</li>
+                </ul>
+            </li>
+            <li><strong>Query Database:</strong> ดึงข้อมูลจากฐานข้อมูลหลัก</li>
+            <li><strong>Save to Cache:</strong> นำข้อมูลที่ได้ไปแปะไว้ใน Cache สำหรับคนต่อไป</li>
+            <li>ส่งข้อมูลกลับให้ User</li>
+        </ol>
+        <div class="slide-number">10</div>
+    </div>
+
+    <div class="slide">
+        <h2>Flowchart: Cache-Aside Pattern</h2>
+        <p>การไหลของข้อมูลเมื่อใช้ระบบ Cache</p>
+        <div style="height: 60%; margin-top: 1rem;">
+            <div class="image-placeholder">
+                <i class="fas fa-project-diagram" style="font-size: 3rem; margin-right: 15px;"></i>
+                [แทรกรูปภาพ: Cache-Aside Flowchart]
+            </div>
+        </div>
+        <div class="slide-number">11</div>
+    </div>
+
+    <div class="slide">
+        <h2>⚠️ ปัญหาโลกแตกของ Cache: ข้อมูลไม่ตรงกัน!</h2>
+        <p>ถ้าแก้ไขข้อมูลใน Database แต่ลืมแก้ใน Cache ผู้ใช้จะเห็นข้อมูลเก่า (Stale Data)</p>
+        <div class="grid-2" style="margin-top: 2rem;">
+            <div class="box-info">
+                <h3>1. Cache Invalidation (การล้างแคช)</h3>
+                <p>ทุกครั้งที่มีการ <strong>Write/Update/Delete</strong> ลง Database แอปพลิเคชันต้องสั่งลบ (Delete Key) ข้อมูลนั้นออกจาก Redis ด้วย เพื่อบังคับให้รอบถัดไปเกิด Cache Miss</p>
+            </div>
+            <div class="box-info" style="border-left-color: var(--secondary); background: rgba(16, 185, 129, 0.1);">
+                <h3>2. TTL (Time-To-Live)</h3>
+                <p>ตั้งเวลาหมดอายุให้ Cache อัตโนมัติ (เช่น 60 วินาที) เป็นตาข่ายรองรับความปลอดภัย หากลืม Invalidate ข้อมูลก็จะไม่อัปเดตเกิน 60 วินาที</p>
+            </div>
+        </div>
+        <div class="slide-number">12</div>
+    </div>
+
+    <div class="slide">
+        <div style="text-align: center; margin: auto;">
+            <h1 style="font-size: 4em; color: var(--primary);">Part 3</h1>
+            <p style="font-size: 2em; color: white;">Load Balancing</p>
+            <p>การกระจายโหลดและ Horizontal Scaling</p>
+        </div>
+        <div class="slide-number">13</div>
+    </div>
+
+    <div class="slide">
+        <h2>⚖️ Scaling: ทำอย่างไรเมื่อรับโหลดไม่ไหว?</h2>
+        <div class="grid-2">
+            <div>
+                <h3 style="color: var(--accent);">Vertical Scaling (Scale Up)</h3>
+                <p>อัปเกรดเครื่องเดิมให้แรงขึ้น (เพิ่ม CPU, RAM)</p>
+                <ul>
+                    <li>✅ ทำง่าย ไม่ต้องแก้ Code</li>
+                    <li>❌ มีขีดจำกัด (Hardware ตัน)</li>
+                    <li>❌ แพง และเกิด Single Point of Failure</li>
+                </ul>
+            </div>
+            <div>
+                <h3 style="color: var(--secondary);">Horizontal Scaling (Scale Out)</h3>
+                <p>เพิ่มจำนวนเครื่อง Server ให้ทำงานช่วยกัน</p>
+                <ul>
+                    <li>✅ ขยายได้ไม่จำกัด</li>
+                    <li>✅ มี High Availability (เครื่องนึงพัง เครื่องอื่นทำแทน)</li>
+                    <li>❌ <span class="highlight">ระบบซับซ้อนขึ้น ต้องมี Load Balancer</span></li>
+                </ul>
+            </div>
+        </div>
+        <div class="slide-number">14</div>
+    </div>
+
+    <div class="slide">
+        <h2>🚦 Load Balancer คืออะไร?</h2>
+        <p>คือ <strong>"จราจร"</strong> ที่ยืนอยู่หน้าระบบ ทำหน้าที่รับ Request จากผู้ใช้ และตัดสินใจว่าจะส่ง Request นั้นไปให้ Server ตัวไหน (App 1, App 2 หรือ App 3) เพื่อให้งานเฉลี่ยเท่าๆ กัน</p>
+        
+        <div class="box-question" style="margin-top: 2rem;">
+            <h3>🛠️ Nginx (เอ็นจินเอ็กซ์)</h3>
+            <p>ใน Lab สัปดาห์นี้ เราจะใช้ Nginx ทำหน้าที่เป็นทั้ง Reverse Proxy และ Load Balancer คอยแจกจ่ายงานให้ Node.js Container ทั้ง 3 ตัว</p>
+        </div>
+        <div class="slide-number">15</div>
+    </div>
+
+    <div class="slide">
+        <h2>🔄 Algorithm การกระจายโหลด</h2>
+        <p>Load Balancer มีวิธีการเลือก Server หลายแบบ ที่นิยมใช้คือ:</p>
+        <table>
+            <tr>
+                <th>Algorithm</th>
+                <th>หลักการทำงาน</th>
+                <th>เหมาะสำหรับ</th>
+            </tr>
+            <tr>
+                <td class="highlight">Round-Robin (ใช้ใน Lab)</td>
+                <td>วนส่งไปทีละเครื่องตามลำดับ (1 -> 2 -> 3 -> 1...)</td>
+                <td>Server ทุกเครื่องมีสเปคเท่ากัน</td>
+            </tr>
+            <tr>
+                <td>Least Connections</td>
+                <td>ส่งไปเครื่องที่กำลังรับงานน้อยที่สุด</td>
+                <td>งานแต่ละ Request ใช้เวลาประมวลผลไม่เท่ากัน</td>
+            </tr>
+            <tr>
+                <td>IP Hash</td>
+                <td>จำ IP ผู้ใช้ แล้วส่งไปเครื่องเดิมเสมอ</td>
+                <td>ระบบที่ต้องการ Session Sticky (ห้ามเปลี่ยนเครื่อง)</td>
+            </tr>
+        </table>
+        <div class="slide-number">16</div>
+    </div>
+    
+    <div class="slide">
+        <h2>ภาพรวม: การทำงานของ Load Balancer</h2>
+        <div style="height: 60%; margin-top: 1rem;">
+            <div class="image-placeholder">
+                <i class="fas fa-network-wired" style="font-size: 3rem; margin-right: 15px;"></i>
+                [แทรกรูปภาพ: Load Balancing & Health Check Diagram]
+            </div>
+        </div>
+        <div class="slide-number">17</div>
+    </div>
+
+    <div class="slide">
+        <h2>🩺 Health Checks (ตรวจสุขภาพ Server)</h2>
+        <div class="grid-2">
+            <div>
+                <p>ถ้า Server ตัวที่ 2 ล่ม (Crash) ไป Load Balancer จะรู้ได้อย่างไร?</p>
+                <p><strong>คำตอบ:</strong> Load Balancer จะทำการ PING หรือส่ง HTTP Request ไปถาม Server เป็นระยะๆ เรียกว่า <strong>Health Check</strong></p>
+                <ul>
+                    <li>ถ้าตอบ 200 OK -> ส่งงานให้ปกติ</li>
+                    <li>ถ้า Time out / 500 -> <span class="danger">ตัดออกจากระบบชั่วคราว</span> ไม่ส่ง User ไปหา</li>
+                </ul>
+            </div>
+            <div class="box-info">
+                <h3>💡 ข้อคิด (SE Concept)</h3>
+                <p>นี่คือหลักการของ <strong>Fault Tolerance</strong> (ความทนทานต่อความบกพร่อง) ระบบที่ดีย่อมไม่ล่มทั้งระบบเพียงเพราะ Component เดียวพัง</p>
+            </div>
+        </div>
+        <div class="slide-number">18</div>
+    </div>
+
+    <div class="slide">
+        <div style="text-align: center; margin: auto;">
+            <h1 style="font-size: 4em; color: var(--secondary);">Part 4</h1>
+            <p style="font-size: 2em; color: white;">Quality Attributes & Trade-offs Analysis</p>
+            <p>โลกของการออกแบบซอฟต์แวร์ ไม่มีทางออกที่สมบูรณ์แบบ มีแต่การแลกเปลี่ยน</p>
+        </div>
+        <div class="slide-number">19</div>
+    </div>
+
+    <div class="slide">
+        <h2>⚖️ สิ่งที่ได้มา แลกกับ สิ่งที่เสียไป (Trade-offs)</h2>
+        <div class="grid-2">
+            <div>
+                <h3 style="color: var(--secondary);">✅ สิ่งที่ได้เพิ่ม (Benefits)</h3>
+                <ul>
+                    <li><strong>Performance:</strong> เร็วขึ้นด้วย Cache (ลดเวลา Query)</li>
+                    <li><strong>Scalability:</strong> รองรับคนได้มากขึ้นด้วย Horizontal Scaling</li>
+                    <li><strong>Availability:</strong> ระบบเสถียรขึ้น ล่มยากขึ้นด้วย Load Balancer & Health Check</li>
+                </ul>
+            </div>
+            <div>
+                <h3 style="color: var(--danger);">❌ สิ่งที่เสียไป (Costs)</h3>
+                <ul>
+                    <li><strong>Simplicity:</strong> ระบบซับซ้อนขึ้นอย่างมาก (มีหลาย Container, config เพิ่ม)</li>
+                    <li><strong>Consistency:</strong> ความท้าทายเรื่อง Cache Invalidation (ข้อมูลเก่า/ใหม่)</li>
+                    <li><strong>Maintenance:</strong> Debug ยากขึ้น (Log กระจายอยู่หลายเครื่อง)</li>
+                </ul>
+            </div>
+        </div>
+        <div class="slide-number">20</div>
+    </div>
+
+    <div class="slide">
+        <h2>📋 สรุป Checklist ก่อนลงมือทำ Lab</h2>
+        <p>นักศึกษาเข้าใจหัวข้อเหล่านี้แล้วหรือยัง?</p>
+        <div style="background: rgba(255,255,255,0.05); padding: 1.5rem; border-radius: 8px;">
+            <p>✅ Layer = แยก Code / Tier = แยก Server (Physical Deployment)</p>
+            <p>✅ 4-Tier ใน Lab: Nginx → App ×3 → Redis + PostgreSQL</p>
+            <p>✅ Cache-Aside: ตรวจ Cache → ถ้าไม่มี (MISS) ไปหา DB → เก็บลง Cache</p>
+            <p>✅ Invalidation: เมื่อแก้ข้อมูล (Write) ต้องลบ Cache ทิ้งด้วย</p>
+            <p>✅ TTL: ตั้งเวลาให้ Cache หมดอายุอัตโนมัติ</p>
+            <p>✅ Round-Robin: Nginx ส่ง Request วนไปทีละ Server ตามลำดับ</p>
+            <p>✅ Health Check: ตรวจสอบว่า Server รอดไหม ก่อนส่ง Request ไปหา</p>
+        </div>
+        <div class="slide-number">21</div>
+    </div>
+
+    <div class="slide">
+        <h2>🗺️ แผนผัง Lab ที่จะทำต่อ (3 ชั่วโมง)</h2>
+        <div style="font-family: monospace; background: #000; padding: 2rem; border-radius: 12px; font-size: 1.2em; color: var(--secondary); margin-top: 1rem;">
+            <p style="color: white; margin-bottom: 10px;">> execution_plan_week6.sh</p>
+            <p>Part 1: สร้างโครงสร้าง Folder & .env (15 นาที)</p>
+            <p>Part 2: Coding Backend + เชื่อม Redis Cache (60 นาที)</p>
+            <p>Part 3: Config Nginx Load Balancer (30 นาที)</p>
+            <p>Part 4: เขียน docker-compose.yml และรันคำสั่ง <span style="color: var(--accent);">--scale app=3</span> (30 นาที)</p>
+            <p>Part 5: Testing (Load Test & Cache Hit/Miss) (45 นาที)</p>
+        </div>
+        <div class="slide-number">22</div>
+    </div>
+    
+    <div class="slide">
+        <div style="text-align: center; margin: auto;">
+            <h1 style="font-size: 5em; color: var(--primary);"><i class="fas fa-comments"></i></h1>
+            <h1 style="font-size: 3em; margin: 10px 0;">Q & A</h1>
+            <p style="font-size: 1.5em; color: var(--text-muted);">มีคำถามข้อสงสัยก่อนเริ่ม Lab หรือไม่?</p>
+            <br>
+            <p class="highlight" style="font-size: 1.2em;">เตรียมเปิด Docker Desktop และ VS Code ให้พร้อม!</p>
+        </div>
+        <div class="slide-number">23</div>
+    </div>
+    
+    <div class="slide">
+        <div style="text-align: center; margin: auto;">
+            <h1 style="font-size: 4em; color: var(--secondary);">Thank You</h1>
+            <p style="font-size: 2em; color: white;">ENGSE207 สถาปัตยกรรมซอฟต์แวร์</p>
+            <p>Let's Code! 🚀</p>
+        </div>
+        <div class="slide-number">24</div>
+    </div>
+
+    <div id="controls">
+        <button id="btn-fs" title="Full Screen"><i class="fas fa-expand"></i></button>
+        <button id="btn-font-minus" title="Decrease Font"><i class="fas fa-font"></i><i class="fas fa-minus" style="font-size: 0.5em;"></i></button>
+        <button id="btn-font-plus" title="Increase Font"><i class="fas fa-font"></i><i class="fas fa-plus" style="font-size: 0.5em;"></i></button>
+        <div style="width: 1px; background: rgba(255,255,255,0.2); margin: 0 5px;"></div>
+        <button id="btn-prev" title="Previous Slide"><i class="fas fa-chevron-left"></i></button>
+        <span id="slide-counter">1 / 24</span>
+        <button id="btn-next" title="Next Slide"><i class="fas fa-chevron-right"></i></button>
+    </div>
+
+</div>
+
+<script>
+    const slides = document.querySelectorAll('.slide');
+    const btnNext = document.getElementById('btn-next');
+    const btnPrev = document.getElementById('btn-prev');
+    const btnFs = document.getElementById('btn-fs');
+    const btnFontPlus = document.getElementById('btn-font-plus');
+    const btnFontMinus = document.getElementById('btn-font-minus');
+    const slideCounter = document.getElementById('slide-counter');
+    
+    let currentSlide = 0;
+    let currentFontSize = 18; // base font size
+
+    function updateSlides() {
+        slides.forEach((slide, index) => {
+            slide.classList.remove('active');
+            if (index === currentSlide) {
+                slide.classList.add('active');
+            }
+        });
+        slideCounter.textContent = `${currentSlide + 1} / ${slides.length}`;
+    }
+
+    // Navigation
+    btnNext.addEventListener('click', () => {
+        if (currentSlide < slides.length - 1) currentSlide++;
+        updateSlides();
+    });
+
+    btnPrev.addEventListener('click', () => {
+        if (currentSlide > 0) currentSlide--;
+        updateSlides();
+    });
+
+    // Keyboard Navigation
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowRight' || e.key === 'Space') {
+            if (currentSlide < slides.length - 1) currentSlide++;
+            updateSlides();
+        } else if (e.key === 'ArrowLeft') {
+            if (currentSlide > 0) currentSlide--;
+            updateSlides();
+        }
+    });
+
+    // Full Screen
+    btnFs.addEventListener('click', () => {
+        if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen().catch(err => {
+                alert(`Error attempting to enable fullscreen: ${err.message}`);
+            });
+            btnFs.innerHTML = '<i class="fas fa-compress"></i>';
+        } else {
+            document.exitFullscreen();
+            btnFs.innerHTML = '<i class="fas fa-expand"></i>';
+        }
+    });
+
+    // Font Size Adjustment
+    btnFontPlus.addEventListener('click', () => {
+        if (currentFontSize < 28) {
+            currentFontSize += 2;
+            document.documentElement.style.setProperty('--base-font-size', `${currentFontSize}px`);
+        }
+    });
+
+    btnFontMinus.addEventListener('click', () => {
+        if (currentFontSize > 12) {
+            currentFontSize -= 2;
+            document.documentElement.style.setProperty('--base-font-size', `${currentFontSize}px`);
+        }
+    });
+
+    // Initialize
+    updateSlides();
+</script>
+
+</body>
+</html>
