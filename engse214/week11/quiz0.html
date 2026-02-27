@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Privacy, PDPA & Ethics Exam</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        body {
+            font-family: 'Prompt', sans-serif;
+            background-color: #0f172a;
+            color: #f8fafc;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 1.5rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+        .option-label {
+            transition: all 0.2s;
+        }
+        .option-label:hover {
+            background-color: rgba(59, 130, 246, 0.1);
+            border-color: #3b82f6;
+        }
+        input[type="radio"]:checked + .option-label {
+            background-color: rgba(59, 130, 246, 0.2);
+            border-color: #3b82f6;
+            color: #60a5fa;
+        }
+        .hidden-screen { display: none !important; }
+    </style>
+</head>
+<body class="p-4">
+
+    <div id="login-screen" class="glass-panel w-full max-w-lg p-8 transform transition-all">
+        <div class="text-center mb-8">
+            <i class="fas fa-user-shield text-5xl text-blue-500 mb-4"></i>
+            <h1 class="text-3xl font-bold mb-2 text-white">แบบทดสอบ Week 11</h1>
+            <p class="text-gray-400">Privacy, PDPA & Ethics</p>
+        </div>
+        <div class="space-y-6">
+            <div>
+                <label class="block text-sm font-medium text-gray-300 mb-2">รหัสนักศึกษา</label>
+                <input type="text" id="student-id" placeholder="กรอกรหัสนักศึกษา 13 หลัก" class="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-300 mb-2">ชื่อ - นามสกุล</label>
+                <input type="text" id="student-name" placeholder="นาย/นางสาว..." class="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition">
+            </div>
+            <button onclick="startQuiz()" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-4 rounded-lg transition shadow-lg shadow-blue-500/30 mt-4 flex justify-center items-center gap-2">
+                <i class="fas fa-play"></i> เริ่มทำข้อสอบ
+            </button>
+            <p id="login-error" class="text-red-400 text-sm text-center hidden">กรุณากรอกข้อมูลให้ครบถ้วน</p>
+        </div>
+    </div>
+
+    <div id="quiz-screen" class="glass-panel w-full max-w-3xl p-8 hidden-screen">
+        <div class="flex justify-between items-center mb-6 pb-4 border-b border-slate-700">
+            <div class="text-sm text-gray-400">
+                ผู้เข้าสอบ: <span id="display-name" class="font-bold text-white"></span>
+            </div>
+            <div class="bg-blue-900/50 text-blue-300 px-4 py-1 rounded-full text-sm font-bold border border-blue-500/30">
+                ข้อที่ <span id="current-q">1</span> / 20
+            </div>
+        </div>
+
+        <div class="mb-8">
+            <h2 id="question-text" class="text-2xl font-medium leading-relaxed text-white"></h2>
+        </div>
+
+        <div id="options-container" class="space-y-4 mb-8">
+            </div>
+
+        <div class="flex justify-end">
+            <button onclick="nextQuestion()" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-6 rounded-lg transition shadow-lg flex items-center gap-2">
+                ถัดไป <i class="fas fa-arrow-right"></i>
+            </button>
+        </div>
+    </div>
+
+    <div id="result-screen" class="glass-panel w-full max-w-lg p-8 hidden-screen text-center relative">
+        <div id="capture-area" class="bg-slate-900 p-8 rounded-xl border border-slate-700 mb-6 relative overflow-hidden">
+            <div class="absolute inset-0 flex items-center justify-center opacity-5 pointer-events-none">
+                <i class="fas fa-shield-alt text-[15rem]"></i>
+            </div>
+            
+            <h2 class="text-2xl font-bold mb-6 text-white border-b border-slate-700 pb-4">ผลการทดสอบ Week 11</h2>
+            
+            <div class="text-left space-y-3 mb-8">
+                <p class="text-gray-400">รหัสนักศึกษา: <span id="res-id" class="text-white font-bold"></span></p>
+                <p class="text-gray-400">ชื่อ-สกุล: <span id="res-name" class="text-white font-bold"></span></p>
+                <p class="text-gray-400">เวลาที่ส่ง: <span id="res-time" class="text-white font-bold"></span></p>
+            </div>
+
+            <div class="mb-4">
+                <p class="text-sm text-gray-400 mb-2">คะแนนของคุณ</p>
+                <div class="text-6xl font-black" id="score-text"></div>
+                <p class="text-gray-400 mt-2">จาก 20 คะแนน (เกณฑ์ผ่าน 15 คะแนน)</p>
+            </div>
+
+            <div id="status-badge" class="mt-6 inline-block px-6 py-2 rounded-full font-bold text-lg"></div>
+        </div>
+
+        <div id="result-controls" class="flex flex-col gap-3">
+            </div>
+    </div>
+
+    <script>
+        // --- Quiz Data ---
+        const allQuestions = [
+            {
+                q: "ความแตกต่างหลักระหว่าง Security และ Privacy คืออะไร?",
+                opts: [
+                    "Security ปกป้องสิทธิ์ของบุคคล ส่วน Privacy ปกป้องระบบ",
+                    "Security ปกป้องระบบจากการบุกรุก ส่วน Privacy คือการคุ้มครองสิทธิการควบคุมข้อมูลของเจ้าของ",
+                    "ทั้งสองมีความหมายเหมือนกันทุกประการ",
+                    "Security ใช้กับฮาร์ดแวร์ ส่วน Privacy ใช้กับซอฟต์แวร์"
+                ],
+                ans: 1
+            },
+            {
+                q: "สถานการณ์ใดคือตัวอย่างของระบบที่มี 'Security ดี แต่ Privacy แย่'?",
+                opts: [
+                    "ฐานข้อมูลไม่ใส่รหัสผ่าน ทำให้แฮกเกอร์เข้ามาขโมยข้อมูลผู้ใช้ได้ง่าย",
+                    "มี Privacy Policy ที่ชัดเจน แต่ระบบล่มบ่อย",
+                    "ฐานข้อมูลเข้ารหัสอย่างแน่นหนา แต่บริษัทนำข้อมูลพฤติกรรมผู้ใช้ไปขายให้ผู้โฆษณาโดยไม่แจ้ง",
+                    "ระบบมีช่องโหว่ SQL Injection แต่ไม่ได้เก็บข้อมูลส่วนตัวใดๆ"
+                ],
+                ans: 2
+            },
+            {
+                q: "ตามหลักการ CIA Triad ความเป็นส่วนตัว (Privacy) ถือเป็นส่วนขยายของมิติใด?",
+                opts: ["Confidentiality (ความลับ)", "Integrity (ความถูกต้อง)", "Availability (ความพร้อมใช้)", "Non-repudiation (การห้ามปฏิเสธความรับผิด)"],
+                ans: 0
+            },
+            {
+                q: "ความเข้าใจผิดของนักพัฒนาเกี่ยวกับการเขียน 'Privacy Policy ยาว 10 หน้า แล้วซ่อนเงื่อนไขไว้' ขัดกับหลักการใด?",
+                opts: ["Data Minimization", "Informed Consent (ความยินยอมที่ได้รับแจ้งอย่างชัดเจน)", "Data Portability", "Right to be Forgotten"],
+                ans: 1
+            },
+            {
+                q: "ใครคือ 'เจ้าของข้อมูลส่วนบุคคล' (Data Subject) ที่แท้จริงตามกฎหมาย PDPA?",
+                opts: ["บริษัทผู้พัฒนาแอปพลิเคชัน", "ผู้ให้บริการ Cloud (เช่น AWS)", "ผู้ใช้งาน (User) ที่ข้อมูลนั้นอ้างอิงถึง", "โปรแกรมเมอร์ผู้ดูแลฐานข้อมูล"],
+                ans: 2
+            },
+            {
+                q: "หน้าที่หลักของ Data Controller (ผู้ควบคุมข้อมูล) คืออะไร?",
+                opts: ["ตัดสินใจเกี่ยวกับวัตถุประสงค์และวิธีการประมวลผลข้อมูล", "ประมวลผลข้อมูลตามคำสั่งของผู้ให้บริการเซิร์ฟเวอร์เท่านั้น", "ปกป้องข้อมูลไม่ให้แฮกเกอร์เจาะระบบเท่านั้น", "เขียนโค้ดและจัดการ Database โครงสร้างพื้นฐาน"],
+                ans: 0
+            },
+            {
+                q: "หากบริษัท A ใช้บริการ Cloud ของ AWS เพื่อเก็บข้อมูลลูกค้า AWS มีสถานะเป็นอะไรตาม PDPA?",
+                opts: ["Data Subject", "Data Controller", "Data Processor", "Data Protection Officer (DPO)"],
+                ans: 2
+            },
+            {
+                q: "ข้อใดเป็นโทษทางอาญาที่สูงสุดตาม พ.ร.บ. คุ้มครองข้อมูลส่วนบุคคล (PDPA)?",
+                opts: ["ปรับ 5 ล้านบาท", "จำคุกไม่เกิน 1 ปี", "จำคุกไม่เกิน 5 ปี", "ไม่มีโทษทางอาญา มีแต่โทษปรับ"],
+                ans: 1
+            },
+            {
+                q: "หากเกิดข้อมูลรั่วไหล (Data Breach) ผู้ควบคุมข้อมูลต้องแจ้งเหตุแก่คณะกรรมการภายในเวลากี่ชั่วโมง?",
+                opts: ["24 ชั่วโมง", "48 ชั่วโมง", "72 ชั่วโมง", "7 วัน"],
+                ans: 2
+            },
+            {
+                q: "ข้อใดต่อไปนี้จัดเป็น 'ข้อมูลส่วนบุคคลอ่อนไหว' (Sensitive Data) ที่กฎหมายคุ้มครองเข้มงวดเป็นพิเศษ?",
+                opts: ["ชื่อ-นามสกุล", "เบอร์โทรศัพท์", "ที่อยู่ไปรษณีย์", "ข้อมูลชีวมิติ (Biometrics) เช่น ลายนิ้วมือ"],
+                ans: 3
+            },
+            {
+                q: "ข้อใดคือความแตกต่างที่สำคัญระหว่าง PDPA ของไทย และ GDPR ของยุโรป?",
+                opts: ["GDPR ไม่มีโทษทางอาญา (จำคุก) แต่เน้นโทษปรับที่สูงมาก", "GDPR ไม่คุ้มครองข้อมูลอ่อนไหว", "PDPA ค่าปรับแพงกว่า GDPR", "PDPA ไม่บังคับใช้กับวิศวกรซอฟต์แวร์"],
+                ans: 0
+            },
+            {
+                q: "หากคุณพัฒนาแอปพลิเคชันในไทย แต่มีผู้ใช้งานเป็นชาวยุโรป (EU) อาศัยอยู่ในยุโรป คุณต้องปฏิบัติตามกฎหมายใด?",
+                opts: ["PDPA เท่านั้น เพราะเซิร์ฟเวอร์อยู่ไทย", "GDPR เท่านั้น", "ต้องปฏิบัติตามทั้ง PDPA และ GDPR", "ไม่ต้องปฏิบัติตามกฎหมายใดเลย"],
+                ans: 2
+            },
+            {
+                q: "แนวคิด 'Privacy by Design' หมายถึงอะไร?",
+                opts: ["การออกแบบ UI ให้มีสีสันทึบแสง", "การออกแบบระบบให้มีความเป็นส่วนตัวตั้งแต่ขั้นตอนเริ่มต้นของสถาปัตยกรรม", "การแปะเอกสาร Privacy Policy ไว้ในหน้าแรกของเว็บ", "การบังคับให้ผู้ใช้ใส่รหัสผ่านยาว 16 ตัวอักษร"],
+                ans: 1
+            },
+            {
+                q: "การตั้งค่าให้แอปพลิเคชันแชร์ข้อมูลผู้ใช้น้อยที่สุดตั้งแต่เริ่มใช้งาน โดยที่ผู้ใช้ไม่ต้องไปตั้งค่าปิดเอง สอดคล้องกับหลักการใดของ Privacy by Design?",
+                opts: ["Proactive not Reactive", "Privacy as the Default Setting", "End-to-End Security", "Visibility and Transparency"],
+                ans: 1
+            },
+            {
+                q: "ในมุมมองของการเขียนโค้ด (SE Implementation) การทำ Data Minimization คืออะไร?",
+                opts: ["การย่อขนาดไฟล์รูปภาพของผู้ใช้", "การดึงหรือเก็บเฉพาะข้อมูลที่จำเป็นต่อการใช้งานฟีเจอร์นั้นจริงๆ", "การลบฐานข้อมูลทุกๆ 1 เดือน", "การเข้ารหัสข้อมูลทั้งหมดให้มีขนาดเล็กลง"],
+                ans: 1
+            },
+            {
+                q: "การซ่อนเบอร์โทรศัพท์บนหน้าจอ UI ให้แสดงผลเป็น 081-XXX-XXXX เรียกว่าเทคนิคอะไร?",
+                opts: ["Data Injection", "Data Masking", "Data Encryption", "Data Retention"],
+                ans: 1
+            },
+            {
+                q: "การตั้งเวลาลบข้อมูลประวัติผู้ใช้อัตโนมัติเมื่อหมดอายุหรือหมดความจำเป็น สอดคล้องกับเรื่องใดมากที่สุด?",
+                opts: ["Data Retention Policy", "Data Breach Notification", "Data Portability", "Right to Rectification"],
+                ans: 0
+            },
+            {
+                q: "ข้อมูลประเภทใดจัดเป็น 'ข้อมูลส่วนบุคคลที่สามารถระบุตัวตนทางอ้อม' (Indirect Identification)?",
+                opts: ["เลขประจำตัวประชาชน", "รูปถ่ายหน้าตรง", "IP Address และ Cookie ID", "อีเมลที่มีชื่อนามสกุลชัดเจน"],
+                ans: 2
+            },
+            {
+                q: "ตามจรรยาบรรณวิชาชีพ ACM Code of Ethics ข้อ 1.2 'Avoid harm' ในบริบทของ Privacy ให้ความสำคัญกับเรื่องใด?",
+                opts: ["การละเมิดความเป็นส่วนตัวสามารถนำไปสู่ความเสียหายทั้งทรัพย์สิน จิตใจ และชื่อเสียงในชีวิตจริง", "ระบบล่มบ่อยทำให้เกิดความเสียหายทางธุรกิจ", "การเขียนโค้ดที่ไม่มีคอมเมนต์ทำให้โปรแกรมเมอร์คนอื่นทำงานยาก", "ซอฟต์แวร์ต้องใช้ทรัพยากรเครื่องน้อยที่สุด"],
+                ans: 0
+            },
+            {
+                q: "หากเจ้านายสั่งให้แอบฝังโค้ดดึง Contact List ผู้ใช้โดยไม่บอกใน Privacy Policy คุณควรทำอย่างไรตามหลักจริยธรรม?",
+                opts: ["ทำตามสั่งทันทีเพราะเป็นลูกจ้าง", "ลาออกโดยไม่แจ้งให้ทราบล่วงหน้า", "แอบเขียนโค้ดให้ทำงานผิดพลาดเพื่อปกป้องผู้ใช้", "อธิบายความเสี่ยงด้านกฎหมาย (PDPA) และเสนอทางเลือกอื่นที่โปร่งใส"],
+                ans: 3
+            }
+        ];
+
+        // --- App State ---
+        let currentQuestions = [];
+        let currentIndex = 0;
+        let score = 0;
+        let studentData = { id: '', name: '' };
+
+        // --- Utilities ---
+        function shuffleArray(array) {
+            let shuffled = [...array];
+            for (let i = shuffled.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+            }
+            return shuffled;
+        }
+
+        function formatDate() {
+            const now = new Date();
+            return now.toLocaleString('th-TH');
+        }
+
+        // --- Core Functions ---
+        function startQuiz() {
+            const idInput = document.getElementById('student-id').value.trim();
+            const nameInput = document.getElementById('student-name').value.trim();
+            const errorMsg = document.getElementById('login-error');
+
+            if (!idInput || !nameInput) {
+                errorMsg.classList.remove('hidden');
+                return;
+            }
+
+            studentData = { id: idInput, name: nameInput };
+            document.getElementById('display-name').textContent = studentData.name;
+            
+            // Setup quiz
+            setupQuiz();
+            
+            // Switch screens
+            document.getElementById('login-screen').classList.add('hidden-screen');
+            document.getElementById('quiz-screen').classList.remove('hidden-screen');
+        }
+
+        function setupQuiz() {
+            score = 0;
+            currentIndex = 0;
+            // Shuffle questions and options
+            currentQuestions = shuffleArray(allQuestions).map(q => {
+                // To keep track of the correct answer when options are shuffled
+                let optsWithIndex = q.opts.map((opt, idx) => ({ text: opt, isCorrect: idx === q.ans }));
+                let shuffledOpts = shuffleArray(optsWithIndex);
+                return {
+                    q: q.q,
+                    opts: shuffledOpts
+                };
+            });
+            loadQuestion();
+        }
+
+        function loadQuestion() {
+            const qData = currentQuestions[currentIndex];
+            document.getElementById('current-q').textContent = currentIndex + 1;
+            document.getElementById('question-text').textContent = qData.q;
+            
+            const optionsContainer = document.getElementById('options-container');
+            optionsContainer.innerHTML = ''; // Clear old
+
+            qData.opts.forEach((opt, idx) => {
+                const div = document.createElement('div');
+                div.className = 'relative';
+                
+                div.innerHTML = `
+                    <input type="radio" name="answer" id="opt${idx}" value="${opt.isCorrect}" class="peer sr-only">
+                    <label for="opt${idx}" class="option-label block w-full p-4 border border-slate-600 rounded-lg cursor-pointer text-gray-300 hover:text-white bg-slate-800">
+                        ${opt.text}
+                    </label>
+                `;
+                optionsContainer.appendChild(div);
+            });
+        }
+
+        function nextQuestion() {
+            const selected = document.querySelector('input[name="answer"]:checked');
+            if (!selected) {
+                alert('กรุณาเลือกคำตอบก่อนไปข้อถัดไป');
+                return;
+            }
+
+            if (selected.value === "true") {
+                score++;
+            }
+
+            currentIndex++;
+
+            if (currentIndex < currentQuestions.length) {
+                loadQuestion();
+            } else {
+                showResult();
+            }
+        }
+
+        function showResult() {
+            document.getElementById('quiz-screen').classList.add('hidden-screen');
+            const resScreen = document.getElementById('result-screen');
+            resScreen.classList.remove('hidden-screen');
+
+            // Set data
+            document.getElementById('res-id').textContent = studentData.id;
+            document.getElementById('res-name').textContent = studentData.name;
+            document.getElementById('res-time').textContent = formatDate();
+            
+            const scoreText = document.getElementById('score-text');
+            scoreText.textContent = score;
+            
+            const badge = document.getElementById('status-badge');
+            const controls = document.getElementById('result-controls');
+
+            if (score >= 15) {
+                scoreText.className = "text-6xl font-black text-green-400";
+                badge.className = "mt-6 inline-block px-6 py-2 rounded-full font-bold text-lg bg-green-900/50 text-green-300 border border-green-500";
+                badge.innerHTML = "<i class='fas fa-check-circle'></i> ผ่านการทดสอบ";
+                
+                controls.innerHTML = `
+                    <button onclick="captureScreen()" class="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-3 px-4 rounded-lg transition shadow-lg shadow-green-500/30 flex justify-center items-center gap-2">
+                        <i class="fas fa-camera"></i> บันทึกภาพหน้าจอส่งอาจารย์
+                    </button>
+                `;
+            } else {
+                scoreText.className = "text-6xl font-black text-red-400";
+                badge.className = "mt-6 inline-block px-6 py-2 rounded-full font-bold text-lg bg-red-900/50 text-red-300 border border-red-500";
+                badge.innerHTML = "<i class='fas fa-times-circle'></i> ไม่ผ่านการทดสอบ (ต้องได้ 15 ขึ้นไป)";
+                
+                controls.innerHTML = `
+                    <p class="text-sm text-yellow-400 mb-2">ระบบจะทำการสุ่มข้อสอบใหม่ทั้งหมด</p>
+                    <button onclick="retryQuiz()" class="w-full bg-orange-600 hover:bg-orange-500 text-white font-bold py-3 px-4 rounded-lg transition shadow-lg shadow-orange-500/30 flex justify-center items-center gap-2">
+                        <i class="fas fa-redo"></i> ทำข้อสอบใหม่อีกครั้ง
+                    </button>
+                `;
+            }
+        }
+
+        function retryQuiz() {
+            document.getElementById('result-screen').classList.add('hidden-screen');
+            setupQuiz();
+            document.getElementById('quiz-screen').classList.remove('hidden-screen');
+        }
+
+        function captureScreen() {
+            const captureArea = document.getElementById('capture-area');
+            
+            html2canvas(captureArea, {
+                backgroundColor: "#0f172a", // Match background
+                scale: 2 // High resolution
+            }).then(canvas => {
+                // Create download link
+                const link = document.createElement('a');
+                link.download = `Exam_W11_${studentData.id}.png`;
+                link.href = canvas.toDataURL("image/png");
+                link.click();
+            });
+        }
+    </script>
+</body>
+</html>
