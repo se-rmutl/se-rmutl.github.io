@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ENGSE207 - Week 12: Security-Aware Software Architecture</title>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --slide-bg: #1e293b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent: #0ea5e9;
+            --accent-glow: rgba(14, 165, 233, 0.4);
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --success: #10b981;
+            --base-font-size: 24px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Kanit', sans-serif; }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+            font-size: var(--base-font-size);
+        }
+
+        /* Slide Container - 16:9 Aspect Ratio */
+        #deck-container {
+            position: relative;
+            width: 100vw;
+            max-width: 177.78vh; /* 16:9 aspect ratio */
+            height: 56.25vw;
+            max-height: 100vh;
+            background-color: var(--slide-bg);
+            box-shadow: 0 0 30px rgba(0,0,0,0.8);
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .slide {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            padding: 5% 8%;
+            display: flex;
+            flex-direction: column;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateX(50px);
+            transition: opacity 0.4s ease, transform 0.4s ease, visibility 0.4s;
+        }
+
+        .slide.active {
+            opacity: 1;
+            visibility: visible;
+            transform: translateX(0);
+        }
+
+        /* Typography */
+        h1 { font-size: 2.5em; color: var(--accent); margin-bottom: 0.2em; text-shadow: 0 0 15px var(--accent-glow); }
+        h2 { font-size: 1.8em; color: var(--text-main); border-bottom: 3px solid var(--accent); padding-bottom: 10px; margin-bottom: 20px; display: inline-block; }
+        h3 { font-size: 1.4em; color: var(--warning); margin-top: 15px; margin-bottom: 10px; }
+        p, li { font-size: 1em; line-height: 1.6; color: var(--text-muted); margin-bottom: 12px; }
+        ul { margin-left: 30px; }
+        strong { color: var(--text-main); }
+
+        /* Highlight Boxes */
+        .box { padding: 20px; border-radius: 8px; margin: 15px 0; border-left: 5px solid; background: rgba(0,0,0,0.2); }
+        .box-info { border-color: var(--accent); }
+        .box-warning { border-color: var(--warning); }
+        .box-danger { border-color: var(--danger); }
+        
+        .box-title { display: flex; align-items: center; font-weight: bold; margin-bottom: 10px; font-size: 1.2em;}
+        .box-info .box-title { color: var(--accent); }
+        .box-warning .box-title { color: var(--warning); }
+        .box-danger .box-title { color: var(--danger); }
+
+        /* Layouts */
+        .flex-row { display: flex; gap: 30px; align-items: center; height: 100%; }
+        .col-50 { flex: 1; }
+        .center-content { display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; height: 100%; }
+        
+        /* Images */
+        .slide-img { max-width: 100%; max-height: 52%; border-radius: 8px; cursor: pointer; box-shadow: 0 10px 25px rgba(0,0,0,0.5); transition: transform 0.2s; border: 1px solid #334155; }
+        .slide-img:hover { transform: scale(1.02); border-color: var(--accent); }
+        .img-container { text-align: center; margin-top: 20px; }
+
+        /* Controls */
+        #controls-bar {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(15, 23, 42, 0.9);
+            padding: 10px 25px;
+            border-radius: 30px;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            z-index: 100;
+            border: 1px solid #334155;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+            backdrop-filter: blur(5px);
+        }
+        button {
+            background: none; border: none; color: var(--text-main); font-size: 1.2rem; cursor: pointer; transition: color 0.2s; display: flex; align-items: center; justify-content: center;
+        }
+        button:hover { color: var(--accent); }
+        .btn-nav { font-size: 1.5rem; background: #334155; width: 40px; height: 40px; border-radius: 50%; }
+        .btn-nav:hover { background: var(--accent); color: #fff; }
+        #slide-counter { font-size: 0.9em; font-weight: bold; color: var(--text-muted); min-width: 60px; text-align: center; }
+
+        /* Lightbox */
+        #lightbox {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.9);
+            display: flex; justify-content: center; align-items: center; z-index: 999;
+            opacity: 0; visibility: hidden; transition: opacity 0.3s;
+        }
+        #lightbox.show { opacity: 1; visibility: visible; }
+        #lightbox img { max-width: 90vw; max-height: 90vh; border-radius: 8px; box-shadow: 0 0 30px rgba(0,0,0,0.8); }
+        #close-lightbox { position: absolute; top: 20px; right: 30px; font-size: 2rem; color: white; cursor: pointer; }
+
+        /* Watermark */
+        .watermark { position: absolute; bottom: 20px; left: 30px; font-size: 0.7em; color: rgba(148, 163, 184, 0.3); }
+
+    </style>
+</head>
+<body>
+
+    <div id="deck-container">
+        
+        <div class="slide active center-content">
+            <h3 style="color: var(--text-muted);">ENGSE207 สถาปัตยกรรมซอฟต์แวร์ (Software Architecture)</h3>
+            <h1 style="font-size: 3.5em; margin: 20px 0;">Week 12: Security-Aware Software Architecture</h1>
+            <p style="font-size: 1.2em; color: var(--accent);">"ออกแบบระบบให้ปลอดภัยตั้งแต่ก้าวแรก (Security by Design)"</p>
+            <br><br>
+            <p><strong>ผู้สอน:</strong> นายธนิต เกตุแก้ว</p>
+            <p>วิศวกรรมซอฟต์แวร์ มทร.ล้านนา (ดอยสะเก็ด)</p>
+            <div class="watermark">ENGSE207 - Software Architecture</div>
+        </div>
+
+        <div class="slide">
+            <h2>ทำไมต้อง Security-Aware Architecture? 🛡️</h2>
+            <div class="flex-row">
+                <div class="col-50">
+                    <p>ในอดีต Security มักเป็นสิ่งที่ "ทำทีหลัง" (Afterthought) เมื่อระบบเสร็จแล้ว</p>
+                    <p>ปัจจุบัน ระบบมีความซับซ้อน (Cloud, Microservices) ภัยคุกคามจึงมีหลากหลายทิศทาง</p>
+                    <ul>
+                        <li>การแก้ไขช่องโหว่หลังจากระบบขึ้น Production ไปแล้ว <strong>มีค่าใช้จ่ายสูงมาก</strong></li>
+                        <li>อาจเกิดการรั่วไหลของข้อมูล (Data Breach) นำไปสู่ความเสียหายต่อองค์กร</li>
+                    </ul>
+                </div>
+                <div class="col-50">
+                    <div class="box box-danger">
+                        <div class="box-title">💡 Security by Design</div>
+                        <p>การออกแบบสถาปัตยกรรมที่คำนึงถึงความปลอดภัย "ตั้งแต่เริ่มต้น" ช่วยลดความเสี่ยง ป้องกันการโจมตี และสร้างความน่าเชื่อถือให้กับ Software ของเรา</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>ความเชื่อมโยงกับวัตถุประสงค์รายวิชา (CLOs) 🎯</h2>
+            <p>เนื้อหาในสัปดาห์นี้สอดคล้องกับมาตรฐานทักษะที่นักศึกษาต้องบรรลุ:</p>
+            <div class="box box-info">
+                <ul>
+                    <li><strong>CLO3:</strong> อธิบายองค์ประกอบและคุณลักษณะคุณภาพ (Quality Attributes) โดยเฉพาะเรื่อง Security ได้อย่างถูกต้อง</li>
+                    <li><strong>CLO6 & CLO7:</strong> เลือกใช้และวิเคราะห์รูปแบบสถาปัตยกรรมที่เหมาะสมกับปัญหาด้านความปลอดภัย</li>
+                    <li><strong>CLO10:</strong> สามารถนำความรู้ไปประยุกต์ทำ Prototype ที่มีเรื่อง Authentication & API Gateway ได้</li>
+                    <li><strong>CLO14:</strong> ตระหนักถึงความปลอดภัยของข้อมูล กฎหมายจริยธรรม และผลกระทบต่อสังคม</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="slide center-content">
+            <h2>หัวข้อการเรียนรู้ (Agenda) 📋</h2>
+            <div style="text-align: left; margin-top: 30px;">
+                <h3 style="color: var(--text-main);">1.1 Threat Modeling เบื้องต้น</h3>
+                <p>STRIDE Framework และ Data Flow Diagram (DFD)</p>
+                <br>
+                <h3 style="color: var(--text-main);">1.2 Security Architecture Components</h3>
+                <p>Auth Service, Tokens, API Gateway และ WAF</p>
+                <br>
+                <h3 style="color: var(--text-main);">1.3 Zero-Trust Architecture</h3>
+                <p>หลักการ "Never Trust, Always Verify"</p>
+            </div>
+        </div>
+
+        <div class="slide center-content">
+            <h1 style="color: var(--warning);">ส่วนที่ 1</h1>
+            <h2>Threat Modeling เบื้องต้น</h2>
+            <p>รู้จักศัตรู และจุดอ่อนของระบบด้วย STRIDE Framework และ DFD</p>
+        </div>
+
+        <div class="slide">
+            <h2>Threat Modeling คืออะไร? 🕵️</h2>
+            <p>กระบวนการวิเคราะห์และระบุ <strong>ภัยคุกคาม (Threats)</strong> ที่อาจเกิดขึ้นกับระบบ ตั้งแต่ขั้นตอนการออกแบบ</p>
+            <div class="flex-row">
+                <div class="col-50">
+                    <h3>คำถามหลัก 4 ข้อ:</h3>
+                    <ol>
+                        <li><strong>เรากำลังสร้างอะไร?</strong> (วาด Diagram เช่น DFD)</li>
+                        <li><strong>อะไรที่สามารถผิดพลาด/ถูกโจมตีได้บ้าง?</strong> (หา Threats)</li>
+                        <li><strong>เราจะจัดการกับมันอย่างไร?</strong> (Mitigation)</li>
+                        <li><strong>เราทำได้ดีพอหรือยัง?</strong> (Validation)</li>
+                    </ol>
+                </div>
+                <div class="col-50">
+                    <div class="box box-warning">
+                        <div class="box-title">❓ Question for Students</div>
+                        <p>นักศึกษาคิดว่า แฮกเกอร์โจมตีระบบจากจุดไหนได้ง่ายที่สุด? ระหว่างตัว Application Code, Database หรือ Network?</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>Data Flow Diagram (DFD) 📊</h2>
+            <p>ก่อนจะหาภัยคุกคาม เราต้องเห็น "ภาพรวมการไหลของข้อมูล" ในระบบก่อน</p>
+            <p>DFD เป็นเครื่องมือที่ช่วยแสดงว่า ข้อมูลมาจากไหน ไปประมวลผลที่ไหน และถูกเก็บที่ใด</p>
+            <ul>
+                <li><strong>Process (วงกลม/ขอบมน):</strong> การประมวลผลข้อมูล (เช่น Web Server, API)</li>
+                <li><strong>Data Store (เส้นขนานสองเส้น):</strong> แหล่งเก็บข้อมูล (เช่น Database, File System)</li>
+                <li><strong>External Entity (สี่เหลี่ยม):</strong> ผู้ใช้ หรือระบบภายนอก</li>
+                <li><strong>Data Flow (ลูกศร):</strong> ทิศทางการไหลของข้อมูล</li>
+            </ul>
+        </div>
+
+        <div class="slide">
+            <h2>Trust Boundaries (เส้นแบ่งขอบเขตความเชื่อใจ) 🚧</h2>
+            <div class="flex-row">
+                <div class="col-50">
+                    <p>ใน DFD เพื่อทำ Threat Modeling เราต้องลาก <strong>Trust Boundary</strong></p>
+                    <p>คือ เส้นสมมติที่แบ่งแยกพื้นที่ที่มีระดับความน่าเชื่อถือ "ต่างกัน"</p>
+                    <ul>
+                        <li>เช่น ระหว่าง Internet (Public) กับ Internal Network (Private)</li>
+                        <li>ข้อมูลใดๆ ที่ข้ามผ่านเส้นนี้ **ต้องถูกตรวจสอบเสมอ**</li>
+                    </ul>
+                </div>
+                <div class="col-50">
+                    <div class="box box-danger">
+                        <div class="box-title">🚨 กฎเหล็ก!</div>
+                        <p>จุดที่ Data Flow วิ่งตัดผ่าน Trust Boundary คือจุดเสี่ยงสูงสุดที่มักเกิดการโจมตี (Attack Surface)</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>ตัวอย่าง: DFD สำหรับ Task Board System</h2>
+            <p>สังเกตสัญลักษณ์และ Trust Boundaries (เส้นประสีแดง)</p>
+            <div class="img-container">
+                <img src="images/DFD-Task_Board_Threat_Model.png" class="slide-img" alt="DFD - Task Board Threat Model" onclick="openLightbox(this.src)">
+                <p style="font-size: 0.8em; margin-top: 10px;">(คลิกที่รูปเพื่อขยาย)</p>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>วิเคราะห์จาก DFD 🔍</h2>
+            <ul>
+                <li><strong>External Entity:</strong> User ผ่าน Browser ข้าม Boundary มายัง Web Server</li>
+                <li><strong>Data Flows:</strong> Credentials (Username/Password), Task Data ไหลไปมาระหว่างส่วนต่างๆ</li>
+                <li><strong>Trust Boundary หลัก:</strong> ระหว่าง Internet กับ Web Server และระหว่าง Web Server กับ Database</li>
+            </ul>
+            <div class="box box-info">
+                <p>💡 <strong>Observation:</strong> ถ้า Hacker ดักฟังข้อมูลตรงเส้น Data Flow จาก Browser มายัง Web Server ได้ เขาจะได้ Credentials ของ User ไปเลย หากไม่ได้เข้ารหัสไว้ (HTTPS)</p>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>STRIDE Framework 🛡️</h2>
+            <p>พัฒนาโดย Microsoft เป็นเทคนิคการจำแนกภัยคุกคาม (Threat Categorization) แบ่งเป็น 6 ประเภท:</p>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px;">
+                <div class="box"><strong>S</strong>poofing (การสวมรอย)</div>
+                <div class="box"><strong>T</strong>ampering (การดัดแปลงข้อมูล)</div>
+                <div class="box"><strong>R</strong>epudiation (การปฏิเสธความรับผิดชอบ)</div>
+                <div class="box"><strong>I</strong>nformation Disclosure (ข้อมูลรั่วไหล)</div>
+                <div class="box"><strong>D</strong>enial of Service (การขัดขวางการให้บริการ)</div>
+                <div class="box"><strong>E</strong>levation of Privilege (การยกระดับสิทธิ์)</div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>S - Spoofing Identity (การสวมรอย) 🎭</h2>
+            <p><strong>ความหมาย:</strong> ผู้โจมตีพยายามปลอมตัวเป็นคนอื่น หรือระบบอื่น เพื่อเข้าถึงข้อมูลที่ตนไม่มีสิทธิ์</p>
+            <h3>ตัวอย่างใน Task Board:</h3>
+            <ul>
+                <li>Hacker แอบขโมย Token ของ Admin แล้วปลอมเป็น Admin</li>
+                <li>การตั้งชื่อ Domain ปลอมเพื่อหลอกให้ User กรอกรหัสผ่าน</li>
+            </ul>
+            <div class="box box-success">
+                <div class="box-title">✅ การป้องกัน (Mitigation):</div>
+                <p>ใช้ Strong Authentication, MFA (Multi-Factor Authentication), หรือการเข้ารหัส Token แบบรัดกุม</p>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>T - Tampering with Data (การดัดแปลงข้อมูล) ✍️</h2>
+            <p><strong>ความหมาย:</strong> การเปลี่ยนแปลง แก้ไข หรือลบข้อมูลโดยไม่ได้รับอนุญาต ระหว่างจัดเก็บหรือระหว่างการส่งผ่าน</p>
+            <h3>ตัวอย่างใน Task Board:</h3>
+            <ul>
+                <li>ดักจับ Request และแก้จำนวนเงิน หรือเปลี่ยนสถานะ Task จาก Pending เป็น Completed เอง</li>
+                <li>แอบแก้ไขข้อมูลใน Database โดยตรง</li>
+            </ul>
+            <div class="box box-success">
+                <div class="box-title">✅ การป้องกัน (Mitigation):</div>
+                <p>ใช้ TLS/SSL (HTTPS) ข้อมูลเข้ารหัสขณะส่ง, ทำ Data Integrity (เช่น JWT Signatures)</p>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>R - Repudiation (การปฏิเสธความรับผิดชอบ) 🤷‍♂️</h2>
+            <p><strong>ความหมาย:</strong> ผู้ใช้ทำสิ่งใดสิ่งหนึ่งลงไป (เช่น ลบข้อมูลสำคัญ) แล้วปฏิเสธว่าไม่ได้ทำ และระบบไม่มีหลักฐานเพียงพอที่จะพิสูจน์</p>
+            <h3>ตัวอย่างใน Task Board:</h3>
+            <ul>
+                <li>พนักงานลบ Task งานสำคัญทิ้ง แล้วบอกว่า "ระบบพังลบไปเอง"</li>
+            </ul>
+            <div class="box box-success">
+                <div class="box-title">✅ การป้องกัน (Mitigation):</div>
+                <p>ทำ <strong>Audit Logging</strong> ที่มั่นคงแข็งแรงและแก้ไขไม่ได้ (Append-only logs) บันทึกว่า ใคร ทำอะไร ที่ไหน เมื่อไหร่</p>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>I - Information Disclosure (ข้อมูลรั่วไหล) 🔓</h2>
+            <p><strong>ความหมาย:</strong> ข้อมูลที่เป็นความลับถูกเปิดเผยให้ผู้ที่ไม่มีสิทธิ์เห็น</p>
+            <h3>ตัวอย่างใน Task Board:</h3>
+            <ul>
+                <li>API ส่ง Error Message ที่บอกโครงสร้าง Database ออกมาทางหน้าจอ</li>
+                <li>ดักฟัง Network Traffic แบบ Plaintext (HTTP)</li>
+            </ul>
+            <div class="box box-success">
+                <div class="box-title">✅ การป้องกัน (Mitigation):</div>
+                <p>เข้ารหัสข้อมูลทั้งตอนอยู่เฉยๆ (Encryption at Rest) และตอนส่ง (Encryption in Transit), ซ่อน Error Stack trace จากผู้ใช้</p>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>D - Denial of Service (การขัดขวางการให้บริการ) ⛔</h2>
+            <p><strong>ความหมาย:</strong> ทำให้ระบบไม่สามารถให้บริการผู้ใช้ปกติได้ โดยการส่ง Request จำนวนมหาศาล หรือเจาะจงจุดที่กินทรัพยากรสูง</p>
+            <h3>ตัวอย่างใน Task Board:</h3>
+            <ul>
+                <li>ส่ง API Request ยิงเข้าระบบ 100,000 ครั้งต่อวินาทีจน Server ล่ม (DDoS)</li>
+            </ul>
+            <div class="box box-success">
+                <div class="box-title">✅ การป้องกัน (Mitigation):</div>
+                <p>ทำ Rate Limiting (จำกัดจำนวน Request), ใช้ WAF, ออกระบบแบบ High Availability / Auto-Scaling</p>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>E - Elevation of Privilege (การยกระดับสิทธิ์) 👑</h2>
+            <p><strong>ความหมาย:</strong> ผู้ใช้ที่มีสิทธิ์ต่ำกว่า พยายามหาช่องโหว่เพื่อให้ได้สิทธิ์ที่สูงขึ้น (เช่น จาก User ธรรมดา กลายเป็น Admin)</p>
+            <h3>ตัวอย่างใน Task Board:</h3>
+            <ul>
+                <li>แอบแก้ไขพารามิเตอร์ <code>role=user</code> เป็น <code>role=admin</code> ใน JWT Token</li>
+            </ul>
+            <div class="box box-success">
+                <div class="box-title">✅ การป้องกัน (Mitigation):</div>
+                <p>ใช้หลักการ <strong>Principle of Least Privilege (PoLP)</strong> ให้สิทธิ์เท่าที่จำเป็น, ตรวจสอบสิทธิ์ฝั่ง Server (Server-side Authorization) เสมอ</p>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>ตารางวิเคราะห์ STRIDE ของระบบ Task Board 📝</h2>
+            <p>การนำความรู้ STRIDE มาสร้างตารางเพื่อ Mapping Threat และกำหนด Mitigation Plan</p>
+            <div class="img-container">
+                <img src="images/STRIDE_Analysis_Table.png" class="slide-img" alt="STRIDE Analysis Table" onclick="openLightbox(this.src)">
+                <p style="font-size: 0.8em; margin-top: 10px;">(คลิกที่รูปเพื่อขยาย)</p>
+            </div>
+        </div>
+
+        <div class="slide center-content">
+            <h2 style="border:none; color: var(--accent); font-size: 2.5em;">❓ Checkpoint Review</h2>
+            <div class="box box-warning" style="max-width: 800px; text-align: left; margin-top: 30px;">
+                <p><strong>สถานการณ์:</strong> ถ้าระบบของคุณใช้ HTTP ธรรมดา (ไม่ใช้ HTTPS) ในการส่ง Username/Password เพื่อ Login</p>
+                <br>
+                <p>นักศึกษาคิดว่าระบบนี้กำลังเสี่ยงต่อภัยคุกคามตัวไหนใน <strong>STRIDE</strong> มากที่สุด?</p>
+                <p style="color: var(--text-muted); font-size: 0.9em; margin-top: 10px;">(เฉลย: Information Disclosure (เห็นข้อมูล Plaintext) นำไปสู่ Spoofing (นำรหัสผ่านไปสวมรอย))</p>
+            </div>
+        </div>
+
+        <div class="slide center-content">
+            <h1 style="color: var(--success);">ส่วนที่ 2</h1>
+            <h2>Security Architecture Components</h2>
+            <p>ชิ้นส่วนสถาปัตยกรรมที่ช่วยปกป้องระบบ: Auth, API Gateway, WAF</p>
+        </div>
+
+        <div class="slide">
+            <h2>Authentication (AuthN) vs. Authorization (AuthZ) 🔐</h2>
+            <p>สองคำนี้มักมาคู่กัน แต่ความหมายต่างกันอย่างสิ้นเชิง จำให้แม่น!</p>
+            <div class="flex-row">
+                <div class="col-50 box box-info">
+                    <h3>Authentication (AuthN)</h3>
+                    <p><strong>"คุณคือใคร?" (Who are you?)</strong></p>
+                    <p>กระบวนการพิสูจน์ตัวตน เช่น การกรอก Username/Password, การสแกนลายนิ้วมือ, Face ID</p>
+                </div>
+                <div class="col-50 box box-warning">
+                    <h3>Authorization (AuthZ)</h3>
+                    <p><strong>"คุณมีสิทธิ์ทำอะไรได้บ้าง?" (What can you do?)</strong></p>
+                    <p>กระบวนการตรวจสอบสิทธิ์ หลังจากพิสูจน์ตัวตนแล้ว เช่น นาย A เป็นแค่ User ดูข้อมูลได้อย่างเดียว ลบไม่ได้</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>JSON Web Token (JWT) 🎟️</h2>
+            <p>ในสถาปัตยกรรมสมัยใหม่ (Stateless / Microservices) เราไม่เก็บ Session ไว้ที่ Server (Sessionless) แต่เราใช้ <strong>Token</strong> แทน</p>
+            <ul>
+                <li>เมื่อ User Login สำเร็จ Server จะออก Token (เหมือนบัตรผ่าน) ให้ User</li>
+                <li>ทุกครั้งที่ User จะขอข้อมูล ต้องแนบ Token นี้มากับ Request (ผ่าน HTTP Header)</li>
+                <li>Server สามารถตรวจสอบความถูกต้องของ Token ได้ทันที โดยไม่ต้องไปค้นหาใน Database ซ้ำ (ประหยัดทรัพยากร)</li>
+            </ul>
+        </div>
+
+        <div class="slide">
+            <h2>วงจรการทำงานของ JWT (Authentication Flow) 🔄</h2>
+            <p>Flow การขอ Token และนำ Token ไปใช้งานในระบบ</p>
+            <div class="img-container">
+                <img src="images/JWT_Authentication_Flow.png" class="slide-img" alt="JWT Authentication Flow" onclick="openLightbox(this.src)">
+                <p style="font-size: 0.8em; margin-top: 10px;">(คลิกที่รูปเพื่อขยาย)</p>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>โครงสร้างของ JWT (Anatomy of JWT) 🧬</h2>
+            <p>JWT ประกอบด้วย 3 ส่วน คั่นด้วยจุด (<code>.</code>) : <code>Header.Payload.Signature</code></p>
+            <div class="box" style="background: #1e1e1e; font-family: monospace; color: #d4d4d4;">
+                <span style="color: #fca5a5;">eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9</span>.<span style="color: #fde047;">eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ</span>.<span style="color: #6ee7b7;">SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c</span>
+            </div>
+            <ul>
+                <li><strong style="color: #fca5a5;">Header:</strong> ระบุประเภท Token และ Algorithm การเข้ารหัส</li>
+                <li><strong style="color: #fde047;">Payload:</strong> เก็บข้อมูล Claim ต่างๆ เช่น User ID, Role, วันหมดอายุ</li>
+                <li><strong style="color: #6ee7b7;">Signature:</strong> ลายเซ็นดิจิทัล ใช้สำหรับยืนยันว่า Payload ไม่ถูก Tampering</li>
+            </ul>
+            <div class="box box-danger">
+                <p>🚨 <strong>คำเตือน:</strong> Payload ถูกแค่เข้ารหัสแบบ Base64 ถอดรหัสอ่านได้ง่ายมาก <strong>ห้ามใส่ข้อมูลความลับ (เช่น Password) ใน Payload เด็ดขาด!</strong></p>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>API Gateway (ด่านหน้าของระบบ) 🚪</h2>
+            <p>เป็น Component ที่รับ Request ทั้งหมดจากภายนอก ก่อนส่งต่อให้ Microservices ภายใน</p>
+            <p><strong>หน้าที่ด้าน Security ของ API Gateway:</strong></p>
+            <ul>
+                <li><strong>SSL/TLS Termination:</strong> ถอดรหัส HTTPS ที่จุดนี้</li>
+                <li><strong>Token Validation:</strong> ตรวจสอบ JWT เบื้องต้นว่าหมดอายุหรือถูกดัดแปลงหรือไม่ (กรอง Request ปลอม)</li>
+                <li><strong>Rate Limiting / Throttling:</strong> ป้องกันการโจมตีแบบ DoS/DDoS (Mitigation สำหรับ STRIDE - D)</li>
+                <li><strong>IP Allow/Deny List:</strong> บล็อก IP ที่น่าสงสัย</li>
+            </ul>
+        </div>
+
+        <div class="slide">
+            <h2>Web Application Firewall (WAF) 🔥🧱</h2>
+            <p>กำแพงกันไฟที่ตั้งอยู่หน้าสุด ทำหน้าที่ตรวจสอบ Traffic ในระดับ Layer 7 (Application Layer)</p>
+            <ul>
+                <li>แตกต่างจาก Firewall ทั่วไป (Layer 3/4) เพราะ WAF เข้าใจ HTTP Traffic</li>
+                <li>ทำหน้าที่ดักจับการโจมตีช่องโหว่เว็บยอดฮิต (OWASP Top 10)</li>
+                <li>เช่น ป้องกัน <strong>SQL Injection</strong>, <strong>Cross-Site Scripting (XSS)</strong></li>
+                <li>สามารถทำ Virtual Patching ปิดช่องโหว่ชั่วคราวได้เร็ว</li>
+            </ul>
+        </div>
+
+        <div class="slide">
+            <h2>C2 Container Diagram (Security Enhanced) 🏗️</h2>
+            <p>เมื่อประกอบ Component ทั้งหมดเข้าด้วยกันในสถาปัตยกรรมระดับ Container</p>
+            <div class="img-container">
+                <img src="images/C2_Container_Diagram_(Security_Enhanced).png" class="slide-img" alt="C2 Container Diagram" onclick="openLightbox(this.src)">
+                <p style="font-size: 0.8em; margin-top: 10px;">(คลิกที่รูปเพื่อขยาย)</p>
+            </div>
+        </div>
+        
+        <div class="slide">
+            <h2>💡 ข้อสังเกตจาก Container Diagram</h2>
+            <ul>
+                <li>Request จาก User ต้องผ่านกำแพงหลายชั้น: <strong>WAF &rarr; API Gateway &rarr; Microservices</strong></li>
+                <li>มีบริการ <strong>Auth Service</strong> แยกออกมาต่างหาก เพื่อจัดการเรื่อง Identity โดยเฉพาะ (Single Responsibility)</li>
+                <li>Microservices ภายใน ไม่ต้องเปิดรับเชื่อมต่อจาก Internet โดยตรง (อยู่ใน Private Subnet)</li>
+            </ul>
+        </div>
+
+        <div class="slide center-content">
+            <h1 style="color: var(--accent);">ส่วนที่ 3</h1>
+            <h2>Zero-Trust Architecture</h2>
+            <p>"Never Trust, Always Verify" หมดยุคของการเชื่อใจคนใน</p>
+        </div>
+
+        <div class="slide">
+            <h2>ปัญหาของ Perimeter Security แบบเดิม 🏰</h2>
+            <p>แนวคิดดั้งเดิมคือแบบ <strong>Castle-and-Moat (ปราสาทและคูน้ำ)</strong></p>
+            <ul>
+                <li>ป้องกันภัยจากภายนอกสุดชีวิต (มี Firewall แน่นหนา)</li>
+                <li>แต่ถ้าผ่านประตูเข้ามาได้ ระบบจะ <strong>"เชื่อใจ" (Trust)</strong> ผู้ใช้และอุปกรณ์ภายในเครือข่ายเดียวกันทั้งหมด</li>
+            </ul>
+            <div class="box box-danger">
+                <div class="box-title">🚨 จุดอ่อน:</div>
+                <p>ถ้า Hacker หรือ Malware หลุดเข้ามาในเครือข่ายภายในได้ หรือมี "หนอนบ่อนไส้" จะสามารถโจมตีข้ามเครื่อง (Lateral Movement) ได้อย่างง่ายดาย!</p>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>หลักการของ Zero-Trust 🚫🤝</h2>
+            <p>แนวคิดใหม่: <strong>"Never Trust, Always Verify" (ไม่เชื่อใจใครเลย และตรวจสอบเสมอ)</strong></p>
+            <ul>
+                <li>ไม่ว่าจะอยู่ "นอก" หรือ "ใน" เครือข่าย ก็ถือว่า <strong>ไม่น่าเชื่อถือ</strong></li>
+                <li>ทุกๆ Request (เช่น Service A เรียก Service B) ต้องถูกตรวจสอบสิทธิ์ และเข้ารหัสเสมอ</li>
+                <li>ประเมินความเสี่ยงตลอดเวลา (Continuous Assessment) เช่น ดูพฤติกรรม User, อุปกรณ์ที่ใช้</li>
+                <li>ใช้ <strong>Micro-segmentation</strong> ซอยเครือข่ายย่อยๆ เพื่อจำกัดความเสียหายหากถูกเจาะ</li>
+            </ul>
+        </div>
+
+        <div class="slide">
+            <h2>เปรียบเทียบ Zero-Trust กับ Perimeter Security ⚖️</h2>
+            <p>ภาพแสดงการปรับเปลี่ยนกระบวนทัศน์ (Paradigm Shift) ในด้าน Security</p>
+            <div class="img-container">
+                <img src="images/Zero-Trust_vs_Perimeter_Security.png" class="slide-img" alt="Zero-Trust vs Perimeter Security" onclick="openLightbox(this.src)">
+                <p style="font-size: 0.8em; margin-top: 10px;">(คลิกที่รูปเพื่อขยาย)</p>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>Defense in Depth (การป้องกันหลายชั้น) 🧅</h2>
+            <p>ไม่มีระบบป้องกันใดสมบูรณ์แบบ (No Silver Bullet) จึงต้องใช้หลักการคล้ายหัวหอม</p>
+            <ul>
+                <li><strong>Data Layer:</strong> เข้ารหัสฐานข้อมูล</li>
+                <li><strong>Application Layer:</strong> ใช้ Secure Coding, ทำ AuthN/AuthZ</li>
+                <li><strong>Host / Container Layer:</strong> ปิด Port ที่ไม่ใช้, อัปเดต Patch</li>
+                <li><strong>Network Layer:</strong> WAF, Security Group, API Gateway</li>
+                <li><strong>Perimeter Layer:</strong> DDoS Protection, Edge Firewall</li>
+            </ul>
+            <p><em>หากชั้นนอกถูกเจาะ ยังมีชั้นในคอยป้องกันอยู่</em></p>
+        </div>
+
+        <div class="slide">
+            <h2>ชั้นต่างๆ ของ Defense in Depth 📉</h2>
+            <p>ตัวอย่างการวางระดับการป้องกันเพื่อชะลอและหยุดยั้งการโจมตี</p>
+            <div class="img-container">
+                <img src="images/Defense_in_Depth_Layers.png" class="slide-img" alt="Defense in Depth Layers" onclick="openLightbox(this.src)">
+                <p style="font-size: 0.8em; margin-top: 10px;">(คลิกที่รูปเพื่อขยาย)</p>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>📌 สรุป และ การบ้าน (Key Takeaways)</h2>
+            <div class="box box-info">
+                <p><strong>สรุปเนื้อหาสัปดาห์ที่ 12:</strong></p>
+                <ul>
+                    <li><strong>Threat Modeling (STRIDE):</strong> ช่วยให้เรารู้ว่าระบบจะโดนโจมตีแบบไหนบ้างตั้งแต่ตอนออกแบบ</li>
+                    <li><strong>Security Components:</strong> การใช้ JWT, API Gateway, WAF ช่วยป้องกันภัยคุกคามในระบบ Web/Microservices</li>
+                    <li><strong>Zero-Trust:</strong> เปลี่ยนจากความเชื่อใจในวง Network เป็นการตรวจสอบทุกๆ Request</li>
+                </ul>
+            </div>
+            <div class="box box-warning">
+                <p><strong>📝 การบ้าน (สัปดาห์หน้า):</strong></p>
+                <p>ทบทวน Docker Compose ของ Week 6 และลองคิดว่า ถ้าระบบขึ้น Production แล้ว เราจะ <strong>Monitoring (สอดส่อง)</strong> ระบบและดู Log ศูนย์กลางได้อย่างไร? (เตรียมความพร้อมสู่เรื่อง Observability ในสัปดาห์ถัดไป)</p>
+            </div>
+            <br>
+            <h3 style="text-align: center; color: var(--success); font-size: 2em; margin-top: 20px;">Q & A ?</h3>
+        </div>
+
+        <div class="watermark">ENGSE207 - Software Architecture</div>
+    </div>
+
+    <div id="controls-bar">
+        <button onclick="changeFontSize(-2)" title="ลดขนาดฟอนต์">A-</button>
+        <button onclick="changeFontSize(2)" title="เพิ่มขนาดฟอนต์">A+</button>
+        <div style="width: 1px; height: 20px; background: #334155; margin: 0 5px;"></div>
+        <button class="btn-nav" onclick="prevSlide()" title="สไลด์ก่อนหน้า">◀</button>
+        <span id="slide-counter">1 / 35</span>
+        <button class="btn-nav" onclick="nextSlide()" title="สไลด์ถัดไป">▶</button>
+        <div style="width: 1px; height: 20px; background: #334155; margin: 0 5px;"></div>
+        <button onclick="toggleFullScreen()" title="เต็มหน้าจอ">⛶</button>
+    </div>
+
+    <div id="lightbox" onclick="closeLightbox()">
+        <span id="close-lightbox">&times;</span>
+        <img id="lightbox-img" src="" alt="Zoomed Image">
+    </div>
+
+    <script>
+        // Slide Navigation Logic
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slide');
+        const counter = document.getElementById('slide-counter');
+        const totalSlides = slides.length;
+
+        function updateSlide() {
+            slides.forEach((slide, index) => {
+                if(index === currentSlide) {
+                    slide.classList.add('active');
+                } else {
+                    slide.classList.remove('active');
+                    // Reset position based on direction
+                    if(index < currentSlide) {
+                        slide.style.transform = 'translateX(-50px)';
+                    } else {
+                        slide.style.transform = 'translateX(50px)';
+                    }
+                }
+            });
+            counter.innerText = `${currentSlide + 1} / ${totalSlides}`;
+        }
+
+        function nextSlide() {
+            if (currentSlide < totalSlides - 1) {
+                currentSlide++;
+                updateSlide();
+            }
+        }
+
+        function prevSlide() {
+            if (currentSlide > 0) {
+                currentSlide--;
+                updateSlide();
+            }
+        }
+
+        // Keyboard Navigation
+        document.addEventListener('keydown', (e) => {
+            if(e.key === 'ArrowRight' || e.key === 'Space' || e.key === 'Enter') {
+                nextSlide();
+            } else if (e.key === 'ArrowLeft') {
+                prevSlide();
+            } else if (e.key === 'Escape') {
+                closeLightbox();
+            }
+        });
+
+        // Font Size Adjustments
+        let currentFontSize = 24;
+        function changeFontSize(step) {
+            currentFontSize += step;
+            if(currentFontSize < 16) currentFontSize = 16;
+            if(currentFontSize > 36) currentFontSize = 36;
+            document.documentElement.style.setProperty('--base-font-size', currentFontSize + 'px');
+        }
+
+        // Fullscreen Toggle
+        function toggleFullScreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => {
+                    console.log(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
+                });
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+            }
+        }
+
+        // Lightbox Logic
+        const lightbox = document.getElementById('lightbox');
+        const lightboxImg = document.getElementById('lightbox-img');
+
+        function openLightbox(src) {
+            lightboxImg.src = src;
+            lightbox.classList.add('show');
+        }
+
+        function closeLightbox() {
+            lightbox.classList.remove('show');
+            setTimeout(() => { lightboxImg.src = ""; }, 300); // clear after animation
+        }
+
+        // Initialize
+        updateSlide();
+    </script>
+</body>
+</html>

@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ENGSE207 - ความเข้าใจ JWT (JSON Web Token) อย่างละเอียด</title>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600;700&family=Fira+Code:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0b1120;
+            --slide-bg: #1e293b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent: #8b5cf6; /* Purple for JWT theme */
+            --accent-glow: rgba(139, 92, 246, 0.4);
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --success: #10b981;
+            --jwt-header: #fb7185;
+            --jwt-payload: #c084fc;
+            --jwt-signature: #2dd4bf;
+            --base-font-size: 24px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Kanit', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+            font-size: var(--base-font-size);
+        }
+
+        /* Slide Container - 16:9 */
+        #deck-container {
+            position: relative;
+            width: 100vw;
+            max-width: 177.78vh;
+            height: 56.25vw;
+            max-height: 100vh;
+            background-color: var(--slide-bg);
+            box-shadow: 0 0 30px rgba(0,0,0,0.8);
+            overflow: hidden;
+            transition: all 0.3s ease;
+            background-image: radial-gradient(circle at 100% 0%, #2e1065 0%, transparent 40%);
+        }
+
+        .slide {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            padding: 5% 8%;
+            display: flex;
+            flex-direction: column;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(30px);
+            transition: opacity 0.4s ease, transform 0.4s ease, visibility 0.4s;
+        }
+
+        .slide.active {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        /* Typography */
+        h1 { font-size: 2.8em; color: var(--accent); margin-bottom: 0.2em; text-shadow: 0 0 15px var(--accent-glow); line-height: 1.2; }
+        h2 { font-size: 1.8em; color: var(--text-main); border-bottom: 3px solid var(--accent); padding-bottom: 10px; margin-bottom: 20px; display: inline-block; }
+        h3 { font-size: 1.4em; color: var(--warning); margin-top: 15px; margin-bottom: 10px; }
+        p, li { font-size: 1.1em; line-height: 1.6; color: var(--text-muted); margin-bottom: 12px; }
+        ul, ol { margin-left: 30px; margin-bottom: 15px; }
+        strong { color: var(--text-main); }
+        code { font-family: 'Fira Code', monospace; background: rgba(0,0,0,0.3); padding: 2px 8px; border-radius: 4px; color: #a78bfa; font-size: 0.9em; }
+
+        /* Boxes & Highlights */
+        .box { padding: 20px; border-radius: 8px; margin: 15px 0; border-left: 5px solid; background: rgba(0,0,0,0.2); box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .box-info { border-color: var(--accent); }
+        .box-warning { border-color: var(--warning); }
+        .box-danger { border-color: var(--danger); }
+        .box-success { border-color: var(--success); }
+        
+        .box-title { display: flex; align-items: center; font-weight: bold; margin-bottom: 10px; font-size: 1.2em;}
+        .box-info .box-title { color: var(--accent); }
+        .box-warning .box-title { color: var(--warning); }
+        .box-danger .box-title { color: var(--danger); }
+        .box-success .box-title { color: var(--success); }
+
+        /* Layouts */
+        .flex-row { display: flex; gap: 30px; align-items: center; height: 100%; width: 100%; }
+        .col-50 { flex: 1; }
+        .center-content { display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; height: 100%; }
+        
+        /* Infographics (CSS based) */
+        .diagram { background: #0f172a; border: 1px solid #334155; border-radius: 10px; padding: 20px; text-align: center; font-family: 'Fira Code', monospace; font-size: 0.9em; color: #cbd5e1; margin-top: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
+        .jwt-token { display: flex; font-family: 'Fira Code', monospace; font-size: 1.2em; word-break: break-all; text-align: center; background: #000; padding: 20px; border-radius: 10px; line-height: 1.5; margin: 20px 0; }
+        .jwt-p1 { color: var(--jwt-header); }
+        .jwt-p2 { color: var(--jwt-payload); }
+        .jwt-p3 { color: var(--jwt-signature); }
+        
+        .flow-container { display: flex; justify-content: space-between; align-items: center; background: #0f172a; padding: 30px; border-radius: 10px; border: 1px solid #334155; margin-top: 20px; }
+        .node { background: var(--slide-bg); padding: 15px 25px; border-radius: 8px; border: 2px solid var(--accent); text-align: center; font-weight: bold; z-index: 2; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+        .arrow { flex-grow: 1; height: 2px; background: var(--text-muted); position: relative; margin: 0 15px; }
+        .arrow::after { content: ''; position: absolute; right: 0; top: -5px; border-top: 6px solid transparent; border-bottom: 6px solid transparent; border-left: 10px solid var(--text-muted); }
+
+        /* Controls */
+        #controls-bar {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(15, 23, 42, 0.9);
+            padding: 10px 25px;
+            border-radius: 30px;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            z-index: 100;
+            border: 1px solid #334155;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+            backdrop-filter: blur(5px);
+        }
+        button { background: none; border: none; color: var(--text-main); font-size: 1.2rem; cursor: pointer; transition: color 0.2s; display: flex; align-items: center; justify-content: center; }
+        button:hover { color: var(--accent); }
+        .btn-nav { font-size: 1.5rem; background: #334155; width: 40px; height: 40px; border-radius: 50%; }
+        .btn-nav:hover { background: var(--accent); color: #fff; }
+        #slide-counter { font-size: 0.9em; font-weight: bold; color: var(--text-muted); min-width: 60px; text-align: center; }
+
+        .watermark { position: absolute; bottom: 20px; left: 30px; font-size: 0.7em; color: rgba(148, 163, 184, 0.3); z-index: 10; }
+    </style>
+</head>
+<body>
+
+    <div id="deck-container">
+        
+        <div class="slide active center-content">
+            <h3 style="color: var(--text-muted);">ENGSE207 สถาปัตยกรรมซอฟต์แวร์ (Software Architecture)</h3>
+            <h1 style="font-size: 3.5em; margin: 20px 0;">🔐 ความเข้าใจ JWT อย่างละเอียด</h1>
+            <h2 style="border:none; color: var(--jwt-payload); font-size: 2em;">JSON Web Token Principles</h2>
+            <p style="font-size: 1.2em; color: var(--text-muted); margin-top: 20px;">ออกแบบระบบ Authentication สำหรับโลกยุค Modern & Microservices</p>
+            <div class="watermark">ENGSE207 - Software Architecture</div>
+        </div>
+
+        <div class="slide center-content">
+            <h2>📋 สารบัญการเรียนรู้ (Agenda)</h2>
+            <div style="text-align: left; margin-top: 30px; font-size: 1.1em; width: 60%;">
+                <p><strong>Part 1:</strong> ปัญหาระบบเดิม และ ทำไมต้อง JWT?</p>
+                <p><strong>Part 2:</strong> ผ่าโครงสร้าง JWT ทั้ง 3 ส่วน</p>
+                <p><strong>Part 3:</strong> Cryptography พื้นฐานของการ Sign Token</p>
+                <p><strong>Part 4:</strong> การทำงานและ Flow ของระบบ JWT</p>
+                <p><strong>Part 5:</strong> ทำไม Microservices ถึงรัก JWT?</p>
+                <p><strong>Part 6:</strong> ข้อดี ข้อเสีย และ Security Best Practices</p>
+            </div>
+        </div>
+
+        <div class="slide center-content">
+            <h1 style="color: var(--accent);">Part 1</h1>
+            <h2>ทำไมต้องมี JWT?</h2>
+            <p>รู้จักจุดอ่อนของระบบเดิม สู่กระบวนทัศน์การออกแบบระบบแบบ Stateless</p>
+        </div>
+
+        <div class="slide">
+            <h2>🔙 ยุคก่อน JWT: Session-Based Authentication</h2>
+            <p>ในอดีต (และหลายระบบในปัจจุบัน) การยืนยันตัวตนใช้ระบบ <strong>Session</strong></p>
+            <div class="diagram">
+                <p>1. User ส่ง Username/Password ไปที่ Server</p>
+                <p>2. Server ตรวจสอบถูกต้อง สร้าง <strong>Session ID (เช่น XYZ123)</strong> เก็บลง Database หรือ Redis</p>
+                <p>3. Server ส่ง Session ID คืนให้ User ผ่าน <strong>Cookie</strong></p>
+                <p>4. ครั้งต่อไป User ส่ง Cookie(XYZ123) มา Server ต้องไป<strong>เปิดหาใน DB ทุกครั้ง</strong> ว่านี่คือใคร!</p>
+            </div>
+            <div class="box box-info">
+                <p>💡 ระบบนี้เรียกว่า <strong>"Stateful"</strong> เพราะ Server ต้องจดจำสถานะ (State) ของผู้ใช้ทุกคนไว้ในหน่วยความจำหรือฐานข้อมูลของตัวเอง</p>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>💥 ปัญหาของระบบ Session-Based</h2>
+            <div class="flex-row">
+                <div class="col-50">
+                    <ul>
+                        <li><strong>Scalability ยาก:</strong> ถ้าเรามี Server 5 ตัว (Load Balancer) User ล็อกอินที่ Server A แต่ครั้งต่อไป Request วิ่งไป Server B... Server B จะไม่รู้จัก User คนนี้ (เพราะ Session อยู่ที่ A)</li>
+                        <li><strong>ภาระฐานข้อมูล (Overhead):</strong> ต้องอ่าน Database/Redis ทุกๆ Request ยิ่งคนใช้เยอะ DB ยิ่งทำงานหนัก</li>
+                        <li><strong>CORS & Mobile Apps:</strong> การจัดการ Cookie ข้ามโดเมน หรือใน Mobile App มีความซับซ้อน</li>
+                    </ul>
+                </div>
+                <div class="col-50">
+                    <div class="box box-danger">
+                        <div class="box-title">❓ คำถามชวนคิด</div>
+                        <p>ถ้าเราต้องการรองรับผู้ใช้ 1 ล้านคนพร้อมกัน การเก็บ Session 1 ล้าน Record และต้อง Query มันในทุกๆ วินาที จะเกิดอะไรขึ้นกับระบบ?</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>🚀 ทางออก: JWT และระบบแบบ Stateless</h2>
+            <p><strong>"ถ้างั้น ก็ไม่ต้องให้ Server จำอะไรเลยสิ!"</strong> นี่คือคอนเซปต์ของ <strong>Stateless</strong></p>
+            <div class="diagram" style="text-align: left;">
+                <p style="color: var(--success);">✅ JWT (JSON Web Token) ทำหน้าที่เสมือน "บัตรประชาชน" หรือ "พาสปอร์ต"</p>
+                <p>1. User ล็อกอินสำเร็จ Server ออกบัตร <strong>(JWT)</strong> ให้ User ไปถือไว้</p>
+                <p>2. ข้อมูลว่า User คือใคร สิทธิ์อะไร <strong>ถูกเขียนติดไว้บนบัตรเลย</strong></p>
+                <p>3. พอ User จะใช้งาน ก็แค่ยื่นบัตร (Token) ให้ Server</p>
+                <p>4. Server แค่ตรวจสอบ "ลายเซ็นบนบัตร" ว่าเป็นของจริงและไม่หมดอายุ ก็ให้ผ่านได้เลย <strong>โดยไม่ต้องไปค้น Database!</strong></p>
+            </div>
+        </div>
+
+        <div class="slide center-content">
+            <h1 style="color: var(--jwt-payload);">Part 2</h1>
+            <h2>ผ่าโครงสร้าง JWT (Anatomy of JWT) 🧬</h2>
+            <p>เบื้องหลังสตริงยาวๆ มันซ่อนอะไรไว้ข้างในบ้าง?</p>
+        </div>
+
+        <div class="slide">
+            <h2>ชำแหละโครงสร้าง JWT</h2>
+            <p>JWT คือ String ยาวๆ ที่ถูกคั่นด้วยเครื่องหมายจุด (<code>.</code>) แบ่งออกเป็น 3 ส่วน:</p>
+            <div class="jwt-token">
+                <span class="jwt-p1">eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9</span><span style="color:#fff;">.</span><span class="jwt-p2">eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ</span><span style="color:#fff;">.</span><span class="jwt-p3">SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c</span>
+            </div>
+            <div class="flex-row" style="align-items: flex-start; margin-top: 20px;">
+                <div class="col-50 box" style="border-color: var(--jwt-header);">
+                    <h3 style="color: var(--jwt-header);">1. Header (สีแดง)</h3>
+                    <p>บอกประเภท Token (JWT) และ Algorithm ที่ใช้เข้ารหัสลายเซ็น (เช่น HS256)</p>
+                </div>
+                <div class="col-50 box" style="border-color: var(--jwt-payload);">
+                    <h3 style="color: var(--jwt-payload);">2. Payload (สีม่วง)</h3>
+                    <p>เก็บข้อมูลผู้ใช้ (Claims) เช่น User ID, Role, วันหมดอายุ</p>
+                </div>
+                <div class="col-50 box" style="border-color: var(--jwt-signature);">
+                    <h3 style="color: var(--jwt-signature);">3. Signature (สีฟ้า)</h3>
+                    <p>ลายเซ็นดิจิทัล ใช้ยืนยันว่าข้อมูลไม่ได้ถูกดัดแปลง</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>🚨 ระวัง! ถอดรหัส (Decode) ไม่ใช่ เข้ารหัสลับ (Decrypt)</h2>
+            <div class="flex-row">
+                <div class="col-50">
+                    <p>ข้อมูลใน <strong>Header</strong> และ <strong>Payload</strong> ไม่ได้ถูกเข้ารหัสลับ (Not Encrypted)</p>
+                    <p>มันถูกแค่แปลงฟอร์แมตให้อยู่ในรูป <code>Base64Url</code> เท่านั้น!</p>
+                    <p>แปลว่า <strong>"ใครก็ตาม"</strong> ที่ได้ Token นี้ไป สามารถเอาไป Decode อ่านข้อมูลข้างในได้อย่างง่ายดายผ่านเว็บเช่น jwt.io</p>
+                </div>
+                <div class="col-50">
+                    <div class="box box-danger">
+                        <div class="box-title">⚠️ กฎเหล็กของ JWT</div>
+                        <p><strong>ห้าม!!!</strong> ใส่ข้อมูลที่เป็นความลับ เช่น Password, บัตรเครดิต, หรือข้อมูลส่วนบุคคลที่อ่อนไหว ลงใน Payload เด็ดขาด ให้ใส่แค่ ID, Role หรือข้อมูลที่เปิดเผยได้เท่านั้น</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>❓ คำถาม: ถ้าใครก็อ่านได้ แล้วมันปลอดภัยยังไง?</h2>
+            <p>ความปลอดภัยของ JWT ไม่ได้อยู่ที่ "การซ่อนข้อมูล" แต่อยู่ที่ <strong>"ความสมบูรณ์ของข้อมูล" (Data Integrity)</strong></p>
+            <p>เวทมนตร์อยู่ที่ส่วนที่ 3 คือ <strong>Signature</strong></p>
+            <div class="box box-success">
+                <p>สูตรการสร้าง Signature: <br>
+                <code>HMACSHA256( base64UrlEncode(header) + "." + base64UrlEncode(payload), <strong>SECRET_KEY</strong> )</code>
+                </p>
+            </div>
+            <ul>
+                <li>การจะสร้าง Signature ที่ถูกต้องได้ <strong>ต้องรู้ SECRET_KEY</strong> (ซึ่งเก็บไว้ที่ Server เท่านั้น)</li>
+                <li>ถ้า Hacker เอา Token ไปแอบแก้ Payload (เช่น เปลี่ยน Role=User เป็น Role=Admin)</li>
+                <li>เมื่อส่งกลับมา Server จะเอา Header กับ Payload ใหม่ มาคำนวณ Signature อีกครั้ง</li>
+                <li><strong>ผลลัพธ์:</strong> Signature ใหม่จะไม่ตรงกับของเดิม! (เพราะ Hacker ไม่มี Secret) Server จะเตะ Request นั้นทิ้งทันที! (401 Unauthorized)</li>
+            </ul>
+        </div>
+
+        <div class="slide center-content">
+            <h1 style="color: var(--jwt-signature);">Part 3</h1>
+            <h2>Algorithm ที่ใช้ Sign Token 🔐</h2>
+            <p>การเลือกกุญแจล็อคความปลอดภัย: Symmetric vs Asymmetric</p>
+        </div>
+
+        <div class="slide">
+            <h2>🔑 HS256 vs RS256 ต่างกันอย่างไร?</h2>
+            <p>ใน Header เราจะเห็นค่า <code>"alg": "HS256"</code> นี่คือ Algorithm หลักๆ มี 2 ประเภทที่นิยม</p>
+            <div class="flex-row">
+                <div class="col-50 box box-info">
+                    <div class="box-title">Symmetric (เช่น HS256)</div>
+                    <p>ใช้ <strong>Secret Key 1 ดอก</strong> ถือกุญแจดอกเดียวกันทั้งตอน "สร้าง(Sign)" และตอน "ตรวจ(Verify)"</p>
+                    <p>✅ เร็ว ง่าย เหมาะกับระบบเล็ก (Monolith)</p>
+                    <p>❌ ถ้า Service อื่นจะตรวจ Token ต้องแจกกุญแจดอกนี้ไปให้ด้วย (เสี่ยงกุญแจหลุด)</p>
+                </div>
+                <div class="col-50 box box-warning">
+                    <div class="box-title">Asymmetric (เช่น RS256)</div>
+                    <p>ใช้ <strong>Key Pair 2 ดอก</strong><br> - <code>Private Key</code> ใช้ "สร้าง(Sign)"<br> - <code>Public Key</code> ใช้ "ตรวจ(Verify)"</p>
+                    <p>✅ ปลอดภัยมาก Service อื่นเอา Public Key ไปตรวจได้โดยไม่ต้องห่วงความลับหลุด</p>
+                    <p>⭐ มาตรฐานสำหรับ <strong>Microservices</strong></p>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide center-content">
+            <h1 style="color: var(--success);">Part 4</h1>
+            <h2>การทำงานและ Flow ของ JWT 🔄</h2>
+            <p>วงจรชีวิตตั้งแต่ Login ยัน Logout</p>
+        </div>
+
+        <div class="slide">
+            <h2>ขั้นตอนที่ 1: การขอ Token (Authentication)</h2>
+            <div class="flow-container">
+                <div class="node">1. Client<br><span style="font-size: 0.8em; font-weight:normal;">(POST /login + User/Pass)</span></div>
+                <div class="arrow"></div>
+                <div class="node">2. Auth Service<br><span style="font-size: 0.8em; font-weight:normal;">(Verify DB -> Sign JWT)</span></div>
+                <div class="arrow"></div>
+                <div class="node">3. Client<br><span style="font-size: 0.8em; font-weight:normal;">(รับ JWT ไปเก็บไว้)</span></div>
+            </div>
+            <div class="box" style="margin-top: 30px;">
+                <p>1. ผู้ใช้กรอก Username / Password</p>
+                <p>2. Server ตรวจสอบกับ Database ถ้ารหัสถูก จะทำการ <strong>Sign JWT</strong> (ใช้ Secret Key)</p>
+                <p>3. Server ส่ง String JWT กลับไปให้ Client (Browser/Mobile) เก็บไว้ (เช่น ใน LocalStorage หรือ Cookie)</p>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>ขั้นตอนที่ 2: การใช้งาน Token (Authorization)</h2>
+            <div class="flow-container" style="border-color: var(--success);">
+                <div class="node">1. Client<br><span style="font-size: 0.8em; font-weight:normal;">(GET /api/data + Header)</span></div>
+                <div class="arrow"></div>
+                <div class="node">2. API Gateway/Service<br><span style="font-size: 0.8em; font-weight:normal;">(Verify Signature)</span></div>
+                <div class="arrow"></div>
+                <div class="node" style="border-color: var(--success);">3. Response<br><span style="font-size: 0.8em; font-weight:normal;">(Return Data / 401)</span></div>
+            </div>
+            <div class="box" style="margin-top: 30px;">
+                <p>1. ทุกครั้งที่ Client จะดึงข้อมูล ต้องแนบ JWT ไปด้วยใน HTTP Header: <br><code>Authorization: Bearer <token></code></p>
+                <p>2. Server รับ Request หยิบ Token มาตรวจสอบ (Verify Signature & Expiration Date)</p>
+                <p>3. ถ้าตรวจสอบผ่าน (Valid) Server จะให้บริการดึงข้อมูลส่งกลับไป</p>
+            </div>
+        </div>
+
+        <div class="slide center-content">
+            <h1 style="color: var(--warning);">Part 5</h1>
+            <h2>JWT ในโลก Microservices 🏗️</h2>
+            <p>ทำไมมันถึงกลายเป็นมาตรฐาน (De facto standard)?</p>
+        </div>
+
+        <div class="slide">
+            <h2>ทำไม Microservices ถึงรัก JWT? 💖</h2>
+            <p>ในสถาปัตยกรรม Microservices ระบบถูกซอยเป็นหลายๆ Service (Order, Product, Payment)</p>
+            <div class="flex-row">
+                <div class="col-50">
+                    <ul>
+                        <li>ถ้าใช้ Session: ทุก Service ต้องต่อท่อไปหา Redis/Database ตัวเดียวกันเพื่อเช็คว่า User ล็อกอินหรือยัง (เกิด Bottleneck & Coupling)</li>
+                        <li><strong>เมื่อใช้ JWT:</strong> 
+                            <ul>
+                                <li>Auth Service เป็นคนออกบัตร (Sign)</li>
+                                <li>Service อื่นๆ แค่ "ตรวจบัตร" (Verify) ด้วย Library ในตัวมันเอง หรือใช้ API Gateway ตรวจด่านหน้า</li>
+                                <li><strong>ระบบทำงานอิสระต่อกัน (Decoupled) สเกลได้ไม่จำกัด!</strong></li>
+                            </ul>
+                        </li>
+                    </ul>
+                </div>
+                <div class="col-50">
+                    <div class="diagram" style="padding: 10px;">
+                        <p>[Auth Service] ➔ (Issues JWT)</p>
+                        <p>↓</p>
+                        <p>[Client] ➔ [API Gateway] (Verifies JWT)</p>
+                        <p>↙ &nbsp; &nbsp; ↓ &nbsp; &nbsp; ↘</p>
+                        <p>[Svc A] &nbsp; [Svc B] &nbsp; [Svc C]</p>
+                        <p style="font-size: 0.8em; color: var(--text-muted);">(Services ได้รับ User ID ทันที ไม่ต้องถาม DB!)</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide center-content">
+            <h1 style="color: var(--danger);">Part 6</h1>
+            <h2>ข้อพึงระวัง & Security Best Practices 🛡️</h2>
+            <p>ไม่มีอะไรสมบูรณ์แบบ JWT ก็มีจุดอ่อนที่ต้องระวัง</p>
+        </div>
+
+        <div class="slide">
+            <h2>ชั่งน้ำหนัก: ข้อดี vs ข้อเสีย ของ JWT ⚖️</h2>
+            <div class="flex-row">
+                <div class="col-50 box box-success">
+                    <div class="box-title">✅ ข้อดี (Pros)</div>
+                    <ul>
+                        <li><strong>Stateless & Scalable:</strong> Server ไม่ต้องจำ State</li>
+                        <li><strong>Cross-Domain:</strong> ทำงานข้ามโดเมนได้สบาย (CORS friendly กว่า Session Cookie)</li>
+                        <li><strong>Performance:</strong> ลด Load ของ Database ได้มหาศาล</li>
+                        <li><strong>Mobile Ready:</strong> ใช้งานกับ Mobile App ได้ง่าย</li>
+                    </ul>
+                </div>
+                <div class="col-50 box box-danger">
+                    <div class="box-title">❌ ข้อเสีย (Cons)</div>
+                    <ul>
+                        <li><strong>ขนาดใหญ่ (Payload Size):</strong> ยิ่งใส่ข้อมูลเยอะ Token ยิ่งยาว เปลือง Bandwidth (เพราะต้องส่งทุก Request)</li>
+                        <li><strong>Invalidation ทำได้ยาก:</strong> <em>"ถ้าออก Token ไปแล้ว จะยกเลิกกลางคันยังไง?"</em> (นี่คือปัญหาใหญ่สุดของ JWT)</li>
+                        <li><strong>ข้อมูลอ่านได้ (Not Encrypted):</strong> เสี่ยงถ้าใส่ข้อมูลผิดประเภท</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>🚨 ปัญหาโลกแตก: การยกเลิก Token (Invalidation)</h2>
+            <p>เนื่องจาก JWT ตรวจสอบตัวเองได้ (Stateless) ถ้า User กด Logout หรือ โดนแบน...</p>
+            <p><strong>ปัญหา:</strong> Token เก่าที่ออกไปแล้ว ยังคง Valid อยู่จนกว่าจะถึงเวลาหมดอายุ (Expiration) ที่ตั้งไว้!</p>
+            <div class="box box-warning">
+                <div class="box-title">💡 วิธีแก้ปัญหา (Mitigation Strategies)</div>
+                <ol>
+                    <li><strong>ตั้งอายุสั้นๆ (Short Lived Token):</strong> ให้ Access Token หมดอายุไวๆ (เช่น 15 นาที) เพื่อลดหน้าต่างความเสี่ยง</li>
+                    <li><strong>ใช้ Refresh Token:</strong> เมื่อ Access Token หมดอายุ ค่อยใช้ Refresh Token (ซึ่งเก็บใน DB) ไปขอใหม่ ถ้า User โดนแบน ก็ลบ Refresh Token ใน DB ทิ้ง!</li>
+                    <li><strong>Token Blacklist:</strong> ยอมทำ Stateful นิดๆ โดยเก็บ Token ที่ถูกสั่ง Logout ไว้ใน Redis ชั่วคราวจนกว่าจะหมดอายุ (แลกมากับ Performance ที่ลดลง)</li>
+                </ol>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>เก็บ Token ไว้ที่ไหนดี? (Front-end Storage) 🗄️</h2>
+            <p>ความเสี่ยงหลัก: Hacker ขโมย Token ของผู้ใช้ไปสวมรอย</p>
+            <div class="flex-row">
+                <div class="col-50 box box-danger">
+                    <div class="box-title">❌ Local Storage / Session Storage</div>
+                    <p>เข้าถึงได้ด้วย JavaScript (<code>localStorage.getItem('token')</code>)</p>
+                    <p><strong>เสี่ยงต่อ XSS (Cross-Site Scripting):</strong> ถ้าเว็บเรามีช่องโหว่ให้รัน JS แปลกปลอมได้ Hacker จะดูด Token ขโมยออกไปได้ทันที!</p>
+                </div>
+                <div class="col-50 box box-success">
+                    <div class="box-title">✅ HttpOnly Cookie</div>
+                    <p>ตั้งค่าคุกกี้เป็น <code>HttpOnly</code> และ <code>Secure</code></p>
+                    <p>JavaScript ของ Browser <strong>จะมองไม่เห็นและอ่านไม่ได้</strong> ป้องกัน XSS ได้ชะงัดนัก!</p>
+                    <p style="font-size: 0.9em; color: var(--text-muted);">(แต่ต้องไประวังเรื่อง CSRF แทน ซึ่งแก้ได้ด้วย SameSite cookie)</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>💻 ตัวอย่างโค้ด (Node.js) - การสร้าง Token</h2>
+            <p>เราใช้ Library อย่าง <code>jsonwebtoken</code> ในการสร้าง (Sign)</p>
+            <div class="diagram" style="text-align: left; padding: 15px; background: #1e1e1e; color: #d4d4d4;">
+                <pre><code><span style="color: #569cd6;">const</span> jwt = <span style="color: #dcdcaa;">require</span>(<span style="color: #ce9178;">'jsonwebtoken'</span>);
+<span style="color: #569cd6;">const</span> SECRET_KEY = process.env.JWT_SECRET; <span style="color: #6a9955;">// ห้ามฮาร์ดโค้ด!</span>
+
+<span style="color: #569cd6;">function</span> <span style="color: #dcdcaa;">login</span>(req, res) {
+  <span style="color: #6a9955;">// ... ตรวจสอบ User/Pass สำเร็จ ...</span>
+  <span style="color: #569cd6;">const</span> payload = {
+    userId: <span style="color: #b5cea8;">123</span>,
+    role: <span style="color: #ce9178;">'admin'</span>
+  };
+
+  <span style="color: #6a9955;">// สร้าง Token (Sign)</span>
+  <span style="color: #569cd6;">const</span> token = jwt.<span style="color: #dcdcaa;">sign</span>(payload, SECRET_KEY, { <span style="color: #9cdcfe;">expiresIn</span>: <span style="color: #ce9178;">'1h'</span> });
+  
+  res.<span style="color: #dcdcaa;">json</span>({ token: token });
+}</code></pre>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>💻 ตัวอย่างโค้ด (Node.js) - การตรวจ Token (Middleware)</h2>
+            <p>เราเขียน Middleware ดัก Request ก่อนเข้าถึงข้อมูลจริง</p>
+            <div class="diagram" style="text-align: left; padding: 15px; background: #1e1e1e; color: #d4d4d4; font-size: 0.85em;">
+                <pre><code><span style="color: #569cd6;">function</span> <span style="color: #dcdcaa;">authenticateToken</span>(req, res, next) {
+  <span style="color: #569cd6;">const</span> authHeader = req.headers[<span style="color: #ce9178;">'authorization'</span>];
+  <span style="color: #569cd6;">const</span> token = authHeader && authHeader.<span style="color: #dcdcaa;">split</span>(<span style="color: #ce9178;">' '</span>)[<span style="color: #b5cea8;">1</span>]; <span style="color: #6a9955;">// แยกว่า Bearer <token></span>
+
+  <span style="color: #af00db;">if</span> (!token) <span style="color: #af00db;">return</span> res.<span style="color: #dcdcaa;">sendStatus</span>(<span style="color: #b5cea8;">401</span>); <span style="color: #6a9955;">// ไม่มี Token เตะออก</span>
+
+  <span style="color: #6a9955;">// ตรวจสอบ (Verify)</span>
+  jwt.<span style="color: #dcdcaa;">verify</span>(token, SECRET_KEY, (err, user) => {
+    <span style="color: #af00db;">if</span> (err) <span style="color: #af00db;">return</span> res.<span style="color: #dcdcaa;">sendStatus</span>(<span style="color: #b5cea8;">403</span>); <span style="color: #6a9955;">// Token ปลอมหรือหมดอายุ</span>
+    req.user = user; <span style="color: #6a9955;">// เอา payload แปะไว้ให้ Service ถัดไปใช้</span>
+    <span style="color: #dcdcaa;">next</span>(); <span style="color: #6a9955;">// ให้ผ่าน!</span>
+  });
+}</code></pre>
+            </div>
+            <div class="box box-danger" style="padding: 10px; margin-top: 5px;">
+                <p>⚠️ <strong>จุดผิดพลาดบ่อย:</strong> บางคนเผลอใช้ <code>jwt.decode()</code> แทน <code>jwt.verify()</code> ซึ่งมันจะแค่อ่านข้อมูล ไม่ออกแรงตรวจสอบ Signature (โดนแฮกแน่นอน!)</p>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>🔧 สรุปการใช้งานในชีวิตจริงของสถาปนิกซอฟต์แวร์</h2>
+            <ul>
+                <li><strong>อย่าสร้างระบบ Auth เองถ้าไม่จำเป็น:</strong> ให้ใช้บริการภายนอก เช่น <strong>Keycloak</strong>, <strong>Auth0</strong>, <strong>Firebase Auth</strong> หรือ <strong>AWS Cognito</strong> ซึ่งเขาจัดการเรื่อง JWT, Refresh Token และ Security ให้หมดแล้ว (ตามมาตรฐาน OAuth 2.0 / OpenID Connect)</li>
+                <li><strong>API Gateway:</strong> ให้ API Gateway (เช่น Kong, AWS API Gateway) เป็นคนทำหน้าที่ Verify JWT เพื่อลดภาระของ Microservices ด้านใน</li>
+            </ul>
+        </div>
+
+        <div class="slide center-content">
+            <h2 style="font-size: 2.5em; color: var(--accent);">🛠️ Workshop / การบ้าน</h2>
+            <div class="box box-info" style="text-align: left; max-width: 800px; margin-top: 30px;">
+                <p><strong>โจทย์: JWT Debugger</strong></p>
+                <ol>
+                    <li>ให้นักศึกษาเข้าไปที่เว็บไซต์ <strong>https://jwt.io</strong></li>
+                    <li>ลองเปลี่ยนข้อมูลในกล่องสีม่วง (Payload) สังเกตว่าเกิดอะไรขึ้นกับ Token ทางซ้าย?</li>
+                    <li>ลองเปลี่ยน Secret Key สีฟ้าด้านล่างขวา สังเกตการณ์เปลี่ยนแปลงของ Signature</li>
+                    <li>ทดลองนำ Token ที่ได้ไปตรวจสอบด้วย Node.js script ตามตัวอย่างในสไลด์</li>
+                </ol>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>📌 สรุป (Key Takeaways)</h2>
+            <div class="box box-info">
+                <p>1. <strong>JWT (JSON Web Token)</strong> เป็นเครื่องมือที่ทำให้ระบบ Authentication เป็นแบบ Stateless (Server ไม่ต้องจำ State)</p>
+                <p>2. มี 3 ส่วน: <strong>Header</strong> (ประเภท+อัลกอริทึม), <strong>Payload</strong> (ข้อมูล-ห้ามใส่ความลับ!), <strong>Signature</strong> (ลายเซ็นกันปลอมแปลง)</p>
+                <p>3. <strong>Signature</strong> ทำงานได้เพราะ Hacker ไม่มี Secret Key / Private Key ของเรา</p>
+                <p>4. <strong>Microservices</strong> นิยมใช้มากเพราะลดปัญหาคอขวดที่ฐานข้อมูล</p>
+                <p>5. ต้องระวังเรื่อง <strong>Storage (XSS)</strong> และการทำ <strong>Token Invalidation (Refresh Token)</strong></p>
+            </div>
+        </div>
+
+        <div class="slide center-content">
+            <h1 style="font-size: 4em; color: var(--success);">Q & A ?</h1>
+            <p style="font-size: 1.5em; margin-top: 20px;">มีคำถามเพิ่มเติมไหมครับ?</p>
+        </div>
+
+        <div class="slide center-content">
+            <h1 style="font-size: 3em; color: var(--text-muted);">Thank You</h1>
+            <p style="margin-top: 20px;">ENGSE207 Software Architecture</p>
+        </div>
+
+    </div>
+
+    <div id="controls-bar">
+        <button onclick="changeFontSize(-2)" title="ลดขนาดฟอนต์">A-</button>
+        <button onclick="changeFontSize(2)" title="เพิ่มขนาดฟอนต์">A+</button>
+        <div style="width: 1px; height: 20px; background: #334155; margin: 0 5px;"></div>
+        <button class="btn-nav" onclick="prevSlide()" title="สไลด์ก่อนหน้า">◀</button>
+        <span id="slide-counter">1 / 28</span>
+        <button class="btn-nav" onclick="nextSlide()" title="สไลด์ถัดไป">▶</button>
+        <div style="width: 1px; height: 20px; background: #334155; margin: 0 5px;"></div>
+        <button onclick="toggleFullScreen()" title="เต็มหน้าจอ">⛶</button>
+    </div>
+
+    <script>
+        // Slide Navigation Logic
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slide');
+        const counter = document.getElementById('slide-counter');
+        const totalSlides = slides.length;
+
+        function updateSlide() {
+            slides.forEach((slide, index) => {
+                if(index === currentSlide) {
+                    slide.classList.add('active');
+                } else {
+                    slide.classList.remove('active');
+                    if(index < currentSlide) {
+                        slide.style.transform = 'translateY(-30px)';
+                    } else {
+                        slide.style.transform = 'translateY(30px)';
+                    }
+                }
+            });
+            counter.innerText = `${currentSlide + 1} / ${totalSlides}`;
+        }
+
+        function nextSlide() {
+            if (currentSlide < totalSlides - 1) {
+                currentSlide++;
+                updateSlide();
+            }
+        }
+
+        function prevSlide() {
+            if (currentSlide > 0) {
+                currentSlide--;
+                updateSlide();
+            }
+        }
+
+        // Keyboard Navigation
+        document.addEventListener('keydown', (e) => {
+            if(e.key === 'ArrowRight' || e.key === 'Space' || e.key === 'PageDown') {
+                nextSlide();
+            } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+                prevSlide();
+            }
+        });
+
+        // Font Size Adjustments
+        let currentFontSize = 24;
+        function changeFontSize(step) {
+            currentFontSize += step;
+            if(currentFontSize < 16) currentFontSize = 16;
+            if(currentFontSize > 36) currentFontSize = 36;
+            document.documentElement.style.setProperty('--base-font-size', currentFontSize + 'px');
+        }
+
+        // Fullscreen Toggle
+        function toggleFullScreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => {
+                    console.log(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
+                });
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+            }
+        }
+
+        // Initialize
+        updateSlide();
+    </script>
+</body>
+</html>

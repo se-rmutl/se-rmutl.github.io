@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ENGSE207 - Lab Week 12: Security-Aware Architecture</title>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600;700&family=Fira+Code:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0b1121;
+            --slide-bg: #1e293b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent: #10b981; /* Emerald */
+            --accent-glow: rgba(16, 185, 129, 0.4);
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --info: #3b82f6;
+            --purple: #8b5cf6;
+            --code-bg: #0f172a;
+            --base-font-size: 24px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Kanit', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+            font-size: var(--base-font-size);
+        }
+
+        /* Slide Container - 16:9 */
+        #deck-container {
+            position: relative;
+            width: 100vw;
+            max-width: 177.78vh;
+            height: 56.25vw;
+            max-height: 100vh;
+            background-color: var(--slide-bg);
+            box-shadow: 0 0 30px rgba(0,0,0,0.8);
+            overflow: hidden;
+            transition: all 0.3s ease;
+            background-image: radial-gradient(circle at 50% 0%, #1e293b 0%, #0f172a 100%);
+        }
+
+        .slide {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            padding: 5% 8%;
+            display: flex;
+            flex-direction: column;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateX(50px);
+            transition: opacity 0.4s ease, transform 0.4s ease, visibility 0.4s;
+        }
+
+        .slide.active {
+            opacity: 1;
+            visibility: visible;
+            transform: translateX(0);
+        }
+
+        /* Typography */
+        h1 { font-size: 2.8em; color: var(--accent); margin-bottom: 0.2em; text-shadow: 0 0 15px var(--accent-glow); line-height: 1.2; }
+        h2 { font-size: 1.8em; color: var(--text-main); border-bottom: 3px solid var(--accent); padding-bottom: 10px; margin-bottom: 20px; display: inline-block; }
+        h3 { font-size: 1.4em; color: var(--warning); margin-top: 15px; margin-bottom: 10px; }
+        p, li { font-size: 1.05em; line-height: 1.6; color: var(--text-muted); margin-bottom: 12px; }
+        ul, ol { margin-left: 30px; margin-bottom: 15px; }
+        strong { color: var(--text-main); }
+        code { font-family: 'Fira Code', monospace; background: rgba(0,0,0,0.4); padding: 2px 8px; border-radius: 4px; color: #a78bfa; font-size: 0.9em; border: 1px solid #334155; }
+        pre { background: var(--code-bg); padding: 15px; border-radius: 8px; overflow-x: auto; font-family: 'Fira Code', monospace; font-size: 0.85em; color: #cbd5e1; border: 1px solid #334155; box-shadow: inset 0 2px 10px rgba(0,0,0,0.5); margin-bottom: 15px; }
+        pre code { background: none; padding: 0; border: none; color: inherit; font-size: 1em; }
+
+        /* Syntax Highlight */
+        .kw { color: #f87171; } /* Keyword */
+        .fn { color: #60a5fa; } /* Function */
+        .st { color: #a78bfa; } /* String */
+        .cm { color: #6b7280; font-style: italic; } /* Comment */
+
+        /* Boxes & Highlights */
+        .box { padding: 20px; border-radius: 8px; margin: 15px 0; border-left: 5px solid; background: rgba(0,0,0,0.2); box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .box-info { border-color: var(--info); }
+        .box-warning { border-color: var(--warning); }
+        .box-danger { border-color: var(--danger); }
+        .box-success { border-color: var(--accent); }
+        
+        .box-title { display: flex; align-items: center; font-weight: bold; margin-bottom: 10px; font-size: 1.2em;}
+        .box-info .box-title { color: var(--info); }
+        .box-warning .box-title { color: var(--warning); }
+        .box-danger .box-title { color: var(--danger); }
+        .box-success .box-title { color: var(--accent); }
+
+        /* Layouts */
+        .flex-row { display: flex; gap: 30px; align-items: center; height: 100%; width: 100%; }
+        .flex-col { display: flex; flex-direction: column; gap: 15px; }
+        .col-50 { flex: 1; }
+        .col-40 { flex: 4; }
+        .col-60 { flex: 6; }
+        .center-content { display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; height: 100%; }
+
+        /* Architecture Diagram Elements */
+        .arch-container { display: flex; flex-direction: column; align-items: center; background: #0f172a; padding: 20px; border-radius: 10px; border: 1px solid #334155; margin-top: 10px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
+        .arch-row { display: flex; justify-content: center; align-items: center; width: 100%; gap: 20px; margin: 10px 0; }
+        .node { background: var(--slide-bg); padding: 15px 25px; border-radius: 8px; border: 2px solid; text-align: center; font-weight: bold; z-index: 2; color: #f8fafc; font-size: 0.9em; }
+        .node.user { border-color: var(--info); }
+        .node.gateway { border-color: var(--warning); background: rgba(245, 158, 11, 0.1); }
+        .node.service { border-color: var(--accent); background: rgba(16, 185, 129, 0.1); }
+        .node.db { border-radius: 50%; border-color: var(--danger); width: 90px; height: 90px; display: flex; align-items: center; justify-content: center; background: rgba(239, 68, 68, 0.1); }
+        .node.log { border-color: var(--purple); background: rgba(139, 92, 246, 0.1); width: 100%; margin-top: 15px; }
+        .arrow-down { width: 2px; height: 30px; background: #475569; position: relative; }
+        .arrow-down::after { content: ''; position: absolute; bottom: -5px; left: -4px; border-left: 5px solid transparent; border-right: 5px solid transparent; border-top: 8px solid #475569; }
+        
+        /* File Tree */
+        .folder-tree { font-family: 'Fira Code', monospace; background: #000; padding: 15px; border-radius: 8px; color: #a78bfa; font-size: 0.85em; border: 1px solid #334155; line-height: 1.4; }
+        .folder-tree span { color: #f8fafc; }
+
+        /* Controls */
+        #controls-bar {
+            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+            background: rgba(15, 23, 42, 0.9); padding: 10px 25px; border-radius: 30px;
+            display: flex; gap: 15px; align-items: center; z-index: 100;
+            border: 1px solid #334155; box-shadow: 0 5px 15px rgba(0,0,0,0.5); backdrop-filter: blur(5px);
+        }
+        button { background: none; border: none; color: var(--text-main); font-size: 1.2rem; cursor: pointer; transition: color 0.2s; display: flex; align-items: center; justify-content: center; }
+        button:hover { color: var(--accent); }
+        .btn-nav { font-size: 1.5rem; background: #334155; width: 40px; height: 40px; border-radius: 50%; }
+        .btn-nav:hover { background: var(--accent); color: #fff; }
+        #slide-counter { font-size: 0.9em; font-weight: bold; color: var(--text-muted); min-width: 60px; text-align: center; }
+
+        .watermark { position: absolute; bottom: 20px; left: 30px; font-size: 0.7em; color: rgba(148, 163, 184, 0.3); z-index: 10; font-family: monospace; }
+    </style>
+</head>
+<body>
+
+    <div id="deck-container">
+        
+        <div class="slide active center-content">
+            <h3 style="color: var(--text-muted);">ENGSE207 สถาปัตยกรรมซอฟต์แวร์</h3>
+            <h1 style="font-size: 3em; margin: 15px 0;">🛡️ คู่มือปฏิบัติการ สัปดาห์ที่ 12</h1>
+            <h2 style="border:none; color: var(--accent); font-size: 2em; margin-bottom: 20px;">Security-Aware Architecture</h2>
+            <p style="font-size: 1.2em; color: var(--text-main);">Task Board พร้อม Auth, JWT และ Centralized Logging</p>
+            <div style="margin-top: 30px; background: rgba(0,0,0,0.4); padding: 15px 30px; border-radius: 20px; border: 1px solid #334155;">
+                <span style="color: var(--warning);">⏳ ระยะเวลา: 3 ชั่วโมง</span> | 
+                <span style="color: var(--danger);">🔥 ระดับความยาก: ⭐⭐⭐⭐</span>
+            </div>
+            <div class="watermark">ENGSE207 - Software Architecture Lab</div>
+        </div>
+
+        <div class="slide">
+            <h2>🎯 วัตถุประสงค์การเรียนรู้ (CLOs)</h2>
+            <div class="flex-row">
+                <div class="col-50">
+                    <div class="box box-success">
+                        <ul>
+                            <li>อธิบายบทบาทของ Auth Service, JWT, API Gateway ในสถาปัตยกรรมได้</li>
+                            <li>เพิ่ม <strong>Auth Service</strong> เข้าใน Docker Compose ของ Task Board ได้</li>
+                            <li>ออกแบบและทดสอบ <strong>JWT Authentication Flow</strong> ระหว่าง Services ได้</li>
+                            <li>ใช้ <strong>API Gateway (Nginx)</strong> เพื่อรวมศูนย์และทำ <strong>Rate Limiting</strong> ได้</li>
+                            <li>ตั้งค่า <strong>Centralized Logging (Loki+Grafana)</strong> เพื่อดู Security Events ได้</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="col-50">
+                    <div class="box box-warning">
+                        <div class="box-title">💡 เป้าหมายหลักของวันนี้</div>
+                        <p>อัปเกรดระบบ Task Board จากเดิมที่ "ใครก็เข้าถึงข้อมูลได้" ให้กลายเป็นระบบที่มี <strong>"ด่านตรวจ (Zero-Trust พื้นฐาน)"</strong> มีการยืนยันตัวตน และบันทึกประวัติการเข้าใช้งานอย่างเป็นระบบ</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide center-content">
+            <h2>🔄 วิวัฒนาการสถาปัตยกรรม Task Board</h2>
+            <div class="flex-row" style="justify-content: center; margin-top: 20px; width: 100%;">
+                <div class="box box-danger" style="text-align: center; flex: 1;">
+                    <h3 style="color: var(--danger);">Week 6: N-Tier</h3>
+                    <p style="font-size: 0.9em;">(Local Docker)</p>
+                    <ul style="text-align: left; font-size: 0.85em;">
+                        <li>❌ ไม่มี Authentication</li>
+                        <li>❌ ทุกคนเรียก API ได้โดยตรง</li>
+                        <li>❌ ไม่มี Logging รวมศูนย์</li>
+                    </ul>
+                </div>
+                <div style="font-size: 2em; color: #475569;">➔</div>
+                <div class="box box-warning" style="text-align: center; flex: 1;">
+                    <h3 style="color: var(--warning);">Week 7: Cloud Deploy</h3>
+                    <p style="font-size: 0.9em;">(Railway PaaS)</p>
+                    <ul style="text-align: left; font-size: 0.85em;">
+                        <li>✅ HTTPS อัตโนมัติ</li>
+                        <li>⚠️ ยังไม่มี Auth ป้องกันข้อมูล</li>
+                        <li>⚠️ ใครรู้ URL ก็เข้าได้</li>
+                    </ul>
+                </div>
+                <div style="font-size: 2em; color: var(--accent);">➔</div>
+                <div class="box box-success" style="text-align: center; flex: 1; border-width: 3px;">
+                    <h3 style="color: var(--accent);">Week 12: Security</h3>
+                    <p style="font-size: 0.9em;">(Microservices Security)</p>
+                    <ul style="text-align: left; font-size: 0.85em;">
+                        <li>✅ Auth Service & JWT</li>
+                        <li>✅ API Gateway & Rate Limit</li>
+                        <li>✅ Centralized Logging</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>🏗️ สถาปัตยกรรม C2: Security Enhanced</h2>
+            <div class="arch-container">
+                <div class="node user" style="width: 200px;">🌐 Internet (HTTPS :443)</div>
+                <div class="arrow-down"></div>
+                <div class="node gateway" style="width: 400px;">🛡️ Nginx (API Gateway + Rate Limiter)<br><span style="font-size: 0.8em; font-weight:normal;">ตรวจและรวม Route | Rate: 10 req/s</span></div>
+                <div class="arrow-down"></div>
+                <div class="arch-row">
+                    <div class="flex-col" style="align-items: center;">
+                        <div class="node service">🔑 Auth Service<br><span style="font-size: 0.8em; font-weight:normal;">Login / Issue JWT</span></div>
+                        <div class="arrow-down"></div>
+                        <div class="node db">Auth DB</div>
+                    </div>
+                    <div class="flex-col" style="align-items: center;">
+                        <div class="node service">👤 User Service<br><span style="font-size: 0.8em; font-weight:normal;">Profiles / Roles</span></div>
+                        <div class="arrow-down"></div>
+                        <div class="node db">User DB</div>
+                    </div>
+                    <div class="flex-col" style="align-items: center;">
+                        <div class="node service">📋 Task Service<br><span style="font-size: 0.8em; font-weight:normal;">CRUD Tasks (JWT Req)</span></div>
+                        <div class="arrow-down"></div>
+                        <div class="node db">Task DB</div>
+                    </div>
+                </div>
+                <div class="node log">📊 Logging Stack: Loki + Grafana (รับ logs จากทุก Service)</div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>🤔 ทฤษฎี: ทำไมต้องมี Auth Service แยก?</h2>
+            <div class="flex-row">
+                <div class="col-50 box box-danger">
+                    <div class="box-title">❌ แบบเก่า (Monolith/Week 6)</div>
+                    <p>Task API ทำหน้าที่รับโหลดทุกอย่าง:</p>
+                    <ul>
+                        <li>ตรวจสอบ Username / Password</li>
+                        <li>เชื่อมต่อ User DB</li>
+                        <li>เชื่อมต่อ Task DB</li>
+                    </ul>
+                    <p><em>(ระบบพังง่าย ละเมิดหลัก Single Responsibility)</em></p>
+                </div>
+                <div class="col-50 box box-success">
+                    <div class="box-title">✅ แบบใหม่ (Microservices)</div>
+                    <p>แยกหน้าที่กันอย่างชัดเจน:</p>
+                    <ul>
+                        <li><strong>Auth Service:</strong> ทำหน้าที่รับหน้า Login เช็ครหัส และ "ออก Token (JWT)"</li>
+                        <li><strong>Task Service & User Service:</strong> สนใจแค่เช็คว่า "Token ถูกต้องไหม?" ถ้าถูกก็ให้ผ่าน ไม่ต้องไปต่อ Auth DB อีกรอบ</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>📁 เตรียม Project Structure</h2>
+            <div class="flex-row">
+                <div class="col-40 folder-tree">
+task-board-security/<br>
+├── <span>docker-compose.yml</span><br>
+├── <span>.env</span> <span class="cm">← ใส่ JWT_SECRET ที่นี่</span><br>
+├── <span>nginx/</span><br>
+│   └── <span>nginx.conf</span><br>
+├── <span>auth-service/</span><br>
+│   ├── src/index.js<br>
+│   └── package.json<br>
+├── <span>user-service/</span><br>
+│   ├── src/index.js<br>
+│   └── package.json<br>
+├── <span>task-service/</span><br>
+│   ├── src/index.js<br>
+│   └── package.json<br>
+└── <span>monitoring/</span><br>
+    └── promtail-config.yml
+                </div>
+                <div class="col-60">
+                    <div class="box box-info">
+                        <div class="box-title">🛠️ สิ่งที่ต้องทำเป็นอันดับแรก</div>
+                        <ol>
+                            <li>สร้างโฟลเดอร์ตามโครงสร้างด้านซ้าย</li>
+                            <li>ในแต่ละโฟลเดอร์ Service (auth, user, task) ให้รัน: <br><code>npm init -y</code></li>
+                            <li>ติดตั้ง Dependencies พื้นฐาน: <br><code>npm i express jsonwebtoken bcryptjs pg dotenv cors winston</code></li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide center-content">
+            <h1 style="color: var(--accent);">Part 1</h1>
+            <h2>สร้าง Auth Service 🔑</h2>
+            <p>ด่านแรกของระบบ: เช็ครหัสผ่าน ➔ ออกบัตรผ่าน (JWT)</p>
+        </div>
+
+        <div class="slide">
+            <h2>🔑 Part 1: Auth Service (Database Schema)</h2>
+            <p>Service นี้ต้องมี Database ของตัวเอง (Auth DB) เพื่อเก็บข้อมูล Credentials</p>
+            <div class="box box-warning">
+                <div class="box-title">⚠️ กฎเหล็ก Security</div>
+                <p>ตาราง <code>auth_users</code> จะเก็บ <code>password_hash</code> ด้วยอัลกอริทึม <strong>Bcrypt</strong> ห้ามเก็บรหัสผ่านเป็น Plaintext เด็ดขาด!</p>
+            </div>
+            <p><strong>ตัวอย่าง Schema (auth-service/init.sql):</strong></p>
+            <pre><code><span class="kw">CREATE TABLE</span> auth_users (
+  id <span class="kw">SERIAL PRIMARY KEY</span>,
+  user_id <span class="kw">VARCHAR</span>(50) <span class="kw">UNIQUE NOT NULL</span>,
+  email <span class="kw">VARCHAR</span>(255) <span class="kw">UNIQUE NOT NULL</span>,
+  password_hash <span class="kw">VARCHAR</span>(255) <span class="kw">NOT NULL</span>,
+  role <span class="kw">VARCHAR</span>(20) <span class="kw">DEFAULT</span> <span class="st">'member'</span>
+);</code></pre>
+        </div>
+
+        <div class="slide">
+            <h2>💻 โค้ดสำคัญ: Login & ออก JWT (auth-service)</h2>
+            <pre><code><span class="kw">const</span> bcrypt = <span class="fn">require</span>(<span class="st">'bcryptjs'</span>);
+<span class="kw">const</span> jwt = <span class="fn">require</span>(<span class="st">'jsonwebtoken'</span>);
+
+app.<span class="fn">post</span>(<span class="st">'/api/auth/login'</span>, <span class="kw">async</span> (req, res) => {
+  <span class="kw">const</span> { email, password } = req.body;
+  <span class="cm">// 1. ดึง User จาก DB ด้วย Email (สมมติได้ตัวแปร user มา)</span>
+  
+  <span class="cm">// 2. เทียบรหัสผ่านด้วย bcrypt</span>
+  <span class="kw">const</span> isMatch = <span class="kw">await</span> bcrypt.<span class="fn">compare</span>(password, user.password_hash);
+  <span class="kw">if</span> (!isMatch) <span class="kw">return</span> res.<span class="fn">status</span>(401).<span class="fn">json</span>({ error: <span class="st">'Invalid credentials'</span> });
+
+  <span class="cm">// 3. สร้าง JWT Token (Payload ห้ามใส่ Password!)</span>
+  <span class="kw">const</span> token = jwt.<span class="fn">sign</span>(
+    { user_id: user.user_id, role: user.role }, 
+    process.env.JWT_SECRET, 
+    { expiresIn: <span class="st">'1h'</span> }
+  );
+  
+  res.<span class="fn">json</span>({ message: <span class="st">'Login success'</span>, token });
+});</code></pre>
+        </div>
+
+        <div class="slide center-content">
+            <h1 style="color: var(--info);">Part 2</h1>
+            <h2>สร้าง User Service 👤</h2>
+            <p>แยกการจัดการข้อมูลส่วนตัวโปรไฟล์ ออกจากรหัสผ่าน</p>
+        </div>
+
+        <div class="slide">
+            <h2>👤 Part 2: หน้าที่ของ User Service</h2>
+            <div class="flex-row">
+                <div class="col-50 box box-info">
+                    <div class="box-title">🌟 หน้าที่หลัก</div>
+                    <ul>
+                        <li>เก็บข้อมูลส่วนตัวที่เปิดเผยได้ เช่น ชื่อ นามสกุล รูปโปรไฟล์ แผนก</li>
+                        <li>ไม่ต้องเก็บ Password แล้ว (หน้าที่นั้น Auth Service เอาไปทำ)</li>
+                        <li>เชื่อมโยงข้อมูลกับ Auth Service ด้วย <code>user_id</code> เดียวกัน</li>
+                    </ul>
+                </div>
+                <div class="col-50">
+                    <p><strong>ตัวอย่าง Schema (user-service/init.sql):</strong></p>
+                    <pre><code><span class="kw">CREATE TABLE</span> user_profiles (
+  user_id <span class="kw">VARCHAR</span>(50) <span class="kw">PRIMARY KEY</span>,
+  full_name <span class="kw">VARCHAR</span>(100),
+  department <span class="kw">VARCHAR</span>(50),
+  created_at <span class="kw">TIMESTAMP DEFAULT CURRENT_TIMESTAMP</span>
+);</code></pre>
+                    <p style="font-size: 0.9em; color: var(--danger);">* หมายเหตุ: การดึง Profile ตัวเองก็ต้องใช้ <strong>JWT Token</strong> ยืนยันเช่นกัน!</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide center-content">
+            <h1 style="color: var(--accent);">Part 3</h1>
+            <h2>สร้าง Task Service พร้อม JWT Guard 🛡️</h2>
+            <p>สร้างด่านตรวจไม่ให้คนนอกเข้ามาล้วงข้อมูล</p>
+        </div>
+
+        <div class="slide">
+            <h2>🛡️ Part 3: โค้ดด่านตรวจ JWT (Middleware)</h2>
+            <p>ใน Task Service เราจะเขียน <code>authMiddleware.js</code> ดักไว้ก่อนเข้าถึง Database</p>
+            <pre><code><span class="kw">const</span> jwt = <span class="fn">require</span>(<span class="st">'jsonwebtoken'</span>);
+
+<span class="kw">const</span> <span class="fn">verifyToken</span> = (req, res, next) => {
+  <span class="cm">// 1. มองหา Header ชื่อ Authorization</span>
+  <span class="kw">const</span> authHeader = req.headers[<span class="st">'authorization'</span>];
+  <span class="kw">if</span> (!authHeader) <span class="kw">return</span> res.<span class="fn">status</span>(403).<span class="fn">json</span>({ error: <span class="st">'No token provided'</span> });
+
+  <span class="kw">const</span> token = authHeader.<span class="fn">split</span>(<span class="st">' '</span>)[1]; <span class="cm">// ตัดคำว่า "Bearer " ออก</span>
+  
+  <span class="cm">// 2. ใช้ Secret Key ถอดรหัสเพื่อเช็คความถูกต้อง</span>
+  jwt.<span class="fn">verify</span>(token, process.env.JWT_SECRET, (err, decoded) => {
+    <span class="kw">if</span> (err) <span class="kw">return</span> res.<span class="fn">status</span>(401).<span class="fn">json</span>({ error: <span class="st">'Unauthorized!'</span> });
+    req.user = decoded; <span class="cm">// แนบ Payload (user_id, role) ให้ Service ไปใช้ต่อ</span>
+    <span class="fn">next</span>(); <span class="cm">// ให้ผ่าน! ✅</span>
+  });
+};
+
+<span class="cm">// ตัวอย่างการใช้งาน</span>
+app.<span class="fn">get</span>(<span class="st">'/api/tasks'</span>, verifyToken, (req, res) => { ... });</code></pre>
+        </div>
+
+        <div class="slide center-content">
+            <h1 style="color: var(--warning);">Part 4</h1>
+            <h2>API Gateway (Nginx) + Rate Limiting 🚪</h2>
+            <p>ประตูทางเข้าบานเดียวของระบบ ป้องกันโจมตีแบบ DoS</p>
+        </div>
+
+        <div class="slide">
+            <h2>🚪 Part 4: Nginx และ Rate Limiting</h2>
+            <div class="flex-row">
+                <div class="col-50">
+                    <p><strong>Reverse Proxy:</strong> ให้ Client วิ่งมาที่ Nginx (Port 80) ที่เดียว แล้ว Nginx จะทำการ <strong>Routing</strong> ไปหา Auth, User, Task Service เอง</p>
+                    <p><strong>Rate Limiting:</strong> ป้องกัน Hacker ใช้สคริปต์สุ่มรหัสผ่าน (Brute-force) หรือยิง Request จำนวนมหาศาลเพื่อทำให้ Server ล่ม (DoS Attack)</p>
+                </div>
+                <div class="col-50 box box-warning">
+                    <div class="box-title">💻 โค้ด Nginx (nginx.conf)</div>
+                    <pre style="margin-bottom:0; font-size: 0.8em;"><code>http {
+  <span class="cm"># กำหนด Zone จำกัด 10 requests / วินาที ต่อ 1 IP</span>
+  <span class="fn">limit_req_zone</span> $binary_remote_addr zone=mylimit:10m rate=10r/s;
+
+  server {
+    <span class="kw">location</span> /api/auth/ {
+      <span class="fn">limit_req</span> zone=mylimit burst=5 nodelay; <span class="cm"># เปิดใช้ Rate Limit</span>
+      <span class="fn">proxy_pass</span> http://auth-service:3001/;
+    }
+    <span class="kw">location</span> /api/tasks/ {
+      <span class="fn">proxy_pass</span> http://task-service:3002/;
+    }
+  }
+}</code></pre>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide center-content">
+            <h1 style="color: var(--purple);">Part 5</h1>
+            <h2>Centralized Logging 📊</h2>
+            <p>รวบรวม Log จากทุก Microservices มาไว้ที่เดียวด้วย Loki + Grafana</p>
+        </div>
+
+        <div class="slide">
+            <h2>📊 Part 5: ตั้งค่า Winston Logger (JSON Format)</h2>
+            <div class="flex-row">
+                <div class="col-50">
+                    <p>ใน Production เราไม่ใช้แค่ <code>console.log()</code> เพราะมันค้นหายาก เราจะใช้ไลบรารี <strong>Winston</strong> ให้เขียน Log เป็นรูปแบบ <strong>JSON (Structured Logging)</strong></p>
+                    <p>นำโค้ดด้านขวาไปใส่ในทุก Service (Auth, User, Task)</p>
+                </div>
+                <div class="col-50">
+                    <pre style="font-size: 0.8em;"><code><span class="cm">// utils/logger.js</span>
+<span class="kw">const</span> winston = <span class="fn">require</span>(<span class="st">'winston'</span>);
+
+<span class="kw">const</span> logger = winston.<span class="fn">createLogger</span>({
+  level: <span class="st">'info'</span>,
+  format: winston.format.<span class="fn">combine</span>(
+    winston.format.<span class="fn">timestamp</span>(),
+    winston.format.<span class="fn">json</span>() <span class="cm">// Output เป็น JSON</span>
+  ),
+  transports: [
+    <span class="kw">new</span> winston.transports.<span class="fn">Console</span>()
+  ]
+});
+
+<span class="kw">module.exports</span> = logger;
+
+<span class="cm">// การใช้งาน: logger.info('User login success', { userId: 123 });</span></code></pre>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide center-content">
+            <h1 style="color: var(--info);">Part 6</h1>
+            <h2>รวมร่างด้วย Docker Compose 🐳</h2>
+            <p>จัดการ 9 Containers ให้คุยกันและตั้งค่า Security Network</p>
+        </div>
+
+        <div class="slide">
+            <h2>🐳 Part 6: Docker Compose (Network & Port Security)</h2>
+            <p>สังเกตการเปิด Port (Port Mapping) ใน <code>docker-compose.yml</code></p>
+            <ul>
+                <li><strong>API Gateway (Nginx):</strong> <code>ports: ["80:80"]</code> เปิดให้คนภายนอกเข้าได้เพียงทางเดียว!</li>
+                <li><strong>Auth, Task, User Services:</strong> <strong>ไม่มี ports ออกไปข้างนอก!</strong> ใช้แค่ <code>expose: ["3001"]</code> เพื่อคุยกันเองในวง LAN (Network)</li>
+                <li><strong>Logging Driver:</strong> กำหนดให้ทุก Service ส่ง Log ไปหา <code>Loki</code> อัตโนมัติ</li>
+            </ul>
+            <pre style="margin-top: 10px; font-size: 0.8em;"><code>    <span class="kw">logging</span>:
+      <span class="kw">driver</span>: loki
+      <span class="kw">options</span>:
+        <span class="kw">loki-url</span>: "http://localhost:3100/loki/api/v1/push"
+        <span class="kw">loki-retries</span>: "5"</code></pre>
+        </div>
+
+        <div class="slide">
+            <h2>🧪 Part 7: Security Test Cases (ทดสอบระบบ)</h2>
+            <p>หลังจากรัน <code>docker compose up --build -d</code> ให้ใช้ Postman ทดสอบ:</p>
+            <div class="flex-col">
+                <div class="box" style="border-left-color: var(--danger); padding: 10px 20px;">
+                    <strong style="color: var(--danger);">Test 1: เข้า API แบบไม่มี Token</strong>
+                    <p style="margin:0; font-size:0.9em;">ยิง <code>GET http://localhost/api/tasks</code> โดยไม่แนบ Header ➔ <strong>คาดหวัง: 403 Forbidden</strong></p>
+                </div>
+                <div class="box" style="border-left-color: var(--info); padding: 10px 20px;">
+                    <strong style="color: var(--info);">Test 2: ขอ Token (Login)</strong>
+                    <p style="margin:0; font-size:0.9em;">ยิง <code>POST http://localhost/api/auth/login</code> พร้อม user/pass ➔ <strong>คาดหวัง: 200 OK + ได้รับ JWT Token</strong></p>
+                </div>
+                <div class="box" style="border-left-color: var(--accent); padding: 10px 20px;">
+                    <strong style="color: var(--accent);">Test 3: นำ Token ไปดึงข้อมูล Task</strong>
+                    <p style="margin:0; font-size:0.9em;">ยิง <code>GET http://localhost/api/tasks</code> โดยแนบ <code>Authorization: Bearer <Token></code> ➔ <strong>คาดหวัง: 200 OK + ได้ข้อมูล Task</strong></p>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>🚀 ทดสอบยิง Rate Limiting (DoS Test)</h2>
+            <p>ทดสอบว่า Nginx สามารถป้องกันการยิง Request สแปมรัวๆ ได้จริงหรือไม่</p>
+            <div class="box box-warning" style="font-family: monospace;">
+                <p># รันคำสั่งนี้ใน Terminal (ส่ง Request 20 ครั้งติดๆ กันในเสี้ยววินาที)</p>
+                <code style="display: block; padding: 10px; margin-top: 10px; color: #60a5fa;">for i in {1..20}; do curl -i http://localhost/api/auth/login; done</code>
+            </div>
+            <p style="margin-top: 20px;"><strong>ผลลัพธ์ที่คาดหวัง:</strong></p>
+            <ul>
+                <li>Request แรกๆ จะทะลุไปถึง Auth Service (ได้ <strong>HTTP 200/401</strong>)</li>
+                <li>Request ที่เกินลิมิต 10 ครั้งต่อวินาที Nginx จะเตะทิ้งและตอบกลับด้วย <strong style="color: var(--danger);">HTTP 503 Service Temporarily Unavailable</strong> ทันที! (เซิร์ฟเวอร์รอดตาย)</li>
+            </ul>
+        </div>
+
+        <div class="slide">
+            <h2>⚖️ สรุป: Defense in Depth & Trade-offs</h2>
+            <div class="flex-row">
+                <div class="col-50 box box-success">
+                    <div class="box-title">🛡️ การป้องกันหลายชั้น</div>
+                    <ul>
+                        <li><strong>ชั้นที่ 1:</strong> Rate Limiting (Nginx) กัน DoS</li>
+                        <li><strong>ชั้นที่ 2:</strong> JWT Validation กันคนนอก</li>
+                        <li><strong>ชั้นที่ 3:</strong> Role-based Auth ตรวจสิทธิ์ User</li>
+                        <li><strong>ชั้นที่ 4:</strong> SQL Parameterized Queries</li>
+                    </ul>
+                </div>
+                <div class="col-50 box box-danger">
+                    <div class="box-title">➖ สิ่งที่ต้องแลกมา (Cost)</div>
+                    <ul>
+                        <li><strong>Complexity เพิ่ม:</strong> มีถึง 9 Container ดูแลยากขึ้น</li>
+                        <li><strong>Latency เพิ่ม:</strong> การเช็ค JWT ผ่าน Middleware กินเวลา ~5ms</li>
+                        <li><strong>UX:</strong> Rate Limit ตั้งน้อยไปอาจบล็อกคนใช้งานจริง</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>✅ Checklist งานที่ต้องส่ง (Deliverables)</h2>
+            <div class="flex-row">
+                <div class="col-50">
+                    <ul style="list-style-type: none; margin-left: 0;">
+                        <li><input type="checkbox" checked disabled> <code>docker compose up --build</code> รันผ่านทุก service</li>
+                        <li><input type="checkbox" checked disabled> ทดสอบ Authentication Flow สำเร็จ</li>
+                        <li><input type="checkbox" checked disabled> ทดสอบ Rate Limit ได้ผลติด 503</li>
+                        <li><input type="checkbox" checked disabled> เห็น Structured Log (JSON) ปรากฏใน Grafana</li>
+                        <li><input type="checkbox" checked disabled> อัปเดตแผนภาพ <strong>C2 Diagram</strong></li>
+                        <li><input type="checkbox" checked disabled> เขียนเอกสาร <strong>ADR-001</strong></li>
+                    </ul>
+                </div>
+                <div class="col-50 box box-warning">
+                    <div class="box-title">📤 การส่งงาน</div>
+                    <p>Push Code ทั้งหมดขึ้น GitHub Repository (Term Project) ของกลุ่มตัวเอง</p>
+                    <p style="color: var(--danger);">🚨 <strong>อย่าลืม:</strong> ห้าม Push ไฟล์ <code>.env</code> หรือโฟลเดอร์ <code>node_modules</code> เด็ดขาด! (ให้ใส่ไว้ใน <code>.gitignore</code>)</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide center-content">
+            <h2 style="font-size: 2.5em; color: var(--info);">🧠 คำถาม Reflection</h2>
+            <div class="box box-info" style="text-align: left; max-width: 900px; margin-top: 30px;">
+                <ol>
+                    <li style="margin-bottom: 15px;">ทำไม JWT ถึงเหมาะกับ Microservices มากกว่า Session-based authentication?</li>
+                    <li style="margin-bottom: 15px;">Rate Limiting ช่วยป้องกัน Attack ประเภทใดบ้าง?</li>
+                    <li style="margin-bottom: 15px;">ทำไมการตั้งค่า <code>ports</code> ใน Docker Compose ถึงสำคัญต่อเรื่อง Security?</li>
+                    <li>ถ้าสมมติ <code>JWT_SECRET</code> ของระบบเรารั่วไหลไปอยู่ในมือ Hacker เราควรจัดการแก้ไขปัญหานี้ทันทีอย่างไร?</li>
+                </ol>
+            </div>
+            <p style="color: var(--text-muted); margin-top: 20px;">(ให้นักศึกษาตอบคำถามเหล่านี้ลงใน <code>README.md</code> ของ Term Project กลุ่ม)</p>
+        </div>
+
+        <div class="slide center-content">
+            <h1 style="font-size: 4em; color: var(--accent);">Q & A ?</h1>
+            <p style="font-size: 1.5em; margin-top: 20px; color: var(--text-muted);">Let's Secure the System! 💻🛡️</p>
+            <div style="margin-top: 50px; font-size: 0.9em; color: #475569;">ENGSE207 Software Architecture</div>
+        </div>
+
+    </div>
+
+    <div id="controls-bar">
+        <button onclick="changeFontSize(-2)" title="ลดขนาดฟอนต์">A-</button>
+        <button onclick="changeFontSize(2)" title="เพิ่มขนาดฟอนต์">A+</button>
+        <div style="width: 1px; height: 20px; background: #334155; margin: 0 5px;"></div>
+        <button class="btn-nav" onclick="prevSlide()" title="สไลด์ก่อนหน้า">◀</button>
+        <span id="slide-counter">1 / 25</span>
+        <button class="btn-nav" onclick="nextSlide()" title="สไลด์ถัดไป">▶</button>
+        <div style="width: 1px; height: 20px; background: #334155; margin: 0 5px;"></div>
+        <button onclick="toggleFullScreen()" title="เต็มหน้าจอ">⛶</button>
+    </div>
+
+    <script>
+        // Slide Navigation Logic
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slide');
+        const counter = document.getElementById('slide-counter');
+        const totalSlides = slides.length;
+
+        function updateSlide() {
+            slides.forEach((slide, index) => {
+                if(index === currentSlide) {
+                    slide.classList.add('active');
+                } else {
+                    slide.classList.remove('active');
+                    if(index < currentSlide) {
+                        slide.style.transform = 'translateX(-50px)';
+                    } else {
+                        slide.style.transform = 'translateX(50px)';
+                    }
+                }
+            });
+            counter.innerText = `${currentSlide + 1} / ${totalSlides}`;
+        }
+
+        function nextSlide() {
+            if (currentSlide < totalSlides - 1) {
+                currentSlide++;
+                updateSlide();
+            }
+        }
+
+        function prevSlide() {
+            if (currentSlide > 0) {
+                currentSlide--;
+                updateSlide();
+            }
+        }
+
+        // Keyboard Navigation
+        document.addEventListener('keydown', (e) => {
+            if(e.key === 'ArrowRight' || e.key === 'Space' || e.key === 'PageDown') {
+                nextSlide();
+            } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+                prevSlide();
+            }
+        });
+
+        // Font Size Adjustments
+        let currentFontSize = 24;
+        function changeFontSize(step) {
+            currentFontSize += step;
+            if(currentFontSize < 16) currentFontSize = 16;
+            if(currentFontSize > 36) currentFontSize = 36;
+            document.documentElement.style.setProperty('--base-font-size', currentFontSize + 'px');
+        }
+
+        // Fullscreen Toggle
+        function toggleFullScreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => {
+                    console.log(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
+                });
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+            }
+        }
+
+        // Initialize
+        updateSlide();
+    </script>
+</body>
+</html>

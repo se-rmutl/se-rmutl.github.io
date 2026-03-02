@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ENGSE207 - Security Architecture Simulator</title>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&family=Fira+Code:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #0b1120;
+            --panel-bg: #1e293b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent: #3b82f6;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --terminal-bg: #000000;
+            --terminal-text: #22c55e;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Kanit', sans-serif; }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Header */
+        header {
+            background: rgba(15, 23, 42, 0.9);
+            padding: 15px 30px;
+            border-bottom: 1px solid #334155;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        header h1 { font-size: 1.5rem; color: var(--accent); display: flex; align-items: center; gap: 10px; margin: 0; }
+        
+        /* Layout */
+        .container {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        /* Sidebar Nav */
+        .sidebar {
+            width: 250px;
+            background: var(--panel-bg);
+            border-right: 1px solid #334155;
+            padding: 20px 0;
+            display: flex;
+            flex-direction: column;
+        }
+        .nav-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            text-align: left;
+            padding: 15px 25px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            border-left: 4px solid transparent;
+        }
+        .nav-btn:hover { background: rgba(59, 130, 246, 0.1); color: var(--text-main); }
+        .nav-btn.active {
+            background: rgba(59, 130, 246, 0.2);
+            color: var(--accent);
+            border-left-color: var(--accent);
+            font-weight: 600;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            gap: 20px;
+            overflow-y: auto;
+        }
+
+        .scenario-header {
+            background: var(--panel-bg);
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid #334155;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .scenario-info h2 { color: var(--text-main); margin-bottom: 5px; }
+        .scenario-info p { color: var(--text-muted); font-size: 0.95rem; margin: 0; }
+
+        /* Security Toggle */
+        .toggle-container {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            background: #0f172a;
+            padding: 10px 20px;
+            border-radius: 30px;
+            border: 1px solid #334155;
+        }
+        .toggle-label { font-weight: bold; font-size: 1.1rem; }
+        .toggle-label.off { color: var(--danger); }
+        .toggle-label.on { color: var(--success); }
+        
+        .switch {
+            position: relative; display: inline-block; width: 60px; height: 34px;
+        }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider {
+            position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+            background-color: var(--danger); transition: .4s; border-radius: 34px;
+        }
+        .slider:before {
+            position: absolute; content: ""; height: 26px; width: 26px; left: 4px; bottom: 4px;
+            background-color: white; transition: .4s; border-radius: 50%;
+        }
+        input:checked + .slider { background-color: var(--success); box-shadow: 0 0 15px rgba(16, 185, 129, 0.5); }
+        input:checked + .slider:before { transform: translateX(26px); }
+
+        /* Workspace Panels */
+        .workspace {
+            display: flex;
+            gap: 20px;
+            flex: 1;
+            min-height: 400px;
+        }
+        .panel {
+            flex: 1;
+            background: var(--panel-bg);
+            border-radius: 10px;
+            border: 1px solid #334155;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .panel-header {
+            background: #0f172a; padding: 10px 15px; font-weight: 600; border-bottom: 1px solid #334155; display: flex; justify-content: space-between; align-items: center;
+        }
+        .panel-body {
+            padding: 20px; flex: 1; display: flex; flex-direction: column; gap: 15px;
+        }
+
+        /* Terminal */
+        .terminal {
+            background: var(--terminal-bg);
+            color: var(--terminal-text);
+            font-family: 'Fira Code', monospace;
+            padding: 15px;
+            flex: 1;
+            overflow-y: auto;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.8);
+        }
+        .term-error { color: #ff4444; }
+        .term-success { color: #00ff00; }
+        .term-warn { color: #ffaa00; }
+        .term-info { color: #3b82f6; }
+
+        /* Controls */
+        input[type="text"], select {
+            width: 100%; padding: 10px; background: #0f172a; border: 1px solid #334155; color: white; border-radius: 5px; outline: none; font-family: inherit;
+        }
+        input[type="text"]:focus, select:focus { border-color: var(--accent); }
+        
+        .btn {
+            padding: 10px 20px; border: none; border-radius: 5px; font-weight: 600; cursor: pointer; transition: all 0.2s; color: white; display: flex; align-items: center; justify-content: center; gap: 8px;
+        }
+        .btn-primary { background: var(--accent); }
+        .btn-primary:hover { background: #2563eb; }
+        .btn-danger { background: var(--danger); }
+        .btn-danger:hover { background: #dc2626; box-shadow: 0 0 10px rgba(239, 68, 68, 0.5); }
+        .btn-warning { background: var(--warning); color: #000; }
+        .btn-warning:hover { background: #d97706; }
+        .btn-success { background: var(--success); }
+        .btn-success:hover { background: #059669; }
+
+        /* Status Badge */
+        .status-badge {
+            padding: 4px 10px; border-radius: 15px; font-size: 0.8rem; font-weight: bold; background: #334155; border: 1px solid transparent;
+        }
+        .status-badge.auth { background: rgba(16, 185, 129, 0.2); color: var(--success); border-color: var(--success); }
+        .status-badge.unauth { background: rgba(239, 68, 68, 0.2); color: var(--danger); border-color: var(--danger); }
+
+        /* Animations */
+        @keyframes shake {
+            0% { transform: translateX(0); }
+            25% { transform: translateX(-5px) rotate(-1deg); }
+            50% { transform: translateX(5px) rotate(1deg); }
+            75% { transform: translateX(-5px) rotate(-1deg); }
+            100% { transform: translateX(0); }
+        }
+        .shake { animation: shake 0.4s ease-in-out; }
+        
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+        .pulse-danger { animation: pulse 1s infinite; border-color: var(--danger); }
+
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>🛡️ Security Architecture Simulator</h1>
+        <div>ENGSE207 - Interactive Lab</div>
+    </header>
+
+    <div class="container">
+        <div class="sidebar">
+            <button class="nav-btn active" id="btn-authn" onclick="switchScenario('authn')">1. JWT Authentication</button>
+            <button class="nav-btn" id="btn-authz" onclick="switchScenario('authz')">2. Role-based Authorization</button>
+            <button class="nav-btn" id="btn-rate" onclick="switchScenario('rate')">3. Rate Limiting</button>
+            <button class="nav-btn" id="btn-waf" onclick="switchScenario('waf')">4. WAF (SQLi / XSS)</button>
+        </div>
+
+        <div class="main-content">
+            
+            <div class="scenario-header">
+                <div class="scenario-info" id="scenario-info-box">
+                    <h2>Scenario Title</h2>
+                    <p>Description goes here...</p>
+                </div>
+                <div class="toggle-container">
+                    <span class="toggle-label off" id="lbl-off">Protection OFF</span>
+                    <label class="switch">
+                        <input type="checkbox" id="security-toggle" onchange="toggleSecurity()">
+                        <span class="slider"></span>
+                    </label>
+                    <span class="toggle-label on" id="lbl-on" style="color:var(--text-muted)">Protection ON</span>
+                </div>
+            </div>
+
+            <div class="workspace">
+                
+                <div class="panel">
+                    <div class="panel-header">
+                        💻 ฝั่ง Client (ผู้ใช้ / Hacker)
+                        <span id="client-token-status" class="status-badge unauth">No Token</span>
+                    </div>
+                    <div class="panel-body" id="client-controls">
+                        </div>
+                </div>
+
+                <div class="panel" id="server-panel">
+                    <div class="panel-header">
+                        🖥️ ฝั่ง Server Console
+                        <button onclick="clearConsole()" style="background:none; border:none; color:var(--text-muted); cursor:pointer;">🗑️ Clear</button>
+                    </div>
+                    <div class="terminal" id="server-console">
+                        <div class="term-info">System initialized. Waiting for requests...</div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- State Management ---
+        let isSecurityEnabled = false;
+        let currentScenario = 'authn';
+        let currentToken = null;
+        let currentUserRole = 'guest';
+
+        // Rate Limiting State
+        let requestCount = 0;
+        let rateLimitTimer = null;
+
+        // --- Data Definitions ---
+        const scenarios = {
+            'authn': {
+                title: "1. JWT Authentication",
+                desc: "ทดสอบระบบพิสูจน์ตัวตน: ถ้าปิด Security ใครก็ดึงข้อมูลได้ / ถ้าเปิด ต้อง Login เพื่อรับ JWT ก่อน",
+                controlsHtml: `
+                    <div style="background: rgba(0,0,0,0.2); padding: 15px; border-radius: 8px;">
+                        <h4 style="margin-bottom: 10px; color: var(--accent);">Step 1: ขอ Token</h4>
+                        <button class="btn btn-primary" style="width:100%" onclick="simulateLogin('User')">🔑 Login ขอ JWT Token</button>
+                    </div>
+                    <div style="background: rgba(0,0,0,0.2); padding: 15px; border-radius: 8px;">
+                        <h4 style="margin-bottom: 10px; color: var(--warning);">Step 2: ร้องขอข้อมูล (API Request)</h4>
+                        <button class="btn btn-success" style="width:100%" onclick="fetchProtectedData()">📥 GET /api/sensitive-data</button>
+                    </div>
+                    <button class="btn btn-danger" style="margin-top:auto;" onclick="logout()">🗑️ ลบ Token ทิ้ง (Logout)</button>
+                `
+            },
+            'authz': {
+                title: "2. Role-based Authorization (RBAC)",
+                desc: "ทดสอบระบบสิทธิ์: User ทั่วไปสามารถแอบลบฐานข้อมูลได้หรือไม่ ถ้าระบบไม่ได้เช็ค Role จาก Payload?",
+                controlsHtml: `
+                    <div style="background: rgba(0,0,0,0.2); padding: 15px; border-radius: 8px;">
+                        <h4 style="margin-bottom: 10px; color: var(--accent);">สวมรอย Login</h4>
+                        <div style="display:flex; gap:10px;">
+                            <button class="btn btn-primary" style="flex:1" onclick="simulateLogin('User')">Login เป็น User</button>
+                            <button class="btn btn-warning" style="flex:1" onclick="simulateLogin('Admin')">Login เป็น Admin</button>
+                        </div>
+                    </div>
+                    <div style="background: rgba(0,0,0,0.2); padding: 15px; border-radius: 8px;">
+                        <h4 style="margin-bottom: 10px; color: var(--danger);">ทำรายการอันตราย</h4>
+                        <button class="btn btn-danger" style="width:100%" onclick="attemptDeleteDB()">🔥 DELETE /api/database</button>
+                    </div>
+                    <button class="btn btn-danger" style="margin-top:auto;" onclick="logout()">🗑️ ลบ Token ทิ้ง (Logout)</button>
+                `
+            },
+            'rate': {
+                title: "3. Rate Limiting (API Gateway)",
+                desc: "ทดสอบการยิง Request รัวๆ (DoS Attack): ระบบจะล่ม หรือ API Gateway จะบล็อกทัน?",
+                controlsHtml: `
+                    <div style="text-align: center; margin-bottom: 15px;">
+                        <div style="font-size: 3rem;">🚀</div>
+                        <p style="color:var(--text-muted)">จำลองการยิง Request จำนวนมาก (Spam)</p>
+                    </div>
+                    <button class="btn btn-danger" style="width:100%; height: 60px; font-size: 1.2rem;" onclick="spamRequest()">💥 ยิง Request รัวๆ! (Spam API)</button>
+                    <div style="margin-top: 20px; background:#000; padding:10px; border-radius:5px; text-align:center;">
+                        <div id="cpu-bar" style="height: 20px; background: var(--success); width: 10%; transition: all 0.2s;"></div>
+                        <small style="color:var(--text-muted)">Server CPU Load</small>
+                    </div>
+                `
+            },
+            'waf': {
+                title: "4. Web Application Firewall (WAF)",
+                desc: "ทดสอบส่ง Payload อันตราย: ส่ง SQL Injection หรือ XSS เข้าไปที่ Input",
+                controlsHtml: `
+                    <div style="background: rgba(0,0,0,0.2); padding: 15px; border-radius: 8px;">
+                        <h4 style="margin-bottom: 10px; color: var(--warning);">ช่องค้นหาข้อมูลผู้ใช้ (Search)</h4>
+                        <select id="payload-selector" style="margin-bottom: 10px;" onchange="updateWafInput()">
+                            <option value="normal">คำค้นหาปกติ: John Doe</option>
+                            <option value="sqli">SQL Injection: ' OR '1'='1' --</option>
+                            <option value="xss">XSS: &lt;script&gt;alert('Hacked!')&lt;/script&gt;</option>
+                        </select>
+                        <input type="text" id="waf-input" value="John Doe" style="margin-bottom: 15px; font-family: monospace; color: var(--danger);">
+                        <button class="btn btn-danger" style="width:100%" onclick="sendWafPayload()">🕷️ ส่ง Request</button>
+                    </div>
+                `
+            }
+        };
+
+        // --- Core Functions ---
+
+        function init() {
+            renderScenario();
+            updateToggleUI();
+        }
+
+        // แก้ไขฟังก์ชันนี้ เพื่อหลีกเลี่ยงการใช้ event.target ที่มักเกิด Error ในบาง Browser
+        function switchScenario(scenarioId) {
+            currentScenario = scenarioId;
+            
+            // 1. Update Nav Active state อย่างปลอดภัย
+            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+            const activeBtn = document.getElementById('btn-' + scenarioId);
+            if (activeBtn) activeBtn.classList.add('active');
+            
+            // 2. Clear Timer ของโหมด Rate Limiting เพื่อไม่ให้ไปกวนโหมดอื่น
+            if (rateLimitTimer) {
+                clearTimeout(rateLimitTimer);
+            }
+            requestCount = 0;
+            updateCpuLoad(10);
+            
+            // 3. Reset states
+            logout();
+            clearConsole();
+            
+            renderScenario();
+        }
+
+        function renderScenario() {
+            const data = scenarios[currentScenario];
+            document.getElementById('scenario-info-box').innerHTML = `<h2>${data.title}</h2><p>${data.desc}</p>`;
+            document.getElementById('client-controls').innerHTML = data.controlsHtml;
+            logConsole(`--- Switched to: ${data.title} ---`, 'info');
+            logConsole(`[System] Security Shield is currently ${isSecurityEnabled ? 'ON' : 'OFF'}`, isSecurityEnabled ? 'success' : 'warn');
+        }
+
+        function toggleSecurity() {
+            isSecurityEnabled = document.getElementById('security-toggle').checked;
+            updateToggleUI();
+            logConsole(`[Config] Security Shield switched ${isSecurityEnabled ? 'ON 🛡️' : 'OFF ⚠️'}`, isSecurityEnabled ? 'success' : 'error');
+            
+            const serverPanel = document.getElementById('server-panel');
+            if(!isSecurityEnabled) {
+                serverPanel.classList.add('pulse-danger');
+            } else {
+                serverPanel.classList.remove('pulse-danger');
+            }
+        }
+
+        function updateToggleUI() {
+            const lblOff = document.getElementById('lbl-off');
+            const lblOn = document.getElementById('lbl-on');
+            if (isSecurityEnabled) {
+                lblOff.style.color = "var(--text-muted)";
+                lblOn.style.color = "var(--success)";
+                lblOn.style.fontWeight = "bold";
+                lblOff.style.fontWeight = "normal";
+            } else {
+                lblOff.style.color = "var(--danger)";
+                lblOff.style.fontWeight = "bold";
+                lblOn.style.color = "var(--text-muted)";
+                lblOn.style.fontWeight = "normal";
+            }
+        }
+
+        // --- Console Logic ---
+        function logConsole(message, type = 'default') {
+            const consoleEl = document.getElementById('server-console');
+            const time = new Date().toLocaleTimeString('en-GB', { hour12: false, hour: "2-digit", minute: "2-digit", second: "2-digit" });
+            
+            let colorClass = '';
+            if(type === 'error') colorClass = 'term-error';
+            if(type === 'success') colorClass = 'term-success';
+            if(type === 'warn') colorClass = 'term-warn';
+            if(type === 'info') colorClass = 'term-info';
+
+            const line = document.createElement('div');
+            // Escape HTML tags to prevent breaking the console UI
+            const safeMessage = message.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+            line.innerHTML = `<span style="color:#666">[${time}]</span> <span class="${colorClass}">${safeMessage}</span>`;
+            consoleEl.appendChild(line);
+            consoleEl.scrollTop = consoleEl.scrollHeight; // Auto scroll
+        }
+
+        function clearConsole() {
+            document.getElementById('server-console').innerHTML = '';
+        }
+
+        function triggerShake() {
+            const panel = document.getElementById('server-panel');
+            panel.classList.remove('shake');
+            void panel.offsetWidth; // trigger reflow
+            panel.classList.add('shake');
+        }
+
+        // --- Scenarios Implementations ---
+
+        // 1. AuthN & AuthZ Helpers
+        function simulateLogin(role) {
+            currentUserRole = role;
+            // Fake JWT generation
+            const header = btoa('{"alg":"HS256","typ":"JWT"}');
+            const payload = btoa(`{"sub":"123","name":"User","role":"${role.toLowerCase()}","iat":1600000000}`);
+            const signature = "fake_signature_xyz";
+            currentToken = `${header}.${payload}.${signature}`;
+            
+            const statusBadge = document.getElementById('client-token-status');
+            statusBadge.className = 'status-badge auth';
+            statusBadge.innerText = `Has Token (${role})`;
+            
+            logConsole(`[Auth Service] User logged in as ${role}. Issued JWT Token.`, 'success');
+        }
+
+        function logout() {
+            currentToken = null;
+            currentUserRole = 'guest';
+            const statusBadge = document.getElementById('client-token-status');
+            if(statusBadge) {
+                statusBadge.className = 'status-badge unauth';
+                statusBadge.innerText = 'No Token';
+            }
+            // Only log if we are actually in a scenario that needs token clearing
+            if(currentScenario === 'authn' || currentScenario === 'authz'){
+                logConsole(`[Client] Token deleted from local storage.`, 'info');
+            }
+        }
+
+        // Scenario 1 Logic
+        function fetchProtectedData() {
+            logConsole(`[Gateway] Received GET /api/sensitive-data`);
+            
+            if (!isSecurityEnabled) {
+                logConsole(`⚠️ [API] Security OFF: Access Granted to sensitive data without token!`, 'error');
+                triggerShake();
+                return;
+            }
+
+            // Security ON - Check Token
+            logConsole(`[Gateway] Security ON: Validating Authorization Header...`, 'info');
+            setTimeout(() => {
+                if (!currentToken) {
+                    logConsole(`❌ [API Gateway] 401 Unauthorized - Missing Token`, 'error');
+                } else {
+                    logConsole(`✅ [API Gateway] Token Valid. Payload Role: ${currentUserRole}`, 'success');
+                    logConsole(`[API Service] 200 OK - Returning Data: { account_balance: $1,000,000 }`, 'success');
+                }
+            }, 500);
+        }
+
+        // Scenario 2 Logic
+        function attemptDeleteDB() {
+            logConsole(`[Gateway] Received DELETE /api/database`);
+            
+            if (!isSecurityEnabled) {
+                logConsole(`⚠️ [API] Security OFF (Broken Access Control): Database Drop Executed by ${currentUserRole}!`, 'error');
+                logConsole(`💥 SYSTEM COMPROMISED!`, 'error');
+                triggerShake();
+                return;
+            }
+
+            // Security ON
+            if (!currentToken) {
+                logConsole(`❌ [API Gateway] 401 Unauthorized - Missing Token`, 'error');
+                return;
+            }
+
+            logConsole(`[Gateway] JWT Valid. Checking Role (Authorization)...`, 'info');
+            setTimeout(() => {
+                if (currentUserRole.toLowerCase() !== 'admin') {
+                    logConsole(`❌ [Authorization Guard] 403 Forbidden - Role '${currentUserRole}' is not allowed to perform DELETE.`, 'error');
+                } else {
+                    logConsole(`✅ [Authorization Guard] Role 'Admin' approved. Executing DELETE.`, 'success');
+                }
+            }, 500);
+        }
+
+        // Scenario 3 Logic (Rate Limiting)
+        function spamRequest() {
+            requestCount++;
+            let load = Math.min(requestCount * 15, 100);
+            updateCpuLoad(load);
+
+            if (!isSecurityEnabled) {
+                // Without Rate Limiting
+                logConsole(`[Web Server] Processing heavy request #${requestCount}... CPU Spike!`, 'warn');
+                triggerShake();
+                if(requestCount > 5) {
+                    logConsole(`💥 [Server] FATAL: Out of Memory. Server Crash (DoS Success)!`, 'error');
+                }
+            } else {
+                // With Rate Limiting
+                if (requestCount <= 3) {
+                    logConsole(`[API Gateway] Request #${requestCount} processed (200 OK).`, 'success');
+                } else {
+                    logConsole(`🛡️ [API Gateway] WAF/Rate Limiter triggered! Blocked request #${requestCount}`, 'info');
+                    logConsole(`❌ 429 Too Many Requests - IP Blocked temporarily.`, 'error');
+                    updateCpuLoad(10); // Gateway absorbs the hit, CPU drops
+                }
+            }
+
+            // Reset counter logic
+            clearTimeout(rateLimitTimer);
+            rateLimitTimer = setTimeout(() => {
+                if (currentScenario === 'rate') {
+                    requestCount = 0;
+                    updateCpuLoad(10);
+                    logConsole(`[System] Traffic normalized. CPU Load stabilized.`, 'info');
+                }
+            }, 3000);
+        }
+
+        function updateCpuLoad(percent) {
+            const bar = document.getElementById('cpu-bar');
+            if(!bar) return;
+            bar.style.width = percent + '%';
+            if(percent > 80) bar.style.background = 'var(--danger)';
+            else if(percent > 50) bar.style.background = 'var(--warning)';
+            else bar.style.background = 'var(--success)';
+        }
+
+        // Scenario 4 Logic (WAF)
+        function updateWafInput() {
+            const val = document.getElementById('payload-selector').value;
+            const inputEl = document.getElementById('waf-input');
+            if (val === 'sqli') inputEl.value = "' OR '1'='1' --";
+            else if (val === 'xss') inputEl.value = "<script>alert('Hacked!')<\/script>";
+            else inputEl.value = "John Doe";
+        }
+
+        function sendWafPayload() {
+            const payload = document.getElementById('waf-input').value;
+            logConsole(`[Gateway] Received POST /api/search with payload: ${payload}`);
+
+            const isMalicious = payload.includes("'") || payload.includes("<script>");
+
+            if (!isSecurityEnabled) {
+                if (isMalicious) {
+                    logConsole(`⚠️ [DB/App] Security OFF: Executing raw payload...`, 'warn');
+                    if(payload.includes("'")) {
+                        logConsole(`💥 [Database] SQL Injection Success! Dumped all user records!`, 'error');
+                    } else {
+                        logConsole(`💥 [Frontend] XSS Script Executed! Stole session cookies!`, 'error');
+                    }
+                    triggerShake();
+                } else {
+                    logConsole(`[App] 200 OK - Search completed safely.`, 'success');
+                }
+                return;
+            }
+
+            // Security ON - WAF Inspection
+            logConsole(`[WAF] Inspecting payload at Layer 7...`, 'info');
+            setTimeout(() => {
+                if (isMalicious) {
+                    logConsole(`🛡️ [WAF] Malicious Signature Detected (OWASP Top 10)!`, 'warn');
+                    logConsole(`❌ [WAF] 406 Not Acceptable - Request Blocked and IP Logged.`, 'error');
+                } else {
+                    logConsole(`✅ [WAF] Payload Clean. Forwarding to Service...`, 'success');
+                    logConsole(`[App] 200 OK - Search completed.`, 'success');
+                }
+            }, 400);
+        }
+
+        // Run Init
+        window.onload = init;
+
+    </script>
+</body>
+</html>
