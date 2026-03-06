@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ENGSE214 - ความมั่นคงปลอดภัยทางไซเบอร์เบื้องต้น</title>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-bg: #f8fafc;
+            --slide-bg: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --accent-primary: #2563eb;
+            --accent-secondary: #f59e0b;
+            --base-font-size: 24px;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #0f172a;
+            font-family: 'Kanit', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+            font-size: var(--base-font-size);
+            color: var(--text-main);
+            transition: font-size 0.3s ease;
+        }
+
+        #presentation-area {
+            position: relative;
+            width: 100vw;
+            height: 56.25vw; /* 16:9 Aspect Ratio */
+            max-height: 100vh;
+            max-width: 177.78vh;
+            background-color: var(--primary-bg);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .slide {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            padding: 5% 8%;
+            box-sizing: border-box;
+            background: var(--slide-bg);
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.6s ease-in-out, transform 0.6s ease-in-out;
+            transform: scale(0.95);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .slide.active {
+            opacity: 1;
+            visibility: visible;
+            transform: scale(1);
+            z-index: 10;
+        }
+
+        .slide-header {
+            border-bottom: 4px solid var(--accent-primary);
+            padding-bottom: 15px;
+            margin-bottom: 30px;
+        }
+
+        .slide-title {
+            font-size: 2.2em;
+            font-weight: 700;
+            color: var(--accent-primary);
+            margin: 0;
+        }
+
+        .slide-content {
+            flex-grow: 1;
+            font-size: 1.2em;
+            line-height: 1.6;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        ul {
+            margin: 0;
+            padding-left: 2em;
+        }
+
+        li {
+            margin-bottom: 15px;
+        }
+
+        .highlight-box {
+            background-color: #eff6ff;
+            border-left: 6px solid var(--accent-primary);
+            padding: 20px;
+            border-radius: 0 8px 8px 0;
+            margin: 20px 0;
+            font-weight: 500;
+        }
+
+        .warning-box {
+            background-color: #fef3c7;
+            border-left: 6px solid var(--accent-secondary);
+            padding: 20px;
+            border-radius: 0 8px 8px 0;
+            margin: 20px 0;
+        }
+
+        .citation {
+            font-size: 0.6em;
+            color: var(--text-muted);
+            vertical-align: super;
+            margin-left: 4px;
+        }
+
+        /* Controls UI */
+        #controls {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(5px);
+            padding: 10px 25px;
+            border-radius: 50px;
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            z-index: 100;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+
+        button {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+        }
+
+        button:hover {
+            background: rgba(255,255,255,0.2);
+            color: #60a5fa;
+            transform: translateY(-2px);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        #slide-counter {
+            color: white;
+            font-weight: 600;
+            font-size: 1rem;
+            min-width: 60px;
+            text-align: center;
+            font-family: monospace;
+        }
+
+        .progress-bar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            height: 6px;
+            background: var(--accent-primary);
+            transition: width 0.4s ease;
+            z-index: 50;
+        }
+
+        /* Title Slide Special Styling */
+        .title-slide {
+            text-align: center;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            color: white;
+        }
+        .title-slide .slide-title {
+            font-size: 3.5em;
+            color: white;
+            border: none;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+        .title-slide .subtitle {
+            font-size: 1.5em;
+            color: #93c5fd;
+            margin-top: 20px;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div id="presentation-area">
+        <div id="slides-container"></div>
+        <div class="progress-bar" id="progress-bar"></div>
+        
+        <div id="controls">
+            <button id="btn-zoom-out" title="ลดขนาดตัวอักษร"><i class="fas fa-font"></i><i class="fas fa-minus" style="font-size: 0.5em; margin-left: 2px;"></i></button>
+            <button id="btn-zoom-in" title="เพิ่มขนาดตัวอักษร"><i class="fas fa-font"></i><i class="fas fa-plus" style="font-size: 0.5em; margin-left: 2px;"></i></button>
+            <div style="width: 1px; height: 24px; background: rgba(255,255,255,0.3); margin: 0 5px;"></div>
+            <button id="btn-prev" title="สไลด์ก่อนหน้า"><i class="fas fa-chevron-left"></i></button>
+            <span id="slide-counter">1 / 40</span>
+            <button id="btn-next" title="สไลด์ถัดไป"><i class="fas fa-chevron-right"></i></button>
+            <div style="width: 1px; height: 24px; background: rgba(255,255,255,0.3); margin: 0 5px;"></div>
+            <button id="btn-fullscreen" title="เต็มจอ"><i class="fas fa-expand"></i></button>
+        </div>
+    </div>
+
+    <script>
+        const slideData = [
+            {
+                title: "ENGSE214 ความมั่นคงปลอดภัยทางไซเบอร์เบื้องต้น",
+                content: "<div class='subtitle'>พร้อมแนวทางการประยุกต์ใช้กับงานวิศวกรรมซอฟต์แวร์ในอนาคต<br><br>สรุปเนื้อหาที่เรียนมาทั้งหมดเพื่อ Software Engineer ยุคใหม่ <span class='citation'></span></div>",
+                isTitle: true
+            },
+            {
+                title: "1. ภาพรวมและเป้าหมายของรายวิชา",
+                content: `
+                    <ul>
+                        <li>Cybersecurity ไม่ใช่แค่เรื่องของแฮกเกอร์ หรือเครื่องมือป้องกันเพียงอย่างเดียว <span class='citation'></span></li>
+                        <li>แต่เป็นการคิดอย่างเป็นระบบเกี่ยวกับ:
+                            <ul>
+                                <li>สิ่งที่ต้องปกป้อง (Assets) <span class='citation'></span></li>
+                                <li>สิ่งที่อาจคุกคามระบบ (Threats) <span class='citation'></span></li>
+                                <li>จุดอ่อนของระบบ (Vulnerabilities) <span class='citation'></span></li>
+                                <li>ความเสี่ยงที่เกิดขึ้นจริง (Risks) <span class='citation'></span></li>
+                                <li>มาตรการป้องกัน ตรวจจับ ตอบสนอง และฟื้นตัว <span class='citation'></span></li>
+                            </ul>
+                        </li>
+                    </ul>
+                `
+            },
+            {
+                title: "2. การเปลี่ยนมุมมอง (Shift in Perspective)",
+                content: `
+                    <div class='highlight-box'>
+                        <strong>จากเดิมที่เราตั้งคำถามแค่ว่า:</strong><br>
+                        "โปรแกรมทำงานได้หรือไม่" <span class='citation'></span>
+                    </div>
+                    <div class='warning-box'>
+                        <strong>เปลี่ยนมุมมองไปสู่:</strong><br>
+                        "โปรแกรมทำงานได้ ปลอดภัยพอ เคารพสิทธิ์ผู้ใช้ และตรวจสอบย้อนหลังได้หรือไม่" <span class='citation'></span>
+                    </div>
+                    <p>นี่คือหัวใจสำคัญของการเป็นวิศวกรซอฟต์แวร์ยุคใหม่ <span class='citation'></span></p>
+                `
+            },
+            {
+                title: "3. กรอบคิดพื้นฐาน: CIA Triad",
+                content: `
+                    <p></p>
+                    <ul>
+                        <li><strong>Confidentiality (ความลับ):</strong> ข้อมูลต้องไม่ถูกเปิดเผยกับผู้ไม่มีสิทธิ์ <span class='citation'></span></li>
+                        <li><strong>Integrity (ความถูกต้อง):</strong> ข้อมูลต้องถูกต้องและไม่ถูกแก้ไขโดยมิชอบ <span class='citation'></span></li>
+                        <li><strong>Availability (ความพร้อมใช้):</strong> ระบบและข้อมูลต้องพร้อมใช้งานเมื่อจำเป็น <span class='citation'></span></li>
+                    </ul>
+                `
+            },
+            {
+                title: "4. แก่นความปลอดภัย (Asset, Threat, Vulnerability, Risk)",
+                content: `
+                    <ul>
+                        <li><strong>Asset (ทรัพย์สิน):</strong> สิ่งที่มีคุณค่าและต้องปกป้อง <span class='citation'></span></li>
+                        <li><strong>Threat (ภัยคุกคาม):</strong> สิ่งที่อาจสร้างความเสียหาย <span class='citation'></span></li>
+                        <li><strong>Vulnerability (ช่องโหว่):</strong> จุดอ่อนที่ถูกใช้โจมตีได้ <span class='citation'></span></li>
+                        <li><strong>Risk (ความเสี่ยง):</strong> ผลรวมของโอกาสและผลกระทบจากการโจมตี <span class='citation'></span></li>
+                    </ul>
+                `
+            },
+            {
+                title: "5. Week 1: พื้นฐานและภาพรวมภัยคุกคาม",
+                content: `
+                    <ul>
+                        <li>Cybersecurity เกี่ยวข้องกับชีวิตประจำวัน ตั้งแต่มือถือ ระบบมหาวิทยาลัย ไปจนถึงโครงสร้างพื้นฐานระดับประเทศ <span class='citation'></span></li>
+                        <li>ไม่ใช่แค่เรื่องของเทคโนโลยี แต่ครอบคลุม <strong>Process + People + Technology</strong> ด้วย <span class='citation'></span></li>
+                    </ul>
+                    <div class='highlight-box'>
+                        <i class="fas fa-lightbulb"></i> ข้อคิด: ซอฟต์แวร์ที่ดีต้องคำนึงถึงความปลอดภัยตั้งแต่เริ่มต้นเสมอ
+                    </div>
+                `
+            },
+            {
+                title: "6. Week 2: ประเภทของภัยคุกคาม (Cyber Threat Types)",
+                content: `
+                    <ul>
+                        <li>การโจมตีมีหลายรูปแบบ เช่น Malware, Social Engineering, Network Attacks, Web Attacks และ APT <span class='citation'></span></li>
+                        <li>การมองภัยคุกคามผ่านผลกระทบต่อ CIA Triad ช่วยให้เห็นว่าบางการโจมตีเน้นขโมยข้อมูล บางอันเน้นแก้ไข หรือทำลาย <span class='citation'></span></li>
+                    </ul>
+                    <div class='warning-box'>
+                        <i class="fas fa-exclamation-triangle"></i> บทเรียนสำคัญ: "คน" มักเป็นจุดเริ่มต้นของเหตุการณ์โจมตี เช่น การหลอกให้คลิกลิงก์ เปิดไฟล์ หรือกรอกข้อมูล <span class='citation'></span>
+                    </div>
+                `
+            },
+            {
+                title: "7. ประเภทยอดฮิตของ Malware",
+                content: `
+                    <p></p>
+                    <ul>
+                        <li><strong>Virus / Worm / Trojan:</strong> มัลแวร์แพร่กระจายตัวและแฝงตัว <span class='citation'></span></li>
+                        <li><strong>Ransomware:</strong> มัลแวร์เรียกค่าไถ่ที่ล็อคไฟล์หรือระบบ <span class='citation'></span></li>
+                        <li><strong>Spyware:</strong> แอบขโมยข้อมูลการใช้งาน <span class='citation'></span></li>
+                        <li><strong>Rootkit:</strong> ซ่อนตัวในระดับลึกของระบบ <span class='citation'></span></li>
+                    </ul>
+                `
+            },
+            {
+                title: "8. Social Engineering (วิศวกรรมสังคม)",
+                content: `
+                    <p>การหลอกลวงที่เล่นกับจิตวิทยาของมนุษย์ <span class='citation'></span></p>
+                    <ul>
+                        <li><strong>Phishing:</strong> หลอกผ่านอีเมลหรือเว็บไซต์ปลอม <span class='citation'></span></li>
+                        <li><strong>Spear Phishing:</strong> เจาะจงเป้าหมายบุคคลเฉพาะ <span class='citation'></span></li>
+                        <li><strong>Pretexting:</strong> สร้างเรื่องราวหลอกลวง <span class='citation'></span></li>
+                        <li><strong>Baiting:</strong> ใช้เหยื่อล่อให้หลงเชื่อ <span class='citation'></span></li>
+                    </ul>
+                `
+            },
+            {
+                title: "9. APT (Advanced Persistent Threats)",
+                content: `
+                    <ul>
+                        <li>คือการโจมตีแบบมีเป้าหมาย (Targeted) <span class='citation'></span></li>
+                        <li>มีการกระทำที่ต่อเนื่อง (Persistent) และซ่อนตัวเก่ง <span class='citation'></span></li>
+                        <li>มักเกิดในองค์กรขนาดใหญ่หรือหน่วยงานรัฐระดับประเทศ <span class='citation'></span></li>
+                    </ul>
+                    <p>ภัยคุกคามเหล่านี้จะส่งผลกระทบต่อองค์กรในระยะยาวอย่างมาก <span class='citation'></span></p>
+                `
+            },
+            {
+                title: "10. Week 3: ช่องโหว่ (Vulnerabilities)",
+                content: `
+                    <ul>
+                        <li>ช่องโหว่ (Vulnerability) คือจุดอ่อนในระบบ ซอฟต์แวร์ เครือข่าย หรือกระบวนการ <span class='citation'></span></li>
+                        <li>ประเภทของช่องโหว่ประกอบด้วย:
+                            <ul>
+                                <li>Software vulnerabilities <span class='citation'></span></li>
+                                <li>Configuration vulnerabilities <span class='citation'></span></li>
+                                <li>Human-related vulnerabilities <span class='citation'></span></li>
+                            </ul>
+                        </li>
+                    </ul>
+                `
+            },
+            {
+                title: "11. การประเมินช่องโหว่ (CVE & CVSS)",
+                content: `
+                    <ul>
+                        <li><strong>CVE / NVD:</strong> ฐานข้อมูลกลางสำหรับอ้างอิงเลขช่องโหว่ (Common Vulnerabilities and Exposures) <span class='citation'></span></li>
+                        <li><strong>CVSS Score:</strong> ระบบประเมินความรุนแรงของช่องโหว่ <span class='citation'></span></li>
+                        <li>เราใช้ข้อมูลเหล่านี้เพื่อช่วยตัดสินใจและจัดลำดับความสำคัญในการแก้ไข <span class='citation'></span></li>
+                    </ul>
+                `
+            },
+            {
+                title: "12. สมการการประเมินความเสี่ยง (Risk Assessment)",
+                content: `
+                    <p></p>
+                    <div class='highlight-box' style='text-align:center; font-size:1.5em;'>
+                        Risk = Threat × Vulnerability × Impact <span class='citation'></span>
+                    </div>
+                    <ul>
+                        <li>การคิดเชิงวิศวกรรม: เราไม่สามารถแก้ทุกอย่างพร้อมกันได้ แต่ต้องจัดลำดับความสำคัญตามความเสี่ยง <span class='citation'></span></li>
+                    </ul>
+                `
+            },
+            {
+                title: "13. การจัดการความเสี่ยง 4 รูปแบบ",
+                content: `
+                    <ul>
+                        <li><strong>Avoid (หลีกเลี่ยง):</strong> เลิกใช้ฟีเจอร์หรือระบบที่มีความเสี่ยงสูง <span class='citation'></span></li>
+                        <li><strong>Reduce (ลดความเสี่ยง):</strong> ติดตั้งระบบป้องกัน อุดช่องโหว่ <span class='citation'></span></li>
+                        <li><strong>Transfer (ถ่ายโอน):</strong> การทำประกันภัยไซเบอร์ หรือจ้าง Outsource <span class='citation'></span></li>
+                        <li><strong>Accept (ยอมรับ):</strong> ยอมรับความเสี่ยงหากผลกระทบน้อยกว่าต้นทุนการแก้ไข <span class='citation'></span></li>
+                    </ul>
+                `
+            },
+            {
+                title: "14. Week 4: OS Security & Hardening",
+                content: `
+                    <ul>
+                        <li><strong>ความสำคัญ:</strong> เพราะถ้า OS ถูกเจาะ ระบบด้านบนทั้งหมด (Application และ Service) ก็เสี่ยงตามไปด้วย <span class='citation'></span></li>
+                        <li><strong>แนวคิด Defense in Depth:</strong> การป้องกันหลายชั้น <span class='citation'></span></li>
+                        <li><strong>กรอบ AAA:</strong>
+                            <ul>
+                                <li>Authentication (การยืนยันตัวตน) <span class='citation'></span></li>
+                                <li>Authorization (การกำหนดสิทธิ์) <span class='citation'></span></li>
+                                <li>Accounting (การเก็บบันทึก) <span class='citation'></span></li>
+                            </ul>
+                        </li>
+                    </ul>
+                `
+            },
+            {
+                title: "15. เทคนิค OS Hardening",
+                content: `
+                    <ul>
+                        <li><strong>Least Privilege:</strong> ให้สิทธิ์เท่าที่จำเป็น <span class='citation'></span></li>
+                        <li>การจัดการ: Password Policy, MFA, File Permissions, ACL, Role-Based Access Control <span class='citation'></span></li>
+                        <li>การตั้งค่า: ปิด service ที่ไม่จำเป็น, แยกบัญชี admin/user, อัปเดต patch และตั้งค่า firewall <span class='citation'></span></li>
+                    </ul>
+                    <div class='highlight-box'>
+                        บทเรียนสำคัญ: ความปลอดภัยที่ดีเริ่มจาก "configuration ที่ดี" ไม่ใช่การแก้ปัญหาเมื่อระบบถูกโจมตีไปแล้ว <span class='citation'></span>
+                    </div>
+                `
+            },
+            {
+                title: "16. Week 5: Network Security",
+                content: `
+                    <ul>
+                        <li>เหตุผลที่ต้องมีเพราะข้อมูลจำนวนมากเคลื่อนที่ผ่านเครือข่ายตลอดเวลา <span class='citation'></span></li>
+                        <li>องค์ประกอบสำคัญ: 
+                            <ul>
+                                <li>Segmentation (การแบ่งสัดส่วนเครือข่าย) <span class='citation'></span></li>
+                                <li>Access control (การควบคุมการเข้าถึง) <span class='citation'></span></li>
+                                <li>Encryption (การเข้ารหัสข้อมูล) <span class='citation'></span></li>
+                                <li>Monitoring (การเฝ้าระวัง) <span class='citation'></span></li>
+                            </ul>
+                        </li>
+                    </ul>
+                `
+            },
+            {
+                title: "17. ภัยคุกคามบนเครือข่ายที่พบบ่อย",
+                content: `
+                    <ul>
+                        <li><strong>Sniffing & Man-in-the-Middle:</strong> ดักจับหรือแทรกแซงข้อมูลระหว่างทาง <span class='citation'></span></li>
+                        <li><strong>DDoS:</strong> โจมตีจนระบบไม่สามารถให้บริการได้ <span class='citation'></span></li>
+                        <li><strong>Port Scanning:</strong> สแกนหาช่องโหว่ของพอร์ต <span class='citation'></span></li>
+                        <li><strong>Session Hijacking & DNS Spoofing:</strong> สวมรอยและหลอกลวงเส้นทาง <span class='citation'></span></li>
+                    </ul>
+                `
+            },
+            {
+                title: "18. เครื่องมือและกลไกป้องกันเครือข่าย",
+                content: `
+                    <p></p>
+                    <ul>
+                        <li><strong>Firewall ประเภทต่างๆ:</strong> Packet Filtering, Stateful Inspection, WAF, NGFW <span class='citation'></span></li>
+                        <li><strong>แนวคิดอื่นๆ:</strong> VPN (Virtual Private Network), DMZ (พื้นที่กันชน) <span class='citation'></span></li>
+                        <li>แก่นสำคัญ: การออกแบบเครือข่ายที่ดีช่วยลดพื้นที่โจมตี และจำกัดผลกระทบหากเกิดเหตุการณ์ <span class='citation'></span></li>
+                    </ul>
+                `
+            },
+            {
+                title: "19. Week 6: Cryptography Basics",
+                content: `
+                    <div class='highlight-box'>
+                        <i class="fas fa-question-circle"></i> คำถามสำคัญ: “ถ้าข้อมูลถูกดักระหว่างทาง เราจะทำอย่างไรให้ผู้อื่นอ่านไม่ออก” <span class='citation'></span>
+                    </div>
+                    <ul>
+                        <li>วิทยาการเข้ารหัสลับ (Cryptography) คือคำตอบในการปกป้องข้อมูล <span class='citation'></span></li>
+                    </ul>
+                `
+            },
+            {
+                title: "20. คำศัพท์พื้นฐานของการเข้ารหัส",
+                content: `
+                    <ul>
+                        <li><strong>Plaintext:</strong> ข้อความปกติที่อ่านเข้าใจ <span class='citation'></span></li>
+                        <li><strong>Ciphertext:</strong> ข้อความที่ถูกเข้ารหัสแล้ว อ่านไม่รู้เรื่อง <span class='citation'></span></li>
+                        <li><strong>Encryption / Decryption:</strong> กระบวนการเข้ารหัส และ ถอดรหัส <span class='citation'></span></li>
+                        <li><strong>Key & Algorithm:</strong> กุญแจและรูปแบบอัลกอริทึมที่ใช้ <span class='citation'></span></li>
+                    </ul>
+                `
+            },
+            {
+                title: "21. Week 7: Web Application Security",
+                content: `
+                    <ul>
+                        <li>เว็บแอปพลิเคชันเป็นด่านหน้าที่ถูกโจมตีมากที่สุด <span class='citation'></span></li>
+                        <li>นักพัฒนาซอฟต์แวร์ต้องเข้าใจแนวทาง <strong>OWASP</strong> เพื่อพัฒนาเว็บให้ปลอดภัย (Secure Coding) <span class='citation'></span></li>
+                        <li>ต้องเรียนรู้ช่องโหว่ยอดฮิตและวิธีปิดช่องโหว่เหล่านั้นตั้งแต่ตอนเขียนโค้ด <span class='citation'></span></li>
+                    </ul>
+                `
+            },
+            {
+                title: "22. ช่องโหว่ยอดฮิตบนเว็บ (OWASP Top 10)",
+                content: `
+                    <p></p>
+                    <ul>
+                        <li><strong>SQL Injection:</strong> การแทรกคำสั่ง SQL เพื่อล้วงข้อมูล <span class='citation'></span></li>
+                        <li><strong>Cross-Site Scripting (XSS):</strong> การฝังโค้ดอันตรายให้ฝั่งผู้ใช้รัน <span class='citation'></span></li>
+                        <li><strong>Broken Access Control:</strong> ระบบจัดการสิทธิ์ที่หละหลวม <span class='citation'></span></li>
+                        <li><strong>IDOR:</strong> การอ้างอิงออบเจกต์โดยตรงที่ไม่ปลอดภัย <span class='citation'></span></li>
+                    </ul>
+                `
+            },
+            {
+                title: "23. Week 11: Privacy, PDPA และจริยธรรม",
+                content: `
+                    <ul>
+                        <li>ความปลอดภัย (Security) และความเป็นส่วนตัว (Privacy) เป็นของคู่กัน <span class='citation'></span></li>
+                        <li><strong>PDPA</strong> กฎหมายคุ้มครองข้อมูลส่วนบุคคล มีผลกระทบโดยตรงต่องานวิศวกรรมซอฟต์แวร์ <span class='citation'></span></li>
+                        <li>หลักการสำคัญ: <strong>Data Minimization</strong> เก็บข้อมูลเท่าที่จำเป็น <span class='citation'></span></li>
+                    </ul>
+                `
+            },
+            {
+                title: "24. จริยธรรมของวิศวกรซอฟต์แวร์",
+                content: `
+                    <ul>
+                        <li>"ไม่เจตนา" ไม่ใช่ข้ออ้างหากสิ่งที่ทำสร้างความเสียหาย <span class='citation'></span></li>
+                        <li>วิศวกรต้องรับผิดชอบต่อผลกระทบของระบบที่สร้าง <span class='citation'></span></li>
+                        <li>ต้องคิดเรื่อง Fairness, Transparency, Consent และ Accountability <span class='citation'></span></li>
+                    </ul>
+                    <div class='highlight-box'>
+                        Software Engineering ที่ดีไม่ใช่แค่ “ปลอดภัย” แต่ต้อง “ชอบธรรม” และ “เคารพผู้ใช้” ด้วย <span class='citation'></span>
+                    </div>
+                `
+            },
+            {
+                title: "25. แก่นความรู้ที่ 1: คิดเป็นระบบ (Systematic Thinking)",
+                content: `
+                    <ul>
+                        <li>Security ต้องคิดเป็นระบบ ไม่ใช่คิดเป็นจุด <span class='citation'></span></li>
+                        <li>วิชานี้ทำให้เห็นว่าความปลอดภัยมีหลายชั้น:
+                            <ul>
+                                <li>OS & Network <span class='citation'></span></li>
+                                <li>Application & Data <span class='citation'></span></li>
+                                <li>Policy & Privacy <span class='citation'></span></li>
+                            </ul>
+                        </li>
+                    </ul>
+                `
+            },
+            {
+                title: "26. แก่นความรู้ที่ 2: พื้นฐานสำคัญที่สุด",
+                content: `
+                    <ul>
+                        <li>ช่องโหว่ส่วนใหญ่ไม่ได้มาจากของที่ซับซ้อนเสมอไป <span class='citation'></span></li>
+                        <li>เหตุการณ์ร้ายแรงมักเกิดจากเรื่องพื้นฐาน เช่น Password อ่อนแอ, Config ผิด, ไม่ Patch, หรือขาด Logging <span class='citation'></span></li>
+                        <li>วิศวกรต้องเก่ง <strong>“พื้นฐานที่ทำสม่ำเสมอ”</strong> ให้มากกว่าหวังพึ่งเครื่องมือแพงๆ <span class='citation'></span></li>
+                    </ul>
+                `
+            },
+            {
+                title: "27. แก่นความรู้ที่ 3: ลดความเสี่ยง ไม่ใช่กำจัดความเสี่ยง",
+                content: `
+                    <ul>
+                        <li>ไม่มีระบบใดในโลกที่ปลอดภัย 100% <span class='citation'></span></li>
+                        <li>Security เป็นเรื่องของการ <strong>"ลดความเสี่ยง"</strong> <span class='citation'></span></li>
+                        <li>การตัดสินใจต้องอาศัย Risk-based thinking (จัดลำดับความสำคัญตามความเสี่ยง อะไรควรทำก่อน อะไรยอมรับได้) <span class='citation'></span></li>
+                    </ul>
+                `
+            },
+            {
+                title: "28. การประยุกต์ใช้ใน SE: Requirement Phase",
+                content: `
+                    <ul>
+                        <li>วิเคราะห์ภัยคุกคาม (Threat Modeling) ตั้งแต่แรก <span class='citation'></span></li>
+                        <li>สอบถามเรื่อง Access Control ให้ชัดเจนแต่แรก <span class='citation'></span></li>
+                        <li>พิจารณากฎหมายข้อมูลส่วนบุคคล (PDPA) <span class='citation'></span></li>
+                        <li>ระบุ Non-functional requirements ด้านความปลอดภัย <span class='citation'></span></li>
+                    </ul>
+                `
+            },
+            {
+                title: "29. การประยุกต์ใช้ใน SE: Design Phase",
+                content: `
+                    <ul>
+                        <li>ออกแบบโดยใช้หลักการ Least Privilege <span class='citation'></span></li>
+                        <li>วางสถาปัตยกรรมแบบ Defense in Depth (มีการป้องกันหลายชั้น) <span class='citation'></span></li>
+                        <li>ไม่เชื่อใจข้อมูลจากภายนอก (Zero Trust Model) <span class='citation'></span></li>
+                    </ul>
+                `
+            },
+            {
+                title: "30. การประยุกต์ใช้ใน SE: Implementation (Secure Coding)",
+                content: `
+                    <p></p>
+                    <ul>
+                        <li>Validate Input ทั้งหมดอย่างเข้มงวด <span class='citation'></span></li>
+                        <li>ใช้ Prepared Statements เพื่อป้องกัน SQL Injection เสมอ <span class='citation'></span></li>
+                        <li>จัดการ Error อย่างระมัดระวัง ไม่คายข้อมูลระบบออกไปให้ผู้ใช้เห็น <span class='citation'></span></li>
+                    </ul>
+                `
+            },
+            {
+                title: "31. การประยุกต์ใช้ใน SE: Security Testing (QA)",
+                content: `
+                    <ul>
+                        <li>ทดสอบ Authentication และ Authorization ให้ครบถ้วน <span class='citation'></span></li>
+                        <li>ทดสอบ Input Validation, SQLi, XSS, IDOR หรือ Boundary ต่างๆ <span class='citation'></span></li>
+                        <li>ทดสอบ Session Management, Logout, HTTPS <span class='citation'></span></li>
+                    </ul>
+                    <div class='highlight-box'>
+                        QA ไม่ใช่แค่ตรวจว่า "ฟีเจอร์ใช้งานได้" แต่ต้องตรวจว่า "ใช้งานได้โดยไม่เปิดช่องให้โจมตี" <span class='citation'></span>
+                    </div>
+                `
+            },
+            {
+                title: "32. การประยุกต์ใช้ใน SE: Deployment & DevSecOps",
+                content: `
+                    <ul>
+                        <li>Harden Server ก่อนนำขึ้น Production เสมอ <span class='citation'></span></li>
+                        <li>ปิด Service ที่ไม่จำเป็น และตั้งค่า TLS(HTTPS) <span class='citation'></span></li>
+                        <li>จัดการ Secret ผ่าน Secret Manager ห้ามฝังใน Code <span class='citation'></span></li>
+                        <li>เก็บ Log อย่างปลอดภัย และ Monitor เหตุการณ์ผิดปกติ <span class='citation'></span></li>
+                    </ul>
+                `
+            },
+            {
+                title: "33. ตัวอย่าง 1: การออกแบบระบบ Login / สมัครสมาชิก",
+                content: `
+                    <ul>
+                        <li>ใช้ Password Hashing ในการเก็บรหัสผ่าน <span class='citation'></span></li>
+                        <li>รองรับ MFA ถ้าเป็นระบบสำคัญ <span class='citation'></span></li>
+                        <li>ป้องกันการ Brute Force <span class='citation'></span></li>
+                        <li>แยก Role ของ User / Admin <span class='citation'></span></li>
+                        <li>ออกแบบ Consent และ Privacy Notice ถ้าต้องเก็บข้อมูล <span class='citation'></span></li>
+                    </ul>
+                `
+            },
+            {
+                title: "34. ตัวอย่าง 2: การออกแบบระบบ e-Commerce",
+                content: `
+                    <ul>
+                        <li>เข้ารหัสข้อมูลสำคัญของลูกค้าและธุรกรรม <span class='citation'></span></li>
+                        <li>ป้องกัน Session Hijacking <span class='citation'></span></li>
+                        <li>ตรวจสอบขั้นตอนการสั่งซื้อ/ชำระเงินไม่ให้เกิด Privilege Escalation <span class='citation'></span></li>
+                        <li>จำกัดข้อมูลที่พนักงานเข้าถึงได้ตามบทบาท <span class='citation'></span></li>
+                        <li>ออกแบบ Log สำหรับ Fraud Investigation <span class='citation'></span></li>
+                    </ul>
+                `
+            },
+            {
+                title: "35. สรุปนำไปใช้จริง 10 คำถาม (ข้อ 1-5)",
+                content: `
+                    <p>เมื่อลงมือทำโปรเจกต์ครั้งต่อไป ให้ถาม 10 ข้อนี้เสมอ <span class='citation'></span></p>
+                    <ol>
+                        <li>ระบบนี้มี asset อะไรที่สำคัญที่สุด? <span class='citation'></span></li>
+                        <li>ใครคือ attacker หรือ threat ที่เป็นไปได้? <span class='citation'></span></li>
+                        <li>จุดอ่อนของระบบอยู่ตรงไหน? <span class='citation'></span></li>
+                        <li>ถ้าโดนโจมตี ผลกระทบคืออะไร? <span class='citation'></span></li>
+                        <li>ใครควรมีสิทธิ์เข้าถึงข้อมูลอะไรบ้าง? <span class='citation'></span></li>
+                    </ol>
+                `
+            },
+            {
+                title: "36. สรุปนำไปใช้จริง 10 คำถาม (ข้อ 6-10)",
+                content: `
+                    <ol start="6">
+                        <li>input ทุกจุดปลอดภัยพอหรือยัง? <span class='citation'></span></li>
+                        <li>ข้อมูลสำคัญถูกเข้ารหัสหรือยัง? <span class='citation'></span></li>
+                        <li>log และ audit trail เพียงพอหรือไม่? <span class='citation'></span></li>
+                        <li>เก็บข้อมูลส่วนบุคคลเกินจำเป็นหรือไม่? <span class='citation'></span></li>
+                        <li>ถ้าผู้ใช้ถามว่า “ระบบนี้ปกป้องข้อมูลอย่างไร” ตอบได้หรือไม่? <span class='citation'></span></li>
+                    </ol>
+                `
+            },
+            {
+                title: "37. บทสรุป: ความรู้สู่พื้นฐานมาตรฐาน",
+                content: `
+                    <ul>
+                        <li>ความรู้จากวิชานี้ควรถูกนำไปใช้เป็น <strong>“พื้นฐานมาตรฐาน”</strong> ของทุกงานพัฒนาในอนาคต <span class='citation'></span></li>
+                        <li>ไม่ว่าจะเป็น Web App, Mobile App, Backend, Cloud Service, QA Automation หรือระบบองค์กรใดๆ <span class='citation'></span></li>
+                    </ul>
+                `
+            },
+            {
+                title: "38. บทสรุป: นักพัฒนาที่ดี",
+                content: `
+                    <div class='highlight-box' style='font-size: 1.4em; text-align: center; padding: 40px;'>
+                        "นักพัฒนาที่ดีไม่ใช่คนที่ทำระบบ ‘เสร็จ’ เท่านั้น<br>
+                        แต่คือคนที่ทำระบบให้ <strong>ใช้งานได้ ปลอดภัย เชื่อถือได้ และเคารพผู้ใช้</strong>" <br><br>
+                        <span style='font-size: 0.6em;' class='citation'></span>
+                    </div>
+                `
+            },
+            {
+                title: "Q&A และอภิปราย",
+                content: `
+                    <div style='text-align: center; margin-top: 50px;'>
+                        <i class="fas fa-shield-alt" style="font-size: 4em; color: var(--accent-primary); margin-bottom: 20px;"></i>
+                        <h2>จบการนำเสนอ</h2>
+                        <p>รายวิชา ENGSE214 ความมั่นคงปลอดภัยทางไซเบอร์เบื้องต้น</p>
+                        <p style="margin-top: 30px; font-style: italic; color: var(--text-muted);">มีข้อสงสัยหรือคำถามเพิ่มเติมไหมครับ?</p>
+                    </div>
+                `
+            }
+        ];
+
+        let currentSlide = 0;
+        const totalSlides = slideData.length;
+        const container = document.getElementById('slides-container');
+        const progressBar = document.getElementById('progress-bar');
+        const slideCounter = document.getElementById('slide-counter');
+
+        // Render Slides
+        slideData.forEach((slide, index) => {
+            const slideEl = document.createElement('div');
+            slideEl.className = `slide ${slide.isTitle ? 'title-slide' : ''}`;
+            slideEl.id = `slide-${index}`;
+            
+            if (slide.isTitle) {
+                slideEl.innerHTML = `
+                    <h1 class="slide-title">${slide.title}</h1>
+                    ${slide.content}
+                `;
+            } else {
+                slideEl.innerHTML = `
+                    <div class="slide-header">
+                        <h2 class="slide-title">${slide.title}</h2>
+                    </div>
+                    <div class="slide-content">
+                        ${slide.content}
+                    </div>
+                `;
+            }
+            container.appendChild(slideEl);
+        });
+
+        function updateSlide() {
+            document.querySelectorAll('.slide').forEach((el, index) => {
+                el.classList.remove('active');
+                if (index === currentSlide) {
+                    el.classList.add('active');
+                }
+            });
+            
+            slideCounter.textContent = `${currentSlide + 1} / ${totalSlides}`;
+            progressBar.style.width = `${((currentSlide + 1) / totalSlides) * 100}%`;
+            
+            document.getElementById('btn-prev').style.opacity = currentSlide === 0 ? '0.3' : '1';
+            document.getElementById('btn-prev').style.cursor = currentSlide === 0 ? 'default' : 'pointer';
+            document.getElementById('btn-next').style.opacity = currentSlide === totalSlides - 1 ? '0.3' : '1';
+            document.getElementById('btn-next').style.cursor = currentSlide === totalSlides - 1 ? 'default' : 'pointer';
+        }
+
+        // Navigation
+        document.getElementById('btn-prev').addEventListener('click', () => {
+            if (currentSlide > 0) {
+                currentSlide--;
+                updateSlide();
+            }
+        });
+
+        document.getElementById('btn-next').addEventListener('click', () => {
+            if (currentSlide < totalSlides - 1) {
+                currentSlide++;
+                updateSlide();
+            }
+        });
+
+        // Keyboard Navigation
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === ' ') {
+                if (currentSlide < totalSlides - 1) { currentSlide++; updateSlide(); }
+            } else if (e.key === 'ArrowLeft') {
+                if (currentSlide > 0) { currentSlide--; updateSlide(); }
+            }
+        });
+
+        // Font Size Controls
+        let currentFontSize = 24;
+        document.getElementById('btn-zoom-in').addEventListener('click', () => {
+            if (currentFontSize < 36) {
+                currentFontSize += 2;
+                document.body.style.setProperty('--base-font-size', `${currentFontSize}px`);
+            }
+        });
+
+        document.getElementById('btn-zoom-out').addEventListener('click', () => {
+            if (currentFontSize > 16) {
+                currentFontSize -= 2;
+                document.body.style.setProperty('--base-font-size', `${currentFontSize}px`);
+            }
+        });
+
+        // Fullscreen Control
+        document.getElementById('btn-fullscreen').addEventListener('click', () => {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => {
+                    console.error(`Error attempting to enable fullscreen: ${err.message}`);
+                });
+            } else {
+                document.exitFullscreen();
+            }
+        });
+
+        // Initialize
+        updateSlide();
+    </script>
+</body>
+</html>
