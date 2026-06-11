@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GitHub & Developer Tools - Software Engineering RMUTL</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Inter:wght@400;700&family=Sarabun:wght@300;400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <style>
+        /* 1. CSS VARIABLES (McKinsey-style high contrast) */
+        :root {
+            --bg-primary: #0d1117;
+            --bg-secondary: #161b22;
+            --text-main: #f0f6fc;
+            --text-dim: #8b949e;
+            --accent: #238636; /* GitHub Green */
+            --highlight: #58a6ff; /* GitHub Blue */
+            --danger: #f85149;
+            --card-border: #30363d;
+            --font-scale: 1;
+            --slide-width: 1280px;
+            --slide-height: 720px;
+            --shadow: 0 20px 40px rgba(0,0,0,0.4);
+        }
+
+        /* 2. LIGHT MODE OVERRIDES */
+        body.light-mode {
+            --bg-primary: #ffffff;
+            --bg-secondary: #f6f8fa;
+            --text-main: #1e293b;
+            --text-dim: #475569;
+            --accent: #10b981;
+            --highlight: #0969da;
+            --card-border: #d0d7de;
+            --shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        /* 3. CORE LAYOUT */
+        * { box-sizing: border-box; }
+        
+        body, html {
+            margin: 0; padding: 0;
+            background-color: #010409;
+            font-family: 'Sarabun', 'Inter', sans-serif;
+            overflow: hidden; /* Hide scrollbars for presentation */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            width: 100vw;
+            transition: background-color 0.3s ease;
+        }
+
+        #presentation-container {
+            width: var(--slide-width);
+            height: var(--slide-height);
+            position: relative;
+            background-color: var(--bg-primary);
+            box-shadow: var(--shadow);
+            border-radius: 12px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        /* Slide Container Style */
+        .slide {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            display: none; /* Controlled by JS */
+            padding: 60px;
+            flex-direction: column;
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        .slide.active { display: flex; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.98); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        /* 4. TOOLBAR & NAV */
+        .toolbar {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(22, 27, 34, 0.85);
+            backdrop-filter: blur(8px);
+            padding: 8px 20px;
+            border-radius: 40px;
+            display: flex;
+            gap: 15px;
+            z-index: 1000;
+            border: 1px solid var(--card-border);
+            color: white;
+            align-items: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        body.light-mode .toolbar {
+            background: rgba(255, 255, 255, 0.9);
+            color: #1e293b;
+        }
+
+        .tool-btn {
+            background: none;
+            border: none;
+            color: inherit;
+            cursor: pointer;
+            font-size: 18px;
+            transition: color 0.2s, transform 0.1s;
+            padding: 5px;
+        }
+        .tool-btn:hover { color: var(--highlight); transform: translateY(-2px); }
+        .tool-btn:active { transform: translateY(0); }
+
+        .nav-info {
+            font-size: 14px;
+            font-weight: bold;
+            margin: 0 10px;
+            min-width: 60px;
+            text-align: center;
+        }
+
+        /* 5. TYPOGRAPHY & CONTENT */
+        h1, h2, h3, h4 { 
+            color: var(--text-main); 
+            margin: 0; 
+            font-family: 'Inter', 'Sarabun', sans-serif;
+            font-size: calc(1em * var(--font-scale));
+        }
+
+        .slide-title {
+            font-size: calc(48px * var(--font-scale));
+            font-weight: 700;
+            margin-bottom: 40px;
+            border-left: 10px solid var(--accent);
+            padding-left: 20px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        p, li { 
+            color: var(--text-dim); 
+            font-size: calc(22px * var(--font-scale));
+            line-height: 1.5;
+        }
+
+        .content-area {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        /* 6. COMPONENT STYLES */
+        
+        /* Bento Grid */
+        .bento-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(2, 1fr);
+            gap: 20px;
+            height: 100%;
+        }
+
+        .bento-item {
+            background: var(--bg-secondary);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            transition: transform 0.3s;
+        }
+        .bento-item:hover { border-color: var(--highlight); transform: translateY(-5px); }
+
+        /* Split Layout */
+        .split-layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            align-items: center;
+        }
+
+        /* Images */
+        .image-frame {
+            width: 100%;
+            height: 450px;
+            border-radius: 16px;
+            overflow: hidden;
+            border: 1px solid var(--card-border);
+        }
+        .image-frame img { width: 100%; height: 100%; object-fit: cover; }
+
+        /* Command Box (Windows Terminal Style) */
+        .cmd-box {
+            background: #000;
+            border-radius: 8px;
+            padding: 20px;
+            font-family: 'Fira Code', monospace;
+            color: #d1d5db;
+            margin: 15px 0;
+            border-left: 4px solid var(--accent);
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
+            position: relative;
+        }
+        .cmd-box::before {
+            content: "Administrator: Command Prompt";
+            position: absolute;
+            top: -25px; left: 0;
+            font-size: 10px;
+            color: var(--text-dim);
+            font-family: 'Inter';
+        }
+
+        /* Reveal Logic */
+        .reveal-btn {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 20px;
+            font-weight: bold;
+            margin-top: 20px;
+            transition: background 0.2s;
+        }
+        .reveal-btn:hover { background: #2ea043; }
+        .reveal-content { display: none; margin-top: 25px; animation: slideDown 0.4s; }
+        @keyframes slideDown { from { transform: translateY(-10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+        /* Timeline Pattern */
+        .timeline {
+            display: flex;
+            justify-content: space-between;
+            position: relative;
+            padding-top: 50px;
+        }
+        .timeline::before {
+            content: '';
+            position: absolute;
+            top: 65px; left: 0; right: 0;
+            height: 4px; background: var(--card-border);
+            z-index: 0;
+        }
+        .timeline-item {
+            width: 15%;
+            text-align: center;
+            z-index: 1;
+            position: relative;
+        }
+        .timeline-marker {
+            width: 30px; height: 30px;
+            background: var(--bg-primary);
+            border: 4px solid var(--accent);
+            border-radius: 50%;
+            margin: 0 auto 20px;
+        }
+        .timeline-label { font-size: 14px; font-weight: bold; color: var(--text-main); }
+
+        /* Badge */
+        .badge {
+            background: var(--accent);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: bold;
+            display: inline-block;
+            margin-bottom: 10px;
+        }
+
+        /* Table Style */
+        table { width: 100%; border-collapse: collapse; background: var(--bg-secondary); border-radius: 12px; overflow: hidden; }
+        th { background: var(--accent); color: white; padding: 15px; text-align: left; }
+        td { padding: 15px; border-bottom: 1px solid var(--card-border); color: var(--text-main); }
+
+    </style>
+</head>
+<body>
+
+    <div class="toolbar">
+        <button class="tool-btn" onclick="prevSlide()"><i class="fa-solid fa-chevron-left"></i></button>
+        <span class="nav-info" id="slide-info">1 / 20</span>
+        <button class="tool-btn" onclick="nextSlide()"><i class="fa-solid fa-chevron-right"></i></button>
+        
+        <div style="width: 1px; height: 20px; background: var(--card-border);"></div>
+        
+        <button class="tool-btn" onclick="toggleFullscreen()" title="Fullscreen"><i class="fa-solid fa-expand"></i></button>
+        <button class="tool-btn" onclick="changeFontSize(-0.1)" title="Decrease Font"><i class="fa-solid fa-minus"></i></button>
+        <button class="tool-btn" onclick="changeFontSize(0.1)" title="Increase Font"><i class="fa-solid fa-plus"></i></button>
+        <button class="tool-btn" onclick="toggleTheme()" title="Toggle Theme"><i class="fa-solid fa-circle-half-stroke"></i></button>
+    </div>
+
+    <div id="presentation-container">
+
+        <div class="slide active" id="slide1">
+            <div class="content-area" style="text-align: center;">
+                <i class="fa-brands fa-github" style="font-size: 120px; color: var(--highlight); margin-bottom: 30px;"></i>
+                <h1 style="font-size: 80px; margin-bottom: 10px;">GitHub & Dev Tools</h1>
+                <p style="font-size: 32px; color: var(--highlight); letter-spacing: 2px; font-weight: bold;">
+                    Modern Workflow for Software Engineers
+                </p>
+                <div style="margin-top: 50px; opacity: 0.6;">
+                    วศ.บ. วิศวกรรมซอฟต์แวร์ | Learning Portfolio Workshop (90 Min)
+                </div>
+            </div>
+        </div>
+
+        <div class="slide" id="slide2">
+            <h2 class="slide-title">เป้าหมายการเรียนรู้</h2>
+            <div class="content-area">
+                <div class="bento-grid">
+                    <div class="bento-item">
+                        <i class="fa-solid fa-code-merge" style="font-size: 40px; color: var(--highlight); margin-bottom: 15px;"></i>
+                        <h3>Version Control</h3>
+                        <p>เข้าใจความต่างของ Git (เครื่อง) และ GitHub (เว็บ)</p>
+                    </div>
+                    <div class="bento-item">
+                        <i class="fa-brands fa-markdown" style="font-size: 40px; color: var(--accent); margin-bottom: 15px;"></i>
+                        <h3>Markdown</h3>
+                        <p>สร้าง README.md สำหรับอธิบายงานให้น่าสนใจ</p>
+                    </div>
+                    <div class="bento-item">
+                        <i class="fa-solid fa-terminal" style="font-size: 40px; color: #fb7185; margin-bottom: 15px;"></i>
+                        <h3>CMD Mastery</h3>
+                        <p>ใช้คำสั่ง Git พื้นฐานผ่าน Command Line ได้คล่องตัว</p>
+                    </div>
+                    <div class="bento-item" style="grid-column: span 2; background: rgba(88, 166, 255, 0.05);">
+                        <i class="fa-solid fa-briefcase" style="font-size: 40px; color: var(--highlight); margin-bottom: 15px;"></i>
+                        <h3>Portfolio</h3>
+                        <p>เริ่มสะสมหลักฐานการเรียนรู้ตั้งแต่วันแรก เพื่ออาชีพในอนาคต</p>
+                    </div>
+                    <div class="bento-item">
+                        <i class="fa-solid fa-screwdriver-wrench" style="font-size: 40px; color: #eab308; margin-bottom: 15px;"></i>
+                        <h3>Dev Tools</h3>
+                        <p>ใช้งาน VS Code พื้นฐาน</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide" id="slide3">
+            <h2 class="slide-title">GitHub คืออะไร?</h2>
+            <div class="split-layout">
+                <div>
+                    <p><strong>GitHub</strong> คือพื้นที่ออนไลน์สำหรับเก็บ Repository และแสดงผลงานของนักพัฒนาทั่วโลก</p>
+                    <ul style="margin-top: 30px;">
+                        <li>ใช้เก็บ Lab และ Project ตลอด 4 ปี</li>
+                        <li>แสดงหลักฐานการเรียนรู้ (Evidence of Learning)</li>
+                        <li>สร้างตัวตนในโลก Developer</li>
+                    </ul>
+                    <div style="background: rgba(35, 134, 54, 0.1); padding: 20px; border-radius: 12px; border: 1px solid var(--accent); margin-top: 40px;">
+                        <p style="margin: 0; font-size: 18px; font-style: italic; color: var(--accent);">
+                            "GitHub ไม่ใช่แค่ที่เก็บ Code แต่เป็นพื้นที่แสดงศักยภาพของวิศวกรซอฟต์แวร์"
+                        </p>
+                    </div>
+                </div>
+                <div class="image-frame">
+                    <img src="https://images.unsplash.com/photo-1531403009284-440f080d1e12?auto=format&fit=crop&w=800&q=80" alt="Team collaborating on GitHub">
+                </div>
+            </div>
+        </div>
+
+        <div class="slide" id="slide4">
+            <h2 class="slide-title">Git vs GitHub</h2>
+            <div class="content-area">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ประเด็น</th>
+                            <th>Git (Local)</th>
+                            <th>GitHub (Cloud)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>คืออะไร</strong></td>
+                            <td>โปรแกรมจัดการ Version</td>
+                            <td>เว็บไซต์เก็บ Repository ออนไลน์</td>
+                        </tr>
+                        <tr>
+                            <td><strong>อยู่ที่ไหน</strong></td>
+                            <td>ในเครื่องคอมพิวเตอร์ของเรา</td>
+                            <td>บนระบบ Cloud (อินเทอร์เน็ต)</td>
+                        </tr>
+                        <tr>
+                            <td><strong>ใช้ทำอะไร</strong></td>
+                            <td>บันทึกประวัติการแก้ไข</td>
+                            <td>แชร์ เก็บ และแสดงผลงาน</td>
+                        </tr>
+                        <tr>
+                            <td><strong>เปรียบเทียบ</strong></td>
+                            <td><i class="fa-solid fa-book"></i> สมุดบันทึกในบ้าน</td>
+                            <td><i class="fa-solid fa-globe"></i> หอสมุดระดับโลก</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="slide" id="slide5">
+            <h2 class="slide-title">ทายสิ? (Interactive)</h2>
+            <div class="content-area" style="text-align: center; background: var(--bg-secondary); border-radius: 20px; padding: 40px;">
+                <h3 style="font-size: 36px; margin-bottom: 20px;">
+                    "ถ้าเราบันทึก (Commit) งานในเครื่องแล้ว แต่คอมพังทันที..."
+                </h3>
+                <p style="font-size: 24px;">งานที่ Commit ไว้จะไปปรากฏบน GitHub ไหม?</p>
+                
+                <button class="reveal-btn" onclick="toggleReveal(this)">ดูเฉลยทางเทคนิค</button>
+                
+                <div class="reveal-content">
+                    <div style="background: var(--bg-primary); padding: 30px; border-radius: 12px; border-left: 8px solid var(--danger);">
+                        <h3 style="color: var(--danger); font-size: 32px;">ไม่ปรากฏ! (NO)</h3>
+                        <p style="margin-top: 15px;">
+                            เพราะการ <span class="highlight-text">Commit</span> คือการบันทึกในเครื่อง (Local) 
+                            ข้อมูลจะขึ้นไปบน GitHub ก็ต่อเมื่อเราใช้คำสั่ง <span class="accent-text">git push</span> เท่านั้น
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide" id="slide6">
+            <h2 class="slide-title">Markdown: พลังแห่งเอกสาร</h2>
+            <div class="split-layout">
+                <div class="image-frame">
+                    <img src="https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=800&q=80" alt="Markdown Editor Preview">
+                </div>
+                <div>
+                    <h3 style="color: var(--highlight); margin-bottom: 20px;">ทำไมต้องใช้?</h3>
+                    <p>เขียนง่ายเหมือน Plain Text แต่แสดงผลได้สวยงาม เป็นมาตรฐานที่ GitHub ใช้สำหรับไฟล์ <span class="accent-text">README.md</span></p>
+                    <ul style="margin-top: 20px; line-height: 2;">
+                        <li><code>#</code> หัวข้อใหญ่</li>
+                        <li><code>**Text**</code> ตัวหนา</li>
+                        <li><code>- List</code> รายการลำดับ</li>
+                        <li><code>[Link](url)</code> ลิงก์เชื่อมโยง</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide" id="slide7">
+            <h2 class="slide-title">Workshop Workflow</h2>
+            <div class="content-area">
+                <div class="timeline">
+                    <div class="timeline-item">
+                        <div class="timeline-marker"></div>
+                        <div class="timeline-label">1. Setup Local<br>(VS Code)</div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-marker" style="border-color: var(--highlight);"></div>
+                        <div class="timeline-label">2. Git Init<br>(Start Tracker)</div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-marker" style="border-color: var(--accent);"></div>
+                        <div class="timeline-label">3. Add & Commit<br>(Save History)</div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-marker" style="border-color: #fb7185;"></div>
+                        <div class="timeline-label">4. Create Repo<br>(GitHub Site)</div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-marker" style="border-color: var(--highlight);"></div>
+                        <div class="timeline-label">5. Remote & Push<br>(Upload)</div>
+                    </div>
+                </div>
+                <div style="text-align: center; margin-top: 100px;">
+                    <p class="highlight-text" style="font-size: 28px;">"เราจะทำ Step-by-Step ไปด้วยกัน!"</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide" id="slide8">
+            <h2 class="slide-title">Step 0-1: แนะนำตัวกับ Git</h2>
+            <div class="content-area">
+                <p>ตรวจสอบว่ามี Git หรือยัง:</p>
+                <div class="cmd-box">git --version</div>
+                
+                <p style="margin-top: 30px;">ตั้งค่าตัวตนในเครื่อง (ครั้งแรกครั้งเดียว):</p>
+                <div class="cmd-box">
+                    git config --global user.name "ชื่อ นามสกุล"<br>
+                    git config --global user.email "your_email@example.com"<br>
+                    git config --global init.defaultBranch main
+                </div>
+            </div>
+        </div>
+
+        <div class="slide" id="slide9">
+            <h2 class="slide-title">Step 2-3: สร้างโฟลเดอร์ & VS Code</h2>
+            <div class="split-layout">
+                <div>
+                    <div class="cmd-box">
+                        cd %USERPROFILE%\Documents<br>
+                        mkdir se-bootcamp-portfolio<br>
+                        cd se-bootcamp-portfolio<br>
+                        code .
+                    </div>
+                    <p style="margin-top: 20px; font-size: 18px;">
+                        <i class="fa-solid fa-lightbulb" style="color: #eab308;"></i> 
+                        คำสั่ง <code>code .</code> คือการสั่งเปิดโฟลเดอร์ปัจจุบันด้วย VS Code ทันที
+                    </p>
+                </div>
+                <div class="image-frame">
+                    <img src="https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=800&q=80" alt="Clean dev environment">
+                </div>
+            </div>
+        </div>
+
+        <div class="slide" id="slide10">
+            <h2 class="slide-title">Step 4-5: สร้าง README.md</h2>
+            <div class="content-area">
+                <div class="badge">ใน VS Code</div>
+                <ol style="font-size: 24px; line-height: 1.8;">
+                    <li>คลิกขวาพื้นที่ Explorer เลือก <span class="highlight-text">New File</span></li>
+                    <li>ตั้งชื่อไฟล์ว่า <span class="accent-text">README.md</span></li>
+                    <li>ใส่เนื้อหา "About Me" ตาม Template ที่แจก</li>
+                    <li>กด <span class="highlight-text">Ctrl + S</span> เพื่อบันทึก</li>
+                    <li>กด <span class="highlight-text">Ctrl + Shift + V</span> เพื่อดู Preview</li>
+                </ol>
+            </div>
+        </div>
+
+        <div class="slide" id="slide11">
+            <h2 class="slide-title">Step 6: เริ่มต้น Git (Local)</h2>
+            <div class="content-area" style="text-align: center;">
+                <p style="font-size: 28px; margin-bottom: 40px;">สลับกลับมาที่ <span class="highlight-text">Command Prompt (CMD)</span></p>
+                <div class="cmd-box" style="font-size: 32px; display: inline-block; padding: 30px 60px;">
+                    git init
+                </div>
+                <p style="margin-top: 40px;">ตรวจเช็คสถานะ:</p>
+                <div class="cmd-box" style="border-left-color: var(--highlight);">git status</div>
+                <p style="color: var(--danger); font-size: 18px; margin-top: 15px;">
+                    *จะเห็นไฟล์ README.md เป็นสีแดง (Untracked)
+                </p>
+            </div>
+        </div>
+
+        <div class="slide" id="slide12">
+            <h2 class="slide-title">Step 7-8: บันทึกประวัติ (Add & Commit)</h2>
+            <div class="content-area">
+                <div class="split-layout">
+                    <div>
+                        <div class="cmd-box">
+                            git add README.md<br>
+                            git commit -m "Create initial portfolio"
+                        </div>
+                        <p style="margin-top: 30px;">
+                            <strong>Add:</strong> นำไฟล์เข้า Staging Area (เตรียมตัว)<br>
+                            <strong>Commit:</strong> บันทึกประวัติลงเครื่องพร้อมข้อความ (Message)
+                        </p>
+                    </div>
+                    <div class="image-frame">
+                        <img src="https://images.unsplash.com/photo-1618401479427-c8ef9435e2f1?auto=format&fit=crop&w=800&q=80" alt="Version Control History Concept">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide" id="slide13">
+            <h2 class="slide-title">Step 9: สร้าง Repository บน GitHub</h2>
+            <div class="content-area">
+                <div style="background: var(--bg-secondary); padding: 40px; border-radius: 16px;">
+                    <ol style="font-size: 24px; line-height: 1.8;">
+                        <li>เข้าเว็บ GitHub กดปุ่ม <span class="highlight-text">+</span> > <span class="accent-text">New repository</span></li>
+                        <li>ตั้งชื่อ: <span class="highlight-text">se-bootcamp-portfolio</span></li>
+                        <li><span style="color: var(--danger); font-weight: bold;">ห้ามติ๊ก!</span> "Add a README file" (เพราะเราสร้างในเครื่องแล้ว)</li>
+                        <li>กด <span class="accent-text">Create repository</span></li>
+                        <li>คัดลอก URL ของ Repository (HTTPS)</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide" id="slide14">
+            <h2 class="slide-title">Step 10-11: ส่งงานขึ้น Cloud (Push)</h2>
+            <div class="content-area">
+                <div class="cmd-box" style="font-size: 20px;">
+                    git remote add origin https://github.com/USERNAME/se-bootcamp-portfolio.git<br>
+                    git branch -M main<br>
+                    git push -u origin main
+                </div>
+                <div style="margin-top: 40px; text-align: center;">
+                    <div class="badge" style="background: var(--highlight);">Tips</div>
+                    <p>ถ้าระบบให้ Login ให้เลือก "Sign in via Browser" และกดยืนยันในหน้าต่างที่เด้งขึ้นมา</p>
+                    <i class="fa-solid fa-cloud-arrow-up" style="font-size: 60px; color: var(--accent); margin-top: 20px;"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide" id="slide15">
+            <h2 class="slide-title">Step 12: แก้ไขและอัปเดต (Cycle)</h2>
+            <div class="content-area">
+                <p>เมื่อแก้ไขไฟล์ใน VS Code ครั้งถัดไป วัฏจักรคือ:</p>
+                <div class="split-layout">
+                    <div class="cmd-box" style="font-size: 24px;">
+                        git add README.md<br>
+                        git commit -m "Update info"<br>
+                        git push
+                    </div>
+                    <div style="text-align: center;">
+                        <i class="fa-solid fa-arrows-rotate" style="font-size: 100px; color: var(--highlight);"></i>
+                        <p style="margin-top: 20px;">แก้ไข -> บันทึก -> ส่ง</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide" id="slide16">
+            <h2 class="slide-title">Troubleshooting (เจอปัญหา?)</h2>
+            <div class="content-area">
+                <div class="bento-grid">
+                    <div class="bento-item">
+                        <h3>'git' is not recognized</h3>
+                        <p class="small-text">ลองปิด CMD แล้วเปิดใหม่ หรือติดตั้ง Git for Windows อีกครั้ง</p>
+                    </div>
+                    <div class="bento-item">
+                        <h3>Remote already exists</h3>
+                        <p class="small-text">ใช้คำสั่ง <code>git remote set-url origin [URL]</code> เพื่อแก้ไข</p>
+                    </div>
+                    <div class="bento-item">
+                        <h3>Push Failed</h3>
+                        <p class="small-text">เช็คอินเทอร์เน็ต หรือตรวจว่า GitHub มีไฟล์ที่เครื่องไม่มีหรือเปล่า</p>
+                    </div>
+                    <div class="bento-item" style="grid-column: span 3; border-color: var(--highlight);">
+                        <h3>คำสั่งวิเศษ</h3>
+                        <p>พิมพ์ <code>git status</code> บ่อยๆ เพื่อดูว่าตอนนี้เกิดอะไรขึ้นใน Repository</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide" id="slide17">
+            <h2 class="slide-title">กิจกรรมที่ 1: Command Card Sort</h2>
+            <div class="content-area" style="text-align: center;">
+                <p style="font-size: 24px; margin-bottom: 30px;">จงเรียงลำดับคำสั่งต่อไปนี้ให้ถูกต้องสำหรับการเริ่มต้นโปรเจกต์ใหม่</p>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;">
+                    <div style="padding: 15px; background: var(--bg-secondary); border: 1px solid var(--card-border); border-radius: 8px;">git push</div>
+                    <div style="padding: 15px; background: var(--bg-secondary); border: 1px solid var(--card-border); border-radius: 8px;">git init</div>
+                    <div style="padding: 15px; background: var(--bg-secondary); border: 1px solid var(--card-border); border-radius: 8px;">git commit</div>
+                    <div style="padding: 15px; background: var(--bg-secondary); border: 1px solid var(--card-border); border-radius: 8px;">git add</div>
+                </div>
+                <button class="reveal-btn" onclick="toggleReveal(this)" style="margin-top: 40px;">เฉลย</button>
+                <div class="reveal-content">
+                    <p style="font-size: 28px; color: var(--accent); font-weight: bold;">
+                        Init → Add → Commit → Remote → Push
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide" id="slide18">
+            <h2 class="slide-title">บทสรุป</h2>
+            <div class="content-area center-all" style="text-align: center;">
+                <i class="fa-solid fa-quote-left" style="font-size: 60px; color: var(--accent); margin-bottom: 30px;"></i>
+                <h3 style="font-size: 32px; font-weight: normal; line-height: 1.6;">
+                    "ความสม่ำเสมอในการบันทึกงานบน GitHub <br>
+                    คือเครื่องยืนยันความเป็นมืออาชีพของคุณในฐานะ Software Engineer"
+                </h3>
+                <div class="image-frame" style="height: 200px; width: 400px; margin-top: 40px; display: inline-block;">
+                    <img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=800&q=80" alt="Progress graph">
+                </div>
+            </div>
+        </div>
+
+        <div class="slide" id="slide19">
+            <h2 class="slide-title">Peer Review (กิจกรรมท้ายคาบ)</h2>
+            <div class="split-layout">
+                <div>
+                    <p>จับคู่กับเพื่อน สลับกันดู Repository URL:</p>
+                    <ul style="margin-top: 20px; line-height: 1.8;">
+                        <li>เปิดหน้าเว็บได้จริงไหม?</li>
+                        <li>Markdown แสดงผลถูกต้องไหม?</li>
+                        <li>อ่านแล้วรู้จักตัวตนของเพื่อนไหม?</li>
+                        <li>ให้ข้อเสนอแนะ 1 อย่างเพื่อปรับปรุง</li>
+                    </ul>
+                </div>
+                <div style="text-align: center; border: 2px dashed var(--highlight); padding: 30px; border-radius: 16px;">
+                    <i class="fa-solid fa-users-viewfinder" style="font-size: 80px; color: var(--highlight);"></i>
+                    <p style="margin-top: 20px;">"Software Engineering<br>is Teamwork!"</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide" id="slide20">
+            <h2 class="slide-title">Q&A / Exit Ticket</h2>
+            <div class="content-area" style="text-align: center;">
+                <h3 style="font-size: 36px; margin-bottom: 30px;">มีข้อสงสัยตรงไหนไหมครับ?</h3>
+                <p>ก่อนออกจากห้อง: ส่ง Repository Link ใน Google Form หรือ QR Code ที่เตรียมไว้</p>
+                <div style="margin-top: 50px; background: white; padding: 20px; display: inline-block; border-radius: 12px;">
+                    <i class="fa-solid fa-qrcode" style="font-size: 100px; color: black;"></i>
+                </div>
+                <p style="margin-top: 40px; color: var(--highlight); font-weight: bold;">
+                    Happy Coding & Welcome to Software Engineering RMUTL!
+                </p>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // SLIDE NAVIGATION
+        let currentSlide = 1;
+        const totalSlides = 20;
+
+        function updateSlide() {
+            // Hide all slides
+            document.querySelectorAll('.slide').forEach(s => s.classList.remove('active'));
+            // Show current slide
+            document.getElementById(`slide${currentSlide}`).classList.add('active');
+            // Update info
+            document.getElementById('slide-info').innerText = `${currentSlide} / ${totalSlides}`;
+        }
+
+        function nextSlide() {
+            if (currentSlide < totalSlides) {
+                currentSlide++;
+                updateSlide();
+            }
+        }
+
+        function prevSlide() {
+            if (currentSlide > 1) {
+                currentSlide--;
+                updateSlide();
+            }
+        }
+
+        // KEYBOARD SHORTCUTS
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === ' ') nextSlide();
+            if (e.key === 'ArrowLeft') prevSlide();
+        });
+
+        // THEME TOGGLE
+        function toggleTheme() {
+            document.body.classList.toggle('light-mode');
+        }
+
+        // FONT SIZE TOGGLE
+        let currentFontScale = 1;
+        function changeFontSize(delta) {
+            currentFontScale += delta;
+            if (currentFontScale < 0.7) currentFontScale = 0.7;
+            if (currentFontScale > 1.5) currentFontScale = 1.5;
+            document.documentElement.style.setProperty('--font-scale', currentFontScale);
+        }
+
+        // FULLSCREEN
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+            }
+        }
+
+        // REVEAL LOGIC
+        function toggleReveal(btn) {
+            const content = btn.nextElementSibling;
+            if (content.style.display === "block") {
+                content.style.display = "none";
+                btn.innerText = "ดูเฉลย";
+            } else {
+                content.style.display = "block";
+                btn.innerText = "ซ่อนเฉลย";
+            }
+        }
+
+        // Initial update
+        updateSlide();
+    </script>
+</body>
+</html>
