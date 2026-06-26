@@ -352,8 +352,17 @@
     .project-visual:focus-within .visual-zoom::after { opacity: .72; }
     .project-visual:hover img { transform: scale(1.018); }
 
-    /* Full-screen image viewer: touch-first, keyboard accessible, and responsive. */
-    body.modal-open { overflow: hidden; }
+    /* ------------------------------------------------------------------
+       Full-screen image viewer
+       - Phone: true edge-to-edge viewer so the title and image never crop.
+       - Desktop: centred dialog with the same controls.
+       - Image: double-tap / +/- zoom and one-finger drag after zooming.
+       ------------------------------------------------------------------ */
+    html.modal-open,
+    body.modal-open {
+      overflow: hidden;
+      overscroll-behavior: none;
+    }
     .image-modal {
       position: fixed;
       z-index: 200;
@@ -374,7 +383,7 @@
     .image-modal-backdrop {
       position: absolute;
       inset: 0;
-      background: rgba(2, 14, 34, .83);
+      background: rgba(2, 14, 34, .86);
       backdrop-filter: blur(5px);
     }
     .image-modal-dialog {
@@ -385,6 +394,8 @@
       width: 100%;
       max-width: 1600px;
       max-height: calc(100dvh - 20px);
+      min-width: 0;
+      min-height: 0;
       overflow: hidden;
       border: 1px solid rgba(255, 255, 255, .22);
       border-radius: 18px;
@@ -393,9 +404,11 @@
       box-shadow: 0 24px 70px rgba(0, 0, 0, .48);
     }
     .image-modal-toolbar {
-      display: flex;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
       align-items: center;
       gap: 10px;
+      min-width: 0;
       min-height: 58px;
       padding: 9px 10px 9px 15px;
       color: #122c4e;
@@ -410,45 +423,89 @@
       font-size: .92rem;
       font-weight: 850;
       line-height: 1.35;
-      text-overflow: ellipsis;
-      white-space: nowrap;
+      overflow-wrap: anywhere;
     }
+    .image-modal-actions {
+      display: inline-flex;
+      flex: 0 0 auto;
+      align-items: center;
+      gap: 6px;
+    }
+    .image-modal-control,
     .image-modal-close {
       display: inline-grid;
       flex: 0 0 auto;
       place-items: center;
-      width: 44px;
-      height: 44px;
-      margin-left: auto;
+      width: 40px;
+      height: 40px;
+      padding: 0;
       border: 1px solid #d6e2ed;
-      border-radius: 12px;
+      border-radius: 11px;
       color: #143456;
       background: #f5f9fc;
       cursor: pointer;
-      font-size: 1.55rem;
-      font-weight: 500;
+      font-weight: 800;
       line-height: 1;
+      -webkit-tap-highlight-color: transparent;
     }
+    .image-modal-control { font-size: 1.16rem; }
+    .image-modal-control[data-role="reset"] { width: 48px; font-size: .73rem; }
+    .image-modal-close { font-size: 1.55rem; font-weight: 500; }
+    .image-modal-control:hover,
+    .image-modal-control:focus-visible,
     .image-modal-close:hover,
     .image-modal-close:focus-visible { background: #e8f5f7; color: #007f88; }
+    .image-modal-control:focus-visible,
     .image-modal-close:focus-visible { outline: 3px solid #1ab5ae; outline-offset: 2px; }
     .image-modal-stage {
+      position: relative;
       display: grid;
+      min-width: 0;
       min-height: 0;
       place-items: center;
-      overflow: auto;
+      overflow: hidden;
       padding: 8px;
       background: radial-gradient(circle at center, #163960 0%, #071a35 68%);
+      touch-action: none;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-tap-highlight-color: transparent;
     }
     .image-modal-stage img {
       display: block;
       width: auto;
       max-width: 100%;
       height: auto;
-      max-height: calc(100dvh - 162px);
+      max-height: 100%;
       object-fit: contain;
       border-radius: 7px;
       box-shadow: 0 10px 28px rgba(0, 0, 0, .36);
+      cursor: zoom-in;
+      transform: translate3d(0, 0, 0) scale(1);
+      transform-origin: center center;
+      transition: transform .18s ease;
+      -webkit-user-drag: none;
+    }
+    .image-modal-stage.is-zoomed img { cursor: grab; }
+    .image-modal-stage.is-dragging img { cursor: grabbing; transition: none; }
+    .image-modal-hint {
+      position: absolute;
+      left: 50%;
+      bottom: 12px;
+      z-index: 2;
+      max-width: calc(100% - 32px);
+      padding: 7px 10px;
+      border: 1px solid rgba(255,255,255,.24);
+      border-radius: 999px;
+      color: #ecfbff;
+      background: rgba(5, 22, 49, .72);
+      box-shadow: 0 8px 20px rgba(0,0,0,.18);
+      font-size: .72rem;
+      font-weight: 750;
+      line-height: 1.25;
+      text-align: center;
+      transform: translateX(-50%);
+      pointer-events: none;
     }
     .image-modal-caption {
       margin: 0;
@@ -458,6 +515,40 @@
       border-top: 1px solid rgba(255, 255, 255, .12);
       font-size: .76rem;
       line-height: 1.45;
+    }
+
+    /* Phone viewer: full viewport prevents the left/right crop shown on mobile. */
+    @media (max-width: 599px) {
+      .image-modal { display: block; padding: 0; }
+      .image-modal-dialog {
+        width: 100vw;
+        height: 100dvh;
+        max-width: none;
+        max-height: none;
+        border: 0;
+        border-radius: 0;
+        box-shadow: none;
+      }
+      .image-modal-toolbar {
+        grid-template-columns: minmax(0, 1fr) auto;
+        min-height: 66px;
+        padding: max(10px, env(safe-area-inset-top)) 12px 10px 14px;
+      }
+      .image-modal-title {
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+        white-space: normal;
+        font-size: .86rem;
+      }
+      .image-modal-actions { gap: 5px; }
+      .image-modal-control { width: 36px; height: 36px; font-size: 1.04rem; }
+      .image-modal-control[data-role="reset"] { width: 42px; font-size: .68rem; }
+      .image-modal-close { width: 42px; height: 42px; }
+      .image-modal-stage { padding: 12px; }
+      .image-modal-stage img { max-width: 100%; max-height: 100%; }
+      .image-modal-caption { display: none; }
+      .image-modal-hint { bottom: max(12px, env(safe-area-inset-bottom)); }
     }
 
     @media (min-width: 600px) {
@@ -474,7 +565,6 @@
       .image-modal { padding: 22px; }
       .image-modal-dialog { max-height: calc(100dvh - 44px); border-radius: 22px; }
       .image-modal-stage { padding: 14px; }
-      .image-modal-stage img { max-height: calc(100dvh - 186px); }
       .image-modal-caption { padding: 12px 17px; font-size: .82rem; }
     }
 
@@ -511,7 +601,6 @@
       .c1,.c2,.c3,.c4,.c5 { display:block; }
       .image-modal { padding: 32px; }
       .image-modal-dialog { max-height: calc(100dvh - 64px); }
-      .image-modal-stage img { max-height: calc(100dvh - 210px); }
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -708,10 +797,16 @@
     <section class="image-modal-dialog" role="document">
       <div class="image-modal-toolbar">
         <p id="imageModalTitle" class="image-modal-title">ภาพตัวอย่างระบบ</p>
-        <button id="imageModalClose" type="button" class="image-modal-close" aria-label="ปิดภาพขยาย" title="ปิดภาพขยาย">×</button>
+        <div class="image-modal-actions" aria-label="เครื่องมือดูภาพ">
+          <button id="imageModalZoomOut" type="button" class="image-modal-control" aria-label="ย่อภาพ" title="ย่อภาพ">−</button>
+          <button id="imageModalReset" type="button" class="image-modal-control" data-role="reset" aria-label="ปรับภาพให้พอดีหน้าจอ" title="ปรับภาพให้พอดีหน้าจอ">100%</button>
+          <button id="imageModalZoomIn" type="button" class="image-modal-control" aria-label="ขยายภาพ" title="ขยายภาพ">+</button>
+          <button id="imageModalClose" type="button" class="image-modal-close" aria-label="ปิดภาพขยาย" title="ปิดภาพขยาย">×</button>
+        </div>
       </div>
-      <div class="image-modal-stage">
-        <img id="imageModalImage" src="" alt="" />
+      <div id="imageModalStage" class="image-modal-stage" aria-label="พื้นที่ดูภาพขยาย">
+        <img id="imageModalImage" src="" alt="" draggable="false" />
+        <div class="image-modal-hint" aria-hidden="true">แตะ 2 ครั้งเพื่อซูม · ลากเพื่อเลื่อนดู</div>
       </div>
       <p id="imageModalCaption" class="image-modal-caption"></p>
     </section>
@@ -732,6 +827,7 @@
         aun: ['Criterion 1–8','PDCA / CQI','SAR Preparation'],
         deliverables: ['SRS และ Use Case ของการจัดการหลักฐานและ CQI','ER Diagram และ Data Dictionary','Wireframe / Prototype: Evidence Workbench','MVP: เพิ่มหลักฐาน → ส่งตรวจ → อนุมัติ/ตีกลับ','ตัวอย่าง Gap List และ CQI Action List','Test Case / Report, Source Code, README, Demo Video'],
         image: 'p1-dashboard.png',
+        imageTitle: 'Evidence Workbench Dashboard',
         imageAlt: 'ตัวอย่างหน้าจอ Evidence Workbench Dashboard สำหรับบริหารหลักฐาน AUN-QA และ CQI',
         visual: 'ภาพ Dashboard “Evidence Workbench” ที่แสดงรายการหลักฐาน แถบตัวกรองตาม Criterion / ปีการศึกษา / PLO และกล่องสรุป Evidence Gap + CQI Action ที่ค้างอยู่'
       },
@@ -748,6 +844,7 @@
         aun: ['Criterion 1','Criterion 2','Criterion 3','Criterion 4','Criterion 8'],
         deliverables: ['SRS ของข้อมูล PLO/CLO และ Curriculum Mapping','Use Case, ER Diagram และ Data Dictionary','Wireframe ของ Mapping Matrix และ Coverage Report','MVP: สร้าง PLO/CLO และ Mapping ได้จริง','ตัวอย่าง PLO Support Matrix / CLO Coverage Report','Test Case / Report, Source Code, README, Demo Video'],
         image: 'p2-dashboard.png',
+        imageTitle: 'PLO-CLO Mapping Matrix',
         imageAlt: 'ตัวอย่างหน้าจอ PLO-CLO Mapping Matrix แสดงความเชื่อมโยงรายวิชา PLO CLO และระดับ I R M',
         visual: 'ภาพ Mapping Matrix แบบตาราง: แถวเป็นรายวิชา คอลัมน์เป็น PLO/CLO ใช้สีเพื่อแสดง I / R / M พร้อมแผง Coverage และ Gap Summary'
       },
@@ -764,6 +861,7 @@
         aun: ['Criterion 3','Criterion 4','Criterion 6','Criterion 8'],
         deliverables: ['SRS และ Process Model ของวงจรโครงงาน','Use Case, Activity Diagram, ER Diagram, Wireframe','MVP: เสนอหัวข้อ → อาจารย์ตรวจ → ส่งแก้ไข/อนุมัติ','หน้าติดตาม Milestone และ Portfolio ตัวอย่าง','Evidence Package ของโครงงานอย่างน้อย 1 รายการ','Test Case / Report, Source Code, README, Demo Video'],
         image: 'p3-dashboard.png',
+        imageTitle: 'Student Project Journey',
         imageAlt: 'ตัวอย่างหน้าจอ Student Project Journey สำหรับติดตามข้อเสนอโครงงาน การทบทวน การอนุมัติ และ Portfolio',
         visual: 'ภาพ Timeline “Student Project Journey” ตั้งแต่ Proposal → Review → Revision → Approved → Milestones → Digital Portfolio พร้อมตัวอย่างหน้าผลงานโครงงาน'
       },
@@ -780,6 +878,7 @@
         aun: ['Criterion 6','Criterion 7','Support for Criterion 3'],
         deliverables: ['SRS โดยระบุขอบเขตที่ต่อยอดจากระบบเดิม','ER Diagram / Data Dictionary: Asset, Material, Maintenance, Lab Readiness','Wireframe / Prototype ของ workflow หลัก','MVP: เบิกวัสดุ → อนุมัติ → ตัดสต็อก หรือค้นหา → ดูสถานะ → บันทึกซ่อม','Dashboard หรือรายงานสรุปอย่างน้อย 1 หน้า','Test Case / Report, Source Code, README, Demo Video'],
         image: 'p4-dashboard.png',
+        imageTitle: 'Lab Readiness Dashboard',
         imageAlt: 'ตัวอย่างหน้าจอ Lab Readiness Dashboard สำหรับ QR ครุภัณฑ์ สถานะห้อง ซ่อมบำรุง และวัสดุฝึก',
         visual: 'ภาพ “Lab Readiness Dashboard” แสดงสถานะห้อง แผนผังทรัพยากร QR asset lookup การแจ้งซ่อม และกราฟวัสดุฝึกคงเหลือ'
       },
@@ -796,6 +895,7 @@
         aun: ['Criterion 3','Criterion 6','Criterion 8'],
         deliverables: ['SRS ของระบบกิจกรรมและการเก็บหลักฐานการมีส่วนร่วม','Use Case, ER Diagram, Activity Flow และ Wireframe','MVP: สร้างกิจกรรม → ลงทะเบียน → check-in → reflection','ตัวอย่าง Activity Evidence และ Reflection Summary','Dashboard การเข้าร่วมกิจกรรมอย่างน้อย 1 หน้า','Test Case / Report, Source Code, README, Demo Video'],
         image: 'p5-dashboard.png',
+        imageTitle: 'Active Learning Journey',
         imageAlt: 'ตัวอย่างหน้าจอ Active Learning Journey ตั้งแต่แผนกิจกรรม การลงทะเบียน QR Check-in หลักฐาน และ reflection',
         visual: 'ภาพ “Activity Journey” ที่แสดง Event Plan → Registration → QR Check-in → Evidence → Reflection → Engagement Dashboard พร้อมตัวอย่าง QR card'
       },
@@ -812,6 +912,7 @@
         aun: ['Criterion 1','Criterion 2','Criterion 6','Criterion 8'],
         deliverables: ['SRS ของระบบ stakeholder และแบบสำรวจ','Use Case, ER Diagram, Data Dictionary และ Wireframe','MVP: สร้างแบบสอบถาม → เผยแพร่ → รับคำตอบ → สรุปผล','ตัวอย่าง Satisfaction Report และ Issue List','แนวทางส่งออกข้อมูลเพื่อใช้เป็น CQI Input','Test Case / Report, Source Code, README, Demo Video'],
         image: 'p6-dashboard.png',
+        imageTitle: 'Stakeholder Insight Dashboard',
         imageAlt: 'ตัวอย่างหน้าจอ Stakeholder Insight Dashboard สำหรับคะแนนความพึงพอใจ feedback และ Issue List ต่อ CQI',
         visual: 'ภาพ “Stakeholder Insight Dashboard” แสดงผลสำรวจแบบกราฟ คะแนนความพึงพอใจ คำตอบปลายเปิดที่จัดกลุ่ม และ Issue List ที่ส่งต่อ CQI'
       }
@@ -848,7 +949,7 @@
             </div>
             <div class="info-stack">
               <figure class="project-visual">
-                <button type="button" class="visual-zoom" data-zoom-title="${project.code}: ${project.thai}" data-zoom-caption="${project.visual}" aria-label="เปิดภาพขยาย: ${project.imageAlt}">
+                <button type="button" class="visual-zoom" data-zoom-title="${project.code} · ${project.imageTitle}" data-zoom-caption="${project.visual}" aria-label="เปิดภาพขยาย: ${project.imageAlt}">
                   <img src="assets/${project.image}" alt="${project.imageAlt}" loading="lazy" decoding="async"
                     onerror="this.closest('figure').classList.add('image-missing'); this.alt='ไม่พบไฟล์ภาพ: assets/${project.image}'">
                   <span class="zoom-hint" aria-hidden="true"><b>⤢</b> แตะเพื่อดูภาพเต็ม</span>
@@ -908,13 +1009,69 @@
     }, { rootMargin: '-25% 0px -68% 0px', threshold: 0 });
     ['overview','ecosystem','catalog','shared','next'].forEach(id => navObserver.observe(document.getElementById(id)));
 
-    // Image viewer: works with mouse, touch, keyboard (Enter/Space), Escape, and backdrop click.
+    // Image viewer: touch-first, with full-screen mobile layout, zoom controls, double-tap zoom and drag pan.
     const imageModal = document.getElementById('imageModal');
     const imageModalImage = document.getElementById('imageModalImage');
+    const imageModalStage = document.getElementById('imageModalStage');
     const imageModalTitle = document.getElementById('imageModalTitle');
     const imageModalCaption = document.getElementById('imageModalCaption');
     const imageModalClose = document.getElementById('imageModalClose');
+    const imageModalZoomIn = document.getElementById('imageModalZoomIn');
+    const imageModalZoomOut = document.getElementById('imageModalZoomOut');
+    const imageModalReset = document.getElementById('imageModalReset');
     let lastImageTrigger = null;
+
+    const viewer = {
+      scale: 1,
+      x: 0,
+      y: 0,
+      maxScale: 4,
+      pointerId: null,
+      startX: 0,
+      startY: 0,
+      startPanX: 0,
+      startPanY: 0,
+      moved: false,
+      lastTapAt: 0
+    };
+
+    function clamp(value, min, max) { return Math.min(Math.max(value, min), max); }
+
+    function clampPan() {
+      const baseWidth = imageModalImage.offsetWidth || 0;
+      const baseHeight = imageModalImage.offsetHeight || 0;
+      const stageWidth = imageModalStage.clientWidth || 0;
+      const stageHeight = imageModalStage.clientHeight || 0;
+      const maxX = Math.max(0, (baseWidth * viewer.scale - stageWidth) / 2);
+      const maxY = Math.max(0, (baseHeight * viewer.scale - stageHeight) / 2);
+      viewer.x = clamp(viewer.x, -maxX, maxX);
+      viewer.y = clamp(viewer.y, -maxY, maxY);
+    }
+
+    function applyViewerTransform() {
+      clampPan();
+      imageModalImage.style.transform = `translate3d(${viewer.x}px, ${viewer.y}px, 0) scale(${viewer.scale})`;
+      imageModalStage.classList.toggle('is-zoomed', viewer.scale > 1.01);
+      imageModalReset.textContent = `${Math.round(viewer.scale * 100)}%`;
+      imageModalReset.setAttribute('aria-label', `ปรับภาพให้พอดีหน้าจอ ขณะนี้ ${Math.round(viewer.scale * 100)} เปอร์เซ็นต์`);
+    }
+
+    function resetViewer() {
+      viewer.scale = 1;
+      viewer.x = 0;
+      viewer.y = 0;
+      applyViewerTransform();
+    }
+
+    function setViewerScale(nextScale) {
+      viewer.scale = clamp(nextScale, 1, viewer.maxScale);
+      if (viewer.scale <= 1.01) {
+        viewer.scale = 1;
+        viewer.x = 0;
+        viewer.y = 0;
+      }
+      applyViewerTransform();
+    }
 
     function openImageModal(trigger) {
       const sourceImage = trigger.querySelector('img');
@@ -924,8 +1081,10 @@
       imageModalImage.alt = sourceImage.alt || 'ภาพตัวอย่างระบบ';
       imageModalTitle.textContent = trigger.dataset.zoomTitle || sourceImage.alt || 'ภาพตัวอย่างระบบ';
       imageModalCaption.textContent = trigger.dataset.zoomCaption || '';
+      resetViewer();
       imageModal.classList.add('is-open');
       imageModal.setAttribute('aria-hidden', 'false');
+      document.documentElement.classList.add('modal-open');
       document.body.classList.add('modal-open');
       window.setTimeout(() => imageModalClose.focus(), 0);
     }
@@ -934,13 +1093,60 @@
       if (!imageModal.classList.contains('is-open')) return;
       imageModal.classList.remove('is-open');
       imageModal.setAttribute('aria-hidden', 'true');
+      document.documentElement.classList.remove('modal-open');
       document.body.classList.remove('modal-open');
       imageModalImage.removeAttribute('src');
       imageModalImage.alt = '';
+      resetViewer();
       if (lastImageTrigger) {
         window.setTimeout(() => lastImageTrigger.focus(), 0);
       }
     }
+
+    imageModalImage.addEventListener('load', () => {
+      resetViewer();
+    });
+
+    imageModalZoomIn.addEventListener('click', () => setViewerScale(viewer.scale + .5));
+    imageModalZoomOut.addEventListener('click', () => setViewerScale(viewer.scale - .5));
+    imageModalReset.addEventListener('click', resetViewer);
+
+    imageModalStage.addEventListener('pointerdown', (event) => {
+      if (!imageModal.classList.contains('is-open')) return;
+      viewer.pointerId = event.pointerId;
+      viewer.startX = event.clientX;
+      viewer.startY = event.clientY;
+      viewer.startPanX = viewer.x;
+      viewer.startPanY = viewer.y;
+      viewer.moved = false;
+      imageModalStage.setPointerCapture?.(event.pointerId);
+      if (viewer.scale > 1.01) imageModalStage.classList.add('is-dragging');
+    });
+
+    imageModalStage.addEventListener('pointermove', (event) => {
+      if (event.pointerId !== viewer.pointerId || viewer.scale <= 1.01) return;
+      const dx = event.clientX - viewer.startX;
+      const dy = event.clientY - viewer.startY;
+      if (Math.abs(dx) + Math.abs(dy) > 5) viewer.moved = true;
+      viewer.x = viewer.startPanX + dx;
+      viewer.y = viewer.startPanY + dy;
+      applyViewerTransform();
+    });
+
+    function finishImagePointer(event) {
+      if (event.pointerId !== viewer.pointerId) return;
+      imageModalStage.classList.remove('is-dragging');
+      const now = Date.now();
+      if (!viewer.moved && now - viewer.lastTapAt < 280) {
+        setViewerScale(viewer.scale > 1.01 ? 1 : 2.5);
+        viewer.lastTapAt = 0;
+      } else if (!viewer.moved) {
+        viewer.lastTapAt = now;
+      }
+      viewer.pointerId = null;
+    }
+    imageModalStage.addEventListener('pointerup', finishImagePointer);
+    imageModalStage.addEventListener('pointercancel', finishImagePointer);
 
     document.addEventListener('click', (event) => {
       const trigger = event.target.closest('.visual-zoom');
@@ -954,9 +1160,11 @@
     });
 
     document.addEventListener('keydown', (event) => {
-      if (event.key === 'Escape' && imageModal.classList.contains('is-open')) {
-        closeImageModal();
-      }
+      if (!imageModal.classList.contains('is-open')) return;
+      if (event.key === 'Escape') closeImageModal();
+      if (event.key === '+' || event.key === '=') setViewerScale(viewer.scale + .5);
+      if (event.key === '-') setViewerScale(viewer.scale - .5);
+      if (event.key === '0') resetViewer();
     });
 
   </script>
