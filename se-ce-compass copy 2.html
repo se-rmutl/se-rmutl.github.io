@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RMUTL Tech Compass - SE vs CoE</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Kanit', 'sans-serif'] },
+                    colors: {
+                        bgdark: '#0f172a',
+                        cardbg: '#1e293b',
+                        se_color: '#10b981', // Emerald for SE
+                        coe_color: '#3b82f6', // Blue for CoE
+                        accent: '#f59e0b'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { background-color: #0f172a; color: #f8fafc; }
+        .glass-panel { background: rgba(30, 41, 59, 0.85); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); }
+        .option-btn { transition: all 0.2s; border: 1px solid #334155; }
+        .option-btn:hover { transform: translateY(-2px); border-color: #94a3b8; background-color: #334155; }
+        .option-btn:active { transform: scale(0.98); }
+        .glow-text { text-shadow: 0 0 10px rgba(255,255,255,0.3); }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')]">
+
+    <div class="w-full max-w-2xl my-auto">
+        
+        <!-- 1. START SCREEN -->
+        <div id="start-screen" class="glass-panel rounded-3xl p-6 md:p-8 space-y-6 shadow-2xl">
+            <div class="text-center space-y-3">
+                <div class="inline-block px-4 py-1 rounded-full bg-slate-800 border border-slate-700 text-xs font-semibold text-slate-300 tracking-wider">
+                    RMUTL YEAR 1 ASSESSMENT
+                </div>
+                <h1 class="text-3xl md:text-4xl font-bold glow-text">
+                    ค้นหาตัวตน <br>
+                    <span class="text-se_color">SE</span> vs <span class="text-coe_color">CoE</span>
+                </h1>
+                <p class="text-slate-400 text-sm md:text-base">
+                    แบบประเมิน 20 คำถาม ที่อ้างอิงจากหลักสูตรจริงของคณะวิศวกรรมศาสตร์ มทร.ล้านนา เพื่อช่วยตัดสินใจและวางแผนการเรียนในอนาคต
+                </p>
+            </div>
+
+            <div class="space-y-4 bg-slate-900/50 p-5 rounded-2xl border border-slate-800">
+                <div>
+                    <label class="block text-xs text-slate-400 mb-1">ชื่อเล่น (Nickname)</label>
+                    <input id="input-nick" type="text" placeholder="กรอกชื่อเล่นของคุณ" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-slate-500">
+                </div>
+                <div>
+                    <label class="block text-xs text-slate-400 mb-1">ชื่อ - นามสกุล (Full Name)</label>
+                    <input id="input-name" type="text" placeholder="กรอกชื่อและนามสกุล" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-slate-500">
+                </div>
+            </div>
+
+            <button onclick="startAssessment()" class="w-full bg-gradient-to-r from-se_color to-coe_color text-white font-bold py-3.5 rounded-xl hover:opacity-90 transition-opacity flex items-center justify-center gap-2">
+                <span>เริ่มทำแบบประเมิน</span>
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
+            </button>
+        </div>
+
+        <!-- 2. QUIZ SCREEN -->
+        <div id="quiz-screen" class="hidden glass-panel rounded-3xl p-6 md:p-8 space-y-6 shadow-2xl">
+            <div class="flex justify-between items-center text-xs font-semibold text-slate-400">
+                <span id="quiz-progress-text">ข้อที่ 1 / 20</span>
+                <span>RMUTL Curriculum Based</span>
+            </div>
+            
+            <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+                <div id="quiz-progress-bar" class="bg-gradient-to-r from-se_color to-coe_color h-full transition-all duration-300" style="width: 5%"></div>
+            </div>
+
+            <div class="min-h-[100px] flex items-center">
+                <h2 id="question-text" class="text-lg md:text-xl font-medium text-white leading-relaxed">...</h2>
+            </div>
+
+            <div id="options-container" class="space-y-3"></div>
+        </div>
+
+        <!-- 3. RESULTS SCREEN (PORTFOLIO ID CARD) -->
+        <div id="results-screen" class="hidden space-y-4">
+            
+            <!-- Exportable Card -->
+            <div id="export-card" class="bg-slate-900 border border-slate-700 rounded-3xl p-6 md:p-8 relative overflow-hidden shadow-2xl">
+                <!-- Background decoration -->
+                <div id="result-bg-glow" class="absolute -top-20 -right-20 w-64 h-64 rounded-full blur-3xl opacity-20 pointer-events-none"></div>
+
+                <div class="border-b border-slate-800 pb-4 mb-5 flex justify-between items-end">
+                    <div>
+                        <div class="text-[10px] text-slate-400 tracking-widest uppercase mb-1">Developer Identity Card</div>
+                        <h2 class="text-2xl font-bold text-white">ผลการวิเคราะห์แนวถนัด</h2>
+                    </div>
+                    <img src="https://upload.wikimedia.org/wikipedia/th/thumb/e/e0/RMUTL_Logo.svg/800px-RMUTL_Logo.svg.png" alt="RMUTL" class="h-10 opacity-80">
+                </div>
+
+                <div class="flex items-center gap-4 mb-6">
+                    <div id="result-avatar" class="w-14 h-14 rounded-full flex items-center justify-center text-xl font-bold text-white shadow-lg"></div>
+                    <div>
+                        <div id="result-name" class="text-lg font-bold text-white"></div>
+                        <div class="text-xs text-slate-400">นักศึกษาชั้นปีที่ 1 คณะวิศวกรรมศาสตร์</div>
+                    </div>
+                </div>
+
+                <div class="bg-slate-800/50 rounded-2xl p-5 border border-slate-700/50 space-y-4">
+                    <div class="text-center">
+                        <div class="text-xs text-slate-400 mb-1">หลักสูตรที่เหมาะสมกับคุณที่สุดคือ</div>
+                        <div id="result-major-title" class="text-xl md:text-2xl font-bold"></div>
+                    </div>
+
+                    <!-- Progress Bar Result -->
+                    <div class="pt-2">
+                        <div class="flex justify-between text-xs mb-1">
+                            <span class="text-se_color font-semibold">วิศวกรรมซอฟต์แวร์ (SE)</span>
+                            <span class="text-coe_color font-semibold">วิศวกรรมคอมพิวเตอร์ (CoE)</span>
+                        </div>
+                        <div class="w-full bg-slate-700 h-3 rounded-full flex overflow-hidden">
+                            <div id="bar-se" class="bg-se_color h-full transition-all duration-1000"></div>
+                            <div id="bar-coe" class="bg-coe_color h-full transition-all duration-1000"></div>
+                        </div>
+                        <div class="flex justify-between text-[10px] text-slate-400 mt-1">
+                            <span id="score-se"></span>
+                            <span id="score-coe"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-5 grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="space-y-2">
+                        <div class="text-xs font-semibold text-slate-400 border-b border-slate-800 pb-1">📚 รายวิชาเด่นที่คุณต้องเจอ</div>
+                        <ul id="result-courses" class="text-xs text-slate-300 space-y-1.5 list-disc list-inside"></ul>
+                    </div>
+                    <div class="space-y-2">
+                        <div class="text-xs font-semibold text-slate-400 border-b border-slate-800 pb-1">💼 อาชีพเป้าหมายในอนาคต</div>
+                        <ul id="result-careers" class="text-xs text-slate-300 space-y-1.5 list-disc list-inside"></ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Buttons -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <button onclick="exportPNG()" id="btn-export" class="bg-slate-800 hover:bg-slate-700 border border-slate-600 text-white font-semibold py-3.5 rounded-xl text-sm transition-colors flex justify-center items-center gap-2">
+                    📸 บันทึกเป็นรูปภาพ (PNG)
+                </button>
+                <button onclick="location.reload()" class="bg-slate-800 hover:bg-slate-700 border border-slate-600 text-white font-semibold py-3.5 rounded-xl text-sm transition-colors">
+                    🔄 ทำแบบประเมินอีกครั้ง
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // ข้อมูลหลักสูตรที่อ้างอิงจาก มคอ.2
+        const MAJOR_DATA = {
+            SE: {
+                title: "วิศวกรรมซอฟต์แวร์ (Software Engineering)",
+                color: "#10b981",
+                bgGlow: "bg-emerald-500",
+                courses: [
+                    "การเขียนโปรแกรมเชิงวัตถุ (OOP)",
+                    "การวิเคราะห์และออกแบบระบบ (System Analysis and Design)",
+                    "กระบวนการซอฟต์แวร์และการประกันคุณภาพ (SQA)",
+                    "สถาปัตยกรรมซอฟต์แวร์ (Software Architecture)",
+                    "การพัฒนาโปรแกรมบนระบบคลาวด์"
+                ],
+                careers: [
+                    "วิศวกรซอฟต์แวร์ (Software Engineer)",
+                    "นักพัฒนาซอฟต์แวร์ (Developer/Programmer)",
+                    "นักวิเคราะห์และออกแบบระบบ (System Analyst)",
+                    "นักประกันคุณภาพซอฟต์แวร์ (Software QA)",
+                    "สถาปนิกซอฟต์แวร์ (Software Architect)"
+                ]
+            },
+            COE: {
+                title: "วิศวกรรมคอมพิวเตอร์ (Computer Engineering)",
+                color: "#3b82f6",
+                bgGlow: "bg-blue-500",
+                courses: [
+                    "วงจรดิจิทัลและการออกแบบลอจิก (Digital Circuits)",
+                    "โครงสร้างและสถาปัตยกรรมคอมพิวเตอร์ (Computer Architecture)",
+                    "ไมโครโพรเซสเซอร์และการอินเตอร์เฟส",
+                    "ระบบสมองกลฝังตัว (Embedded Systems)",
+                    "การสื่อสารข้อมูลและเครือข่าย (Data Communication)"
+                ],
+                careers: [
+                    "วิศวกรคอมพิวเตอร์ (Computer Engineer)",
+                    "วิศวกรเครือข่าย (Network Engineer)",
+                    "วิศวกรระบบสมองกลฝังตัว (Embedded Systems Engineer)",
+                    "ผู้ดูแลระบบเครือข่าย (Network Administrator)",
+                    "นักออกแบบฮาร์ดแวร์ (Hardware Engineer)"
+                ]
+            }
+        };
+
+        // 20 คำถามที่สร้างจากความแตกต่างของรายวิชาในหลักสูตร
+        const QUESTIONS = [
+            { q: "1. เมื่อพูดถึง 'การสร้างระบบ' คุณตื่นเต้นกับอะไรมากกว่ากัน?", opts: [{ t: "การเขียนโค้ดเพื่อสร้างแอพพลิเคชันหรือแพลตฟอร์มที่คนใช้งานได้จริง", type: "SE" }, { t: "การต่อแผงวงจรและเขียนคำสั่งให้ฮาร์ดแวร์ทำงานตามที่ต้องการ", type: "COE" }] },
+            { q: "2. หากต้องแก้ปัญหาคอมพิวเตอร์ คุณมักจะเริ่มจากจุดไหน?", opts: [{ t: "ตรวจสอบซอฟต์แวร์ โค้ด หรือระบบปฏิบัติการว่ามีข้อผิดพลาดหรือไม่", type: "SE" }, { t: "ตรวจสอบอุปกรณ์ เมนบอร์ด หรือการเชื่อมต่อเครือข่ายสายสัญญาณ", type: "COE" }] },
+            { q: "3. วิชาเรียนแบบไหนที่คุณคิดว่าท้าทายและอยากเรียนที่สุด?", opts: [{ t: "กระบวนการพัฒนาซอฟต์แวร์และการทดสอบระบบ (QA)", type: "SE" }, { t: "การออกแบบวงจรดิจิทัลและลอจิก (Digital Circuits)", type: "COE" }] },
+            { q: "4. คุณชอบจัดการกับข้อมูลในรูปแบบใด?", opts: [{ t: "จัดการฐานข้อมูล (Database) และการส่งต่อข้อมูลผ่าน API", type: "SE" }, { t: "จัดการการส่งสัญญาณข้อมูลผ่านระบบเครือข่ายและ Router", type: "COE" }] },
+            { q: "5. โปรเจกต์จบ (Senior Project) ในฝันของคุณคือแนวไหน?", opts: [{ t: "สร้างระบบ Enterprise Software ขนาดใหญ่ หรือ Web/Mobile App", type: "SE" }, { t: "สร้างหุ่นยนต์, อุปกรณ์ IoT หรือระบบควบคุมอัตโนมัติ (Automations)", type: "COE" }] },
+            { q: "6. ถ้าต้องออกแบบอะไรสักอย่าง คุณอยากออกแบบอะไร?", opts: [{ t: "ออกแบบสถาปัตยกรรมซอฟต์แวร์ (Software Architecture)", type: "SE" }, { t: "ออกแบบสถาปัตยกรรมคอมพิวเตอร์ (Computer Architecture)", type: "COE" }] },
+            { q: "7. คุณสนใจเรื่องความปลอดภัย (Security) ในมุมมองใด?", opts: [{ t: "การป้องกันการเจาะระบบแอปพลิเคชันและการเข้ารหัสข้อมูล", type: "SE" }, { t: "การป้องกันระดับเครือข่าย (Network Security) และระบบโครงสร้างพื้นฐาน", type: "COE" }] },
+            { q: "8. ในการทำงานเป็นทีม คุณชอบรับบทบาทไหน?", opts: [{ t: "ผู้รวบรวมความต้องการ (Requirements) และวางแผนพัฒนาซอฟต์แวร์", type: "SE" }, { t: "ผู้ติดตั้งและตั้งค่าระบบเซิร์ฟเวอร์และอุปกรณ์เครือข่าย", type: "COE" }] },
+            { q: "9. คุณรู้สึกคุ้นเคยหรืออยากศึกษาเครื่องมือกลุ่มไหนมากกว่ากัน?", opts: [{ t: "Java, Python, C#, เครื่องมือพัฒนาซอฟต์แวร์ (IDE)", type: "SE" }, { t: "ภาษา Assembly, C, ออสซิลโลสโคป, อุปกรณ์ไมโครคอนโทรลเลอร์", type: "COE" }] },
+            { q: "10. หากคุณสร้างสิ่งประดิษฐ์สำเร็จ คุณอยากให้มันมีจุดเด่นเรื่องใด?", opts: [{ t: "มี User Interface ที่สวยงาม ใช้งานง่าย และไร้ข้อบกพร่อง (Bug-free)", type: "SE" }, { t: "ประมวลผลได้รวดเร็ว ประหยัดพลังงาน และเสถียรในระดับฮาร์ดแวร์", type: "COE" }] },
+            { q: "11. แนวคิดใดที่คุณให้ความสำคัญในการทำงานมากที่สุด?", opts: [{ t: "การบริหารจัดการโครงการ (Project Management) ให้เสร็จตามกำหนด", type: "SE" }, { t: "การทำงานที่แม่นยำของระบบปฏิบัติการและการทำงานของเครื่องจักร", type: "COE" }] },
+            { q: "12. ในยุคคลาวด์คอมพิวติ้ง (Cloud Computing) คุณอยากทำอะไร?", opts: [{ t: "พัฒนาโปรแกรมประยุกต์และบริการต่างๆ เพื่อนำไปรันบนคลาวด์", type: "SE" }, { t: "ออกแบบโครงสร้างพื้นฐานและดูแลระบบเครือข่ายของคลาวด์", type: "COE" }] },
+            { q: "13. คุณมีมุมมองต่อการเขียนโปรแกรมเชิงวัตถุ (OOP) อย่างไร?", opts: [{ t: "เป็นหัวใจสำคัญในการสร้างโครงสร้างโค้ดที่ดีและนำกลับมาใช้ใหม่ได้", type: "SE" }, { t: "เป็นเครื่องมือหนึ่ง แต่ฉันสนใจการสั่งงานฮาร์ดแวร์โดยตรงมากกว่า", type: "COE" }] },
+            { q: "14. คุณอยากเป็นผู้เชี่ยวชาญด้านใด?", opts: [{ t: "นักทดสอบและประกันคุณภาพซอฟต์แวร์ (Software QA)", type: "SE" }, { t: "ผู้ดูแลระบบเครือข่ายคอมพิวเตอร์ (Network Administrator)", type: "COE" }] },
+            { q: "15. ถ้าพบว่าระบบทำงานช้า คุณจะวิเคราะห์จากสิ่งใดก่อน?", opts: [{ t: "ตรวจสอบอัลกอริทึม โครงสร้างข้อมูล หรือคำสั่ง Database ที่เขียนไว้", type: "SE" }, { t: "ตรวจสอบแบนด์วิดท์เครือข่าย ทรัพยากร CPU หรือ RAM ในระดับเซิร์ฟเวอร์", type: "COE" }] },
+            { q: "16. สภาพแวดล้อมการทำงานแบบไหนที่คุณคิดว่าใช่สำหรับคุณ?", opts: [{ t: "ประชุมทีม Agile, อัปเดตโค้ดขึ้น Git, และเทสแอปพลิเคชัน", type: "SE" }, { t: "อยู่กับอุปกรณ์อิเล็กทรอนิกส์, เซิร์ฟเวอร์, สายแลน, หรือหุ่นยนต์", type: "COE" }] },
+            { q: "17. คุณอยากทำความเข้าใจการทำงานของสิ่งใดให้ลึกซึ้งที่สุด?", opts: [{ t: "วงจรชีวิตของการพัฒนาซอฟต์แวร์ (Software Development Life Cycle)", type: "SE" }, { t: "การทำงานของไมโครโพรเซสเซอร์และการอินเตอร์เฟสอุปกรณ์", type: "COE" }] },
+            { q: "18. อาชีพในอนาคตที่คุณใฝ่ฝันคืออะไร?", opts: [{ t: "Software Developer, System Analyst, IT Analyst", type: "SE" }, { t: "Hardware Engineer, Embedded Systems Engineer", type: "COE" }] },
+            { q: "19. เมื่อพูดถึงคำว่า 'ระบบอัตโนมัติ (Automation)' คุณนึกถึงอะไร?", opts: [{ t: "การทำ Script เพื่อให้ซอฟต์แวร์ทดสอบตัวเองได้โดยอัตโนมัติ", type: "SE" }, { t: "การเขียนโปรแกรมฝังตัวสั่งให้เซ็นเซอร์และมอเตอร์ทำงานร่วมกัน", type: "COE" }] },
+            { q: "20. สุดท้ายนี้ หากเปรียบคุณเป็นส่วนหนึ่งของร่างกายมนุษย์ คุณคือส่วนไหน?", opts: [{ t: "สมองที่คอยวิเคราะห์ สั่งการ และคิดตรรกะซับซ้อน (Software)", type: "SE" }, { t: "ระบบประสาทและกล้ามเนื้อที่เชื่อมต่อทุกส่วนให้ขยับได้จริง (Hardware/Network)", type: "COE" }] }
+        ];
+
+        let state = {
+            studentName: '',
+            currentIndex: 0,
+            scores: { SE: 0, COE: 0 }
+        };
+
+        function startAssessment() {
+            const nick = document.getElementById('input-nick').value.trim();
+            const name = document.getElementById('input-name').value.trim();
+            
+            if (!nick || !name) {
+                alert('กรุณากรอกชื่อเล่น และ ชื่อ-นามสกุล ก่อนเริ่มแบบประเมินครับ');
+                return;
+            }
+
+            state.studentName = `${name} (${nick})`;
+            document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('quiz-screen').classList.remove('hidden');
+            renderQuestion();
+        }
+
+        function renderQuestion() {
+            const qObj = QUESTIONS[state.currentIndex];
+            
+            // อัปเดตแถบความคืบหน้า
+            const progressPct = ((state.currentIndex + 1) / QUESTIONS.length) * 100;
+            document.getElementById('quiz-progress-text').innerText = `ข้อที่ ${state.currentIndex + 1} / 20`;
+            document.getElementById('quiz-progress-bar').style.width = `${progressPct}%`;
+            
+            // แสดงคำถาม
+            document.getElementById('question-text').innerText = qObj.q;
+
+            // แสดงตัวเลือก
+            const container = document.getElementById('options-container');
+            container.innerHTML = '';
+            
+            // สลับตำแหน่งตัวเลือกแบบสุ่มเพื่อไม่ให้จำเจ
+            const options = [...qObj.opts].sort(() => Math.random() - 0.5);
+
+            options.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.className = "w-full text-left p-4 rounded-xl bg-slate-800 option-btn text-slate-200 text-sm md:text-base";
+                btn.innerText = opt.t;
+                btn.onclick = () => handleAnswer(opt.type);
+                container.appendChild(btn);
+            });
+        }
+
+        function handleAnswer(type) {
+            state.scores[type]++;
+            state.currentIndex++;
+
+            if (state.currentIndex < QUESTIONS.length) {
+                renderQuestion();
+            } else {
+                showResults();
+            }
+        }
+
+        function showResults() {
+            document.getElementById('quiz-screen').classList.add('hidden');
+            document.getElementById('results-screen').classList.remove('hidden');
+
+            const total = 20;
+            const sePct = Math.round((state.scores.SE / total) * 100);
+            const coePct = 100 - sePct;
+
+            const winningMajor = sePct >= 50 ? 'SE' : 'COE';
+            const data = MAJOR_DATA[winningMajor];
+
+            // กำหนดข้อมูลบนการ์ด
+            document.getElementById('result-name').innerText = state.studentName;
+            
+            const avatar = document.getElementById('result-avatar');
+            avatar.innerText = winningMajor;
+            avatar.style.backgroundColor = data.color;
+
+            const titleObj = document.getElementById('result-major-title');
+            titleObj.innerText = data.title;
+            titleObj.style.color = data.color;
+
+            document.getElementById('result-bg-glow').classList.add(data.bgGlow);
+
+            // หลอดพลัง
+            document.getElementById('bar-se').style.width = `${sePct}%`;
+            document.getElementById('bar-coe').style.width = `${coePct}%`;
+            document.getElementById('score-se').innerText = `${sePct}%`;
+            document.getElementById('score-coe').innerText = `${coePct}%`;
+
+            // สร้างรายการวิชา
+            const courseList = document.getElementById('result-courses');
+            courseList.innerHTML = '';
+            data.courses.forEach(c => {
+                let li = document.createElement('li');
+                li.innerText = c;
+                courseList.appendChild(li);
+            });
+
+            // สร้างรายการอาชีพ
+            const careerList = document.getElementById('result-careers');
+            careerList.innerHTML = '';
+            data.careers.forEach(c => {
+                let li = document.createElement('li');
+                li.innerText = c;
+                careerList.appendChild(li);
+            });
+        }
+
+        function exportPNG() {
+            const btn = document.getElementById('btn-export');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = 'กำลังบันทึกภาพ...';
+            btn.disabled = true;
+
+            const target = document.getElementById('export-card');
+            
+            setTimeout(() => {
+                html2canvas(target, { 
+                    scale: 2, 
+                    backgroundColor: '#0f172a'
+                }).then(canvas => {
+                    const link = document.createElement('a');
+                    link.download = `RMUTL_Roadmap_${state.studentName}.png`;
+                    link.href = canvas.toDataURL('image/png');
+                    link.click();
+                    
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                }).catch(err => {
+                    alert('เกิดข้อผิดพลาดในการบันทึกภาพครับ');
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                });
+            }, 300);
+        }
+    </script>
+</body>
+</html>
