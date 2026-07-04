@@ -3,7 +3,7 @@ import { defineConfig } from "vite";
 // For deployment, change this to the exact repository name on GitHub.
 
 const repositoryPrefix = "engse203/labs";
-const repositoryName = "engse203-lab02-solution";
+const repositoryName = "engse203-lab02-solution/docs";
 
 
 export default defineConfig({
