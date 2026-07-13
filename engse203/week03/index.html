@@ -1,0 +1,456 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ENGSE203 Week 03 — Web UI, Responsive Layout, Event & Form</title>
+  <style>
+    :root{
+      --base: 1;
+      --bg:#eef6ff; --ink:#0d2751; --muted:#526783; --primary:#123f7a; --blue:#1967d2;
+      --green:#0d7a5f; --mint:#e9f8f1; --yellow:#fff6dd; --red:#b42318; --line:#b9d7ff;
+      --card:#fff; --shadow:0 18px 50px rgba(12,52,104,.13); --radius:28px;
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans Thai", sans-serif;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0;color:var(--ink);background:radial-gradient(circle at 88% 6%, #dcecff 0 13rem, transparent 13.2rem),linear-gradient(135deg,#f8fbff,#eaf4ff 55%,#f9fcff)}
+    body{font-size:calc(22px * var(--base));overflow:hidden}
+    .deck{height:100vh;width:100vw;display:grid;place-items:center;padding:2.2vh 2.3vw 7.4vh}
+    .slide{display:none;position:relative;width:min(96vw,177.77vh);height:min(90vh,54vw);min-height:680px;max-height:calc(100vh - 86px);background:linear-gradient(145deg,#ffffff,#f6fbff);border:2px solid var(--line);border-radius:34px;box-shadow:var(--shadow);overflow:hidden;padding:clamp(28px,4vh,56px) clamp(42px,4.5vw,80px)}
+    .slide.active{display:block}
+    .slide::before{content:"";position:absolute;right:-110px;top:-110px;width:360px;height:360px;border-radius:50%;border:32px solid rgba(25,103,210,.07);pointer-events:none}
+    .slide::after{content:"";position:absolute;left:26px;bottom:22px;width:210px;height:120px;background-image:radial-gradient(#b7d6fb 2px,transparent 2px);background-size:22px 22px;opacity:.48;pointer-events:none}
+    .slide-inner{height:100%;display:flex;flex-direction:column;gap:clamp(14px,2vh,24px);position:relative;z-index:2;overflow:auto;padding-right:6px;scrollbar-width:thin}
+    .slide-inner::-webkit-scrollbar{width:10px}.slide-inner::-webkit-scrollbar-thumb{background:#c3d9f4;border-radius:999px}
+
+    .badge{display:inline-flex;align-items:center;gap:.5rem;align-self:flex-start;padding:.38rem .9rem;border-radius:999px;background:#e7f1ff;border:1px solid #c5dcff;color:#174b92;font-weight:800;font-size:calc(.72em * var(--base))}
+    h1,h2,h3,p{margin:0} h1{font-size:clamp(3.6rem,7vw,7.6rem);line-height:.95;letter-spacing:-.07em;font-weight:950} h2{font-size:clamp(2.5rem,4.6vw,4.0rem);line-height:2.03;letter-spacing:-.055em;font-weight:950} h3{font-size:clamp(1.35rem,2vw,2.1rem);line-height:1.1;font-weight:900}
+    
+    .subtitle{font-size:clamp(1.12rem,1.55vw,1.65rem);line-height:1.45;color:#405977;font-weight:700}.lead{font-size:clamp(1.25rem,1.75vw,1.95rem);line-height:1.42;color:#173b6a;font-weight:750}.small{font-size:clamp(.95rem,1.15vw,1.25rem);color:#526783;line-height:1.45}.tiny{font-size:.82rem;color:#70839b}
+    ul,ol{margin:.2rem 0 0 1.4rem;padding:0;line-height:1.42}.big-list li{margin:.5rem 0;font-size:clamp(1.05rem,1.35vw,1.55rem);font-weight:700}
+    .grid{display:grid;gap:clamp(14px,1.8vw,26px)}.cols-2{grid-template-columns:1fr 1fr}.cols-3{grid-template-columns:repeat(3,1fr)}.cols-4{grid-template-columns:repeat(4,1fr)}.split{display:grid;grid-template-columns:1.05fr .95fr;gap:clamp(20px,2.5vw,42px);align-items:center}.wide-split{display:grid;grid-template-columns:1.3fr .7fr;gap:clamp(20px,2.5vw,42px);align-items:start}
+    .card{background:var(--card);border:1.5px solid #d3e6ff;border-radius:24px;padding:clamp(18px,2vw,30px);box-shadow:0 10px 26px rgba(11,56,108,.08)}.card.yellow{background:#fff8e6;border-color:#ffd86f}.card.green{background:#eaf8f0;border-color:#96d4af}.card.blue{background:#eaf3ff;border-color:#b8d7ff}.card.red{background:#fff0f0;border-color:#ffbbb8}.dark{background:#0d2751;color:#fff;border-color:#0d2751}.dark .small{color:#d5e8ff}
+    .pill{display:inline-flex;align-items:center;justify-content:center;padding:.35rem .75rem;border-radius:999px;background:#e8f2ff;color:#14519b;border:1px solid #c6dcf7;font-size:.85rem;font-weight:900}.accent{color:#b01217}.green-text{color:var(--green)}
+    .image-card{border:1.5px solid #d3e6ff;border-radius:24px;overflow:hidden;background:#fff;box-shadow:0 12px 30px rgba(11,56,108,.08)}.image-card img{width:100%;height:100%;object-fit:contain;display:block;background:#fff}.hero-img{height:clamp(300px,42vh,520px)}
+    code,kbd{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace}.code{background:#081d38;color:#e9f6ff;border-radius:18px;padding:1rem 1.1rem;font-size:clamp(.78rem,1.05vw,1.1rem);line-height:1.35;white-space:pre-wrap;overflow:auto;max-height:32vh;box-shadow:0 12px 24px rgba(4,25,48,.17)}.code .comment{color:#80b6e8}.code .kw{color:#8bd8ff}.code .str{color:#ffd08a}
+    .flow{display:flex;align-items:center;gap:12px;flex-wrap:wrap}.flow-step{flex:1 1 140px;min-height:118px;background:#fff;border:1.5px solid #cfe2ff;border-radius:22px;padding:18px;box-shadow:0 8px 22px rgba(11,56,108,.08)}.flow-step strong{font-size:1.1rem}.arrow{font-size:2.1rem;font-weight:950;color:var(--green)}
+    .timeline{display:grid;grid-template-columns:repeat(6,1fr);gap:12px}.tl{min-height:120px;border-radius:20px;padding:18px;background:#fff;border:1.5px solid #cfe2ff}.tl b{display:flex;align-items:center;justify-content:center;width:42px;height:42px;border-radius:50%;background:#123f7a;color:#fff;margin-bottom:10px}
+    .controls{position:fixed;right:20px;bottom:18px;z-index:20;display:flex;gap:10px;align-items:center;padding:8px;background:rgba(255,255,255,.76);border:1px solid #c9def8;border-radius:22px;box-shadow:0 12px 26px rgba(7,42,88,.18);backdrop-filter:blur(12px)}
+    .btn,select{border:0;background:#10396f;color:#fff;border-radius:14px;font-weight:900;padding:.7rem .9rem;font-size:1rem;box-shadow:0 8px 18px rgba(13,39,81,.2)}.btn:hover,.btn:focus,select:focus{outline:3px solid #ffc83d;outline-offset:2px}.btn.secondary{background:#e8f2ff;color:#10396f;box-shadow:none;border:1px solid #c6dcf7}.counter{position:absolute;right:82px;top:34px;background:#10396f;color:#fff;border-radius:999px;padding:.52rem 1rem;font-weight:950;box-shadow:0 12px 28px rgba(13,39,81,.2)}
+    .note{background:#fff8e6;border:1.5px solid #f5c84c;border-radius:22px;padding:18px 22px;color:#153b66;font-weight:850}.question{background:#eff7ff;border:1.5px solid #b7d6fb;border-radius:22px;padding:20px;color:#173b6a;font-weight:850}
+    .demo{background:#fff;border:1.5px solid #cfe2ff;border-radius:24px;padding:22px;box-shadow:0 10px 24px rgba(11,56,108,.08)}input,select.demo-select,textarea{font:inherit;width:100%;padding:.75rem .9rem;border:1.6px solid #b7cce8;border-radius:14px;background:#fff}label{font-weight:850;color:#173b6a;display:grid;gap:6px}textarea{min-height:110px;resize:vertical}.demo button{font:inherit;border:0;border-radius:14px;background:#1967d2;color:#fff;font-weight:900;padding:.75rem 1rem}.demo button.alt{background:#0d7a5f}.demo button.ghost{background:#e8f2ff;color:#123f7a;border:1px solid #c6dcf7}.demo-output{border-radius:18px;background:#f4f8ff;border:1px dashed #99bde9;padding:16px;min-height:70px}.status{border-radius:18px;padding:14px 16px;background:#e8f2ff;color:#123f7a;font-weight:900}.status.error{background:#ffeceb;color:#a91e15}.status.success{background:#e8f7ee;color:#0d6d44}.error-msg{min-height:1.2rem;color:#b42318;font-weight:800;font-size:.9rem}.invalid{border-color:#d92d20!important;background:#fffafa!important}.focus-ring:focus-visible{outline:4px solid #ffc83d;outline-offset:3px}
+    .preview-panel{background:#ecf8f0;border:1.5px solid #99d6b1;border-radius:22px;padding:20px}.request-list{display:grid;gap:10px;list-style:none;margin:0;padding:0}.request-list li{background:#f6fbff;border:1px solid #cfe2ff;border-radius:16px;padding:12px 14px;display:grid;gap:4px}.request-list strong{color:#123f7a}
+    .device-frame{border:10px solid #1b3b66;border-radius:34px;background:#f7fbff;margin:auto;transition:.25s ease;overflow:auto;box-shadow:0 16px 36px rgba(8,38,76,.18)}.sim-grid{display:grid;grid-template-columns:1fr;gap:12px;padding:14px}.sim-card{background:#fff;border:1px solid #cfe2ff;border-radius:14px;padding:14px;min-height:66px}.device-wide .sim-grid{grid-template-columns:1fr 1fr}.table{width:100%;border-collapse:separate;border-spacing:0;font-size:clamp(.82rem,1vw,1.1rem);overflow:hidden;border-radius:18px;border:1px solid #cfe2ff}.table th,.table td{padding:12px 14px;border-bottom:1px solid #d9e8fb;text-align:left;vertical-align:top}.table th{background:#123f7a;color:white}.table tr:last-child td{border-bottom:0}.table tr:nth-child(even) td{background:#f4f8ff}
+    @media (max-width:1000px){body{overflow:auto}.deck{height:auto;min-height:100vh;padding:12px 8px 110px}.slide{width:100%;height:auto;min-height:calc(100vh - 132px);padding:28px 22px}.split,.wide-split,.cols-2,.cols-3,.cols-4{grid-template-columns:1fr}.timeline{grid-template-columns:1fr 1fr}.controls{left:8px;right:8px;justify-content:center;flex-wrap:wrap}.counter{right:28px;top:22px}h1{font-size:3.2rem}h2{font-size:2.55rem}.slide-inner{overflow:visible}.hero-img{height:auto}}
+  </style>
+</head>
+<body>
+<div class="deck" id="deck">
+
+<section class="slide active" data-title="01 — Cover"><span class="counter"></span><div class="slide-inner">
+  <div class="badge">ENGSE203 • Week 03 • Interactive HTML Slide</div>
+  <div class="split">
+    <div>
+      <h1>Web UI<br>Responsive<br>Event & Form</h1>
+      <p class="lead">สื่อสอนเชิงปฏิบัติสำหรับนักศึกษาวิศวกรรมซอฟต์แวร์: เห็นภาพหลักการ → ทดลองจริง → เตรียมทำ LAB 3</p>
+      <div class="note">ผลลัพธ์ปลายทาง: Campus Service Request ที่ตอบสนองต่อผู้ใช้ ตรวจข้อมูล และแสดงผลได้ทั้ง Desktop / Mobile</div>
+    </div>
+    <div class="image-card hero-img"><img src="images/lab3-campus-service-request.png" alt="Campus Service Request preview"></div>
+  </div>
+</div></section>
+
+<section class="slide" data-title="02 — รายวิชาและเป้าหมาย"><span class="counter"></span><div class="slide-inner">
+  <div class="badge">ตำแหน่งของ Week 03 ในรายวิชา</div><h2>จาก JavaScript Modules → สู่ Web UI ที่ใช้งานได้จริง</h2>
+  <div class="grid cols-3">
+    <div class="card blue"><h3>CLO3</h3><p class="small">ออกแบบและพัฒนาส่วนติดต่อผู้ใช้แบบ Responsive และ Interactive</p></div>
+    <div class="card green"><h3>เวลาเรียน</h3><p class="small">ทฤษฎี 1 ชั่วโมง • ปฏิบัติ 4 ชั่วโมง • LAB 3 รายบุคคล</p></div>
+    <div class="card yellow"><h3>สิ่งที่ต้องเห็นได้จริง</h3><p class="small">UI อ่านง่าย, layout ปรับตามจอ, event ทำงาน, form validate และ deploy ผ่าน GitHub Pages</p></div>
+  </div>
+  <div class="question">คำถามนำ: “เมื่อผู้ใช้กรอกข้อมูลแล้วกด Submit หน้าเว็บควรตอบกลับอย่างไรให้ผู้ใช้เข้าใจ?”</div>
+</div></section>
+
+<section class="slide" data-title="03 — Learning Map"><span class="counter"></span><div class="slide-inner">
+  <div class="badge">แผนที่การเรียนรู้</div><h2>Week 03: จากโครงสร้าง → ปฏิสัมพันธ์ → ตรวจสอบ → ส่งมอบ</h2>
+  <div class="image-card"><img src="images/week03-learning-map.png" alt="Week 03 learning map"></div>
+  <div class="note">แนวคิดสำคัญ: UI ที่ดีต้องเข้าใจง่าย ใช้งานได้ ให้ feedback และตรวจสอบได้</div>
+</div></section>
+
+<section class="slide" data-title="04 — What is Web UI"><span class="counter"></span><div class="slide-inner">
+  <div class="badge">1. Web UI Foundation</div><h2>Web UI คือ “จุดที่ผู้ใช้พบระบบ”</h2>
+  <div class="grid cols-4">
+    <div class="card"><h3>ตอนนี้อยู่ที่ไหน?</h3><p class="small">ชื่อหน้า ลำดับหัวข้อ และสถานะของงานต้องชัดเจน</p></div>
+    <div class="card"><h3>ทำอะไรได้?</h3><p class="small">ปุ่ม ลิงก์ ช่องกรอก ต้องบอกพฤติกรรมด้วยรูปแบบและข้อความ</p></div>
+    <div class="card"><h3>ต้องกรอกอะไร?</h3><p class="small">label, hint, required และตัวอย่างช่วยลดความสับสน</p></div>
+    <div class="card"><h3>ระบบตอบกลับอย่างไร?</h3><p class="small">loading, success, error, preview หรือรายการใหม่ต้องมองเห็นได้</p></div>
+  </div>
+  <div class="question">UI ไม่ใช่แค่ “สวย” แต่ต้องทำให้งานของผู้ใช้สำเร็จ</div>
+</div></section>
+
+<section class="slide" data-title="05 — UI UX Interaction"><span class="counter"></span><div class="slide-inner">
+  <div class="badge">UI • UX • Interaction</div><h2>สามคำนี้เกี่ยวกัน แต่ไม่ใช่เรื่องเดียวกัน</h2>
+  <table class="table"><thead><tr><th>แนวคิด</th><th>คำถามหลัก</th><th>ตัวอย่างใน LAB 3</th></tr></thead><tbody>
+    <tr><td><b>UI</b></td><td>สิ่งที่เห็น อ่าน และกดได้ชัดหรือไม่</td><td>หัวข้อ, form field, button, status, list</td></tr>
+    <tr><td><b>UX</b></td><td>ผู้ใช้ทำงานสำเร็จโดยไม่สับสนหรือไม่</td><td>กรอก → preview → แก้ error → submit สำเร็จ</td></tr>
+    <tr><td><b>Interaction</b></td><td>เมื่อ click/input/submit แล้วเกิดอะไร</td><td>live preview, validation, success feedback</td></tr>
+  </tbody></table>
+</div></section>
+
+<section class="slide" data-title="06 — UI Principles"><span class="counter"></span><div class="slide-inner">
+  <div class="badge">หลักการ Web UI 5 ประการ</div><h2>ออกแบบให้ผู้ใช้ “เดาได้ ตรวจได้ แก้ได้”</h2>
+  <div class="grid cols-5" style="display:grid;grid-template-columns:repeat(5,1fr);gap:14px">
+    <div class="card blue"><h3>Hierarchy</h3><p class="small">รู้ว่าอะไรสำคัญก่อนหลัง</p></div>
+    <div class="card blue"><h3>Consistency</h3><p class="small">สิ่งเหมือนกันต้องทำงานเหมือนกัน</p></div>
+    <div class="card blue"><h3>Affordance</h3><p class="small">เห็นแล้วรู้ว่ากด/กรอก/เลือกได้</p></div>
+    <div class="card blue"><h3>Feedback</h3><p class="small">ทุก action สำคัญมีผลลัพธ์ให้เห็น</p></div>
+    <div class="card blue"><h3>Recovery</h3><p class="small">ผิดแล้วรู้สาเหตุและแก้ได้</p></div>
+  </div>
+  <div class="note">สำหรับ LAB 3 ให้ตรวจทุกครั้งว่า “ผู้ใช้รู้หรือไม่ว่าต้องทำอะไรต่อ?”</div>
+</div></section>
+
+<section class="slide" data-title="07 — UI Before/After"><span class="counter"></span><div class="slide-inner">
+  <div class="badge">UI ที่ใช้งานได้จริง</div><h2>ก่อนปรับปรุง vs หลังปรับปรุง</h2>
+  <div class="split">
+    <div class="image-card"><img src="images/web-ui-before-after.png" alt="Before and after web UI comparison"></div>
+    <div class="demo">
+      <h3>Interactive Check</h3><p class="small">กดเลือกสิ่งที่ทำให้ UI ฝั่งขวาดีกว่า</p>
+      <div class="grid" style="margin-top:12px"><button class="ghost" onclick="markUi('label')">มี label ชัดเจน</button><button class="ghost" onclick="markUi('feedback')">มี feedback ข้างปุ่ม</button><button class="ghost" onclick="markUi('spacing')">spacing อ่านง่าย</button></div>
+      <div id="ui-check" class="demo-output" style="margin-top:14px">เลือกประเด็นเพื่ออภิปรายในห้องเรียน</div>
+    </div>
+  </div>
+</div></section>
+
+<section class="slide" data-title="08 — Separation of Concerns"><span class="counter"></span><div class="slide-inner">
+  <div class="badge">2. Separation of Concerns</div><h2>HTML, CSS, JavaScript ต้องแยกบทบาท</h2>
+  <div class="flow"><div class="flow-step"><h3>HTML</h3><p class="small">ความหมายและโครงสร้าง</p></div><div class="arrow">→</div><div class="flow-step"><h3>CSS</h3><p class="small">layout, spacing, responsive, state visual</p></div><div class="arrow">→</div><div class="flow-step"><h3>JavaScript</h3><p class="small">event, state, validation, render</p></div></div>
+  <div class="note">ถ้าแยกชัด: เปลี่ยน layout ได้โดยไม่ทำลาย logic และเตรียมเข้าสู่ React component/state ได้ง่าย</div>
+</div></section>
+
+<section class="slide" data-title="09 — HTML CSS JS Table"><span class="counter"></span><div class="slide-inner">
+  <div class="badge">ตรวจโค้ดแบบวิศวกรซอฟต์แวร์</div><h2>ถามให้ถูกชั้น ก่อนแก้โค้ด</h2>
+  <table class="table"><thead><tr><th>ชั้น</th><th>หน้าที่หลัก</th><th>คำถามตรวจโค้ด</th><th>ตัวอย่าง</th></tr></thead><tbody>
+    <tr><td>HTML</td><td>ความหมายและโครงสร้าง</td><td>ปิด CSS แล้วยังอ่านลำดับเนื้อหาได้ไหม?</td><td>header, main, section, form, label</td></tr>
+    <tr><td>CSS</td><td>layout, responsive และสถานะภาพ</td><td>เปลี่ยนข้อมูลแล้ว style ยังใช้ซ้ำได้ไหม?</td><td>Grid, Flexbox, media query, :focus-visible</td></tr>
+    <tr><td>JS</td><td>event, state, validation, render</td><td>handler สั้นและเรียก function ที่ทำหน้าที่เดียวหรือไม่?</td><td>addEventListener, FormData, validate()</td></tr>
+  </tbody></table>
+</div></section>
+
+<section class="slide" data-title="10 — Code Anatomy"><span class="counter"></span><div class="slide-inner">
+  <div class="badge">Code Pattern</div><h2>ตัวอย่างแยก HTML → CSS → JavaScript</h2>
+  <div class="grid cols-3">
+    <div class="card"><h3>HTML</h3><pre class="code">&lt;form id="request-form" novalidate&gt;
+  &lt;label for="requester-name"&gt;Requester name&lt;/label&gt;
+  &lt;input id="requester-name" name="requesterName" /&gt;
+  &lt;small id="requesterName-error" class="error"&gt;&lt;/small&gt;
+&lt;/form&gt;</pre></div>
+    <div class="card"><h3>CSS</h3><pre class="code">.error { min-height: 1.25rem; color: #b42318; }
+input:focus-visible {
+  outline: 3px solid #f2b705;
+}</pre></div>
+    <div class="card"><h3>JS</h3><pre class="code">form.addEventListener('submit', handleSubmit);
+function handleSubmit(event) {
+  event.preventDefault();
+  const data = Object.fromEntries(new FormData(form));
+}</pre></div>
+  </div>
+</div></section>
+
+<section class="slide" data-title="11 — Semantic HTML"><span class="counter"></span><div class="slide-inner">
+  <div class="badge">3. Semantic HTML</div><h2>โครงสร้างที่สื่อความหมาย</h2>
+  <div class="split"><div class="image-card"><img src="images/semantic-html-landmarks.png" alt="Semantic HTML landmarks"></div><div>
+    <ul class="big-list"><li>ใช้ <code>&lt;main&gt;</code> สำหรับเนื้อหาหลักหนึ่งส่วน</li><li>ใช้ <code>&lt;section&gt;</code> เมื่อมีกลุ่มเนื้อหาพร้อมหัวข้อ</li><li>ใช้ <code>&lt;form&gt;</code> เมื่อผู้ใช้ส่งข้อมูล</li><li>ใช้ <code>&lt;button&gt;</code> สำหรับ action และ <code>&lt;a&gt;</code> สำหรับ navigation</li></ul>
+  </div></div>
+</div></section>
+
+<section class="slide" data-title="12 — Landmark Code"><span class="counter"></span><div class="slide-inner">
+  <div class="badge">Semantic Structure</div><h2>ตัวอย่างโครงสร้างของ LAB 3</h2>
+  <pre class="code">&lt;header class="hero"&gt;
+  &lt;p class="eyebrow"&gt;ENGSE203 • LAB 3&lt;/p&gt;
+  &lt;h1&gt;Campus Service Request&lt;/h1&gt;
+&lt;/header&gt;
+
+&lt;main class="container page-grid"&gt;
+  &lt;section aria-labelledby="form-title"&gt;...&lt;/section&gt;
+  &lt;aside aria-labelledby="preview-title"&gt;...&lt;/aside&gt;
+&lt;/main&gt;</pre>
+  <div class="question">Checkpoint: ถ้าเปลี่ยน <code>button</code> เป็น <code>div</code> ที่คลิกได้ ผู้ใช้ keyboard จะใช้งานอย่างไร?</div>
+</div></section>
+
+<section class="slide" data-title="13 — Form Control Semantics"><span class="counter"></span><div class="slide-inner">
+  <div class="badge">Label • name • id • aria-describedby</div><h2>ฟอร์มที่อ่านได้ทั้งคนและเครื่องมือ</h2>
+  <div class="grid cols-2"><div><table class="table"><thead><tr><th>ส่วน</th><th>หน้าที่</th></tr></thead><tbody><tr><td><code>label for</code> + <code>input id</code></td><td>คลิก label แล้ว focus ช่องกรอก และช่วย screen reader</td></tr><tr><td><code>name</code></td><td>เป็น key ที่ <code>FormData</code> ใช้อ่านค่า</td></tr><tr><td><code>aria-describedby</code></td><td>เชื่อม input กับ hint/error</td></tr><tr><td><code>role="status"</code></td><td>ประกาศข้อความที่เปลี่ยนหลัง action</td></tr></tbody></table></div><div><pre class="code">&lt;label for="details"&gt;Details&lt;/label&gt;
+&lt;textarea
+  id="details"
+  name="details"
+  aria-describedby="details-hint details-error"
+  minlength="10"
+  required&gt;&lt;/textarea&gt;
+&lt;small id="details-hint"&gt;อธิบายอย่างน้อย 10 ตัวอักษร&lt;/small&gt;
+&lt;small id="details-error" class="error"&gt;&lt;/small&gt;</pre></div></div>
+</div></section>
+
+<section class="slide" data-title="14 — CSS Mental Model"><span class="counter"></span><div class="slide-inner">
+  <div class="badge">4. CSS Mental Model</div><h2>ก่อน Responsive ต้องเข้าใจ “กล่อง”</h2>
+  <div class="split"><div class="image-card"><img src="images/css-layout-mental-model.png" alt="CSS layout mental model"></div><div class="card"><h3>จำ 3 เรื่อง</h3><ul class="big-list"><li>Box Model: content + padding + border + margin</li><li>Cascade: rule หลายชุดแข่งขันกัน</li><li>Layout: เลือกเครื่องมือตามความสัมพันธ์ขององค์ประกอบ</li></ul></div></div>
+</div></section>
+
+<section class="slide" data-title="15 — CSS Foundation"><span class="counter"></span><div class="slide-inner">
+  <div class="badge">CSS foundation ที่ควรกำหนดก่อนเริ่ม layout</div><h2>ตั้งค่าให้ layout คาดเดาได้</h2>
+  <pre class="code">*, *::before, *::after { box-sizing: border-box; }
+:root {
+  --color-primary: #1456a0;
+  --space-1: .5rem;
+  --space-2: 1rem;
+  --radius: 1rem;
+}
+body {
+  margin: 0;
+  font-family: system-ui, sans-serif;
+  background: #f4f7fb;
+  color: #17243a;
+}</pre>
+  <div class="note">Best practice: อย่าเริ่ม layout ก่อนตั้ง box-sizing, spacing token และสีหลัก</div>
+</div></section>
+
+<section class="slide" data-title="16 — Flex vs Grid"><span class="counter"></span><div class="slide-inner">
+  <div class="badge">Flexbox หรือ Grid?</div><h2>เลือกจากปัญหา ไม่ใช่จำ syntax</h2>
+  <table class="table"><thead><tr><th>สถานการณ์</th><th>เครื่องมือ</th><th>เหตุผล</th></tr></thead><tbody>
+    <tr><td>ปุ่มหลายปุ่มในแถวเดียว</td><td>Flexbox</td><td>จัดตำแหน่งบนแกนเดียวได้ดี</td></tr>
+    <tr><td>ฟอร์ม + preview เป็นสองคอลัมน์</td><td>Grid</td><td>ควบคุมแถวและคอลัมน์ชัดเจน</td></tr>
+    <tr><td>รายการ card จำนวนไม่แน่นอน</td><td>Grid + auto-fit/minmax</td><td>เพิ่ม/ลดจำนวน card โดยไม่เขียน breakpoint หลายจุด</td></tr>
+    <tr><td>icon + text ภายในปุ่ม</td><td>Flexbox</td><td>จัด alignment ภายใน component</td></tr>
+  </tbody></table>
+</div></section>
+
+<section class="slide" data-title="17 — Responsive Design"><span class="counter"></span><div class="slide-inner">
+  <div class="badge">5. Responsive Design</div><h2>เนื้อหาเดียวกัน หลาย viewport</h2>
+  <div class="split"><div class="image-card"><img src="images/responsive-design-viewports.png" alt="Responsive design viewports"></div><div><ul class="big-list"><li>ไม่ใช่สร้างหน้าแยกสำหรับ iPhone/iPad/Desktop</li><li>เริ่ม mobile-first: 1 คอลัมน์ อ่านง่าย</li><li>เพิ่มคอลัมน์เมื่อพื้นที่พอ</li><li>Breakpoint ควรมาจาก “เนื้อหาเริ่มไม่เหมาะสม”</li></ul></div></div>
+</div></section>
+
+<section class="slide" data-title="18 — Responsive Code"><span class="counter"></span><div class="slide-inner">
+  <div class="badge">Fluid container • flexible track • clamp()</div><h2>Responsive โดยไม่ต้องเขียน breakpoint ทุกขนาด</h2>
+  <pre class="code">.container {
+  width: min(100% - 2rem, 70rem);
+  margin-inline: auto;
+}
+.hero h1 {
+  font-size: clamp(2rem, 5vw, 3.5rem);
+}
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  gap: 1rem;
+}</pre>
+</div></section>
+
+<section class="slide" data-title="19 — Responsive Playground"><span class="counter"></span><div class="slide-inner">
+  <div class="badge">Interactive Responsive Playground</div><h2>ลากเพื่อดู layout เปลี่ยนตามพื้นที่</h2>
+  <div class="split"><div class="demo"><label>Viewport width: <span id="vp-label">375px</span><input id="vp-range" type="range" min="320" max="1000" value="375"></label><div id="device" class="device-frame" style="width:375px;max-width:100%;margin-top:16px"><div class="sim-grid"><div class="sim-card">Form</div><div class="sim-card">Live Preview</div><div class="sim-card">Request List</div><div class="sim-card">Status</div></div></div></div><div class="card green"><h3>เกณฑ์ทดสอบ</h3><ul class="big-list"><li>ไม่มี horizontal scroll</li><li>label/button ไม่ถูกตัด</li><li>mobile: form ก่อน preview</li><li>desktop: สองคอลัมน์อ่านง่าย</li></ul></div></div>
+</div></section>
+
+<section class="slide" data-title="20 — Event-driven UI"><span class="counter"></span><div class="slide-inner">
+  <div class="badge">6. Event-driven Programming</div><h2>UI ทำงานเป็นวงจร: Action → Event → Handler → State → Render</h2>
+  <div class="image-card"><img src="images/event-driven-ui-flow.png" alt="Event-driven UI flow"></div>
+</div></section>
+
+<section class="slide" data-title="21 — Event Concepts"><span class="counter"></span><div class="slide-inner">
+  <div class="badge">event.target • currentTarget • preventDefault()</div><h2>เข้าใจ Event object ก่อนเขียน handler</h2>
+  <table class="table"><thead><tr><th>แนวคิด</th><th>ความหมาย</th><th>ตัวอย่าง</th></tr></thead><tbody><tr><td><code>event.target</code></td><td>element ต้นทางที่ผู้ใช้โต้ตอบจริง</td><td>input ที่กำลังพิมพ์</td></tr><tr><td><code>event.currentTarget</code></td><td>element ที่ผูก listener อยู่</td><td>form ที่รับ input event แบบ bubbling</td></tr><tr><td><code>preventDefault()</code></td><td>ยกเลิกพฤติกรรมเดิมของ browser</td><td>ไม่ให้ form reload หน้าเมื่อ submit</td></tr><tr><td><code>stopPropagation()</code></td><td>หยุดการเดินทางของ event</td><td>ใช้เท่าที่จำเป็น ไม่ใช่คำตอบแรก</td></tr></tbody></table>
+</div></section>
+
+<section class="slide" data-title="22 — Event Playground"><span class="counter"></span><div class="slide-inner">
+  <div class="badge">Interactive Event Playground</div><h2>ลองดู target และ currentTarget</h2>
+  <div class="split"><div class="demo" id="event-zone" style="padding:28px;background:#eaf3ff"><h3>Form Listener Zone</h3><label>พิมพ์ชื่อ<input class="focus-ring" name="name" placeholder="ลองพิมพ์"></label><label>เลือกประเภท<select class="demo-select focus-ring" name="type"><option>Repair</option><option>Borrow</option><option>Room</option></select></label><button class="ghost" type="button" id="event-btn">Click me</button></div><div class="demo"><h3>Event Log</h3><div id="event-log" class="demo-output">โต้ตอบกับ input/select/button ทางซ้าย</div></div></div>
+</div></section>
+
+<section class="slide" data-title="23 — Event Delegation Code"><span class="counter"></span><div class="slide-inner">
+  <div class="badge">Event Delegation</div><h2>ผูก listener ที่ form แล้วอ่านค่าจาก FormData</h2>
+  <pre class="code">const form = document.querySelector('#request-form');
+const preview = document.querySelector('#preview');
+
+form.addEventListener('input', (event) => {
+  // currentTarget คือ form; target คือ input/select/textarea ที่เปลี่ยน
+  const data = Object.fromEntries(new FormData(event.currentTarget).entries());
+  renderPreview(data);
+});
+
+form.addEventListener('submit', (event) => {
+  event.preventDefault();
+  handleSubmit(event.currentTarget);
+});</pre>
+</div></section>
+
+<section class="slide" data-title="24 — Handler Validate Render"><span class="counter"></span><div class="slide-inner">
+  <div class="badge">แยก handler → validate → render</div><h2>ทำให้โค้ดอ่านง่ายและย้ายไป React ได้</h2>
+  <pre class="code">function handleSubmit(form) {
+  const data = readForm(form);
+  const errors = validate(data);
+  renderErrors(errors);
+
+  if (Object.keys(errors).length > 0) {
+    renderStatus('invalid', 'กรุณาตรวจสอบข้อมูลที่ระบุ');
+    return;
+  }
+
+  addRequest(data);
+  renderStatus('success', 'บันทึกคำขอเรียบร้อย');
+  form.reset();
+  renderPreview(readForm(form));
+}</pre>
+  <div class="note">Vanilla JS: อ่าน DOM และอัปเดต DOM เอง • React: เก็บข้อมูลใน state แล้ว render จาก state</div>
+</div></section>
+
+<section class="slide" data-title="25 — Form State"><span class="counter"></span><div class="slide-inner">
+  <div class="badge">7. Form Design, Validation และ Feedback</div><h2>แบบฟอร์มต้องมีเส้นทางกลับไปแก้ไข</h2>
+  <div class="split"><div class="image-card"><img src="images/form-state-feedback.png" alt="Form state feedback flow"></div><div><ul class="big-list"><li>Idle: พร้อมกรอก</li><li>Editing: กำลังแก้ไข</li><li>Invalid: พบข้อมูลผิด</li><li>Error: ส่งไม่สำเร็จ</li><li>Success: บันทึกสำเร็จ</li></ul></div></div>
+</div></section>
+
+<section class="slide" data-title="26 — Validation Levels"><span class="counter"></span><div class="slide-inner">
+  <div class="badge">Validation 3 ระดับ</div><h2>เร็ว เข้าถึงได้ และปลอดภัย</h2>
+  <div class="grid cols-3"><div class="card blue"><h3>HTML Constraints</h3><p class="small"><code>required</code>, <code>minlength</code>, <code>type="email"</code><br>เร็วและเข้าถึงได้</p></div><div class="card yellow"><h3>JavaScript Client-side</h3><p class="small"><code>validate(data)</code> และ custom message<br>ให้ feedback ตามโจทย์</p></div><div class="card green"><h3>Server-side</h3><p class="small">ตรวจซ้ำที่ API ก่อนบันทึก<br>จำเป็นเมื่อเข้าสู่ Back-end</p></div></div>
+  <div class="note">Client-side validation ช่วย UX แต่ไม่ใช่ความปลอดภัยฝั่งระบบ</div>
+</div></section>
+
+<section class="slide" data-title="27 — Validation Function"><span class="counter"></span><div class="slide-inner">
+  <div class="badge">Pure function validation</div><h2>รับข้อมูล → คืน error object โดยไม่แตะ DOM</h2>
+  <pre class="code">function validate(data) {
+  const errors = {};
+
+  if (data.requesterName.trim().length < 2) {
+    errors.requesterName = 'กรุณากรอกชื่ออย่างน้อย 2 ตัวอักษร';
+  }
+  if (!data.requestType) {
+    errors.requestType = 'กรุณาเลือกประเภทคำขอ';
+  }
+  if (data.details.trim().length < 10) {
+    errors.details = 'กรุณาอธิบายอย่างน้อย 10 ตัวอักษร';
+  }
+  return errors;
+}</pre>
+</div></section>
+
+<section class="slide" data-title="28 — Form Playground"><span class="counter"></span><div class="slide-inner">
+  <div class="badge">Interactive Form Validation</div><h2>ลองกรอกข้อมูลแล้วดู error / success feedback</h2>
+  <div class="split"><form id="play-form" class="demo" novalidate><label>Requester name<input name="requesterName" placeholder="ชื่ออย่างน้อย 2 ตัวอักษร"></label><small id="pf-name" class="error-msg"></small><label>Request type<select name="requestType" class="demo-select"><option value="">เลือกประเภท</option><option>Repair</option><option>Borrow</option><option>Room</option></select></label><small id="pf-type" class="error-msg"></small><label>Details<textarea name="details" placeholder="อธิบายอย่างน้อย 10 ตัวอักษร"></textarea></label><small id="pf-details" class="error-msg"></small><button type="submit">Submit request</button></form><div class="demo"><h3>Feedback</h3><div id="play-status" class="status">Ready</div><div id="play-preview" class="preview-panel" style="margin-top:16px">Live preview จะแสดงที่นี่</div></div></div>
+</div></section>
+
+<section class="slide" data-title="29 — LAB 3 Complete Example"><span class="counter"></span><div class="slide-inner">
+  <div class="badge">8. Campus Service Request</div><h2>ตัวอย่างครบวงจรของ LAB 3</h2>
+  <div class="image-card hero-img"><img src="images/lab3-campus-service-request.png" alt="Campus Service Request desktop outcome"></div>
+  <div class="note">รวม Semantic HTML, mobile-first layout, live preview, validation, feedback state และรายการข้อมูลหลัง submit</div>
+</div></section>
+
+<section class="slide" data-title="30 — Read Form and Preview"><span class="counter"></span><div class="slide-inner">
+  <div class="badge">อ่านข้อมูลจาก form และ render preview</div><h2>ใช้ <code>FormData</code> และ <code>textContent</code></h2>
+  <div class="grid cols-2"><pre class="code">function readForm(form) {
+  return Object.fromEntries(new FormData(form).entries());
+}</pre><pre class="code">function renderPreview(data) {
+  previewName.textContent = data.requesterName || 'ยังไม่ระบุชื่อ';
+  previewType.textContent = data.requestType || 'ยังไม่เลือกประเภท';
+  previewDetails.textContent = data.details || 'ยังไม่มีรายละเอียด';
+}</pre></div>
+  <div class="question">เหตุผล: ใช้ <code>textContent</code> แทน <code>innerHTML</code> เมื่อแสดงข้อมูลที่ผู้ใช้กรอก</div>
+</div></section>
+
+<section class="slide" data-title="31 — Campus Mini App"><span class="counter"></span><div class="slide-inner">
+  <div class="badge">Interactive Mini App</div><h2>Campus Service Request — ทดลองใช้งานจริง</h2>
+  <div class="wide-split"><form id="campus-form" class="demo" novalidate><div class="grid cols-3"><div class="card blue"><h3 id="total-count">0</h3><p class="small">Total</p></div><div class="card yellow"><h3 id="pending-count">0</h3><p class="small">Pending</p></div><div class="card green"><h3 id="approved-count">0</h3><p class="small">Approved</p></div></div><label>Requester name<input name="requesterName" placeholder="เช่น Somchai"></label><small class="error-msg" id="cr-name"></small><label>Request type<select class="demo-select" name="requestType"><option value="">เลือกประเภท</option><option>Repair</option><option>Borrow</option><option>Room</option></select></label><small class="error-msg" id="cr-type"></small><label>Details<textarea name="details" placeholder="ระบุรายละเอียดคำขอ"></textarea></label><small class="error-msg" id="cr-details"></small><button type="submit">Submit Request</button></form><aside class="preview-panel"><h3>Live Preview</h3><div id="cr-status" class="status">Ready</div><p class="small" style="margin-top:12px"><b>Name:</b> <span id="cr-p-name">ยังไม่ระบุชื่อ</span></p><p class="small"><b>Type:</b> <span id="cr-p-type">ยังไม่เลือกประเภท</span></p><p class="small"><b>Details:</b> <span id="cr-p-details">ยังไม่มีรายละเอียด</span></p><h3 style="margin-top:18px">Requests</h3><ul id="cr-list" class="request-list"></ul></aside></div>
+</div></section>
+
+<section class="slide" data-title="32 — Add Request Safely"><span class="counter"></span><div class="slide-inner">
+  <div class="badge">เพิ่มรายการหลัง submit สำเร็จ</div><h2>สร้าง DOM node และกำหนด <code>textContent</code></h2>
+  <pre class="code">function addRequest(data) {
+  const item = document.createElement('li');
+  const title = document.createElement('strong');
+  const details = document.createElement('span');
+
+  title.textContent = `${data.requesterName} • ${data.requestType}`;
+  details.textContent = data.details;
+
+  item.append(title, details);
+  requestList.prepend(item);
+}</pre>
+  <div class="question">Checkpoint: ฟังก์ชันใดอ่านข้อมูล? ฟังก์ชันใดตัดสินว่า valid? ฟังก์ชันใดเปลี่ยนหน้าจอ?</div>
+</div></section>
+
+<section class="slide" data-title="33 — Cross-platform Workflow"><span class="counter"></span><div class="slide-inner">
+  <div class="badge">9. Workflow: iMac M1 และ Windows 11 + WSL2</div><h2>คำสั่งเหมือนกันเมื่ออยู่ใน shell ที่ถูกต้อง</h2>
+  <div class="image-card"><img src="images/cross-platform-workflow.png" alt="Cross-platform workflow on iMac and WSL2"></div>
+</div></section>
+
+<section class="slide" data-title="34 — Environment Checklist"><span class="counter"></span><div class="slide-inner">
+  <div class="badge">ตรวจ environment ก่อนเริ่ม LAB</div><h2>อย่าให้ terminal ทำงานคนละโลกกับ VS Code</h2>
+  <div class="split"><pre class="code"># ใช้เหมือนกันทั้ง macOS และ WSL เมื่อเข้าโฟลเดอร์ถูกต้อง
+nvm use 22
+node -v
+npm -v
+git status
+npm install
+npm run dev</pre><div class="card red"><h3>ข้อผิดพลาดที่ต้องป้องกัน</h3><ul class="big-list"><li>เปิดโฟลเดอร์ WSL ด้วย VS Code ฝั่ง Windows แบบปกติ</li><li>คัดลอก node_modules ข้าม OS</li><li>เปิด index.html ด้วย double click ทั้งที่ใช้ Vite</li><li>ลืม build ก่อน push docs/</li></ul></div></div>
+</div></section>
+
+<section class="slide" data-title="35 — LAB 3 Rubric"><span class="counter"></span><div class="slide-inner">
+  <div class="badge">10. LAB 3 และหลักฐานการเรียนรู้</div><h2>สิ่งที่ต้องทำและคะแนน</h2>
+  <table class="table"><thead><tr><th>ส่วนประเมิน</th><th>สิ่งที่ต้องทำ</th><th>คะแนน</th></tr></thead><tbody><tr><td>Semantic HTML & Accessibility</td><td>landmark, heading, label, name/id, keyboard focus</td><td>0.50</td></tr><tr><td>Responsive Layout</td><td>mobile-first, Grid/Flexbox, ใช้งานได้ 375px และ Desktop</td><td>0.75</td></tr><tr><td>Event & Live Preview</td><td>input/submit event, FormData, DOM update ไม่มี console error</td><td>0.75</td></tr><tr><td>Validation & Feedback</td><td>invalid/success state, ข้อความแก้ไขได้, ไม่ลบข้อมูลเมื่อผิด</td><td>0.50</td></tr><tr><td>Git workflow & delivery</td><td>feature branch, commits, PR, README, GitHub Pages</td><td>0.50</td></tr></tbody></table>
+</div></section>
+
+<section class="slide" data-title="36 — Submission Checklist"><span class="counter"></span><div class="slide-inner">
+  <div class="badge">Checklist ก่อนส่ง LAB 3</div><h2>ตรวจให้ครบก่อนส่ง URL</h2>
+  <div class="grid cols-2"><div class="card green"><h3>ต้องส่ง</h3><ul class="big-list"><li>Repository URL</li><li>Pull Request URL ที่ merge แล้ว</li><li>GitHub Pages URL</li><li>ภาพ Desktop และ Mobile</li><li>README: features, วิธีรัน, test cases, screenshots</li></ul></div><div class="card yellow"><h3>ต้องทดสอบ</h3><ul class="big-list"><li>Incognito เปิด Pages ได้</li><li>Console ไม่มี error สีแดง</li><li>Tab ผ่าน control ตามลำดับ</li><li>กรอกว่าง/สั้น/ถูกต้อง ได้ feedback</li><li>ทดสอบ 375px, 768px และ Desktop</li></ul></div></div>
+</div></section>
+
+<section class="slide" data-title="37 — Review Questions"><span class="counter"></span><div class="slide-inner">
+  <div class="badge">11. คำถามทบทวนหลักการ</div><h2>ถามเพื่อเช็คความเข้าใจก่อนลงมือ LAB</h2>
+  <div class="grid cols-2"><div class="question">เหตุใด placeholder จึงไม่ควรใช้แทน label?</div><div class="question">Flexbox และ Grid ต่างกันด้าน mental model อย่างไร?</div><div class="question">Breakpoint ควรกำหนดจากอุปกรณ์หรือจากจุดที่เนื้อหาเริ่มไม่เหมาะสม?</div><div class="question">event.target และ event.currentTarget ต่างกันอย่างไร?</div><div class="question">preventDefault() ทำหน้าที่อะไร และไม่ได้ทำหน้าที่อะไร?</div><div class="question">ทำไม error message ต้องมีข้อความ ไม่ควรใช้กรอบสีแดงอย่างเดียว?</div></div>
+</div></section>
+
+<section class="slide" data-title="38 — Summary"><span class="counter"></span><div class="slide-inner">
+  <div class="badge">12. สรุป Week 03</div><h2>Web UI ที่ดี = โครงสร้างชัด + ปรับตามจอ + ตอบสนอง + ให้ feedback</h2>
+  <div class="timeline"><div class="tl"><b>1</b><h3>HTML</h3><p class="small">สื่อความหมาย</p></div><div class="tl"><b>2</b><h3>CSS</h3><p class="small">จัด layout</p></div><div class="tl"><b>3</b><h3>Responsive</h3><p class="small">ปรับตามพื้นที่</p></div><div class="tl"><b>4</b><h3>Event</h3><p class="small">รับการกระทำ</p></div><div class="tl"><b>5</b><h3>Form</h3><p class="small">รับข้อมูล</p></div><div class="tl"><b>6</b><h3>Feedback</h3><p class="small">บอกผลและให้แก้ไข</p></div></div>
+  <div class="note">ความเข้าใจนี้จะถูกยกระดับเป็น component, props และ state ใน React สัปดาห์ที่ 4</div>
+</div></section>
+
+</div>
+<div class="controls" aria-label="Slide controls">
+  <button class="btn" id="prevBtn">←</button>
+  <button class="btn" id="nextBtn">→</button>
+  <select id="slideSelect" aria-label="Select slide"></select>
+  <button class="btn" id="fontDown">A−</button><button class="btn" id="fontReset">A</button><button class="btn" id="fontUp">A+</button>
+  <button class="btn" id="fullBtn">⛶ Full screen</button>
+</div>
+<script>
+const slides=[...document.querySelectorAll('.slide')];
+const select=document.getElementById('slideSelect');
+let current=0; let scale=1;
+slides.forEach((s,i)=>{const opt=document.createElement('option'); opt.value=i; opt.textContent=`${String(i+1).padStart(2,'0')} ${s.dataset.title.replace(/^\d+\s+—\s+/,'')}`; select.append(opt);});
+function show(i){current=(i+slides.length)%slides.length; slides.forEach((s,idx)=>s.classList.toggle('active',idx===current)); select.value=current; location.hash=`slide-${current+1}`; updateCounters();}
+function updateCounters(){slides.forEach((s,i)=>{s.querySelector('.counter').textContent=`${String(i+1).padStart(2,'0')}/${slides.length}`;});}
+document.getElementById('nextBtn').onclick=()=>show(current+1); document.getElementById('prevBtn').onclick=()=>show(current-1); select.onchange=e=>show(+e.target.value);
+document.addEventListener('keydown',e=>{if(e.key==='ArrowRight'||e.key==='PageDown') show(current+1); if(e.key==='ArrowLeft'||e.key==='PageUp') show(current-1); if(e.key.toLowerCase()==='f') toggleFull();});
+function applyFont(){document.documentElement.style.setProperty('--base',scale.toFixed(2));}
+document.getElementById('fontUp').onclick=()=>{scale=Math.min(1.3,scale+.07);applyFont();}; document.getElementById('fontDown').onclick=()=>{scale=Math.max(.82,scale-.07);applyFont();}; document.getElementById('fontReset').onclick=()=>{scale=1;applyFont();};
+function toggleFull(){ if(!document.fullscreenElement){document.documentElement.requestFullscreen?.();} else {document.exitFullscreen?.();}}
+document.getElementById('fullBtn').onclick=toggleFull;
+const m=location.hash.match(/slide-(\d+)/); if(m) current=Math.max(0,Math.min(slides.length-1,+m[1]-1)); updateCounters(); show(current);
+function markUi(type){ const map={label:'Label ช่วยให้รู้ว่าต้องกรอกอะไร และคลิกแล้ว focus ได้', feedback:'Feedback ช่วยให้รู้ว่าระบบรับ action แล้ว', spacing:'Spacing และ visual hierarchy ทำให้อ่านและแก้ไขง่าย'}; document.getElementById('ui-check').textContent=map[type]; }
+window.markUi=markUi;
+// Responsive playground
+const vp=document.getElementById('vp-range'); const vpLabel=document.getElementById('vp-label'); const device=document.getElementById('device');
+if(vp){vp.addEventListener('input',()=>{const w=+vp.value; vpLabel.textContent=w+'px'; device.style.width=Math.min(w,900)+'px'; device.classList.toggle('device-wide',w>=760);});}
+// Event playground
+const zone=document.getElementById('event-zone'); const log=document.getElementById('event-log');
+if(zone){['input','change','click'].forEach(type=>zone.addEventListener(type,e=>{log.innerHTML=`<b>event:</b> ${type}<br><b>target:</b> ${e.target.tagName.toLowerCase()}${e.target.name?'[name='+e.target.name+']':''}<br><b>currentTarget:</b> #event-zone`; }));}
+// Form playground
+function readForm(form){return Object.fromEntries(new FormData(form).entries());}
+function validateData(data){const errors={}; if((data.requesterName||'').trim().length<2) errors.requesterName='กรุณากรอกชื่ออย่างน้อย 2 ตัวอักษร'; if(!data.requestType) errors.requestType='กรุณาเลือกประเภทคำขอ'; if((data.details||'').trim().length<10) errors.details='กรุณาอธิบายอย่างน้อย 10 ตัวอักษร'; return errors;}
+function setFieldError(form,name,msg,outputId){const field=form.elements[name]; const out=document.getElementById(outputId); if(out) out.textContent=msg||''; if(field){field.classList.toggle('invalid',!!msg); field.setAttribute('aria-invalid',String(!!msg));}}
+const pf=document.getElementById('play-form');
+if(pf){pf.addEventListener('input',()=>{const d=readForm(pf); document.getElementById('play-preview').innerHTML=`<b>Preview</b><br>Name: ${d.requesterName||'ยังไม่ระบุ'}<br>Type: ${d.requestType||'ยังไม่เลือก'}<br>Details: ${d.details||'ยังไม่มีรายละเอียด'}`;}); pf.addEventListener('submit',e=>{e.preventDefault(); const d=readForm(pf); const er=validateData(d); setFieldError(pf,'requesterName',er.requesterName,'pf-name'); setFieldError(pf,'requestType',er.requestType,'pf-type'); setFieldError(pf,'details',er.details,'pf-details'); const st=document.getElementById('play-status'); if(Object.keys(er).length){st.className='status error'; st.textContent='กรุณาตรวจสอบข้อมูลที่ระบุ';}else{st.className='status success'; st.textContent='บันทึกคำขอเรียบร้อย';}});}
+// Campus mini app
+const cf=document.getElementById('campus-form'); let requests=[];
+function updateCounts(){document.getElementById('total-count').textContent=requests.length; document.getElementById('pending-count').textContent=requests.filter(r=>r.status==='Pending').length; document.getElementById('approved-count').textContent=requests.filter(r=>r.status==='Approved').length;}
+function updateCampusPreview(){const d=readForm(cf); document.getElementById('cr-p-name').textContent=d.requesterName||'ยังไม่ระบุชื่อ'; document.getElementById('cr-p-type').textContent=d.requestType||'ยังไม่เลือกประเภท'; document.getElementById('cr-p-details').textContent=d.details||'ยังไม่มีรายละเอียด';}
+function renderList(){const ul=document.getElementById('cr-list'); ul.innerHTML=''; requests.forEach(r=>{const li=document.createElement('li'); const strong=document.createElement('strong'); const span=document.createElement('span'); strong.textContent=`${r.requesterName} • ${r.requestType} • ${r.status}`; span.textContent=r.details; li.append(strong,span); ul.append(li);});}
+if(cf){updateCounts(); cf.addEventListener('input',updateCampusPreview); cf.addEventListener('submit',e=>{e.preventDefault(); const d=readForm(cf); const er=validateData(d); setFieldError(cf,'requesterName',er.requesterName,'cr-name'); setFieldError(cf,'requestType',er.requestType,'cr-type'); setFieldError(cf,'details',er.details,'cr-details'); const st=document.getElementById('cr-status'); if(Object.keys(er).length){st.className='status error'; st.textContent='กรุณาตรวจสอบข้อมูลที่ระบุ'; return;} requests.unshift({...d,status: requests.length%3===0?'Approved':'Pending'}); st.className='status success'; st.textContent='บันทึกคำขอเรียบร้อย'; renderList(); updateCounts(); cf.reset(); updateCampusPreview();});}
+</script>
+</body>
+</html>

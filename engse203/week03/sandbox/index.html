@@ -1,0 +1,515 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ENGSE203 Week 03 Interactive Sandbox — Web UI, Responsive, Event, Form</title>
+  <style>
+    :root{
+      --bg:#eef5ff; --surface:#ffffff; --surface2:#f7fbff; --ink:#0c1d36; --muted:#52647c;
+      --primary:#1456a0; --primary2:#0c3d73; --teal:#12a594; --amber:#f2b705; --danger:#c1352b; --ok:#15803d;
+      --line:#c9dcf3; --shadow:0 16px 45px rgba(11,48,92,.12); --radius:22px; --fontScale:1;
+      --mono:"SFMono-Regular",Consolas,"Liberation Mono",monospace;
+      --sans:Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans Thai", sans-serif;
+    }
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth;font-size:calc(16px * var(--fontScale))}
+    body{margin:0;background:radial-gradient(circle at top right, rgba(20,86,160,.14), transparent 36rem),linear-gradient(135deg,#f8fbff,#eef5ff 52%,#f6fffc);color:var(--ink);font-family:var(--sans);line-height:1.65}
+    a{color:var(--primary);text-decoration:none} a:hover{text-decoration:underline}
+    .topbar{position:sticky;top:0;z-index:50;display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:.7rem clamp(1rem,2vw,2rem);background:rgba(247,251,255,.86);backdrop-filter:blur(16px);border-bottom:1px solid var(--line)}
+    .brand{display:flex;align-items:center;gap:.8rem;font-weight:900;color:var(--primary2)}
+    .logo{width:2.7rem;height:2.7rem;border-radius:.8rem;background:#fff;display:grid;place-items:center;box-shadow:0 7px 18px rgba(11,48,92,.12);font-weight:1000;color:var(--primary)}
+    .toolbar{display:flex;align-items:center;gap:.45rem;flex-wrap:wrap;justify-content:flex-end}
+    button,.btn{border:0;border-radius:999px;background:var(--primary2);color:#fff;font:inherit;font-weight:800;padding:.65rem 1rem;cursor:pointer;box-shadow:0 8px 16px rgba(12,61,115,.18);transition:.2s transform,.2s opacity,.2s background}
+    button:hover,.btn:hover{transform:translateY(-1px);opacity:.96;text-decoration:none}
+    button.secondary{background:#e7f1ff;color:#113b70;box-shadow:none;border:1px solid #bdd6f2}
+    button.ghost{background:#fff;color:var(--primary2);border:1px solid var(--line);box-shadow:none}
+    button.ok{background:var(--ok)} button.warn{background:#9a6200} button.danger{background:var(--danger)}
+    select,input,textarea{font:inherit;border:1px solid #c6d9ef;border-radius:14px;background:#fff;color:var(--ink)}
+    .wrap{display:grid;grid-template-columns:minmax(14rem,18rem) minmax(0,1fr);gap:1.2rem;width:min(100% - 2rem,94rem);margin:1.2rem auto 4rem}
+    aside.nav{position:sticky;top:5rem;height:calc(100vh - 6rem);overflow:auto;background:rgba(255,255,255,.82);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:1rem}
+    .nav h2{font-size:1rem;margin:.3rem 0 1rem;color:var(--muted)}
+    .nav a{display:block;padding:.62rem .8rem;border-radius:14px;font-weight:800;color:#17365d;margin:.16rem 0}
+    .nav a:hover,.nav a.active{background:#e8f2ff;text-decoration:none}
+    main{min-width:0}
+    .hero{position:relative;overflow:hidden;padding:clamp(2rem,5vw,4.5rem);border-radius:32px;background:linear-gradient(135deg,#0d376b,#1456a0 56%,#12a594);color:#fff;box-shadow:var(--shadow);min-height:26rem;display:grid;align-items:center}
+    .hero:after{content:"";position:absolute;inset:auto -8rem -12rem auto;width:34rem;height:34rem;border-radius:50%;background:rgba(255,255,255,.11);border:2rem solid rgba(255,255,255,.08)}
+    .hero .content{position:relative;z-index:1;max-width:58rem}
+    .eyebrow{display:inline-flex;gap:.4rem;align-items:center;padding:.35rem .8rem;border-radius:999px;background:rgba(255,255,255,.18);font-weight:900;letter-spacing:.06em;text-transform:uppercase;font-size:.82rem}
+    h1{font-size:clamp(2.4rem,6vw,5.6rem);line-height:.96;margin:.9rem 0 1rem;letter-spacing:-.06em}
+    h2{font-size:clamp(2rem,4vw,3.5rem);line-height:1.05;margin:.2rem 0 1rem;letter-spacing:-.04em;color:#0f3465}
+    h3{font-size:clamp(1.35rem,2.2vw,2rem);line-height:1.18;margin:1rem 0 .6rem;color:#103865}
+    p.lead{font-size:clamp(1.15rem,2vw,1.55rem);max-width:58rem;color:rgba(255,255,255,.88);font-weight:650}
+    .section{margin:1.2rem 0;padding:clamp(1rem,2.2vw,2rem);background:rgba(255,255,255,.86);border:1px solid var(--line);border-radius:28px;box-shadow:var(--shadow);scroll-margin-top:5.8rem}
+    .section.intro{background:linear-gradient(180deg,#fff,#f7fbff)}
+    .grid{display:grid;gap:1rem}.two{grid-template-columns:repeat(2,minmax(0,1fr))}.three{grid-template-columns:repeat(3,minmax(0,1fr))}.four{grid-template-columns:repeat(4,minmax(0,1fr))}
+    .card{background:var(--surface);border:1px solid var(--line);border-radius:22px;padding:1rem;box-shadow:0 10px 24px rgba(11,48,92,.08);min-width:0}.card.soft{background:#f8fbff}.card.green{background:#f0fffb;border-color:#b8ede4}.card.yellow{background:#fff9e7;border-color:#f4d575}.card.red{background:#fff4f3;border-color:#f1c2bd}.card.blue{background:#eff6ff;border-color:#c5dcf7}
+    .pill{display:inline-flex;align-items:center;gap:.4rem;padding:.35rem .75rem;border-radius:999px;background:#e8f2ff;color:#1456a0;font-weight:900;font-size:.85rem}.pill.green{background:#dcfce7;color:#166534}.pill.amber{background:#fef3c7;color:#92400e}.pill.red{background:#fee2e2;color:#991b1b}.pill.dark{background:#0d376b;color:#fff}
+    .callout{padding:1rem 1.2rem;border-radius:22px;border:1px solid #f1c675;background:#fff8e5;color:#533b07;font-weight:750}.callout.blue{background:#eef7ff;border-color:#bfdcff;color:#163b66}.callout.green{background:#eefcf7;border-color:#b9edda;color:#10523b}.callout.red{background:#fff1f0;border-color:#ffb8b0;color:#7e211a}
+    ul.clean{padding-left:1.2rem;margin:.4rem 0}.clean li{margin:.3rem 0} strong{color:#0f3465}.muted{color:var(--muted)}
+    .image-card{overflow:hidden;background:#fff;border:1px solid var(--line);border-radius:24px;padding:.8rem;box-shadow:0 10px 24px rgba(11,48,92,.08)}.image-card img{width:100%;height:auto;display:block;border-radius:16px}.caption{font-size:.9rem;color:var(--muted);text-align:center;margin-top:.5rem}
+    pre,code{font-family:var(--mono)} pre{margin:.6rem 0 0;white-space:pre-wrap;background:#071d38;color:#eef7ff;border-radius:18px;padding:1rem;overflow:auto;font-size:.92rem;line-height:1.55}.code-title{font-weight:900;color:#1456a0;margin-top:.5rem}
+    .sandbox{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:1rem;align-items:stretch}.editor-pane,.preview-pane{min-width:0}.tabs{display:flex;gap:.4rem;flex-wrap:wrap;margin:.4rem 0}.tab-btn[aria-selected="true"]{background:var(--teal);color:#fff}.editor-set{display:grid;gap:.7rem}.editor-set label{display:grid;gap:.35rem;font-weight:900;color:#14375f}.editor-set textarea{width:100%;min-height:9rem;resize:vertical;padding:.8rem;font-family:var(--mono);font-size:.9rem;line-height:1.45;background:#071d38;color:#f2f7ff;border-color:#183a62;border-radius:18px}.runner-actions{display:flex;gap:.5rem;flex-wrap:wrap;margin:.8rem 0}.preview-frame,.device-frame iframe{width:100%;min-height:30rem;border:1px solid #bfd5ed;border-radius:22px;background:#fff;box-shadow:inset 0 0 0 1px rgba(255,255,255,.6)}
+    .device-toolbar{display:flex;gap:.4rem;align-items:center;justify-content:space-between;flex-wrap:wrap;margin:.5rem 0}.device-shell{width:100%;overflow:auto;border-radius:24px;background:#dfeeff;border:1px solid #bcd7f5;padding:1rem}.device-frame{margin:auto;width:var(--deviceW,100%);max-width:100%;transition:width .25s ease}.device-frame iframe{height:36rem;min-height:36rem}
+    .ui-demo{display:grid;grid-template-columns:1fr 1fr;gap:1rem;align-items:stretch}.bad-ui,.good-ui{border-radius:22px;padding:1rem;border:1px solid var(--line);background:#fff}.bad-ui button{background:#697586}.good-ui button{background:var(--primary)}.fake-input{height:2.8rem;border-radius:12px;border:1px solid #cbd8e8;margin:.6rem 0;background:#f4f7fb}.bad-ui .fake-input{background:linear-gradient(90deg,#ddd,#eee);border-color:#ddd}.status-box{padding:.7rem;border-radius:12px;margin-top:.7rem;background:#e7f7f1;color:#0b6045;font-weight:850}
+    .box-model{display:grid;place-items:center;gap:.5rem;background:#f4f8ff;border-radius:22px;padding:1rem;min-height:20rem}.box{display:grid;place-items:center;border:3px solid #7f96b5;background:#d9e8ff;padding:2rem;min-width:14rem}.box .border{display:grid;place-items:center;background:#fff1cf;border:3px solid #d68b00;padding:1.4rem}.box .padding{display:grid;place-items:center;background:#dcfce7;border:3px solid #25a05f;padding:1rem}.box .content{display:grid;place-items:center;background:#bfdbfe;border:3px solid #2563eb;padding:1rem;font-weight:900}.range-row{display:grid;gap:.4rem;margin:.5rem 0}
+    .flow{display:grid;grid-template-columns:repeat(6,1fr);gap:.7rem;align-items:center}.flow .step{position:relative;text-align:center;padding:1rem .6rem;border:1px solid var(--line);background:#fff;border-radius:18px;font-weight:850}.flow .step:not(:last-child)::after{content:"→";position:absolute;right:-.65rem;top:50%;transform:translateY(-50%);font-size:1.3rem;color:var(--teal);font-weight:1000}
+    .event-log{min-height:9rem;max-height:18rem;overflow:auto;background:#071d38;color:#dcfce7;border-radius:18px;padding:1rem;font-family:var(--mono);font-size:.9rem}.form-grid{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(18rem,.9fr);gap:1rem}.service-form label{display:grid;gap:.35rem;font-weight:900;margin:.6rem 0}.service-form input,.service-form select,.service-form textarea{width:100%;padding:.75rem}.service-form textarea{min-height:7rem;resize:vertical}.error{min-height:1.35rem;color:var(--danger);font-weight:800;font-size:.9rem}.service-form [aria-invalid="true"]{border-color:var(--danger);box-shadow:0 0 0 3px rgba(193,53,43,.12)}.preview-card{background:#f0fff9;border:1px solid #bee8d9;border-radius:22px;padding:1rem;position:sticky;top:5.5rem}.request-list{display:grid;gap:.6rem;list-style:none;padding:0;margin:.8rem 0}.request-list li{background:#fff;border:1px solid var(--line);border-radius:16px;padding:.8rem;display:grid;gap:.25rem}.request-list span{color:var(--muted)}
+    .checklist label{display:flex;gap:.7rem;align-items:flex-start;background:#fff;border:1px solid var(--line);padding:.7rem;border-radius:14px;margin:.4rem 0;font-weight:750}.checklist input{width:1.2rem;height:1.2rem;accent-color:var(--teal);margin-top:.2rem}.score{font-size:1.8rem;font-weight:1000;color:var(--primary)}
+    .landmark-preview{border:1px solid #bdd6f2;border-radius:20px;background:#fff;padding:1rem}.landmark-preview .l-header,.landmark-preview .l-nav,.landmark-preview .l-main,.landmark-preview .l-aside,.landmark-preview .l-footer{border:2px dashed #9bb9db;border-radius:14px;padding:.8rem;margin:.4rem;background:#f8fbff}.landmark-preview .l-row{display:grid;grid-template-columns:1fr 2fr 1fr;gap:.5rem}.highlight{outline:5px solid var(--amber)!important;background:#fff9e7!important}
+    .footer-note{text-align:center;color:var(--muted);margin:2rem auto}.kbd{font-family:var(--mono);font-weight:900;background:#fff;border:1px solid var(--line);padding:.12rem .45rem;border-radius:.4rem;box-shadow:0 2px 0 #c8d8ea}
+    @media (max-width: 1100px){.wrap{grid-template-columns:1fr}.nav{position:relative!important;top:auto!important;height:auto!important}.sandbox,.two,.three,.four,.ui-demo,.form-grid{grid-template-columns:1fr}.flow{grid-template-columns:1fr}.flow .step:not(:last-child)::after{content:"↓";right:50%;top:auto;bottom:-1.2rem;transform:translateX(50%)}.landmark-preview .l-row{grid-template-columns:1fr}.topbar{position:relative}}
+    @media (max-width: 640px){.wrap{width:min(100% - .75rem,94rem)}.section{padding:1rem;border-radius:20px}.hero{padding:1.3rem;border-radius:22px}.toolbar{justify-content:flex-start}.topbar{align-items:flex-start;flex-direction:column}button,.btn{padding:.56rem .8rem}.device-shell{padding:.4rem}.device-frame iframe{height:34rem}}
+    @media print{.topbar,.nav,.runner-actions,.toolbar{display:none!important}.wrap{display:block}.section{break-inside:avoid;box-shadow:none}.hero{color:#111;background:#fff}}
+  </style>
+</head>
+<body>
+  <header class="topbar" role="banner">
+    <div class="brand"><div class="logo">SE</div><div>ENGSE203 • Week 03 Interactive Sandbox<br><span class="muted">Web UI • Responsive Layout • Event • Form</span></div></div>
+    <div class="toolbar" aria-label="tools">
+      <button class="secondary" id="decreaseFont">A−</button>
+      <button class="secondary" id="resetFont">A</button>
+      <button class="secondary" id="increaseFont">A+</button>
+      <button id="toggleFull">⛶ Full screen</button>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <aside class="nav" aria-label="สารบัญ">
+      <h2>เส้นทางเรียนด้วยตัวเอง</h2>
+      <a href="#overview">0. ภาพรวม</a>
+      <a href="#ui">1. Web UI ที่ใช้งานได้</a>
+      <a href="#soc">2. HTML/CSS/JS แยกหน้าที่</a>
+      <a href="#semantic">3. Semantic HTML</a>
+      <a href="#css">4. CSS Layout Mental Model</a>
+      <a href="#responsive">5. Responsive Lab</a>
+      <a href="#events">6. Event & DOM Update</a>
+      <a href="#form">7. Form Validation</a>
+      <a href="#runner">8. Code Playground</a>
+      <a href="#lab3">9. LAB 3 Checklist</a>
+    </aside>
+
+    <main>
+      <section class="hero" id="overview">
+        <div class="content">
+          <span class="eyebrow">ENGSE203 • Week 03 • Self-learning Sandbox</span>
+          <h1>สร้าง Web UI ที่ตอบสนองผู้ใช้ได้จริง</h1>
+          <p class="lead">เรียนรู้แบบลงมือทำ: ปรับ HTML/CSS/JavaScript, ทดลอง Run, ดูผลทันที และนำแนวคิดไปสร้าง <strong style="color:#fff">Campus Service Request</strong> ใน LAB 3</p>
+          <div class="grid four" style="margin-top:1.2rem">
+            <div class="card blue"><span class="pill">HTML</span><h3>ความหมาย</h3><p>ใช้ semantic element, label, form, landmark</p></div>
+            <div class="card green"><span class="pill green">CSS</span><h3>Layout</h3><p>ใช้ box model, Grid/Flexbox, responsive breakpoint</p></div>
+            <div class="card yellow"><span class="pill amber">JS</span><h3>Interaction</h3><p>ใช้ event, FormData, state, DOM update</p></div>
+            <div class="card red"><span class="pill red">UX</span><h3>Feedback</h3><p>ให้ผู้ใช้รู้ว่า error/success และแก้ไขอย่างไร</p></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section intro">
+        <h2>แผนที่การเรียนรู้ Week 03</h2>
+        <div class="grid two">
+          <div class="image-card"><img src="images/week03-learning-map.png" alt="แผนที่การเรียนรู้ Week 3"><div class="caption">จากโครงสร้าง → layout → event → validation → deploy</div></div>
+          <div class="card soft">
+            <h3>เป้าหมายที่ต้องทำได้หลังเรียน</h3>
+            <ul class="clean">
+              <li>อธิบายบทบาทของ HTML, CSS, JavaScript แยกจากกันได้</li>
+              <li>ออกแบบ layout ที่ใช้ได้ทั้ง Desktop และ Mobile</li>
+              <li>ใช้ <code>addEventListener</code>, <code>FormData</code>, <code>preventDefault()</code> ได้</li>
+              <li>สร้าง validation + feedback ที่ผู้ใช้แก้ปัญหาได้</li>
+              <li>เตรียมแนวคิดไปสู่ React: component, props, state</li>
+            </ul>
+            <div class="callout green"><strong>วิธีใช้:</strong> อ่านแนวคิดสั้น ๆ → ทดลอง interactive → แก้ code → สรุปด้วย checklist</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="ui">
+        <span class="pill">1 • Web UI</span>
+        <h2>Web UI คือจุดที่ผู้ใช้ “รับรู้ระบบ”</h2>
+        <p>ผู้ใช้ไม่เห็น function, route หรือ database โดยตรง ผู้ใช้เห็น <strong>ข้อความ ปุ่ม ช่องกรอก ลำดับเนื้อหา และ feedback</strong> ดังนั้น UI ที่ดีต้องตอบ 4 คำถามได้เร็ว: อยู่ที่ไหน, ทำอะไรได้, ต้องกรอกอะไร, ระบบตอบกลับอย่างไร</p>
+        <div class="grid two">
+          <div class="image-card"><img src="images/web-ui-before-after.png" alt="Web UI before after"><div class="caption">ก่อน/หลังปรับ: hierarchy, label, spacing, feedback, focus</div></div>
+          <div class="card">
+            <h3>Interactive: UI ที่ดีต้องมีอะไร?</h3>
+            <div class="ui-demo">
+              <div class="bad-ui"><h3>ก่อนปรับ</h3><div class="fake-input"></div><div class="fake-input"></div><button id="badSubmit">SUBMIT</button><p class="muted">กดแล้วแทบไม่รู้ว่าเกิดอะไร</p></div>
+              <div class="good-ui"><h3>Create Service Request</h3><label>Requester name <input id="uiName" placeholder="เช่น กิตติ"></label><label>Details <input id="uiDetails" placeholder="อธิบายสิ่งที่ต้องการ"></label><button id="goodSubmit">Submit request</button><div class="status-box" id="uiStatus" role="status">Ready — พร้อมรับข้อมูล</div></div>
+            </div>
+            <div class="callout blue" style="margin-top:1rem">กดปุ่มทั้งสองฝั่ง แล้วเปรียบเทียบว่า feedback ฝั่งใดช่วยให้ผู้ใช้ไปต่อได้ง่ายกว่า</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="soc">
+        <span class="pill">2 • Separation of Concerns</span>
+        <h2>HTML, CSS, JavaScript ควรรับผิดชอบคนละเรื่อง</h2>
+        <div class="grid three">
+          <div class="card blue"><h3>HTML</h3><p>บอกความหมายและโครงสร้าง เช่น <code>form</code>, <code>label</code>, <code>main</code></p><p class="muted">ถามตัวเอง: ถ้าปิด CSS ยังอ่านลำดับเนื้อหาได้ไหม?</p></div>
+          <div class="card green"><h3>CSS</h3><p>ควบคุมภาพและ layout เช่น Grid, Flexbox, spacing, focus</p><p class="muted">ถามตัวเอง: ถ้าเปลี่ยนข้อมูล style ยังใช้ซ้ำได้ไหม?</p></div>
+          <div class="card yellow"><h3>JavaScript</h3><p>จัดการ event, state, validation และ render</p><p class="muted">ถามตัวเอง: handler สั้นและเรียก function ที่มีหน้าที่เดียวหรือไม่?</p></div>
+        </div>
+        <div class="callout blue" style="margin-top:1rem">หลักสำคัญ: ไม่ใส่ <code>onclick</code> กระจัดกระจายใน HTML แต่ใช้ <code>id/name</code> แล้วผูกด้วย <code>addEventListener</code></div>
+      </section>
+
+      <section class="section" id="semantic">
+        <span class="pill">3 • Semantic HTML</span>
+        <h2>เลือก element ให้ตรงกับบทบาทของข้อมูล</h2>
+        <div class="grid two">
+          <div class="image-card"><img src="images/semantic-html-landmarks.png" alt="Semantic HTML landmarks"><div class="caption">Landmark ช่วยให้คนอ่านโค้ด โปรแกรมอ่านหน้าจอ และ React component เข้าใจโครงสร้างเดียวกัน</div></div>
+          <div class="card">
+            <h3>Landmark Inspector</h3>
+            <p class="muted">เลือกส่วนที่ต้องการ highlight เพื่อเห็นโครงสร้างหน้าเว็บ</p>
+            <div class="tabs" role="group" aria-label="highlight landmark">
+              <button class="ghost mark-btn" data-mark="l-header">header</button>
+              <button class="ghost mark-btn" data-mark="l-nav">nav</button>
+              <button class="ghost mark-btn" data-mark="l-main">main</button>
+              <button class="ghost mark-btn" data-mark="l-aside">aside</button>
+              <button class="ghost mark-btn" data-mark="l-footer">footer</button>
+            </div>
+            <div class="landmark-preview" id="landmarkPreview">
+              <div class="l-header"><strong>&lt;header&gt;</strong> ชื่อระบบ / คำอธิบาย</div>
+              <div class="l-row"><div class="l-nav"><strong>&lt;nav&gt;</strong><br>เมนูหลัก</div><div class="l-main"><strong>&lt;main&gt;</strong><br><div class="l-section">&lt;section&gt; form</div><div class="l-section">&lt;section&gt; list</div></div><div class="l-aside"><strong>&lt;aside&gt;</strong><br>preview/status</div></div>
+              <div class="l-footer"><strong>&lt;footer&gt;</strong> ข้อมูลเสริม</div>
+            </div>
+            <pre><code>&lt;main class="container page-grid"&gt;
+  &lt;section aria-labelledby="form-title"&gt;...&lt;/section&gt;
+  &lt;aside aria-labelledby="preview-title"&gt;...&lt;/aside&gt;
+&lt;/main&gt;</code></pre>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="css">
+        <span class="pill">4 • CSS Layout</span>
+        <h2>Box Model → Flexbox/Grid → Responsive</h2>
+        <div class="grid two">
+          <div class="image-card"><img src="images/css-layout-mental-model.png" alt="CSS Layout Mental Model"><div class="caption">เริ่มจากกล่องของ element ก่อนเลือก Flexbox หรือ Grid</div></div>
+          <div class="card">
+            <h3>Box Model Visualizer</h3>
+            <div class="box-model">
+              <div class="box" id="boxMargin"><span>margin</span><div class="border" id="boxBorder"><span>border</span><div class="padding" id="boxPadding"><span>padding</span><div class="content">content</div></div></div></div>
+            </div>
+            <div class="range-row"><label>Padding <span id="paddingValue">24</span>px</label><input type="range" min="6" max="60" value="24" id="paddingRange"></div>
+            <div class="range-row"><label>Border <span id="borderValue">3</span>px</label><input type="range" min="1" max="12" value="3" id="borderRange"></div>
+            <div class="callout">ใช้ <code>box-sizing: border-box</code> เพื่อให้ width รวม padding และ border ช่วยลดปัญหา layout ล้น</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="responsive">
+        <span class="pill">5 • Responsive Layout</span>
+        <h2>เนื้อหาเดียวกัน ปรับตามพื้นที่</h2>
+        <p>Responsive Design ไม่ใช่การทำหน้าแยกหลายชุด แต่คือการใช้โครงสร้างเดียวกันให้ปรับ layout ตามพื้นที่และการใช้งานจริง</p>
+        <div class="grid two">
+          <div class="image-card"><img src="images/responsive-design-viewports.png" alt="Responsive design viewports"><div class="caption">Breakpoint ควรมาจากเนื้อหาที่เริ่มอ่านยาก ไม่ใช่จำชื่ออุปกรณ์</div></div>
+          <div class="card">
+            <h3>Responsive Preview Lab</h3>
+            <div class="device-toolbar">
+              <div class="tabs">
+                <button class="ghost device-btn" data-width="375px">Mobile 375</button>
+                <button class="ghost device-btn" data-width="768px">Tablet 768</button>
+                <button class="ghost device-btn" data-width="100%">Desktop</button>
+              </div>
+              <span class="pill" id="deviceLabel">Desktop</span>
+            </div>
+            <div class="device-shell"><div class="device-frame" id="responsiveDevice"><iframe title="responsive preview" id="responsiveFrame" sandbox="allow-scripts"></iframe></div></div>
+          </div>
+        </div>
+        <pre><code>.container { width: min(100% - 2rem, 70rem); margin-inline: auto; }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); }
+@media (min-width: 48rem) {
+  .page-grid { grid-template-columns: minmax(0, 2fr) minmax(18rem, 1fr); }
+}</code></pre>
+      </section>
+
+      <section class="section" id="events">
+        <span class="pill">6 • Event-driven UI</span>
+        <h2>Action → Event → Handler → State → Render</h2>
+        <div class="flow" aria-label="event flow">
+          <div class="step">User action</div><div class="step">Browser event</div><div class="step">Handler</div><div class="step">Validate</div><div class="step">Update state</div><div class="step">Render feedback</div>
+        </div>
+        <div class="grid two" style="margin-top:1rem">
+          <div class="image-card"><img src="images/event-driven-ui-flow.png" alt="Event driven UI flow"><div class="caption">event.preventDefault() ป้องกัน form reload เพื่อให้เรา validate และ render เอง</div></div>
+          <div class="card">
+            <h3>Event Inspector</h3>
+            <p class="muted">พิมพ์ กดปุ่ม และ submit form เพื่อดู <code>event.type</code>, <code>target</code>, <code>currentTarget</code></p>
+            <form id="eventForm" class="service-form">
+              <label>พิมพ์ข้อความ <input name="demoInput" placeholder="ลองพิมพ์ที่นี่"></label>
+              <button type="button" id="demoClick">Click event</button>
+              <button type="submit">Submit form</button>
+            </form>
+            <div class="event-log" id="eventLog" aria-live="polite"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="form">
+        <span class="pill">7 • Form + Validation</span>
+        <h2>Campus Service Request Mini App</h2>
+        <p>ตัวอย่างนี้รวม semantic structure, mobile-first layout, live preview, validation, feedback และรายการข้อมูลหลัง submit สำเร็จ</p>
+        <div class="grid two" style="align-items:start">
+          <div class="image-card"><img src="images/lab3-campus-service-request.png" alt="Campus Service Request final screen"><div class="caption">ผลลัพธ์ปลายทางของ LAB 3</div></div>
+          <div class="image-card"><img src="images/form-state-feedback.png" alt="Form State Feedback"><div class="caption">Feedback ต้องบอกสาเหตุและทางแก้ ไม่ใช่ใช้สีอย่างเดียว</div></div>
+        </div>
+        <div class="form-grid" style="margin-top:1rem">
+          <form id="requestForm" class="service-form card" novalidate>
+            <h3 id="form-title">Create Service Request</h3>
+            <p id="formStatus" class="callout blue" role="status">Ready — กรอกข้อมูลแล้วดู Live Preview ทางขวา</p>
+            <label for="requesterName">Requester name
+              <input id="requesterName" name="requesterName" aria-describedby="requesterName-error" autocomplete="name">
+              <small id="requesterName-error" class="error"></small>
+            </label>
+            <label for="requestType">Request type
+              <select id="requestType" name="requestType" aria-describedby="requestType-error">
+                <option value="">เลือกประเภทคำขอ</option><option>ห้องเรียน / อุปกรณ์</option><option>Software account</option><option>Network / Internet</option><option>อื่น ๆ</option>
+              </select>
+              <small id="requestType-error" class="error"></small>
+            </label>
+            <label for="details">Details
+              <textarea id="details" name="details" aria-describedby="details-hint details-error" minlength="10" placeholder="อธิบายรายละเอียดอย่างน้อย 10 ตัวอักษร"></textarea>
+              <small id="details-hint" class="muted">อย่าลบข้อมูลเดิมเมื่อ validation ไม่ผ่าน</small>
+              <small id="details-error" class="error"></small>
+            </label>
+            <div class="runner-actions">
+              <button type="submit">Submit request</button><button type="button" class="secondary" id="fillValid">Fill valid sample</button><button type="button" class="ghost" id="clearForm">Clear</button>
+            </div>
+          </form>
+          <aside class="preview-card" aria-labelledby="preview-title">
+            <h3 id="preview-title">Live Preview</h3>
+            <p><strong>Name:</strong> <span id="previewName">ยังไม่ระบุชื่อ</span></p>
+            <p><strong>Type:</strong> <span id="previewType">ยังไม่เลือกประเภท</span></p>
+            <p><strong>Details:</strong> <span id="previewDetails">ยังไม่มีรายละเอียด</span></p>
+            <h3>Submitted requests</h3>
+            <ul class="request-list" id="requestList"><li><strong>ตัวอย่าง • Network / Internet</strong><span>ขอตรวจสอบ Wi-Fi ห้องเรียน</span></li></ul>
+          </aside>
+        </div>
+      </section>
+
+      <section class="section" id="runner">
+        <span class="pill">8 • Code Playground</span>
+        <h2>ปรับโค้ดแล้ว Run เห็นผลทันที</h2>
+        <p>เลือก preset แล้วแก้ HTML/CSS/JS เพื่อทดลองแนวคิดของ Week 03 ด้วยตัวเอง</p>
+        <div class="sandbox">
+          <div class="editor-pane card">
+            <div class="device-toolbar">
+              <label><strong>Preset:</strong> <select id="presetSelect"><option value="semantic">Semantic Form</option><option value="responsive">Responsive Cards</option><option value="event">Event Delegation</option><option value="validation">Form Validation</option></select></label>
+              <button id="loadPreset" class="secondary">Load preset</button>
+            </div>
+            <div class="editor-set">
+              <label>HTML<textarea id="htmlEditor" spellcheck="false"></textarea></label>
+              <label>CSS<textarea id="cssEditor" spellcheck="false"></textarea></label>
+              <label>JavaScript<textarea id="jsEditor" spellcheck="false"></textarea></label>
+            </div>
+            <div class="runner-actions"><button id="runCode">Run ▶</button><button class="ghost" id="copyCode">Copy combined HTML</button></div>
+            <p class="muted">หมายเหตุ: ใช้ iframe sandbox แยกจากหน้าหลัก เหมาะสำหรับฝึกแก้โค้ด UI เบื้องต้น</p>
+          </div>
+          <div class="preview-pane card">
+            <h3>Result</h3>
+            <iframe class="preview-frame" id="codeFrame" sandbox="allow-scripts allow-forms" title="code playground preview"></iframe>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="lab3">
+        <span class="pill">9 • LAB 3</span>
+        <h2>Checklist ก่อนส่งงาน</h2>
+        <div class="grid two">
+          <div class="card">
+            <h3>เกณฑ์ LAB 3</h3>
+            <div class="checklist" id="labChecklist">
+              <label><input type="checkbox"> Semantic HTML: landmark, heading, label, name/id, keyboard focus</label>
+              <label><input type="checkbox"> Responsive: ใช้ mobile-first, Grid/Flexbox, ทดสอบ 375px และ Desktop</label>
+              <label><input type="checkbox"> Event: มี input/submit event, FormData, DOM update, ไม่มี console error</label>
+              <label><input type="checkbox"> Validation: มี invalid/success state, ข้อความแก้ไขได้, ไม่ลบข้อมูลเมื่อผิด</label>
+              <label><input type="checkbox"> Git: feature branch, commit, PR, README, GitHub Pages</label>
+              <label><input type="checkbox"> Test evidence: ภาพ Desktop/Mobile และคำอธิบาย test cases</label>
+            </div>
+            <p>ความพร้อม: <span class="score" id="checkScore">0%</span></p>
+          </div>
+          <div class="card green">
+            <h3>สิ่งที่ต้องส่ง</h3>
+            <ul class="clean">
+              <li>Repository URL</li>
+              <li>Pull Request URL ที่ merge แล้ว</li>
+              <li>GitHub Pages URL</li>
+              <li>ภาพ Desktop และ Mobile พร้อมคำอธิบายการทดสอบ</li>
+              <li>README: features, วิธีรัน, test cases, screenshots, สิ่งที่ได้เรียนรู้</li>
+            </ul>
+            <div class="callout red"><strong>ห้าม:</strong> commit <code>node_modules</code>, <code>.env</code>, token, password หรือข้อมูลส่วนบุคคลที่ไม่จำเป็น</div>
+          </div>
+        </div>
+      </section>
+
+      <p class="footer-note">ENGSE203 Week 03 Interactive Sandbox • ใช้ประกอบการเรียนรู้ด้วยตนเองและการสอนแบบ Projector</p>
+    </main>
+  </div>
+
+  <script>
+  const $ = (sel, root=document) => root.querySelector(sel);
+  const $$ = (sel, root=document) => Array.from(root.querySelectorAll(sel));
+
+  let fontScale = 1;
+  function applyFont(){ document.documentElement.style.setProperty('--fontScale', fontScale.toFixed(2)); }
+  $('#increaseFont').addEventListener('click',()=>{fontScale=Math.min(1.35,fontScale+.08);applyFont();});
+  $('#decreaseFont').addEventListener('click',()=>{fontScale=Math.max(.85,fontScale-.08);applyFont();});
+  $('#resetFont').addEventListener('click',()=>{fontScale=1;applyFont();});
+  $('#toggleFull').addEventListener('click',()=>{ if(!document.fullscreenElement){document.documentElement.requestFullscreen?.();}else{document.exitFullscreen?.();}});
+
+  const navLinks = $$('.nav a');
+  const sections = navLinks.map(a => $(a.getAttribute('href'))).filter(Boolean);
+  const io = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if(entry.isIntersecting){
+        navLinks.forEach(a=>a.classList.toggle('active', a.getAttribute('href') === '#' + entry.target.id));
+      }
+    });
+  }, {rootMargin:'-30% 0px -60% 0px', threshold:.05});
+  sections.forEach(s=>io.observe(s));
+
+  $('#badSubmit').addEventListener('click',()=> alert('ไม่มี feedback บนหน้า → ผู้ใช้ไม่รู้ว่าระบบทำอะไรแล้ว'));
+  $('#goodSubmit').addEventListener('click',()=>{
+    const name = $('#uiName').value.trim(); const details = $('#uiDetails').value.trim();
+    $('#uiStatus').textContent = name && details ? `Success — รับคำขอของ ${name} แล้ว` : 'Error — กรุณากรอกชื่อและรายละเอียดก่อนส่ง';
+    $('#uiStatus').style.background = name && details ? '#e7f7f1' : '#fff1f0';
+    $('#uiStatus').style.color = name && details ? '#0b6045' : '#8b1e16';
+  });
+
+  $$('.mark-btn').forEach(btn=>btn.addEventListener('click',()=>{
+    $$('.landmark-preview > div, .landmark-preview .l-row > div').forEach(el=>el.classList.remove('highlight'));
+    const target = $('.' + btn.dataset.mark, $('#landmarkPreview'));
+    if(target) target.classList.add('highlight');
+  }));
+
+  $('#paddingRange').addEventListener('input', e=>{ $('#paddingValue').textContent=e.target.value; $('#boxPadding').style.padding=e.target.value+'px'; });
+  $('#borderRange').addEventListener('input', e=>{ $('#borderValue').textContent=e.target.value; $('#boxBorder').style.borderWidth=e.target.value+'px'; });
+
+  const responsiveSrc = `<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>
+    *{box-sizing:border-box} body{font-family:system-ui,sans-serif;margin:0;background:#f4f7fb;color:#17243a}.hero{background:#1456a0;color:white;padding:1.5rem}main{width:min(100% - 2rem,70rem);margin:1rem auto}.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(9rem,1fr));gap:.8rem}.card,.form,.preview{background:white;border:1px solid #d5e3f3;border-radius:1rem;padding:1rem;box-shadow:0 8px 18px rgba(20,86,160,.08)}.page-grid{display:grid;grid-template-columns:1fr;gap:1rem}input,textarea,select,button{width:100%;padding:.75rem;margin:.35rem 0;border-radius:.7rem;border:1px solid #bcd0e5}button{background:#1456a0;color:white;font-weight:800}@media(min-width:48rem){.page-grid{grid-template-columns:minmax(0,2fr) minmax(18rem,1fr)}}
+  </style></head><body><header class="hero"><h1>Campus Service Request</h1><p>Responsive Web UI + Event + Form</p></header><main><section class="stats"><article class="card"><b>Total</b><h2>12</h2></article><article class="card"><b>Pending</b><h2>5</h2></article><article class="card"><b>Approved</b><h2>7</h2></article></section><section class="page-grid"><form class="form"><h2>Create request</h2><input placeholder="Requester name"><select><option>Request type</option></select><textarea placeholder="Details"></textarea><button>Submit</button></form><aside class="preview"><h2>Live Preview</h2><p>Desktop: 2 columns</p><p>Mobile: 1 column</p></aside></section></main></body></html>`;
+  function setResponsive(width,label){ $('#responsiveDevice').style.setProperty('--deviceW', width); $('#deviceLabel').textContent = label; $('#responsiveFrame').srcdoc = responsiveSrc; }
+  $$('.device-btn').forEach(btn=>btn.addEventListener('click',()=>setResponsive(btn.dataset.width, btn.textContent)));
+  setResponsive('100%','Desktop');
+
+  const log = msg => { const out=$('#eventLog'); out.textContent = `[${new Date().toLocaleTimeString()}] ${msg}\n` + out.textContent; };
+  $('#eventForm').addEventListener('input', e=> log(`input: target=${e.target.tagName.toLowerCase()} name=${e.target.name || '-'} currentTarget=form`));
+  $('#demoClick').addEventListener('click', e=> log(`click: target=${e.target.tagName.toLowerCase()} currentTarget=button`));
+  $('#eventForm').addEventListener('submit', e=>{ e.preventDefault(); log('submit: preventDefault() แล้ว จึงไม่ reload หน้า'); });
+  log('พร้อมทดลอง event');
+
+  const requestForm = $('#requestForm');
+  function readForm(form){ return Object.fromEntries(new FormData(form).entries()); }
+  function renderPreview(data){ $('#previewName').textContent=data.requesterName || 'ยังไม่ระบุชื่อ'; $('#previewType').textContent=data.requestType || 'ยังไม่เลือกประเภท'; $('#previewDetails').textContent=data.details || 'ยังไม่มีรายละเอียด'; }
+  function validate(data){
+    const errors={};
+    if((data.requesterName||'').trim().length < 2) errors.requesterName='กรุณากรอกชื่ออย่างน้อย 2 ตัวอักษร';
+    if(!data.requestType) errors.requestType='กรุณาเลือกประเภทคำขอ';
+    if((data.details||'').trim().length < 10) errors.details='กรุณาอธิบายอย่างน้อย 10 ตัวอักษร';
+    return errors;
+  }
+  function renderErrors(errors){
+    ['requesterName','requestType','details'].forEach(name=>{
+      const field = document.querySelector(`[name="${name}"]`);
+      const output = document.querySelector(`#${name}-error`);
+      const message = errors[name] || '';
+      output.textContent = message;
+      field.setAttribute('aria-invalid', String(Boolean(message)));
+    });
+  }
+  requestForm.addEventListener('input', e=> renderPreview(readForm(e.currentTarget)));
+  requestForm.addEventListener('submit', e=>{
+    e.preventDefault();
+    const data = readForm(e.currentTarget); const errors = validate(data); renderErrors(errors);
+    if(Object.keys(errors).length){ $('#formStatus').className='callout red'; $('#formStatus').textContent='Invalid — กรุณาตรวจสอบข้อมูลที่ระบุ'; return; }
+    const li=document.createElement('li'); const strong=document.createElement('strong'); const span=document.createElement('span');
+    strong.textContent = `${data.requesterName} • ${data.requestType}`; span.textContent = data.details; li.append(strong,span); $('#requestList').prepend(li);
+    $('#formStatus').className='callout green'; $('#formStatus').textContent='Success — บันทึกคำขอเรียบร้อยและเพิ่มในรายการแล้ว';
+    e.currentTarget.reset(); renderPreview(readForm(e.currentTarget)); renderErrors({});
+  });
+  $('#fillValid').addEventListener('click',()=>{ requestForm.requesterName.value='นักศึกษา ENGSE203'; requestForm.requestType.value='Software account'; requestForm.details.value='ขอเปิดบัญชีสำหรับทดลองระบบ LAB 3 ในห้องเรียน'; renderPreview(readForm(requestForm)); renderErrors({}); $('#formStatus').className='callout blue'; $('#formStatus').textContent='Sample filled — ลองกด Submit request'; });
+  $('#clearForm').addEventListener('click',()=>{ requestForm.reset(); renderPreview(readForm(requestForm)); renderErrors({}); $('#formStatus').className='callout blue'; $('#formStatus').textContent='Ready — กรอกข้อมูลแล้วดู Live Preview ทางขวา'; });
+
+  const presets = {
+    semantic:{
+      html:`<header class="hero"><p>ENGSE203 • LAB 3</p><h1>Campus Service Request</h1></header>
+<main class="page-grid">
+  <section aria-labelledby="form-title">
+    <h2 id="form-title">Create request</h2>
+    <form id="request-form" novalidate>
+      <label for="name">Requester name</label>
+      <input id="name" name="requesterName" placeholder="Your name">
+      <button type="submit">Submit request</button>
+    </form>
+  </section>
+  <aside aria-labelledby="preview-title"><h2 id="preview-title">Preview</h2><p id="result">Ready</p></aside>
+</main>`,
+      css:`body{font-family:system-ui,sans-serif;margin:0;background:#f4f7fb;color:#17243a}.hero{background:#1456a0;color:white;padding:2rem}.page-grid{display:grid;gap:1rem;width:min(100% - 2rem,60rem);margin:1rem auto}section,aside{background:white;border:1px solid #d8e6f5;border-radius:1rem;padding:1rem}label,input,button{display:block;width:100%;margin:.5rem 0}input,button{padding:.75rem;border-radius:.6rem;border:1px solid #bdd0e3}button{background:#1456a0;color:white;font-weight:800}@media(min-width:48rem){.page-grid{grid-template-columns:2fr 1fr}}`,
+      js:`const form = document.querySelector('#request-form');
+const result = document.querySelector('#result');
+form.addEventListener('submit', (event) => {
+  event.preventDefault();
+  const data = Object.fromEntries(new FormData(form).entries());
+  result.textContent = data.requesterName ? 'Hello ' + data.requesterName : 'Please enter your name';
+});`
+    },
+    responsive:{
+      html:`<main class="container"><h1>Responsive Cards</h1><section class="cards"><article>Mobile first</article><article>Grid auto-fit</article><article>Flexible width</article><article>Readable spacing</article></section></main>`,
+      css:`*{box-sizing:border-box}body{font-family:system-ui,sans-serif;margin:0;background:#eef5ff}.container{width:min(100% - 2rem,70rem);margin:2rem auto}.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(12rem,1fr));gap:1rem}article{background:white;border:1px solid #bdd6f2;border-radius:1rem;padding:1.4rem;font-size:1.25rem;font-weight:800;color:#1456a0;box-shadow:0 8px 20px #1456a018}h1{font-size:clamp(2rem,5vw,4rem);color:#0c3d73}`,
+      js:`console.log('Resize the preview area or open on mobile to see auto-fit behavior');`
+    },
+    event:{
+      html:`<main><h1>Event Delegation</h1><form id="demo-form"><input name="message" placeholder="Type something"><select name="level"><option>Normal</option><option>Urgent</option></select><button>Submit</button></form><pre id="log">Ready</pre></main>`,
+      css:`body{font-family:system-ui,sans-serif;margin:0;background:#f7fbff;color:#17243a}main{width:min(100% - 2rem,42rem);margin:2rem auto}form{display:grid;gap:.7rem;background:white;border:1px solid #cfe0f2;border-radius:1rem;padding:1rem}input,select,button{padding:.8rem;border-radius:.7rem;border:1px solid #bdd0e3}button{background:#1456a0;color:white;font-weight:800}pre{background:#071d38;color:#dcfce7;border-radius:1rem;padding:1rem;min-height:8rem}`,
+      js:`const form = document.querySelector('#demo-form');
+const log = document.querySelector('#log');
+function write(message){ log.textContent = message + '\n' + log.textContent; }
+form.addEventListener('input', (event) => {
+  write('input target=' + event.target.name + ', currentTarget=form');
+});
+form.addEventListener('submit', (event) => {
+  event.preventDefault();
+  write('submit prevented; form will not reload page');
+});`
+    },
+    validation:{
+      html:`<main><h1>Validation Practice</h1><form id="request-form" novalidate><label>Name<input name="name"><small id="name-error"></small></label><label>Details<textarea name="details"></textarea><small id="details-error"></small></label><button>Submit</button></form><p id="status" role="status">Ready</p></main>`,
+      css:`body{font-family:system-ui,sans-serif;background:#f4f7fb;color:#17243a}main{width:min(100% - 2rem,42rem);margin:2rem auto}form{background:white;border:1px solid #cfe0f2;border-radius:1rem;padding:1rem}label{display:grid;gap:.3rem;margin:.7rem 0;font-weight:800}input,textarea,button{padding:.8rem;border-radius:.7rem;border:1px solid #bdd0e3}button{background:#1456a0;color:white;font-weight:900}.error,small{min-height:1.2rem;color:#b42318}input[aria-invalid="true"],textarea[aria-invalid="true"]{border-color:#b42318;box-shadow:0 0 0 3px #b4231820}#status{padding:1rem;border-radius:1rem;background:#e8f2ff;font-weight:800}`,
+      js:`const form = document.querySelector('#request-form');
+function validate(data){
+  const errors = {};
+  if(data.name.trim().length < 2) errors.name = 'Name must be at least 2 characters';
+  if(data.details.trim().length < 10) errors.details = 'Details must be at least 10 characters';
+  return errors;
+}
+function renderErrors(errors){
+  ['name','details'].forEach(name => {
+    const field = form.elements[name];
+    const output = document.querySelector('#' + name + '-error');
+    const message = errors[name] || '';
+    output.textContent = message;
+    field.setAttribute('aria-invalid', String(Boolean(message)));
+  });
+}
+form.addEventListener('submit', event => {
+  event.preventDefault();
+  const data = Object.fromEntries(new FormData(form).entries());
+  const errors = validate(data);
+  renderErrors(errors);
+  document.querySelector('#status').textContent = Object.keys(errors).length ? 'Invalid: please fix the form' : 'Success: request saved';
+});`
+    }
+  };
+  function loadPreset(){ const p=presets[$('#presetSelect').value]; $('#htmlEditor').value=p.html; $('#cssEditor').value=p.css; $('#jsEditor').value=p.js; runCode(); }
+  function runCode(){
+    const html = $('#htmlEditor').value, css=$('#cssEditor').value, js=$('#jsEditor').value;
+    const src = `<!doctype html><html><head><meta name="viewport" content="width=device-width, initial-scale=1"><style>${css}</style></head><body>${html}<script>try{${js}}catch(error){document.body.insertAdjacentHTML('beforeend','<pre style="background:#fee;color:#900;padding:1rem;border-radius:1rem">'+error.message+'</pre>')}<\/script></body></html>`;
+    $('#codeFrame').srcdoc = src;
+  }
+  $('#loadPreset').addEventListener('click', loadPreset); $('#runCode').addEventListener('click', runCode);
+  $('#presetSelect').addEventListener('change', loadPreset);
+  $('#copyCode').addEventListener('click', async()=>{ const combined = `<!doctype html><html><head><style>${$('#cssEditor').value}</style></head><body>${$('#htmlEditor').value}<script>${$('#jsEditor').value}<\/script></body></html>`; try{await navigator.clipboard.writeText(combined); alert('Copied combined HTML');}catch{alert('Clipboard unavailable');} });
+  loadPreset();
+
+  function updateScore(){ const items=$$('#labChecklist input'); const done=items.filter(i=>i.checked).length; $('#checkScore').textContent = Math.round(done/items.length*100) + '%'; }
+  $$('#labChecklist input').forEach(i=>i.addEventListener('change', updateScore)); updateScore();
+  </script>
+</body>
+</html>

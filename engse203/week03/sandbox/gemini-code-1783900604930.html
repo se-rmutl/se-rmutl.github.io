@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ENGSE203 Week 3 Sandbox: Campus Service Request</title>
+  <style>
+    /* 
+      ========================================
+      CSS: เลเยอร์ควบคุมความสวยงามและ Layout
+      ========================================
+    */
+    
+    /* 1. CSS Foundation & Variables */
+    *, *::before, *::after { box-sizing: border-box; }
+    
+    :root {
+      --color-primary: #1456a0;
+      --color-primary-hover: #0f407a;
+      --color-bg: #f4f7fb;
+      --color-text: #17243a;
+      --color-error: #b42318;
+      --color-success: #059669;
+      --color-border: #cbd5e1;
+      --color-surface: #ffffff;
+      --space-1: 0.5rem;
+      --space-2: 1rem;
+      --space-3: 1.5rem;
+      --radius: 8px;
+    }
+
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, sans-serif;
+      background: var(--color-bg);
+      color: var(--color-text);
+      line-height: 1.5;
+    }
+
+    /* 2. Layout & Responsive Design (Mobile-First) */
+    .container {
+      width: min(100% - 2rem, 70rem);
+      margin-inline: auto;
+      padding-block: var(--space-3);
+    }
+
+    .hero {
+      background-color: var(--color-primary);
+      color: white;
+      padding-block: var(--space-3);
+      margin-bottom: var(--space-3);
+    }
+
+    .hero p { margin: 0; opacity: 0.8; font-size: 0.875rem; font-weight: bold; }
+    .hero h1 { margin: 0; font-size: clamp(1.5rem, 4vw, 2.5rem); }
+
+    /* Mobile First: 1 คอลัมน์ */
+    .page-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: var(--space-3);
+      align-items: start;
+    }
+
+    /* Breakpoint: ขยายเป็น 2 คอลัมน์เมื่อพื้นที่พอ (Tablet/Desktop) */
+    @media (min-width: 48rem) {
+      .page-grid {
+        /* Form ใช้พื้นที่ 2 ส่วน, Preview ใช้พื้นที่ 1 ส่วน ขั้นต่ำ 18rem */
+        grid-template-columns: minmax(0, 2fr) minmax(18rem, 1fr);
+      }
+    }
+
+    /* 3. Component Styles (Cards, Forms, Buttons) */
+    .card {
+      background: var(--color-surface);
+      padding: var(--space-3);
+      border-radius: var(--radius);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      border: 1px solid var(--color-border);
+    }
+
+    .card h2 { margin-top: 0; color: var(--color-primary); }
+
+    .form-group { margin-bottom: var(--space-3); }
+    
+    label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: var(--space-1);
+    }
+
+    input, select, textarea {
+      width: 100%;
+      padding: 0.75rem;
+      border: 1px solid var(--color-border);
+      border-radius: calc(var(--radius) / 2);
+      font-family: inherit;
+      font-size: 1rem;
+      transition: outline 0.2s;
+    }
+
+    /* Accessibility: Focus state ชัดเจน */
+    input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-visible {
+      outline: 3px solid #f2b705;
+      outline-offset: 2px;
+      border-color: var(--color-primary);
+    }
+
+    /* Validation Styles */
+    input[aria-invalid="true"], select[aria-invalid="true"], textarea[aria-invalid="true"] {
+      border-color: var(--color-error);
+      background-color: #fef2f2;
+    }
+
+    .hint {
+      display: block;
+      font-size: 0.875rem;
+      color: #64748b;
+      margin-top: 0.25rem;
+    }
+
+    .error-msg {
+      display: block;
+      min-height: 1.25rem; /* จองพื้นที่ไม่ให้ Layout กระโดด */
+      color: var(--color-error);
+      font-size: 0.875rem;
+      margin-top: 0.25rem;
+      font-weight: 500;
+    }
+
+    button {
+      background-color: var(--color-primary);
+      color: white;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      font-size: 1rem;
+      font-weight: bold;
+      border-radius: calc(var(--radius) / 2);
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+
+    button:hover { background-color: var(--color-primary-hover); }
+
+    /* Preview Section */
+    .preview-card { background-color: #f0fdf4; border-color: #bbf7d0; }
+    .preview-card h2 { color: var(--color-success); }
+    .preview-item { margin-bottom: var(--space-2); }
+    .preview-label { font-size: 0.875rem; color: #166534; font-weight: bold; }
+    .preview-value { font-size: 1rem; color: #14532d; word-break: break-word; }
+
+    #status-message {
+      margin-left: var(--space-2);
+      font-weight: bold;
+    }
+    .status-success { color: var(--color-success); }
+    .status-error { color: var(--color-error); }
+
+    .flex-actions {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    /* Request List */
+    #request-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    #request-list li {
+      padding: var(--space-2);
+      border-bottom: 1px solid var(--color-border);
+      display: flex;
+      flex-direction: column;
+    }
+    #request-list li:last-child { border-bottom: none; }
+    #request-list strong { color: var(--color-primary); }
+  </style>
+</head>
+<body>
+
+  <!-- 
+    ========================================
+    HTML: เลเยอร์ความหมาย โครงสร้าง และ Accessibility
+    ========================================
+  -->
+  <header class="hero">
+    <div class="container">
+      <p class="eyebrow">ENGSE203 • LAB 3 Sandbox</p>
+      <h1>Campus Service Request</h1>
+    </div>
+  </header>
+
+  <main class="container page-grid">
+    <!-- ส่วนฟอร์มหลัก -->
+    <section class="card" aria-labelledby="form-title">
+      <h2 id="form-title">Create Service Request</h2>
+      
+      <!-- ใช้ id และ name ให้ชัดเจน เพื่อให้ JS อ่าน FormData ได้ -->
+      <form id="request-form" novalidate>
+        
+        <div class="form-group">
+          <label for="requester-name">Requester Name</label>
+          <input 
+            type="text" 
+            id="requester-name" 
+            name="requesterName" 
+            aria-describedby="requesterName-error"
+            placeholder="ชื่อ-นามสกุล ผู้แจ้ง"
+          >
+          <small id="requesterName-error" class="error-msg" aria-live="polite"></small>
+        </div>
+
+        <div class="form-group">
+          <label for="request-type">Request Type</label>
+          <select id="request-type" name="requestType" aria-describedby="requestType-error">
+            <option value="">-- เลือกประเภทบริการ --</option>
+            <option value="IT Support">IT Support (ซ่อมคอม/เครือข่าย)</option>
+            <option value="Facility">Facility (ซ่อมแอร์/ไฟ/อาคาร)</option>
+            <option value="Academic">Academic (ระบบทะเบียน/ยืมอุปกรณ์)</option>
+          </select>
+          <small id="requestType-error" class="error-msg" aria-live="polite"></small>
+        </div>
+
+        <div class="form-group">
+          <label for="details">Details</label>
+          <textarea 
+            id="details" 
+            name="details" 
+            rows="4" 
+            aria-describedby="details-hint details-error"
+          ></textarea>
+          <small id="details-hint" class="hint">อธิบายปัญหาอย่างน้อย 10 ตัวอักษร</small>
+          <small id="details-error" class="error-msg" aria-live="polite"></small>
+        </div>
+
+        <div class="form-group flex-actions">
+          <button type="submit">Submit Request</button>
+          <!-- role="status" เพื่อให้ Screen Reader อ่านสถานะเมื่ออัปเดต -->
+          <span id="status-message" role="status"></span>
+        </div>
+
+      </form>
+    </section>
+
+    <!-- ส่วน Sidebar สำหรับ Live Preview -->
+    <aside class="card preview-card" aria-labelledby="preview-title">
+      <h2 id="preview-title">Live Preview</h2>
+      <div class="preview-item">
+        <div class="preview-label">Name:</div>
+        <div class="preview-value" id="prev-name">ยังไม่ระบุชื่อ</div>
+      </div>
+      <div class="preview-item">
+        <div class="preview-label">Type:</div>
+        <div class="preview-value" id="prev-type">ยังไม่เลือกประเภท</div>
+      </div>
+      <div class="preview-item">
+        <div class="preview-label">Details:</div>
+        <div class="preview-value" id="prev-details">ยังไม่มีรายละเอียด</div>
+      </div>
+    </aside>
+
+    <!-- ส่วนแสดงรายการที่บันทึกแล้ว จะอยู่ด้านล่างฟอร์ม -->
+    <section class="card" style="grid-column: 1 / -1; margin-top: var(--space-2);">
+      <h2>Submitted Requests</h2>
+      <ul id="request-list">
+        <li><span style="color: #64748b;">ยังไม่มีคำขอในระบบ...</span></li>
+      </ul>
+    </section>
+  </main>
+
+  <!-- 
+    ========================================
+    JavaScript: เลเยอร์ Event, Logic และ DOM Update
+    ========================================
+  -->
+  <script>
+    // 1. DOM Elements (ดึง Element ที่ต้องใช้มารอไว้)
+    const form = document.getElementById('request-form');
+    const statusMessage = document.getElementById('status-message');
+    const requestList = document.getElementById('request-list');
+    let requestCount = 0;
+
+    // 2. Event Listeners (Event-driven Programming)
+    
+    // Event: ทำงานทุกครั้งที่ผู้ใช้พิมพ์หรือเปลี่ยนค่า (Live Preview)
+    form.addEventListener('input', (event) => {
+      // currentTarget คือ form ที่ผูก Listener ไว้
+      const data = Object.fromEntries(new FormData(event.currentTarget).entries());
+      renderPreview(data);
+      
+      // (Optional) ลบ Error ทิ้งเมื่อผู้ใช้เริ่มพิมพ์แก้
+      const targetName = event.target.name;
+      clearErrorFor(targetName);
+    });
+
+    // Event: ทำงานเมื่อกด Submit ฟอร์ม
+    form.addEventListener('submit', (event) => {
+      event.preventDefault(); // ป้องกันพฤติกรรมเดิมที่ทำให้หน้าเว็บ Refresh
+
+      const data = readForm(event.currentTarget);
+      const errors = validate(data);
+      
+      renderErrors(errors);
+
+      if (Object.keys(errors).length > 0) {
+        // กรณีมี Error
+        renderStatus('invalid', 'กรุณาตรวจสอบข้อมูลที่ระบุให้ถูกต้อง');
+        return; // จบการทำงานฟังก์ชันนี้ทันที ไม่ไปต่อ
+      }
+
+      // กรณีข้อมูลถูกต้อง (Success Path)
+      addRequestToList(data);
+      renderStatus('success', '✓ บันทึกคำขอเรียบร้อย');
+      
+      // Reset ฟอร์มและ Preview กลับสู่สถานะเริ่มต้น
+      form.reset();
+      renderPreview(readForm(form));
+    });
+
+    // 3. Logic & Pure Functions
+
+    // อ่านค่าจาก Form ออกมาเป็น Object สมบูรณ์
+    function readForm(formElement) {
+      return Object.fromEntries(new FormData(formElement).entries());
+    }
+
+    // ฟังก์ชันตรวจสอบกฎธุรกิจ (Pure Function - ไม่แตะ DOM)
+    function validate(data) {
+      const errors = {};
+      
+      if (!data.requesterName || data.requesterName.trim().length < 2) {
+        errors.requesterName = 'กรุณากรอกชื่ออย่างน้อย 2 ตัวอักษร';
+      }
+      
+      if (!data.requestType) {
+        errors.requestType = 'กรุณาเลือกประเภทคำขอ';
+      }
+      
+      if (!data.details || data.details.trim().length < 10) {
+        errors.details = 'กรุณาอธิบายอย่างน้อย 10 ตัวอักษร';
+      }
+      
+      return errors;
+    }
+
+    // 4. Render Functions (แยกส่วนการอัปเดตหน้าจอออกมาให้ชัดเจน)
+
+    function renderErrors(errors) {
+      const fieldNames = ['requesterName', 'requestType', 'details'];
+      
+      fieldNames.forEach(name => {
+        const field = document.querySelector(`[name="${name}"]`);
+        const output = document.querySelector(`#${name}-error`);
+        const message = errors[name] ?? ''; // ถ้าไม่มี error ให้เป็น string ว่าง
+        
+        output.textContent = message;
+        // อัปเดต aria-invalid เพื่อบอก Screen Reader และปรับ CSS
+        field.setAttribute('aria-invalid', String(Boolean(message)));
+      });
+    }
+
+    function clearErrorFor(name) {
+      const field = document.querySelector(`[name="${name}"]`);
+      const output = document.querySelector(`#${name}-error`);
+      if(field && output) {
+        output.textContent = '';
+        field.setAttribute('aria-invalid', 'false');
+      }
+    }
+
+    function renderPreview(data) {
+      // ใช้ textContent ป้องกัน XSS Injection
+      document.getElementById('prev-name').textContent = data.requesterName || 'ยังไม่ระบุชื่อ';
+      document.getElementById('prev-type').textContent = data.requestType || 'ยังไม่เลือกประเภท';
+      document.getElementById('prev-details').textContent = data.details || 'ยังไม่มีรายละเอียด';
+    }
+
+    function renderStatus(type, message) {
+      statusMessage.textContent = message;
+      statusMessage.className = type === 'success' ? 'status-success' : 'status-error';
+      
+      // ลบข้อความ Success ทิ้งหลังจาก 3 วินาที
+      if(type === 'success') {
+        setTimeout(() => {
+          if(statusMessage.textContent === message) statusMessage.textContent = '';
+        }, 3000);
+      }
+    }
+
+    function addRequestToList(data) {
+      if(requestCount === 0) {
+        requestList.innerHTML = ''; // เคลียร์ข้อความ "ยังไม่มีคำขอ" ตอนเพิ่มครั้งแรก
+      }
+      
+      const item = document.createElement('li');
+      const title = document.createElement('strong');
+      const details = document.createElement('span');
+      
+      title.textContent = `${data.requesterName} • ${data.requestType}`;
+      details.textContent = data.details;
+      
+      item.append(title, details);
+      requestList.prepend(item); // ใส่รายการใหม่ไว้บนสุด
+      requestCount++;
+    }
+
+  </script>
+</body>
+</html>
