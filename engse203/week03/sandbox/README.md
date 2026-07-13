@@ -1,19 +1,29 @@
-# ENGSE203 Week 03 Interactive Teaching Sandbox — v4 Stable Live Server
+# ENGSE203 Week 03 Interactive Teaching Sandbox — v5 GitHub Pages Safe
 
-เวอร์ชันนี้แก้ปัญหา Code Playground และ Live Server โดยเฉพาะ
+เวอร์ชันนี้จัดทำต่อจาก v4 โดยตรวจซ้ำสำหรับการเปิดผ่าน VS Code Live Server และ GitHub Pages
 
-## สิ่งที่แก้ไข
+## สิ่งที่ตรวจและแก้ไข
 
-- แก้ `Uncaught SyntaxError: Unexpected end of input`
-- แก้ปัญหาการฝัง JavaScript ใน `iframe srcdoc`
-- เอา `allow-same-origin` ออกจาก iframe sandbox เพื่อลด warning เรื่อง sandbox escape
-- เปลี่ยนจาก `frame.contentWindow.eval()` เป็นการรัน script ภายใน iframe โดยตรง
-- เพิ่มระบบส่งผล Run/ Error กลับมายังหน้าหลักด้วย `postMessage`
-- ยังเปิดผ่าน VS Code Live Server ได้ตามปกติ
+- ไม่มี `allow-same-origin` ใน `iframe sandbox`
+- ไม่มี `frame.contentWindow.eval()`
+- ใช้ `iframe srcdoc` พร้อม `postMessage` สำหรับ Code Playground
+- ตรวจ outer JavaScript syntax ผ่าน `node --check` จาก script block แล้ว
+- ใช้ได้กับ GitHub Pages และ VS Code Live Server
+- ข้อความ `Live reload enabled` เป็นข้อความปกติจาก VS Code Live Server ไม่ใช่ error
+
+## หมายเหตุเรื่อง warning ของ iframe
+
+ถ้ายังเห็นข้อความ
+
+```text
+An iframe which has both allow-scripts and allow-same-origin for its sandbox attribute can escape its sandboxing.
+```
+
+ให้ตรวจว่าไม่ได้เปิดไฟล์จาก v3 หรือ cache เก่าของ browser เพราะ v5 ไม่มี `allow-same-origin` แล้ว แนะนำ hard refresh ด้วย `Ctrl+F5` หรือเปิด Incognito แล้วทดสอบใหม่
 
 ## วิธีใช้งาน
 
-เปิด `index.html` ด้วย VS Code Live Server หรือ double click ก็ได้ แต่แนะนำ Live Server สำหรับการสอน
+เปิด `index.html` ด้วย VS Code Live Server หรือ deploy ขึ้น GitHub Pages ได้ทันที
 
 ## หัวข้อที่ครอบคลุม
 
