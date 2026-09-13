@@ -1,0 +1,1023 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ENGSE203: The Full-Stack Bridge & Node.js/NPM Introduction</title>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #8CC84B; /* Node.js Green */
+            --secondary-color: #3C873A; /* Node.js Dark Green */
+            --accent-color: #CB3837; /* NPM Red */
+            --react-color: #007BFF;
+
+            --success-color: #10B981;
+            --danger-color: #ef4444;
+            --background-gradient: linear-gradient(135deg, #20232A 0%, #282c34 100%);
+            --slide-bg: #f8f9fa;
+            --text-color: #212529;
+            --header-color: #20232A;
+            --base-font-size: clamp(16px, 1.5vw, 22px);
+            --border-radius: 15px;
+            --code-font: 'Fira Code', 'Courier New', monospace;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { overflow: hidden; height: 100%; }
+
+        body {
+            font-family: 'Sarabun', sans-serif;
+            background: var(--background-gradient);
+            color: var(--text-color);
+            font-size: 16px; 
+            line-height: 1.7;
+        }
+        
+        .presentation {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2vh 3vw; 
+        }
+
+        .slide {
+            background: var(--slide-bg);
+            padding: 30px 40px 80px 40px;
+            border-radius: var(--border-radius);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+            width: 100%;
+            height: 100%;
+            font-size: var(--base-font-size);
+            overflow-y: auto;
+            display: none;
+            animation: fadeIn 0.5s ease-in-out;
+            position: relative;
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .slide::-webkit-scrollbar { display: none; }
+
+        .slide.active { display: block; }
+        
+        .title-slide.active {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            background: var(--background-gradient);
+            color: white;
+        }
+        
+        .title-slide h1, .title-slide h2, .title-slide h3, .title-slide p { color: white !important; }
+        .title-slide h1 { font-size: 3em; margin-bottom: 10px; border: none; }
+        .title-slide h2 { font-size: 2em; margin-bottom: 20px; border: none; }
+        .title-slide h3 { font-size: 1.5em; font-weight: 400; opacity: 0.9; }
+        .title-slide .node-logo, .title-slide .bridge-logo { font-size: 5em; display: block; margin-bottom: 20px; }
+        .title-slide .bridge-logo { color: var(--react-color) }
+        .title-slide h1 .highlight-node { color: var(--primary-color); }
+        .title-slide h1 .highlight-react { color: var(--react-color); }
+        .title-slide h1.node-title { color: var(--primary-color) !important; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
+
+        .progress-bar-container { position: fixed; top: 0; left: 0; width: 100%; height: 8px; background-color: rgba(255, 255, 255, 0.2); z-index: 2000; }
+        .progress-bar { height: 100%; width: 0%; background: linear-gradient(120deg, var(--primary-color) 0%, var(--secondary-color) 100%); transition: width 0.3s ease-out; }
+
+        .presentation-controls {
+            position: fixed; bottom: 15px; left: 50%; transform: translateX(-50%);
+            display: flex; align-items: center; gap: 10px; background: rgba(32, 35, 42, 0.9);
+            padding: 10px 15px; border-radius: 50px; box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(8px); z-index: 1000;
+        }
+
+        .nav-btn, .font-btn, .fullscreen-btn {
+            background: transparent; color: white; border: none; border-radius: 50%;
+            cursor: pointer; transition: all 0.3s ease; display: flex; align-items: center; justify-content: center;
+            width: 45px; height: 45px; font-size: 1.5rem;
+        }
+        .nav-btn:hover:not(:disabled), .font-btn:hover, .fullscreen-btn:hover { background: var(--primary-color); color: var(--secondary-color); transform: translateY(-2px); }
+        .nav-btn:disabled { background-color: transparent; color: #777; cursor: not-allowed; transform: none;}
+               
+        #slide-counter { color: white; font-weight: 500; font-size: 1.1em; min-width: 70px; text-align: center; }
+        .slide-number { position: absolute; bottom: 15px; right: 20px; background: rgba(32, 35, 42, 0.8); color: white; padding: 5px 12px; border-radius: 15px; font-size: 0.8em; font-weight: 600; }
+        
+        .slide h2 { font-size: 2.2em; color: var(--header-color); border-bottom: 3px solid var(--primary-color); padding-bottom: 8px; margin-bottom: 1em; font-weight: 700; }
+        .slide h3 { font-size: 1.6em; color: var(--secondary-color); margin-top: 1.5em; margin-bottom: 0.5em; font-weight: 700; }
+
+        p, ul, ol { font-size: 1em; max-width: 85ch; margin-bottom: 1rem; }
+        
+        ul { list-style: none; padding-left: 0; }
+        ul li { position: relative; padding-left: 35px; margin-bottom: 12px; }
+        ul li::before { content: attr(data-icon); position: absolute; left: 0; top: 0px; font-weight: bold; font-family: 'Font Awesome 6 Free'; }
+        ul.node-style li::before { color: var(--primary-color); }
+        
+        pre { background: #282c34; color: #abb2bf; border-radius: 10px; padding: 1em; margin: 1em 0; font-family: var(--code-font); font-size: 0.9em; overflow-x: auto; line-height: 1.6; }
+        code { font-family: var(--code-font); background-color: rgba(0,0,0,0.05); padding: 2px 5px; border-radius: 4px;}
+        pre code { background-color: transparent; padding: 0; }
+        
+        .solution { border-left: 4px solid var(--accent-color); background: #fff0f0; padding: 15px; margin: 10px 0; border-radius: 0 8px 8px 0; }
+        
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; margin: 20px 0; align-items: start; }
+        
+        blockquote { border-left: 5px solid var(--primary-color); margin: 1.5em 0; padding: 1em 1.5em; background-color: #f0fff0; font-style: italic; }
+        .highlight { background-color: #8CC84B33; padding: 2px 6px; border-radius: 4px; font-weight: 500; }
+        
+        .world-card { padding: 1.5rem; border-radius: var(--border-radius); box-shadow: 0 5px 15px rgba(0,0,0,0.05); border-top: 4px solid; }
+        .world-card.client { border-color: var(--react-color); }
+        .world-card.server { border-color: var(--primary-color); }
+        .world-card h4 { font-size: 1.3em; display: flex; align-items: center; gap: 10px; }
+        .world-card ul li::before { top: 4px; }
+
+        .bridge-diagram .flow-step { display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; }
+        .bridge-diagram .icon { font-size: 2rem; width: 50px; height: 50px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; border-radius: 50%; color: white; }
+        .bridge-diagram .content h5 { font-size: 1.1em; margin: 0; }
+        .bridge-diagram .content p { font-size: 0.9em; margin: 0; color: #555;}
+        .bridge-diagram .flow-arrow { text-align: center; font-size: 1.5em; color: #ccc; margin: -0.5rem 0;}
+        
+        .agreement-card { background: #f8f9fa; padding: 1.5rem; border-radius: 8px; height: 100%;}
+        .agreement-card h4 { font-size: 1.2em; display: flex; align-items: center; gap: 10px; margin-top: 0; padding-bottom: 0.5rem; border-bottom: 2px solid;}
+        .agreement-card ul { padding-left: 5px; }
+        .agreement-card ul li { font-size: 0.95em; }
+        .agreement-card.frontend h4 { color: var(--react-color); border-color: var(--react-color); }
+        .agreement-card.frontend ul li::before { color: var(--react-color); }
+        .agreement-card.backend h4 { color: var(--primary-color); border-color: var(--primary-color); }
+        .agreement-card.backend ul li::before { color: var(--primary-color); }
+        
+        .live-preview-container { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 1em; align-items: start; }
+        .code-pane, .preview-pane { display: flex; flex-direction: column; height: 100%; overflow: hidden; }
+        .pane-title { font-size: 1.1em; font-weight: 700; margin-bottom: 10px; color: var(--secondary-color); text-align: center; }
+        .code-pane pre { flex-grow: 1; margin: 0; display: flex; flex-direction: column; }
+        .code-pane pre code { flex-grow: 1; }
+        .preview-pane-content { flex-grow: 1; border: 1px solid #ccc; border-radius: var(--border-radius); background: white; padding: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.1) inset; overflow-y: auto; }
+        
+        .interactive-demo { border: 1px solid #ddd; border-radius: 10px; padding: 1.5em; background: white; margin-top: 1em; }
+        .interactive-demo input, .interactive-demo textarea, .interactive-demo button, .interactive-demo select { font-family: 'Sarabun', sans-serif; font-size: 0.9em; padding: 8px 12px; margin: 5px; border-radius: 5px; border: 1px solid #ccc; }
+        .interactive-demo button { background-color: var(--secondary-color); color: white; cursor: pointer; }
+        .interactive-demo button:hover { background-color: #4a4e59; }
+        .interactive-demo .output { margin-top: 1em; font-weight: bold; }
+        
+        .explanation-btn {
+            background-color: #ffc107; color: #212529; border: none; padding: 8px 15px; border-radius: 8px; cursor: pointer;
+            font-family: 'Sarabun', sans-serif; font-size: 0.9em; font-weight: bold; margin-top: 1em; transition: all 0.2s ease;
+        }
+        .explanation-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        .explanation-box {
+            display: none; margin-top: 1em; padding: 15px; background-color: #eef7ff;
+            border-left: 5px solid #007bff; border-radius: 0 8px 8px 0; animation: fadeIn 0.3s;
+        }
+        .explanation-box h4 { margin-top: 0; margin-bottom: 0.5em; color: #0056b3; }
+        .explanation-box p { font-size: 0.95em; margin-bottom: 0.5em; }
+        .explanation-box code { font-size: 0.9em; }
+
+        table { width: 100%; border-collapse: collapse; font-size: 0.95em; text-align: left; margin-top: 1em; }
+        th, td { padding: 12px; border: 1px solid #ddd; }
+        thead tr { background-color: var(--secondary-color); color: white; }
+        td:first-child, th:first-child { font-weight: bold; }
+        
+        .code-comment { color: #5c6370; font-style: italic; }
+        .terminal { background: #1e1e1e; color: #d4d4d4; padding: 1em; border-radius: 8px; font-family: var(--code-font); font-size: 0.9em; }
+        .terminal .prompt { color: #569cd6; }
+        .terminal .output { color: #ce9178; }
+        
+        .browser-bar { background-color: #e0e0e0; padding: 8px; border-radius: 5px 5px 0 0; font-family: sans-serif; font-size: 0.8em; color: #333; }
+        .browser-content { padding: 1em; border: 1px solid #e0e0e0; border-top: none; height: 150px; border-radius: 0 0 5px 5px; }
+
+        @media (max-width: 900px) {
+            .live-preview-container, .grid-2 { grid-template-columns: 1fr; height: auto; }
+            .slide { padding: 20px 25px 70px 25px; }
+            .slide h2 { font-size: 1.8em; }
+        }
+    </style>
+</head>
+<body>
+    <div class="progress-bar-container"><div class="progress-bar" id="progress-bar"></div></div>
+
+    <div class="presentation">
+        
+        <section class="slide title-slide active">
+            <div class="bridge-logo"><i class="fas fa-bridge-water"></i></div>
+            <h1>The <span class="highlight-react">Full-Stack</span> Bridge</h1>
+            <h3 style="margin-top: 30px;">เชื่อมต่อ React (Frontend) สู่ Node.js (Backend)</h3>
+            <p style="font-size: 1.2em; opacity: 0.9;">ทำความเข้าใจกลไก Client-Server ก่อนเริ่มต้นสร้าง Backend</p>
+            <div class="slide-number">1/25</div>
+        </section>
+        
+        <section class="slide">
+            <h2>โลกสองใบ: Client vs. Server</h2>
+            <p>การพัฒนาเว็บสมัยใหม่แบ่งออกเป็น 2 ส่วนหลักๆ ที่ทำงานร่วมกันแต่มีหน้าที่แตกต่างกันอย่างสิ้นเชิง</p>
+            <div class="grid-2">
+                <div class="world-card client">
+                    <h4><i class="fab fa-react" style="color:var(--react-color)"></i> Client-Side (ฝั่งผู้ใช้)</h4>
+                    <ul>
+                        <li data-icon="🏠"><strong>ที่อยู่:</strong> ทำงานบนเว็บเบราว์เซอร์ของผู้ใช้</li>
+                        <li data-icon="🎨"><strong>หน้าที่:</strong> แสดงผลหน้าตาเว็บ (UI) และตอบสนองต่อผู้ใช้</li>
+                        <li data-icon="🧠"><strong>หน่วยความจำ:</strong> ชั่วคราว (State) ข้อมูลหายเมื่อปิดเว็บ</li>
+                        <li data-icon="❌"><strong>ข้อจำกัด:</strong> เข้าถึงฐานข้อมูลโดยตรงไม่ได้</li>
+                    </ul>
+                </div>
+                 <div class="world-card server">
+                    <h4><i class="fab fa-node-js" style="color:var(--primary-color)"></i> Server-Side (ฝั่งหลังบ้าน)</h4>
+                    <ul>
+                        <li data-icon="🏢"><strong>ที่อยู่:</strong> ทำงานบนคอมพิวเตอร์เซิร์ฟเวอร์</li>
+                        <li data-icon="⚙️"><strong>หน้าที่:</strong> จัดการ Logic และเป็นแหล่งข้อมูลจริง (Source of Truth)</li>
+                        <li data-icon="💾"><strong>หน่วยความจำ:</strong> ถาวร เชื่อมต่อฐานข้อมูล/ไฟล์ได้</li>
+                        <li data-icon="💪"><strong>พลังพิเศษ:</strong> เข้าถึงไฟล์, ฐานข้อมูล, ระบบอื่นๆ ได้</li>
+                    </ul>
+                </div>
+            </div>
+            <blockquote>คำถามสำคัญ: แล้วโลกสองใบนี้... คุยกันได้อย่างไร?</blockquote>
+            <div class="slide-number">2/25</div>
+        </section>
+
+        <section class="slide">
+            <h2 style="border-bottom-color: var(--react-color);">สะพานเชื่อม: กลไกการทำงานของ API</h2>
+            <p>เพื่อให้ทั้งสองฝั่งสื่อสารกันได้ เราต้องสร้าง "สะพาน" ที่เรียกว่า **API (Application Programming Interface)** โดยใช้ HTTP เป็นช่องทางในการส่ง "คำขอ" (Request) และ "คำตอบ" (Response)</p>
+            <div class="bridge-diagram">
+                <div class="flow-step">
+                    <div class="icon" style="background-color: var(--react-color);"><i class="fab fa-react"></i></div>
+                    <div class="content"><h5>1. React App ส่งคำขอ (Request)</h5><p>เมื่อผู้ใช้คลิก, React จะใช้ <code>fetch()</code> ส่งคำขอ HTTP ไปยัง URL ของ Backend</p></div>
+                </div>
+                <div class="flow-arrow"><i class="fas fa-arrow-down"></i></div>
+                <div class="flow-step">
+                    <div class="icon" style="background-color: #fd7e14;"><i class="fas fa-network-wired"></i></div>
+                    <div class="content"><h5>2. Express Server รับคำขอ</h5><p>เซิร์ฟเวอร์ Node.js ของเราดักฟัง Request และ Express Router จะจับคู่ URL ที่เข้ามา</p></div>
+                </div>
+                <div class="flow-arrow"><i class="fas fa-arrow-down"></i></div>
+                <div class="flow-step">
+                    <div class="icon" style="background-color: var(--primary-color);"><i class="fas fa-cogs"></i></div>
+                    <div class="content"><h5>3. Server ประมวลผล</h5><p>Controller Function ทำงานตาม Logic เช่น อ่านข้อมูลจากไฟล์ <code>foods.json</code></p></div>
+                </div>
+                <div class="flow-arrow"><i class="fas fa-arrow-down"></i></div>
+                <div class="flow-step">
+                    <div class="icon" style="background-color: var(--primary-color);"><i class="fas fa-paper-plane"></i></div>
+                    <div class="content"><h5>4. Server ส่งคำตอบ (Response)</h5><p>เซิร์ฟเวอร์ส่งข้อมูลกลับไปในรูปแบบ JSON พร้อมกับ Status Code (เช่น 200 OK)</p></div>
+                </div>
+                <div class="flow-arrow"><i class="fas fa-arrow-down"></i></div>
+                <div class="flow-step">
+                    <div class="icon" style="background-color: var(--react-color);"><i class="fas fa-sync-alt"></i></div>
+                    <div class="content"><h5>5. React App อัปเดตหน้าเว็บ</h5><p>React รับข้อมูล JSON มาอัปเดต State ทำให้หน้าเว็บ (UI) เปลี่ยนแปลงอัตโนมัติ</p></div>
+                </div>
+            </div>
+            <div class="slide-number">3/25</div>
+        </section>
+
+        <section class="slide">
+            <h2>ข้อตกลงในการสื่อสาร: Frontend vs. Backend</h2>
+            <p>เพื่อให้การเชื่อมต่อราบรื่น ทั้งสองฝั่งต้องมี "ข้อตกลง" หรือหน้าที่ความรับผิดชอบของตัวเอง</p>
+            <div class="grid-2">
+                <div class="agreement-card frontend">
+                    <h4><i class="fab fa-react"></i> หน้าที่ของ Frontend</h4>
+                    <ul>
+                        <li data-icon="➡️"><strong>ส่งคำขอ (Request):</strong> เรียก API Endpoint ที่ถูกต้อง พร้อมส่งข้อมูลตามรูปแบบที่กำหนด</li>
+                        <li data-icon="📥"><strong>รับคำตอบ (Response):</strong> รอรับข้อมูล JSON และจัดการข้อมูลที่ได้มา</li>
+                        <li data-icon="⏳"><strong>จัดการสถานะ UI:</strong> แสดงสถานะ "กำลังโหลด" ระหว่างรอ และอัปเดตหน้าเว็บเมื่อได้รับข้อมูล</li>
+                        <li data-icon="⚠️"><strong>จัดการข้อผิดพลาด:</strong> เตรียมพร้อมรับมือเมื่อ Backend ส่ง Error กลับมา และแสดงข้อความให้ผู้ใช้ทราบ</li>
+                    </ul>
+                </div>
+                 <div class="agreement-card backend">
+                    <h4><i class="fab fa-node-js"></i> หน้าที่ของ Backend</h4>
+                    <ul>
+                        <li data-icon="⬅️"><strong>รับคำขอ (Request):</strong> สร้างและกำหนด Endpoint เพื่อรอรับคำขอจาก Frontend</li>
+                        <li data-icon="🛡️"><strong>ตรวจสอบข้อมูล (Validate):</strong> "ไม่เชื่อใจข้อมูลจาก Client" ต้องตรวจสอบความถูกต้องของข้อมูลที่ส่งมาเสมอ</li>
+                        <li data-icon="⚙️"><strong>ประมวลผล Logic:</strong> จัดการข้อมูล (CRUD) ตามคำขอ เช่น บันทึกลงฐานข้อมูล</li>
+                        <li data-icon="📤"><strong>ส่งคำตอบ (Response):</strong> ส่งข้อมูลกลับในรูปแบบ JSON พร้อม Status Code ที่ถูกต้องและสม่ำเสมอ</li>
+                        <li data-icon="🌐"><strong>จัดการ CORS:</strong> กำหนดนโยบายเพื่ออนุญาตให้ Frontend ที่อยู่คนละ Origin สามารถเรียกใช้ API ได้</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="slide-number">4/25</div>
+        </section>
+
+        <section class="slide">
+            <h2>กรณีศึกษา: เว็บรีวิวร้านอาหาร</h2>
+            <p>เพื่อให้เห็นภาพชัดเจน ลองดูตัวอย่าง Flow การทำงานเมื่อผู้ใช้ต้องการดูข้อมูลร้านอาหารในโปรเจคที่เราจะทำกัน</p>
+            <div class="bridge-diagram">
+                <div class="flow-step">
+                    <div class="icon" style="background-color: var(--react-color);"><i class="fas fa-mouse-pointer"></i></div>
+                    <div class="content"><h5>1. User Action</h5><p>ผู้ใช้คลิกที่ "ร้านอาหาร A" ใน React App, UI แสดงสถานะ "กำลังโหลด..."</p></div>
+                </div>
+                <div class="flow-arrow"><i class="fas fa-arrow-down"></i></div>
+                <div class="flow-step">
+                    <div class="icon" style="background-color: #fd7e14;"><i class="fas fa-paper-plane"></i></div>
+                    <div class="content"><h5>2. Request</h5><p>React ส่ง <code>GET</code> request ไปยัง <code>/api/restaurants/1</code></p></div>
+                </div>
+                <div class="flow-arrow"><i class="fas fa-arrow-down"></i></div>
+                <div class="flow-step">
+                    <div class="icon" style="background-color: var(--primary-color);"><i class="fas fa-database"></i></div>
+                    <div class="content"><h5>3. Backend Process</h5><p>Express Server รับ request, ไปดึงข้อมูลร้านอาหาร <code>id=1</code> จากไฟล์หรือฐานข้อมูล</p></div>
+                </div>
+                <div class="flow-arrow"><i class="fas fa-arrow-down"></i></div>
+                 <div class="flow-step">
+                    <div class="icon" style="background-color: #fd7e14;"><i class="fas fa-reply"></i></div>
+                    <div class="content"><h5>4. Response</h5><p>Server ส่งข้อมูลร้านอาหารกลับไปเป็น JSON: <code>{ "name": "ร้านอาหาร A", ... }</code></p></div>
+                </div>
+                <div class="flow-arrow"><i class="fas fa-arrow-down"></i></div>
+                <div class="flow-step">
+                    <div class="icon" style="background-color: var(--react-color);"><i class="fas fa-desktop"></i></div>
+                    <div class="content"><h5>5. UI Update</h5><p>React รับข้อมูล, อัปเดต State, และแสดงผลรายละเอียดของร้านอาหารบนหน้าจอ</p></div>
+                </div>
+            </div>
+            <div class="slide-number">5/25</div>
+        </section>
+        
+        <section class="slide title-slide">
+            <h2>หัวข้อที่ 1: ทำความรู้จัก Node.js และ NPM</h2>
+            <i class="fab fa-node-js node-logo"></i>
+            <h1 class="node-title">JavaScript นอกเบราว์เซอร์</h1>
+            <h3 style="margin-top: 30px;">ก้าวแรกสู่การเป็น Full-stack Developer !</h3>
+            <p style="font-size: 1.2em; opacity: 0.9;">เป้าหมาย: "จาก Frontend Developer → Full-stack Developer! 💪"</p>
+            <div class="slide-number">6/25</div>
+        </section>
+
+        <section class="slide">
+            <h2>Roadmap การเรียนวันนี้ 🗺️</h2>
+            <p>นี่คือเส้นทางการเรียนรู้ในหัวข้อ "Node.js และ NPM" ของเราในวันนี้ครับ</p>
+            <ul class="node-style">
+                <li data-icon="🟢"><strong>Node.js คืออะไร?</strong> - JavaScript Engine นอกเบราว์เซอร์</li>
+                <li data-icon="📦"><strong>NPM คืออะไร?</strong> - Package Manager และ Ecosystem</li>
+                <li data-icon="⚡"><strong>Installation & Setup</strong> - เริ่มต้นใช้งาน</li>
+                <li data-icon="🧩"><strong>Modules System</strong> - การแบ่งโค้ดเป็นชิ้นส่วน</li>
+            </ul>
+            <h3>Timeline วันนี้ (2.5 ชั่วโมง):</h3>
+            <pre><code>09:00-09:30  │ Node.js Introduction & History
+09:30-10:00  │ Node.js vs Browser JavaScript  
+10:00-10:30  │ NPM Package Manager
+10:30-10:45  │ ☕ Break
+10:45-11:15  │ Installation & First Commands
+11:15-12:00  │ Modules & Built-in APIs</code></pre>
+            <blockquote>เป้าหมายท้ายชั่วโมง: "เข้าใจ Node.js และสามารถใช้ NPM เบื้องต้นได้"</blockquote>
+            <div class="slide-number">7/25</div>
+        </section>
+
+        <section class="slide">
+            <h2>Node.js คืออะไร? 🤔</h2>
+            <p><strong>คำจำกัดความง่ายๆ:</strong> <span class="highlight">Node.js คือ สภาพแวดล้อมที่ทำให้เราสามารถรันโค้ด JavaScript นอกเบราว์เซอร์ได้</span></p>
+            <div class="grid-2">
+                <div>
+                    <h3>🌐 ในเบราว์เซอร์ (Chrome, Firefox)</h3>
+                    <ul class="node-style">
+                        <li data-icon="🎨">HTML, CSS สำหรับแสดงผล</li>
+                        <li data-icon="🖱️">JavaScript สำหรับ interaction</li>
+                        <li data-icon="📄"><strong>DOM API</strong> สำหรับจัดการหน้าเว็บ</li>
+                    </ul>
+                </div>
+                <div>
+                    <h3>💻 ใน Node.js (คอมพิวเตอร์เรา)</h3>
+                    <ul class="node-style">
+                        <li data-icon="⚙️">JavaScript สำหรับทุกอย่าง</li>
+                        <li data-icon="📁"><strong>File System API</strong> สำหรับจัดการไฟล์</li>
+                        <li data-icon="🌐"><strong>HTTP API</strong> สำหรับสร้างเซิร์ฟเวอร์</li>
+                    </ul>
+                </div>
+            </div>
+            <h3>ใจความสำคัญ</h3>
+            <p>ใช้ <strong style="color:var(--secondary-color)">ภาษาเดียวกัน (JavaScript)</strong> แต่ทำงานใน <strong style="color:var(--secondary-color)">สภาพแวดล้อมที่ต่างกัน (Different Environment)</strong> และมี <strong style="color:var(--secondary-color)">พลังมากกว่า (More Powers)</strong> เช่น เข้าถึงไฟล์, ฐานข้อมูล, และสร้างเซิร์ฟเวอร์ได้</p>
+            <blockquote>คำถามให้คิด: ถ้า JavaScript ทำงานนอกเบราว์เซอร์ได้... เราจะสร้างอะไรได้บ้าง? 🎲</blockquote>
+            <div class="slide-number">8/25</div>
+        </section>
+
+        <section class="slide">
+            <h2>ประวัติของ Node.js 📚</h2>
+            <p>เรื่องราวการเกิดขึ้นของ Node.js นั้นน่าสนใจมากครับ</p>
+            <ul class="node-style">
+                <li data-icon="🎯"><strong>2009:</strong> <strong>Ryan Dahl</strong> สร้าง Node.js ขึ้นมาเพื่อแก้ปัญหาเว็บเซิร์ฟเวอร์แบบเก่าที่ทำงานช้าและจัดการ request จำนวนมากได้ไม่ดี โดยนำ V8 Engine ของ Google Chrome มาใช้</li>
+                <li data-icon="🚀"><strong>2010:</strong> <strong>NPM (Node Package Manager)</strong> ถูกสร้างขึ้น ทำให้การแบ่งปันโค้ด (package) กลายเป็นเรื่องง่าย และเป็นจุดเริ่มต้นของ ecosystem ขนาดใหญ่</li>
+                <li data-icon="🌟"><strong>ปัจจุบัน:</strong> Node.js กลายเป็นเทคโนโลยี Backend ที่ได้รับความนิยมสูงสุดในโลก ถูกใช้งานโดยบริษัทเทคโนโลยียักษ์ใหญ่มากมาย</li>
+            </ul>
+            <h3>บริษัทที่ใช้ Node.js</h3>
+             <div class="grid-2">
+                <div>
+                    <ul class="node-style" style="font-size: 0.9em;">
+                        <li data-icon="🍿">Netflix</li>
+                        <li data-icon="🚗">Uber</li>
+                        <li data-icon="💰">PayPal</li>
+                    </ul>
+                </div>
+                 <div>
+                    <ul class="node-style" style="font-size: 0.9em;">
+                         <li data-icon="💼">LinkedIn</li>
+                         <li data-icon="🚀">NASA</li>
+                         <li data-icon="🛒">Walmart</li>
+                    </ul>
+                </div>
+            </div>
+            <blockquote>ถ้าบริษัทระดับโลกเลือกใช้ Node.js แสดงว่ามันต้องมีดีอย่างแน่นอน! 💭</blockquote>
+            <div class="slide-number">9/25</div>
+        </section>
+
+        <section class="slide">
+            <h2>ทำไมต้องเรียน Node.js? 🎯</h2>
+            <p>สำหรับนักพัฒนา React.js อย่างเรา จริงๆ แล้วเราใช้ Node.js อยู่ตลอดเวลาโดยไม่รู้ตัว!</p>
+            <pre><code class="language-bash"># ⚡ สร้างโปรเจค React
+npx create-react-app my-app  # ← นี่คือเครื่องมือที่สร้างด้วย Node.js!
+
+# 📦 ติดตั้ง libraries
+npm install react-router-dom  # ← นี่คือ NPM ที่รันบน Node.js!
+
+# 🔄 รัน Development server
+npm start  # ← นี่ก็รันบน Node.js!</code></pre>
+            
+            <h3>Real-world Applications</h3>
+            <ul class="node-style">
+                <li data-icon="🎮"><strong>Game Servers</strong> - สำหรับเกมออนไลน์</li>
+                <li data-icon="💰"><strong>Fintech APIs</strong> - ระบบธนาคารและการจ่ายเงิน</li>
+                <li data-icon="📱"><strong>Mobile Backends</strong> - API สำหรับแอปพลิเคชันมือถือ</li>
+            </ul>
+            
+            <h3>Salary Impact (Thailand 2024)</h3>
+            <p>Frontend Only: 25k-45k | <strong style="color:var(--secondary-color)">Frontend + Node.js: 35k-60k</strong> | Full-stack: 45k-80k</p>
+            <blockquote>คำถามให้คิด: ถ้าคุณเป็นเจ้าของบริษัท คุณจะจ้างนักพัฒนาที่รู้แค่ Frontend หรือคนที่ทำได้ทั้ง Frontend และ Backend?</blockquote>
+            <div class="slide-number">10/25</div>
+        </section>
+        
+        <section class="slide">
+            <h2>Node.js vs Browser JavaScript 🥊</h2>
+            <p>ถึงแม้จะใช้ภาษา JavaScript เหมือนกัน แต่ก็มีความแตกต่างที่สำคัญอยู่ครับ</p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Feature</th>
+                        <th>🌐 Browser</th>
+                        <th>💻 Node.js</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Global Object</td>
+                        <td><code>window</code></td>
+                        <td><code>global</code></td>
+                    </tr>
+                    <tr>
+                        <td>DOM Manipulation</td>
+                        <td>✅ <code>document.getElementById()</code></td>
+                        <td>❌ ไม่มี (เพราะไม่มีหน้าเว็บ)</td>
+                    </tr>
+                    <tr>
+                        <td>File Access</td>
+                        <td>❌ ไม่ได้ (เพื่อความปลอดภัย)</td>
+                        <td>✅ <code>fs</code> module</td>
+                    </tr>
+                    <tr>
+                        <td>HTTP Server</td>
+                        <td>❌ ไม่ได้</td>
+                        <td>✅ <code>http</code> module</td>
+                    </tr>
+                </tbody>
+            </table>
+            <button class="explanation-btn" onclick="toggleExplanation(this, 'diff')"><i class="fas fa-lightbulb"></i> ดูตัวอย่างโค้ดที่แตกต่าง</button>
+            <div class="explanation-box" data-id="diff">
+                <h4>🌐 โค้ดใน Browser</h4>
+                <pre><code>// แสดง "Hello" บนหน้าเว็บ
+document.getElementById('title').innerHTML = 'Hello World';</code></pre>
+                <h4>💻 โค้ดใน Node.js</h4>
+                <pre><code>// เขียนไฟล์ "hello.txt" ลงในเครื่อง
+const fs = require('fs');
+fs.writeFileSync('hello.txt', 'Hello World');</code></pre>
+            </div>
+            <div class="slide-number">11/25</div>
+        </section>
+        
+        <section class="slide">
+            <h2>NPM คืออะไร? 📦</h2>
+            <p><strong>NPM</strong> ย่อมาจาก <strong>Node Package Manager</strong></p>
+            <blockquote>เราอาจเรียกมันง่ายๆ ว่า "App Store สำหรับนักพัฒนา"</blockquote>
+            <p>NPM คือคลังเก็บโค้ด (เรียกว่า package) ขนาดใหญ่ที่สุดในโลก ที่นักพัฒนาสามารถแบ่งปันและนำโค้ดของคนอื่นมาใช้ในโปรเจคของเราได้</p>
+            
+            <div class="grid-2">
+                <div>
+                    <h3>🍎 App Store</h3>
+                    <ul class="node-style">
+                        <li data-icon="📱">หาแอปที่ต้องการ</li>
+                        <li data-icon="📥">ติดตั้ง</li>
+                        <li data-icon="🚀">ใช้งาน</li>
+                    </ul>
+                </div>
+                <div>
+                    <h3>📦 NPM</h3>
+                    <ul class="node-style">
+                        <li data-icon="🔍">หา package ที่ต้องการ</li>
+                        <li data-icon="💻">ติดตั้ง (<code>npm install</code>)</li>
+                        <li data-icon="💡">นำเข้า (<code>import</code>/<code>require</code>)</li>
+                    </ul>
+                </div>
+            </div>
+            <p class="solution">ปัจจุบันมีมากกว่า <span class="highlight">2 ล้าน packages</span> บน NPM ทำให้เราพัฒนาเว็บแอปพลิเคชันได้รวดเร็วอย่างไม่น่าเชื่อ</p>
+            <blockquote>คำถามสำคัญ: ถ้าไม่มี NPM การพัฒนาเว็บจะเป็นอย่างไร? 🤯</blockquote>
+            <div class="slide-number">12/25</div>
+        </section>
+
+        <section class="slide">
+            <h2>NPM Package ยอดนิยม 🌟</h2>
+            <p>นี่คือตัวอย่าง packages ที่ถูกดาวน์โหลดหลายสิบล้านครั้งต่อสัปดาห์</p>
+            <ul class="node-style">
+                <li data-icon="⚙️"><code>express</code> → Web framework อันดับ 1 สำหรับสร้างเซิร์ฟเวอร์ (ที่เราจะเรียนต่อ)</li>
+                <li data-icon="⚛️"><code>react</code> → UI library ที่เรากำลังใช้อยู่นั่นเอง!</li>
+                <li data-icon="🔗"><code>axios</code> → สำหรับการเรียก API จากฝั่ง Frontend ไปยัง Backend</li>
+                <li data-icon="🛠️"><code>lodash</code> → ชุดเครื่องมือช่วยให้เขียน JavaScript ได้สั้นและง่ายขึ้น</li>
+                <li data-icon="🔄"><code>nodemon</code> → เครื่องมือช่วยรีสตาร์ทเซิร์ฟเวอร์อัตโนมัติเมื่อแก้โค้ด</li>
+            </ul>
+            <h3>การติดตั้งก็ง่ายแสนง่าย:</h3>
+            <pre><code class="language-bash"># ติดตั้ง package เดียว
+npm install express
+
+# ติดตั้งหลาย packages พร้อมกัน
+npm install express body-parser cors
+
+# ติดตั้งสำหรับตอนพัฒนาเท่านั้น
+npm install --save-dev nodemon</code></pre>
+            <div class="slide-number">13/25</div>
+        </section>
+
+        <section class="slide">
+            <h2>การติดตั้ง Node.js & NPM 💻</h2>
+            <p>NPM จะถูกติดตั้งมาพร้อมกับ Node.js โดยอัตโนมัติ</p>
+            <ol>
+                <li>
+                    <strong>ดาวน์โหลด:</strong> ไปที่ <a href="https://nodejs.org" target="_blank">nodejs.org</a> แล้วเลือกเวอร์ชัน <span class="highlight">LTS (Long-Term Support)</span> ซึ่งเป็นเวอร์ชันที่เสถียรและแนะนำสำหรับคนส่วนใหญ่
+                </li>
+                <li>
+                    <strong>ติดตั้ง:</strong> ดับเบิลคลิกไฟล์ที่ดาวน์โหลดมาแล้วกด Next ไปเรื่อยๆ จนเสร็จ
+                </li>
+                <li>
+                    <strong>ตรวจสอบการติดตั้ง:</strong> เปิดโปรแกรม Terminal (หรือ Command Prompt/PowerShell ใน Windows) แล้วพิมพ์คำสั่ง:
+                </li>
+            </ol>
+            <div class="interactive-demo terminal">
+                <span class="prompt">$</span> node -v <br>
+                <span class="output">v20.10.0 (หรือเวอร์ชันอื่น)</span><br><br>
+                <span class="prompt">$</span> npm -v <br>
+                <span class="output">10.2.3 (หรือเวอร์ชันอื่น)</span>
+            </div>
+            <p>ถ้าเห็นเวอร์ชันปรากฏขึ้นมาแบบนี้ แสดงว่าการติดตั้งสำเร็จเรียบร้อยแล้ว! 🎉</p>
+            <blockquote>คำถามเช็คความเข้าใจ: ทำไม NPM ถึงมาพร้อมกับ Node.js?</blockquote>
+            <div class="slide-number">14/25</div>
+        </section>
+        
+        <section class="slide">
+            <h2>คำสั่ง Node.js แรก 🎉</h2>
+            <p>เรามาลองรัน JavaScript ด้วย Node.js กันเลย! ซึ่งทำได้ 2 วิธีหลักๆ:</p>
+            
+            <h3>1. การรันไฟล์ `.js` (วิธีที่ใช้บ่อยที่สุด)</h3>
+            <div class="live-preview-container">
+                <div class="code-pane">
+                    <div class="pane-title">สร้างไฟล์ `hello.js`</div>
+                    <pre><code class="language-js">console.log('สวัสดีจาก Node.js!');
+const currentTime = new Date();
+console.log(`เวลาปัจจุบัน: ${currentTime}`);</code></pre>
+                </div>
+                <div class="preview-pane">
+                    <div class="pane-title">รันด้วย `node hello.js` (Interactive)</div>
+                    <div class="interactive-demo" id="demo-run-node">
+                        <div class="terminal">
+                            <span class="prompt">$</span> node hello.js<br>
+                            <div class="output-placeholder"></div>
+                        </div>
+                        <button>รันคำสั่ง</button>
+                    </div>
+                </div>
+            </div>
+            
+            <h3>2. การใช้ REPL (Read-Eval-Print Loop)</h3>
+            <p>เป็นโหมดโต้ตอบสำหรับทดลองโค้ดสั้นๆ โดยพิมพ์ `node` ใน Terminal แล้ว Enter</p>
+            <pre><code>> console.log('สวัสดี!');
+สวัสดี!
+> 2 + 3
+5</code></pre>
+            <div class="slide-number">15/25</div>
+        </section>
+
+        <section class="slide">
+            <h2>NPM คำสั่งพื้นฐาน 📋 (Interactive)</h2>
+            <p>มาเริ่มต้นโปรเจค Node.js แรกของเรา และทำความเข้าใจไฟล์ `package.json`</p>
+             <div class="interactive-demo" id="demo-npm-init">
+                <p><strong>ขั้นตอน:</strong></p>
+                <ol>
+                    <li>สร้างโฟลเดอร์ใหม่: <code>mkdir my-project && cd my-project</code></li>
+                    <li>เริ่มต้นโปรเจคด้วย NPM:</li>
+                </ol>
+                <div class="terminal">
+                    <span class="prompt">$</span> npm init -y
+                </div>
+                <button>รันคำสั่ง</button>
+                <div class="output-area" style="display:none;">
+                    <h4>ผลลัพธ์: ไฟล์ `package.json` ถูกสร้างขึ้น</h4>
+                    <pre><code></code></pre>
+                </div>
+            </div>
+            <p>ไฟล์ <code>package.json</code> คือ "บัตรประชาชน" ของโปรเจค ที่เก็บข้อมูลสำคัญ เช่น ชื่อ, เวอร์ชัน, และรายการ packages ทั้งหมดที่เราติดตั้ง (dependencies)</p>
+            <div class="slide-number">16/25</div>
+        </section>
+
+        <section class="slide">
+            <h2>เข้าใจ `package.json` 📄</h2>
+            <p>ไฟล์นี้เปรียบเสมือน "ใบแสดงตัวตน" ของโปรเจค ที่บอกทุกอย่างเกี่ยวกับโปรเจคของเรา</p>
+            <pre><code class="language-json">{
+  "name": "food-delivery-api",
+  "version": "1.0.0",
+  "description": "API สำหรับแอปสั่งอาหาร",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  }
+}</code></pre>
+            <button class="explanation-btn" onclick="toggleExplanation(this, 'dep')"><i class="fas fa-lightbulb"></i> dependencies vs devDependencies</button>
+            <div class="explanation-box" data-id="dep">
+                <h4>ความแตกต่างสำคัญ</h4>
+                <p><strong>dependencies:</strong> คือ packages ที่จำเป็นสำหรับให้แอปพลิเคชันทำงานได้บน Production (ตอนใช้งานจริง) เช่น `express`, `react`</p>
+                <p><strong>devDependencies:</strong> คือ packages ที่ใช้สำหรับช่วยในตอนพัฒนาเท่านั้น ไม่ได้ถูกนำไปใช้บน Production เช่น `nodemon` (สำหรับรีสตาร์ทเซิร์ฟเวอร์), `eslint` (สำหรับตรวจจับ error)</p>
+            </div>
+            <button class="explanation-btn" onclick="toggleExplanation(this, 'ver')"><i class="fas fa-lightbulb"></i> Versioning & node_modules</button>
+            <div class="explanation-box" data-id="ver">
+                <h4>Semantic Versioning & node_modules</h4>
+                <p><strong>`^4.18.2`</strong>: ตัวเลขเวอร์ชัน (Major.Minor.Patch) สัญลักษณ์ `^` (Caret) หมายความว่า NPM สามารถอัปเดตเวอร์ชัน Minor และ Patch ได้ (เช่น 4.19.0) แต่ห้ามอัปเดตเวอร์ชัน Major (เช่น 5.0.0) เพราะอาจทำให้โค้ดพังได้</p>
+                <p><strong>`node_modules/`</strong>: คือโฟลเดอร์ที่เก็บไฟล์โค้ดของ packages ทั้งหมดที่เราติดตั้งไว้ ซึ่งเป็นเหตุผลว่าทำไมโฟลเดอร์นี้ถึงมีขนาดใหญ่มาก และเรามักจะไม่นำโฟลเดอร์นี้ขึ้น Git ครับ</p>
+            </div>
+            <div class="slide-number">17/25</div>
+        </section>
+        
+        <section class="slide">
+            <h2>NPM Scripts ⚡</h2>
+            <p><code>scripts</code> ใน `package.json` คือทางลัดสำหรับรันคำสั่งที่ยาวและซับซ้อน ให้เหลือเพียงคำสั่งสั้นๆ ที่จำง่าย</p>
+            <pre><code class="language-json">"scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "test": "jest",
+    "lint": "eslint ."
+}</code></pre>
+            <h3>การใช้งาน</h3>
+            <div class="grid-2">
+                 <div class="terminal">
+                    <span class="prompt"># แทนที่จะพิมพ์ยาวๆ</span><br>
+                    <span class="output">$ nodemon server.js</span>
+                 </div>
+                 <div class="terminal">
+                    <span class="prompt"># เราใช้ script แทน</span><br>
+                    <span class="output">$ npm run dev</span>
+                 </div>
+            </div>
+             <h3>ทำไมต้องใช้ Scripts?</h3>
+            <ul class="node-style">
+                <li data-icon="✅"><strong>สะดวก:</strong> จำคำสั่งง่ายๆ แทนคำสั่งยาว</li>
+                <li data-icon="✅"><strong>เป็นมาตรฐาน:</strong> ทุกคนในทีมใช้คำสั่งเดียวกัน</li>
+                <li data-icon="✅"><strong>อัตโนมัติ:</strong> สามารถรันหลายคำสั่งต่อกันได้</li>
+            </ul>
+            <p class="solution">Scripts คือเวทมนตร์ที่ทำให้ชีวิต developer ง่ายขึ้นอย่างมหาศาล! ✨</p>
+            <div class="slide-number">18/25</div>
+        </section>
+
+        <section class="slide">
+            <h2>Module System ของ Node.js 🧩</h2>
+            <p>แนวคิดของ Module คือ <span class="highlight">"การแบ่งโค้ดเป็นชิ้นส่วนเล็กๆ เพื่อนำกลับมาใช้ซ้ำและจัดการได้ง่าย"</span></p>
+            <p>Node.js มีระบบ Module หลักๆ 2 แบบ:</p>
+            <div class="grid-2">
+                <div>
+                    <h3>1. CommonJS (วิธีดั้งเดิม)</h3>
+                    <pre><code class="language-js">// math.js
+function add(a, b) { return a + b; }
+module.exports = { add };
+
+// app.js
+const math = require('./math');
+console.log(math.add(5, 3)); // 8</code></pre>
+                </div>
+                <div>
+                    <h3>2. ES6 Modules (วิธีใหม่)</h3>
+                    <pre><code class="language-js">// math.mjs
+export function add(a, b) { return a + b; }
+
+// app.mjs
+import { add } from './math.mjs';
+console.log(add(5, 3)); // 8</code></pre>
+                </div>
+            </div>
+            <blockquote>คำถามให้คิด: ทำไมเราต้องแบ่งโค้ดเป็น module? เขียนทุกอย่างลงในไฟล์เดียวไม่ได้หรือ?</blockquote>
+            <div class="slide-number">19/25</div>
+        </section>
+
+        <section class="slide">
+            <h2>Built-in Modules ที่สำคัญ 🛠️</h2>
+            <p>Node.js มาพร้อมกับ Module ที่มีประโยชน์มากมายติดตั้งมาให้แล้ว ไม่ต้องลงเพิ่ม</p>
+            <div class="grid-2">
+                <div>
+                    <ul class="node-style">
+                        <li data-icon="📁">
+                            <strong>File System (`fs`):</strong> สำหรับอ่าน, เขียน, ลบไฟล์
+                            <pre><code>fs.writeFileSync('note.txt', 'Hello');</code></pre>
+                        </li>
+                        <li data-icon="🛣️">
+                            <strong>Path (`path`):</strong> สำหรับจัดการ path ของไฟล์และโฟลเดอร์
+                            <pre><code>path.join(__dirname, 'data.json');</code></pre>
+                        </li>
+                    </ul>
+                </div>
+                <div>
+                    <ul class="node-style">
+                        <li data-icon="💻">
+                            <strong>OS (`os`):</strong> สำหรับดูข้อมูลระบบปฏิบัติการ
+                            <pre><code>console.log(os.cpus().length);</code></pre>
+                        </li>
+                        <li data-icon="🔗">
+                             <strong>URL (`url`):</strong> สำหรับจัดการและแยกส่วน URL
+                            <pre><code>new URL(myUrl).hostname;</code></pre>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <p>และที่สำคัญที่สุดคือ <strong>HTTP (`http`)</strong> สำหรับสร้างเว็บเซิร์ฟเวอร์ ซึ่งเป็นหัวใจของ Backend! 💪</p>
+            <div class="slide-number">20/25</div>
+        </section>
+
+        <section class="slide">
+            <h2>HTTP Module - เซิร์ฟเวอร์แรก! 🌐 (Interactive)</h2>
+            <p>เรามาสร้างเว็บเซิร์ฟเวอร์จริงๆ ด้วยโค้ดไม่กี่บรรทัดกันครับ</p>
+            <div class="live-preview-container">
+                <div class="code-pane">
+                    <div class="pane-title">📝 โค้ด `server.js`</div>
+                    <pre><code class="language-js">const http = require('http');
+
+const server = http.createServer((req, res) => {
+    if (req.url === '/') {
+        res.end('&lt;h1&gt;หน้าแรก&lt;/h1&gt;&lt;a href="/about"&gt;ไปหน้าเกี่ยวกับเรา&lt;/a&gt;');
+    } else if (req.url === '/about') {
+        res.end('&lt;h1&gt;เกี่ยวกับเรา&lt;/h1&gt;&lt;a href="/"&gt;กลับหน้าแรก&lt;/a&gt;');
+    } else {
+        res.writeHead(404);
+        res.end('&lt;h1&gt;404 Not Found&lt;/h1&gt;');
+    }
+});
+
+server.listen(3000, () => {
+    console.log('🚀 Server is running on http://localhost:3000');
+});</code></pre>
+                </div>
+                <div class="preview-pane">
+                    <div class="pane-title">👀 ผลลัพธ์ (จำลอง)</div>
+                    <div class="interactive-demo" id="demo-http-server">
+                        <div class="browser-bar">http://localhost:3000<span class="current-path">/</span></div>
+                        <div class="browser-content"></div>
+                         <div class="controls">
+                            <p>ลองคลิกเพื่อจำลองการเข้าชม URL:</p>
+                            <button data-path="/">หน้าแรก (/)</button>
+                            <button data-path="/about">เกี่ยวกับเรา (/about)</button>
+                            <button data-path="/contact">หน้าที่ไม่มีอยู่ (/contact)</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <blockquote>คำถามท้าทาย: เซิร์ฟเวอร์นี้ต่างจาก React development server (npm start) อย่างไร?</blockquote>
+            <div class="slide-number">21/25</div>
+        </section>
+        
+        <section class="slide">
+            <h2>Nodemon - Development Tool 🔄</h2>
+            <p>เคยเจอปัญหานี้ไหมครับ: <span class="highlight">แก้โค้ด → บันทึก → ต้องหยุดเซิร์ฟเวอร์ (Ctrl+C) → แล้วรันใหม่</span> วนไปเรื่อยๆ...</p>
+            <h3>Nodemon คือทางออก!</h3>
+            <p>Nodemon คือเครื่องมือที่จะคอย "จับตาดู" ไฟล์โปรเจคของเรา และเมื่อไหร่ก็ตามที่มีการเปลี่ยนแปลงและบันทึกไฟล์ มันจะทำการรีสตาร์ทเซิร์ฟเวอร์ให้เราโดยอัตโนมัติ!</p>
+            <div class="grid-2">
+                <div>
+                    <h4>1. ติดตั้ง</h4>
+                    <pre><code>npm install --save-dev nodemon</code></pre>
+                </div>
+                <div>
+                    <h4>2. เพิ่ม Script ใน `package.json`</h4>
+                    <pre><code class="language-json">"scripts": {
+  "start": "node server.js",
+  "dev": "nodemon server.js"
+}</code></pre>
+                </div>
+            </div>
+             <h4>3. รันด้วยคำสั่งใหม่</h4>
+             <pre><code>npm run dev</code></pre>
+             <p class="solution">เพียงเท่านี้ ชีวิตการพัฒนา Backend ของเราก็จะง่ายขึ้นมหาศาล ไม่ต้องเสียสมาธิกับการรีสตาร์ทเซิร์ฟเวอร์เองอีกต่อไป! ✅</p>
+            <div class="slide-number">22/25</div>
+        </section>
+
+        <section class="slide">
+            <h2>สรุปและเตรียมตัวสำหรับ Express.js 🎯</h2>
+            <h3>สิ่งที่เราเรียนรู้ในหัวข้อนี้:</h3>
+            <ul class="node-style">
+                <li data-icon="✅"><strong>Node.js:</strong> คือ JavaScript runtime ที่ทำงานนอกเบราว์เซอร์</li>
+                <li data-icon="✅"><strong>NPM:</strong> คือ "App Store" ของนักพัฒนา สำหรับจัดการ packages</li>
+                <li data-icon="✅"><strong>Modules:</strong> วิธีการแบ่งโค้ดเป็นส่วนๆ เพื่อจัดการง่าย (<code>require</code>, <code>import</code>)</li>
+                <li data-icon="✅"><strong>Built-in APIs:</strong> พลังในการเข้าถึงไฟล์ (<code>fs</code>) และสร้างเซิร์ฟเวอร์ (<code>http</code>)</li>
+            </ul>
+            <h3>แต่ยังมีปัญหาอยู่... 🤔</h3>
+            <p>การสร้างเซิร์ฟเวอร์ด้วย `http` module พื้นฐานนั้นค่อนข้างซับซ้อนเมื่อมีหลาย URL (ดูโค้ดในสไลด์ 21)</p>
+            <pre><code class="language-js">// ต้องใช้ if/else ซ้อนกันเยอะมาก...
+if (req.url === '/api/users' && req.method === 'GET') {
+    // ...
+} else if (req.url === '/api/users' && req.method === 'POST') {
+    // ...
+} // และอื่นๆ อีกมากมาย... 😵
+</code></pre>
+            <p class="solution"><strong>Express.js</strong> จะเข้ามาเป็นฮีโร่ 🦸‍♂️ ที่ช่วยให้การเขียนโค้ดส่วนนี้ง่ายขึ้น สั้นลง และเป็นระเบียบอย่างมาก ซึ่งเราจะเรียนกันในหัวข้อถัดไป!</p>
+            <div class="slide-number">23/25</div>
+        </section>
+        
+        <section class="slide">
+            <h2>คำถามทบทวน 🎓</h2>
+            <p>มาทบทวนความเข้าใจกันหน่อยครับ</p>
+            <ol>
+                <li>
+                    <strong>Node.js แตกต่างจาก JavaScript ใน browser อย่างไร? (ข้อที่สำคัญที่สุด)</strong>
+                    <p style="font-size:0.9em; color: #555;">คำใบ้: การเข้าถึง... และการสร้าง...</p>
+                </li>
+                <li>
+                    <strong>NPM มีบทบาทสำคัญอย่างไรในการพัฒนาเว็บแอปพลิเคชัน?</strong>
+                     <p style="font-size:0.9em; color: #555;">คำใบ้: App Store...</p>
+                </li>
+                 <li>
+                    <strong>ทำไมเราถึงควรใช้ `nodemon` ในการพัฒนาโปรเจค Node.js?</strong>
+                     <p style="font-size:0.9em; color: #555;">คำใบ้: ประหยัดเวลา...</p>
+                </li>
+            </ol>
+            <h3 style="text-align:center; margin-top:2em;">เตรียมพร้อมสำหรับหัวข้อถัดไป:</h3>
+            <h2 style="text-align:center; border:none; color:var(--secondary-color)">Express.js สำหรับสร้างเว็บเซิร์ฟเวอร์!</h2>
+            <div class="slide-number">24/25</div>
+        </section>
+
+        <section class="slide">
+            <h2>🎉 สรุปหัวข้อที่ 1: Node.js และ NPM</h2>
+            <h3>Journey ที่เราผ่านมา:</h3>
+            <pre><code>🌐 JavaScript ใน Browser
+        ↓
+💻 JavaScript ใน Computer (Node.js)
+        ↓  
+📦 Package Management (NPM)
+        ↓
+🛠️ Built-in Modules & APIs
+        ↓
+🚀 พร้อมสำหรับ Express.js!
+</code></pre>
+            <h3>ทักษะใหม่ที่ได้:</h3>
+            <ul class="node-style">
+                <li data-icon="🔧">ติดตั้งและใช้งาน Node.js</li>
+                <li data-icon="📦">จัดการ packages ด้วย NPM</li>
+                <li data-icon="🧩">เขียน modules และ import/export</li>
+                <li data-icon="🌐">สร้าง HTTP server พื้นฐาน</li>
+                <li data-icon="🔄">ใช้ development tools อย่าง nodemon</li>
+            </ul>
+            <h3 style="text-align:center; margin-top:2em;">พักสมองสักหน่อย แล้วกลับมาสร้าง Express Server กัน! ☕</h3>
+            <div class="slide-number">25/25</div>
+        </section>
+
+    </div>
+
+    <div class="presentation-controls">
+        <button id="prev-btn" class="nav-btn" title="สไลด์ก่อนหน้า">‹</button>
+        <span id="slide-counter"></span>
+        <button id="next-btn" class="nav-btn" title="สไลด์ถัดไป">›</button>
+        <button id="fullscreen-btn" class="fullscreen-btn" title="เต็มจอ">⛶</button>
+    </div>
+
+    <script>
+        function toggleExplanation(btn, id) {
+            const explanationBox = document.querySelector(`.explanation-box[data-id="${id}"]`);
+            if (explanationBox) {
+                const isVisible = explanationBox.style.display === 'block';
+                explanationBox.style.display = isVisible ? 'none' : 'block';
+                 // Update button text based on visibility
+                if (isVisible) {
+                    btn.innerHTML = '<i class="fas fa-lightbulb"></i> ' + btn.textContent.replace('ปิดคำอธิบาย', '...').split('...')[0].trim();
+                } else {
+                     const originalText = btn.textContent.replace('<i class="fas fa-lightbulb"></i>', '').trim();
+                     btn.innerHTML = '<i class="fas fa-times"></i> ปิดคำอธิบาย';
+                }
+            }
+        }
+
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const slides = document.querySelectorAll('.slide');
+            const totalSlides = slides.length;
+            let currentSlideIndex = 0;
+
+            const nextBtn = document.getElementById('next-btn');
+            const prevBtn = document.getElementById('prev-btn');
+            const slideCounter = document.getElementById('slide-counter');
+            const progressBar = document.getElementById('progress-bar');
+            const fullscreenBtn = document.getElementById('fullscreen-btn');
+            
+            function showSlide(index) {
+                if (index < 0 || index >= totalSlides) return;
+                slides.forEach((slide, i) => slide.classList.toggle('active', i === index));
+                currentSlideIndex = index;
+                updateControls();
+                runInteractiveDemos(slides[index]);
+            }
+
+            function updateControls() {
+                slideCounter.textContent = `${currentSlideIndex + 1} / ${totalSlides}`;
+                progressBar.style.width = `${((currentSlideIndex + 1) / totalSlides) * 100}%`;
+                prevBtn.disabled = currentSlideIndex === 0;
+                nextBtn.disabled = currentSlideIndex === totalSlides - 1;
+            }
+            
+            function toggleFullScreen() {
+                if (!document.fullscreenElement) {
+                    document.documentElement.requestFullscreen().catch(err => {
+                        alert(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
+                    });
+                } else {
+                  if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                  }
+                }
+            }
+
+            nextBtn.addEventListener('click', () => showSlide(currentSlideIndex + 1));
+            prevBtn.addEventListener('click', () => showSlide(currentSlideIndex - 1));
+            fullscreenBtn.addEventListener('click', toggleFullScreen);
+
+            document.addEventListener('keydown', (e) => {
+                 if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) return;
+                if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); nextBtn.click(); }
+                if (e.key === 'ArrowLeft') { e.preventDefault(); prevBtn.click(); }
+                if (e.key === 'f') { e.preventDefault(); toggleFullScreen(); }
+            });
+
+            // --- Interactive Demos ---
+            function runInteractiveDemos(activeSlide) {
+                if (!activeSlide) return;
+                
+                // Demo: Run Node.js (Slide 15)
+                const runNodeDemo = activeSlide.querySelector('#demo-run-node');
+                if (runNodeDemo && !runNodeDemo.dataset.initialized) {
+                    runNodeDemo.dataset.initialized = true;
+                    const btn = runNodeDemo.querySelector('button');
+                    const output = runNodeDemo.querySelector('.output-placeholder');
+                    btn.addEventListener('click', () => {
+                        output.innerHTML = `<span class="output">สวัสดีจาก Node.js!</span><br><span class="output">เวลาปัจจุบัน: ${new Date().toLocaleString('th-TH')}</span>`;
+                        btn.textContent = 'รันอีกครั้ง';
+                    });
+                }
+                
+                // Demo: NPM Init (Slide 16)
+                const npmInitDemo = activeSlide.querySelector('#demo-npm-init');
+                if (npmInitDemo && !npmInitDemo.dataset.initialized) {
+                    npmInitDemo.dataset.initialized = true;
+                    const btn = npmInitDemo.querySelector('button');
+                    const outputArea = npmInitDemo.querySelector('.output-area');
+                    const outputCode = outputArea.querySelector('pre code');
+                    btn.addEventListener('click', () => {
+                        outputCode.textContent = JSON.stringify({
+                          "name": "my-project",
+                          "version": "1.0.0",
+                          "description": "",
+                          "main": "index.js",
+                          "scripts": {
+                            "test": "echo \"Error: no test specified\" && exit 1"
+                          },
+                          "keywords": [],
+                          "author": "",
+                          "license": "ISC"
+                        }, null, 2);
+                        outputArea.style.display = 'block';
+                    });
+                }
+
+                // Demo: HTTP Server (Slide 21)
+                const httpServerDemo = activeSlide.querySelector('#demo-http-server');
+                if (httpServerDemo && !httpServerDemo.dataset.initialized) {
+                    httpServerDemo.dataset.initialized = true;
+                    const content = httpServerDemo.querySelector('.browser-content');
+                    const pathDisplay = httpServerDemo.querySelector('.current-path');
+                    const updateContent = (path) => {
+                        pathDisplay.textContent = path;
+                        if (path === '/') {
+                            content.innerHTML = '<h1>หน้าแรก</h1><a href="#">ไปหน้าเกี่ยวกับเรา</a>';
+                        } else if (path === '/about') {
+                            content.innerHTML = '<h1>เกี่ยวกับเรา</h1><a href="#">กลับหน้าแรก</a>';
+                        } else {
+                            content.innerHTML = '<h1>404 Not Found</h1>';
+                        }
+                    };
+                    
+                    httpServerDemo.querySelectorAll('button').forEach(btn => {
+                        btn.addEventListener('click', () => {
+                            updateContent(btn.dataset.path);
+                        });
+                    });
+                    
+                    updateContent('/');
+                }
+            }
+
+            showSlide(0);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ENGSE203: การทำงานกับข้อมูล JSON และ API ง่ายๆ</title>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #6f42c1; /* Purple */
+            --secondary-color: #4a2d81; /* Dark Purple */
+            --accent-color: #fd7e14; /* Orange */
+            --success-color: #10B981;
+            --danger-color: #ef4444;
+            --background-gradient: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            --slide-bg: #ffffff;
+            --text-color: #212529;
+            --header-color: #20232A;
+            --base-font-size: clamp(16px, 1.4vw, 21px);
+            --border-radius: 15px;
+            --code-font: 'Fira Code', 'Courier New', monospace;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { overflow: hidden; height: 100%; }
+
+        body {
+            font-family: 'Sarabun', sans-serif;
+            background: var(--background-gradient);
+            color: var(--text-color);
+            font-size: 16px; 
+            line-height: 1.7;
+        }
+        
+        .presentation {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2vh 3vw; 
+        }
+
+        .slide {
+            background: var(--slide-bg);
+            padding: 30px 40px 80px 40px;
+            border-radius: var(--border-radius);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            height: 100%;
+            font-size: var(--base-font-size);
+            overflow-y: auto;
+            display: none;
+            animation: fadeIn 0.5s ease-in-out;
+            position: relative;
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .slide::-webkit-scrollbar { display: none; }
+
+        .slide.active { display: block; }
+        
+        .title-slide.active {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            background: linear-gradient(135deg, #4a2d81 0%, #6f42c1 100%);
+            color: white;
+        }
+        
+        .title-slide h1, .title-slide h2, .title-slide h3, .title-slide p { color: white !important; }
+        .title-slide h1 { font-size: 3em; margin-bottom: 10px; border: none; color: white !important;}
+        .title-slide h2 { font-size: 2em; margin-bottom: 20px; border: none; color: #f8f9fa !important; }
+        .title-slide h3 { font-size: 1.5em; font-weight: 400; opacity: 0.9; }
+        .title-slide .api-logo { font-size: 5em; display: block; margin-bottom: 20px; color: var(--accent-color); }
+
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
+
+        .progress-bar-container { position: fixed; top: 0; left: 0; width: 100%; height: 8px; background-color: rgba(0, 0, 0, 0.1); z-index: 2000; }
+        .progress-bar { height: 100%; width: 0%; background: linear-gradient(120deg, var(--primary-color) 0%, var(--accent-color) 100%); transition: width 0.3s ease-out; }
+
+        .presentation-controls {
+            position: fixed; bottom: 15px; left: 50%; transform: translateX(-50%);
+            display: flex; align-items: center; gap: 10px; background: rgba(32, 35, 42, 0.9);
+            padding: 10px 15px; border-radius: 50px; box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(8px); z-index: 1000;
+        }
+
+        .nav-btn {
+            background: transparent; color: white; border: none; border-radius: 50%;
+            cursor: pointer; transition: all 0.3s ease; display: flex; align-items: center; justify-content: center;
+            width: 45px; height: 45px; font-size: 1.5rem;
+        }
+        .nav-btn:hover:not(:disabled) { background: var(--primary-color); color: white; transform: translateY(-2px); }
+        .nav-btn:disabled { background-color: transparent; color: #777; cursor: not-allowed; transform: none;}
+        
+        #slide-counter { color: white; font-weight: 500; font-size: 1.1em; min-width: 70px; text-align: center; }
+        .slide-number { position: absolute; bottom: 15px; right: 20px; background: rgba(32, 35, 42, 0.8); color: white; padding: 5px 12px; border-radius: 15px; font-size: 0.8em; font-weight: 600; }
+        
+        .slide h2 { font-size: 2.2em; color: var(--header-color); border-bottom: 3px solid var(--primary-color); padding-bottom: 8px; margin-bottom: 1em; font-weight: 700; }
+        .slide h3 { font-size: 1.6em; color: var(--header-color); margin-top: 1.5em; margin-bottom: 0.5em; font-weight: 700; }
+
+        p, ul, ol { font-size: 1em; max-width: 85ch; margin-bottom: 1rem; }
+        
+        ul { list-style: none; padding-left: 0; }
+        ul li { position: relative; padding-left: 35px; margin-bottom: 12px; }
+        ul li::before { content: attr(data-icon); position: absolute; left: 0; top: 0px; color: var(--primary-color); font-weight: bold; font-family: 'Font Awesome 6 Free'; }
+        
+        pre { background: #282c34; color: #abb2bf; border-radius: 10px; padding: 1em; margin: 1em 0; font-family: var(--code-font); font-size: 0.9em; overflow-x: auto; line-height: 1.6; }
+        code { font-family: var(--code-font); background-color: rgba(0,0,0,0.05); padding: 2px 5px; border-radius: 4px;}
+        pre code { background-color: transparent; padding: 0; }
+        
+        .solution { border-left: 4px solid var(--accent-color); background: #fff5e8; padding: 15px; margin: 10px 0; border-radius: 0 8px 8px 0; }
+        
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; margin: 20px 0; align-items: start; }
+        
+        blockquote { border-left: 5px solid var(--primary-color); margin: 1.5em 0; padding: 1em 1.5em; background-color: #f3effd; font-style: italic; }
+        .highlight { background-color: #6f42c133; padding: 2px 6px; border-radius: 4px; font-weight: 500; }
+
+        .explanation-btn {
+            background-color: #ffc107; color: #212529; border: none; padding: 8px 15px; border-radius: 8px; cursor: pointer;
+            font-family: 'Sarabun', sans-serif; font-size: 0.9em; font-weight: bold; margin-top: 1em; transition: all 0.2s ease;
+        }
+        .explanation-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        .explanation-box {
+            display: none; margin-top: 1em; padding: 15px; background-color: #eef7ff;
+            border-left: 5px solid #007bff; border-radius: 0 8px 8px 0; animation: fadeIn 0.3s;
+        }
+        .explanation-box h4 { margin-top: 0; margin-bottom: 0.5em; color: #0056b3; }
+        
+        /* --- INFOGRAPHIC STYLES --- */
+        .infographic-container { background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: var(--border-radius); padding: 1.5em; margin-top: 1em; font-size: 0.9em; }
+        .infographic-container h4 { text-align: center; margin-top: 0; margin-bottom: 1em; color: var(--header-color); }
+        .info-grid { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 1em; text-align: center; }
+        .info-box { padding: 1em; border-radius: 10px; border: 1px solid #ccc; background: white; }
+        .info-arrow { font-size: 1.5em; display: flex; flex-direction: column; align-items: center; color: var(--secondary-color); }
+        .info-arrow span { font-size: 0.7em; font-family: var(--code-font); }
+
+        .rest-api-infographic { display: grid; grid-template-columns: 1fr 1fr; gap: 1em; }
+        .rest-box { border-radius: 10px; padding: 1em; }
+        .rest-box.bad { background-color: #fff0f0; border: 1px solid var(--danger-color); }
+        .rest-box.good { background-color: #f0fff0; border: 1px solid var(--success-color); }
+        .rest-box h5 { margin-top: 0; }
+        .rest-box ul { padding-left: 1.2em; list-style-type: disc; }
+        .rest-box ul li { padding-left: 0; }
+        .rest-box ul li::before { display: none; }
+
+        .crud-cycle { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1em; text-align: center; }
+        .crud-step { padding: 1em; border-radius: 10px; border: 1px solid #ccc; }
+        .crud-step h5 { margin: 0 0 0.5em 0; color: var(--primary-color); }
+        .crud-step p { margin: 0; font-family: var(--code-font); font-weight: bold; }
+        .storage-comparison .icon { font-size: 2.5em; margin-bottom: 0.5em; }
+        /* --- END INFOGRAPHIC STYLES --- */
+
+        @media (max-width: 900px) {
+            .grid-2, .rest-api-infographic, .crud-cycle { grid-template-columns: 1fr; }
+            .slide { padding: 20px 25px 70px 25px; }
+            .slide h2 { font-size: 1.8em; }
+        }
+    </style>
+</head>
+<body>
+    <div class="progress-bar-container"><div class="progress-bar" id="progress-bar"></div></div>
+
+    <div class="presentation">
+        
+        <section class="slide title-slide active">
+            <h2>หัวข้อที่ 3: การทำงานกับข้อมูล JSON และ API ง่ายๆ</h2>
+            <i class="fas fa-database api-logo"></i>
+            <h1>สร้าง Dynamic REST API ที่ใช้งานได้จริง</h1>
+            <h3 style="margin-top: 30px;">ปลดล็อคพลังของการจัดการข้อมูลใน Backend</h3>
+            <p style="font-size: 1.2em; opacity: 0.9;">เป้าหมาย: "จาก Static API → Dynamic REST API ที่สมบูรณ์!"</p>
+            <div class="slide-number">1/14</div>
+        </section>
+
+        <section class="slide">
+            <h2>JSON คืออะไร? ทำไมต้องรู้? 📊</h2>
+            <p><strong>JSON</strong> (JavaScript Object Notation) คือ <span class="highlight">รูปแบบการจัดเก็บและแลกเปลี่ยนข้อมูลที่เป็น Text-based</span> ซึ่งมนุษย์อ่านเข้าใจง่าย และคอมพิวเตอร์ก็สามารถประมวลผลได้ง่ายเช่นกัน</p>
+            
+            <div class="infographic-container">
+                <h4>Infographic: JS Object vs JSON String</h4>
+                <div class="info-grid">
+                    <div class="info-box">
+                        <h5>JavaScript Object</h5>
+                        <pre><code>{ name: "สมชาย" }</code></pre>
+                    </div>
+                    <div class="info-arrow">
+                        <i class="fas fa-arrow-right"></i>
+                        <span>JSON.stringify()</span>
+                        <i class="fas fa-arrow-left"></i>
+                        <span>JSON.parse()</span>
+                    </div>
+                    <div class="info-box">
+                        <h5>JSON String</h5>
+                        <pre><code>'{ "name": "สมชาย" }'</code></pre>
+                    </div>
+                </div>
+            </div>
+
+            <h3>ทำไม JSON ถึงสำคัญ?</h3>
+            <p>เพราะมันเป็น "ภาษากลาง" ที่ใช้สื่อสารกันระหว่างระบบต่างๆ ไม่ว่าจะเป็น:</p>
+            <ul>
+                <li data-icon="🌐">Frontend (React) ↔️ Backend (Express)</li>
+                <li data-icon="📱">Mobile App ↔️ API Server</li>
+            </ul>
+            <blockquote>คำถามสำคัญ: ถ้า JSON เป็นแค่ String แล้วทำไมถึงเรียกว่า "Object Notation"? <br>ตอบ: เพราะโครงสร้างและ Syntax ของมันถอดแบบมาจาก JavaScript Object นั่นเอง!</blockquote>
+            <div class="slide-number">2/14</div>
+        </section>
+
+        <section class="slide">
+            <h2>REST API คืออะไร? ทำไมต้องเป็นมาตรฐาน? 🔌</h2>
+            <p><strong>REST (REpresentational State Transfer)</strong> คือชุดของ <span class="highlight">หลักการและข้อกำหนดในการออกแบบ API</span> ที่เป็นที่ยอมรับและใช้งานกันอย่างแพร่หลายทั่วโลก</p>
+            
+            <div class="infographic-container">
+                <h4>Infographic: API ที่ดี vs API ที่สับสน</h4>
+                <div class="rest-api-infographic">
+                    <div class="rest-box bad">
+                        <h5>❌ API ที่ไม่เป็นมาตรฐาน</h5>
+                        <ul>
+                            <li>/getUserList</li>
+                            <li>/createNewUser (ใช้ GET)</li>
+                            <li>/deleteUserById</li>
+                        </ul>
+                        <p><strong>ผลลัพธ์:</strong> สับสน, เดายาก, ใช้งานลำบาก</p>
+                    </div>
+                    <div class="rest-box good">
+                        <h5>✅ REST API</h5>
+                        <ul>
+                            <li>GET /users</li>
+                            <li>POST /users</li>
+                            <li>DELETE /users/:id</li>
+                        </ul>
+                        <p><strong>ผลลัพธ์:</strong> ชัดเจน, เป็นมาตรฐาน, ใช้งานง่าย</p>
+                    </div>
+                </div>
+            </div>
+
+            <h3>หลักการสำคัญของ REST</h3>
+            <ul>
+                <li data-icon="📁"><strong>Resource-Based URLs:</strong> ใช้คำนาม (เช่น `/users`) แทนคำกริยา</li>
+                <li data-icon="↔️"><strong>HTTP Methods Have Meaning:</strong> ใช้ GET, POST, PUT, DELETE สื่อความหมาย</li>
+                <li data-icon="🚦"><strong>Use HTTP Status Codes:</strong> ใช้ Status Code (200, 404) บอกผลลัพธ์</li>
+            </ul>
+            <div class="slide-number">3/14</div>
+        </section>
+        
+        <section class="slide">
+            <h2>CRUD Operations - หัวใจของ API 🔄</h2>
+            <p><strong>CRUD</strong> คือตัวย่อของการดำเนินการพื้นฐาน 4 อย่างที่ API ส่วนใหญ่ต้องทำได้กับข้อมูล</p>
+            
+            <div class="infographic-container">
+                <h4>Infographic: CRUD Cycle</h4>
+                <div class="crud-cycle">
+                    <div class="crud-step">
+                        <h5>Create</h5>
+                        <p>POST</p>
+                        <span>สร้างข้อมูลใหม่</span>
+                    </div>
+                    <div class="crud-step">
+                        <h5>Read</h5>
+                        <p>GET</p>
+                        <span>อ่าน/ดึงข้อมูล</span>
+                    </div>
+                    <div class="crud-step">
+                        <h5>Update</h5>
+                        <p>PUT / PATCH</p>
+                        <span>แก้ไขข้อมูล</span>
+                    </div>
+                    <div class="crud-step">
+                        <h5>Delete</h5>
+                        <p>DELETE</p>
+                        <span>ลบข้อมูล</span>
+                    </div>
+                </div>
+            </div>
+            
+            <h3>ตัวอย่าง API สำหรับจัดการ "Books"</h3>
+            <pre><code class="language-js">POST   /api/books   // CREATE a new book
+GET    /api/books   // READ all books
+GET    /api/books/:id // READ a single book
+PUT    /api/books/:id // UPDATE a book
+DELETE /api/books/:id // DELETE a book
+</code></pre>
+            <div class="slide-number">4/14</div>
+        </section>
+
+        <section class="slide">
+            <h2>File-based Data Storage - เก็บข้อมูลถาวร 💾</h2>
+            <p>เพื่อให้ข้อมูลไม่หายไปเมื่อเซิร์ฟเวอร์รีสตาร์ท เราจะจำลองการทำงานของฐานข้อมูลโดยการ <span class="highlight">อ่านและเขียนข้อมูลลงในไฟล์ JSON</span></p>
+            
+            <div class="infographic-container">
+                <h4>Infographic: Memory vs. File Storage</h4>
+                <div class="grid-2 storage-comparison">
+                    <div style="text-align:center;">
+                        <h5>In-Memory Storage</h5>
+                        <div class="icon" style="color:var(--danger-color);"><i class="fas fa-memory"></i> <i class="fas fa-arrow-right"></i> <i class="fas fa-power-off"></i> <i class="fas fa-arrow-right"></i> 💥</div>
+                        <p>ข้อมูลหายเมื่อ Server Restart</p>
+                    </div>
+                    <div style="text-align:center;">
+                        <h5>File-based Storage</h5>
+                        <div class="icon" style="color:var(--success-color);"><i class="fas fa-file-alt"></i> <i class="fas fa-arrow-right"></i> <i class="fas fa-power-off"></i> <i class="fas fa-arrow-right"></i> <i class="fas fa-file-alt"></i></div>
+                        <p>ข้อมูลยังคงอยู่</p>
+                    </div>
+                </div>
+            </div>
+
+            <h3>ตัวอย่างฟังก์ชัน `loadUsers` และ `saveUsers`</h3>
+            <pre><code class="language-js">const fs = require('fs');
+const DATA_FILE = './data/users.json';
+
+// ฟังก์ชันอ่านข้อมูลจากไฟล์
+const loadUsers = () => {
+    if (!fs.existsSync(DATA_FILE)) return [];
+    const data = fs.readFileSync(DATA_FILE, 'utf8');
+    return JSON.parse(data);
+};
+
+// ฟังก์ชันบันทึกข้อมูลลงไฟล์
+const saveUsers = (users) => {
+    fs.writeFileSync(DATA_FILE, JSON.stringify(users, null, 2));
+};
+</code></pre>
+            <div class="slide-number">5/14</div>
+        </section>
+
+        <section class="slide">
+            <h2>Data Validation - ป้องกันข้อมูลผิดพลาด ✅</h2>
+            <p>การตรวจสอบความถูกต้องของข้อมูล (Validation) ที่ส่งมาจาก Client เป็นสิ่งสำคัญอย่างยิ่งเพื่อ <span class="highlight">ป้องกันข้อมูลขยะและเพิ่มความปลอดภัยให้ระบบ</span></p>
+            
+            <h3>ทำไมต้อง Validate ที่ Backend?</h3>
+            <p>ถึงแม้ Frontend จะมีการตรวจสอบข้อมูลแล้ว แต่ผู้ไม่หวังดีสามารถส่ง Request ตรงมาที่ API ของเราได้โดยไม่ผ่านหน้าเว็บ ดังนั้น Backend จึงต้องเป็นด่านสุดท้ายที่คอยตรวจสอบข้อมูลเสมอ</p>
+
+            <h3>วิธีที่แนะนำ: ใช้ Library `Joi`</h3>
+            <p>Joi เป็น Library ที่ช่วยให้เรากำหนด "Schema" หรือกฎเกณฑ์ของข้อมูลที่คาดหวังได้อย่างง่ายดาย</p>
+            <pre><code class="language-bash">npm install joi</code></pre>
+            <pre><code class="language-js">const Joi = require('joi');
+const userSchema = Joi.object({
+    name: Joi.string().min(2).required(),
+    email: Joi.string().email().required(),
+});
+
+// Middleware สำหรับตรวจสอบ
+const validateUser = (req, res, next) => {
+    const { error } = userSchema.validate(req.body);
+    if (error) {
+        return res.status(400).json({ message: error.details[0].message });
+    }
+    next();
+};
+
+app.post('/api/users', validateUser, (req, res) => { /*...*/ });
+</code></pre>
+            <p class="solution">"Never trust client data" - คือกฎเหล็กของการพัฒนา Backend</p>
+            <div class="slide-number">6/14</div>
+        </section>
+
+        <section class="slide">
+            <h2>Error Handling สำหรับ API ⚠️</h2>
+            <p>การจัดการ Error ที่ดีจะช่วยให้ API ของเราน่าเชื่อถือและง่ายต่อการ Debug</p>
+            <h3>รูปแบบ Error Response ที่ดี</h3>
+            <p>ควรมีรูปแบบที่เป็นมาตรฐานและให้ข้อมูลที่เพียงพอ</p>
+            <pre><code class="language-json">{
+  "success": false,
+  "error": {
+    "message": "User not found",
+    "code": "USER_NOT_FOUND"
+  }
+}</code></pre>
+            
+            <h3>ประเภทของ Error ที่พบบ่อย</h3>
+            <ul>
+                <li data-icon="📄"><strong>400 Bad Request:</strong> Client ส่งข้อมูลมาไม่ถูกต้อง</li>
+                <li data-icon="🚫"><strong>401 Unauthorized:</strong> Client ยังไม่ได้ยืนยันตัวตน</li>
+                <li data-icon="❓"><strong>404 Not Found:</strong> ไม่พบ Resource ที่ร้องขอ</li>
+                <li data-icon="💥"><strong>500 Internal Server Error:</strong> เกิดข้อผิดพลาดขึ้นที่ฝั่งเซิร์ฟเวอร์</li>
+            </ul>
+             <p>เราสามารถสร้าง <span class="highlight">Centralized Error Handler Middleware</span> เพื่อจัดการ Error ทั้งหมดในที่เดียว ทำให้โค้ดสะอาดและจัดการง่าย</p>
+            <div class="slide-number">7/14</div>
+        </section>
+        
+        <section class="slide">
+            <h2>API Testing ด้วย Postman 🧪</h2>
+            <p>หลังจากสร้าง API แล้ว เราจะรู้ได้อย่างไรว่ามันทำงานได้ถูกต้อง? เราต้องทำการทดสอบ!</p>
+            <p><strong>Postman</strong> คือเครื่องมือที่นักพัฒนา Backend ทุกคนต้องใช้ เป็นโปรแกรมที่ช่วยให้เราสามารถส่ง HTTP Request ไปยัง API ของเราและดู Response ที่ตอบกลับมาได้อย่างง่ายดาย</p>
+            
+            <h3>สิ่งที่เราสามารถทดสอบได้ด้วย Postman:</h3>
+            <div class="grid-2">
+                <div>
+                    <h4>Happy Path (กรณีที่ถูกต้อง) ✅</h4>
+                    <ul>
+                        <li data-icon="✅">สร้างข้อมูลใหม่ได้สำเร็จ (POST)</li>
+                        <li data-icon="✅">ดึงข้อมูลกลับมาได้ถูกต้อง (GET)</li>
+                        <li data-icon="✅">แก้ไขข้อมูลได้ (PUT)</li>
+                        <li data-icon="✅">ลบข้อมูลได้ (DELETE)</li>
+                    </ul>
+                </div>
+                 <div>
+                    <h4>Error Path (กรณีที่ผิดพลาด) ❌</h4>
+                    <ul>
+                        <li data-icon="❌">ส่งข้อมูลไม่ครบแล้วได้ 400 หรือไม่?</li>
+                        <li data-icon="❌">ดึงข้อมูลที่ไม่มีอยู่แล้วได้ 404 หรือไม่?</li>
+                    </ul>
+                </div>
+            </div>
+            <h3>ตัวอย่างการทดสอบด้วย `curl`</h3>
+            <pre><code class="language-bash"># สร้างผู้ใช้ใหม่
+curl -X POST http://localhost:3000/api/users \
+  -H "Content-Type: application/json" \
+  -d '{ "name": "สมชาย", "email": "somchai@email.com" }'
+
+# ดึงข้อมูลผู้ใช้ทั้งหมด
+curl http://localhost:3000/api/users
+</code></pre>
+            <div class="slide-number">8/14</div>
+        </section>
+        
+        <section class="slide">
+            <h2>LAB: สร้าง Food Menu API (1/3) 🎯</h2>
+            <p>ใน Lab นี้ เราจะนำความรู้ทั้งหมดมาสร้าง REST API ที่สมบูรณ์สำหรับจัดการเมนูอาหารของร้านอาหาร</p>
+            <h3>ขั้นตอนที่ 1: ตั้งค่าโปรเจคและ Server พื้นฐาน</h3>
+            <h4>โครงสร้างโปรเจค</h4>
+            <pre><code>/food-menu-api
+├── /data
+│   └── foods.json
+├── /routes
+│   └── foods.js
+├── server.js
+└── package.json</code></pre>
+            <h4>ไฟล์ `server.js`</h4>
+            <pre><code class="language-js">const express = require('express');
+const cors = require('cors');
+const foodRoutes = require('./routes/foods');
+
+const app = express();
+const PORT = 3000;
+
+// Middleware
+app.use(cors());
+app.use(express.json());
+
+// Routes
+app.use('/api/foods', foodRoutes);
+
+// Error Handling (จะเพิ่มทีหลัง)
+
+app.listen(PORT, () => {
+    console.log(`🚀 API Server running on port ${PORT}`);
+});
+</code></pre>
+            <div class="slide-number">9/14</div>
+        </section>
+        
+        <section class="slide">
+            <h2>LAB: สร้าง Food Menu API (2/3) 🍽️</h2>
+            <h3>ขั้นตอนที่ 2: สร้าง CRUD Operations ใน `routes/foods.js`</h3>
+            <p>เราจะสร้าง Endpoint ทั้ง 5 ตัวสำหรับจัดการข้อมูลเมนูอาหาร</p>
+            <pre><code class="language-js">const express = require('express');
+const router = express.Router();
+// ... (import file manager functions)
+
+// GET /api/foods - ดึงเมนูทั้งหมด
+router.get('/', (req, res) => { /* ... */ });
+
+// GET /api/foods/:id - ดึงเมนูตาม ID
+router.get('/:id', (req, res) => { /* ... */ });
+
+// POST /api/foods - เพิ่มเมนูใหม่
+router.post('/', (req, res) => { /* ... */ });
+
+// PUT /api/foods/:id - แก้ไขเมนู
+router.put('/:id', (req, res) => { /* ... */ });
+
+// DELETE /api/foods/:id - ลบเมนู
+router.delete('/:id', (req, res) => { /* ... */ });
+
+module.exports = router;
+</code></pre>
+            <p>ในแต่ละ Route เราจะต้องเรียกใช้ฟังก์ชันสำหรับอ่านและเขียนไฟล์ JSON เพื่อให้ข้อมูลของเราถูกจัดเก็บอย่างถาวร</p>
+            <div class="slide-number">10/14</div>
+        </section>
+
+        <section class="slide">
+            <h2>LAB: สร้าง Food Menu API (3/3) ✅</h2>
+            <h3>ขั้นตอนที่ 3: เพิ่ม Validation และ Error Handling</h3>
+            <p>ทำให้ API ของเรามีความน่าเชื่อถือและแข็งแกร่งมากขึ้น</p>
+            <h4>เพิ่ม Joi Validation Schema</h4>
+            <p>สร้าง Schema สำหรับข้อมูลเมนูอาหารเพื่อตรวจสอบ `name`, `price`, และ `category`</p>
+            <pre><code class="language-js">const foodSchema = Joi.object({
+    name: Joi.string().min(2).required(),
+    price: Joi.number().positive().required(),
+    category: Joi.string().required()
+});
+</code></pre>
+            
+            <h4>นำ Validation Middleware ไปใช้</h4>
+            <p>นำ Middleware ไปใช้กับ Route ที่มีการสร้างและแก้ไขข้อมูล (POST, PUT)</p>
+            <pre><code>router.post('/', validateFood, (req, res) => { /* ... */ });
+router.put('/:id', validateFood, (req, res) => { /* ... */ });
+</code></pre>
+            
+            <h4>เพิ่ม Centralized Error Handler</h4>
+            <p>สร้าง Middleware สำหรับจัดการ Error ทั้งหมดใน `server.js` เพื่อส่ง Response กลับไปในรูปแบบที่เป็นมาตรฐาน</p>
+            <p class="solution">หลังจากทำครบทุกขั้นตอน เราจะได้ REST API ที่สมบูรณ์ พร้อมสำหรับการทดสอบด้วย Postman!</p>
+            <div class="slide-number">11/14</div>
+        </section>
+        
+        <section class="slide">
+            <h2>API Design Best Practices 🏆</h2>
+            <p>เคล็ดลับในการออกแบบ API ให้เป็นมืออาชีพ</p>
+            <h3>1. URL Naming Conventions (การตั้งชื่อ URL)</h3>
+            <p>ใช้คำนามพหูพจน์ (Plural Nouns) เพื่อระบุถึง "Resource" และหลีกเลี่ยงการใช้คำกริยา (Verbs)</p>
+            <div class="grid-2">
+                <div class="solution" style="border-left-color: var(--success-color);">
+                    <strong>✅ ดี:</strong><br>
+                    <code>GET /users</code><br>
+                    <code>POST /products</code>
+                </div>
+                 <div class="solution" style="border-left-color: var(--danger-color); background-color: #fff0f0;">
+                    <strong>❌ ไม่ดี:</strong><br>
+                    <code>GET /getAllUsers</code><br>
+                    <code>POST /createNewProduct</code>
+                </div>
+            </div>
+
+            <h3>2. Response Format Consistency (รูปแบบการตอบกลับที่สม่ำเสมอ)</h3>
+            <p>ควรกำหนดรูปแบบการตอบกลับ (ทั้งกรณี Success และ Error) ให้เป็นมาตรฐานเดียวกันทั้งระบบ</p>
+            <pre><code class="language-json">{
+  "success": true,
+  "data": { /* ... ข้อมูลจริง ... */ }
+}</code></pre>
+            <div class="slide-number">12/14</div>
+        </section>
+
+        <section class="slide">
+            <h2>สรุปการเรียนรู้วันที่ 4 🎓</h2>
+            <p>วันนี้เราได้เดินทางจากพื้นฐานของ JavaScript นอกเบราว์เซอร์ มาจนถึงการสร้าง REST API ที่สมบูรณ์!</p>
+            <h3>Journey ที่เราผ่านมาในวันนี้:</h3>
+            <ol>
+                <li><strong>Node.js & NPM:</strong> เข้าใจหลักการทำงานและเครื่องมือพื้นฐาน</li>
+                <li><strong>Express.js:</strong> ใช้ Web Framework เพื่อสร้างเซิร์ฟเวอร์อย่างรวดเร็ว</li>
+                <li><strong>JSON & REST API:</strong> เรียนรู้การออกแบบและสร้าง API ที่เป็นมาตรฐานสำหรับจัดการข้อมูล</li>
+            </ol>
+            <h3>ผลลัพธ์:</h3>
+            <p>ตอนนี้คุณสามารถ <span class="highlight">สร้าง Backend Server ด้วย Node.js และ Express ที่สามารถรับ-ส่งข้อมูลในรูปแบบ JSON และจัดการข้อมูล (CRUD) ได้อย่างสมบูรณ์</span></p>
+            
+            <h3>ก้าวต่อไป: วันที่ 5</h3>
+            <p>ในวันพรุ่งนี้ เราจะนำความรู้ทั้งหมดมารวมกัน! เราจะเชื่อมต่อ Frontend (React App) ที่เราสร้างไว้ เข้ากับ Backend (Express API) ที่เราเพิ่งสร้างเสร็จในวันนี้ เพื่อสร้างเป็น **Full-stack Application** ที่สมบูรณ์!</p>
+            <div class="slide-number">13/14</div>
+        </section>
+
+        <section class="slide">
+            <h2>🎉 สรุปหัวข้อที่ 3: JSON และ API</h2>
+            <h3>Key Takeaways:</h3>
+            <ul>
+                <li data-icon="💡"><strong>JSON</strong> คือภาษากลางของ Web APIs</li>
+                <li data-icon="💡"><strong>REST API</strong> คือหลักการออกแบบ API ที่เป็นมาตรฐานสากล</li>
+                <li data-icon="💡"><strong>CRUD operations</strong> คือพื้นฐานของระบบจัดการข้อมูล</li>
+                <li data-icon="💡"><strong>Validation และ Error handling</strong> เป็นสิ่งจำเป็นอย่างยิ่งสำหรับ API ที่มีคุณภาพ</li>
+            </ul>
+             <h3 style="text-align:center; margin-top:2em;">ข้อความจากผู้สอน:</h3>
+            <blockquote style="text-align:center; font-size:1.1em; font-weight:bold;">
+                การสร้าง API ไม่ใช่แค่การเขียนโค้ด แต่คือการออกแบบประสบการณ์สำหรับนักพัฒนาคนอื่นๆ ที่จะมาใช้งาน API ของเรา ให้ใส่ใจในรายละเอียด ทำให้มันเข้าใจง่าย และใช้งานได้สะดวก
+            </blockquote>
+             <h3 style="text-align:center;">เตรียมตัวให้พร้อมสำหรับครั้งต่อไป: การเชื่อมต่อ Full-stack! 🚀</h3>
+            <div class="slide-number">14/14</div>
+        </section>
+
+    </div>
+
+    <div class="presentation-controls">
+        <button id="prev-btn" class="nav-btn" title="สไลด์ก่อนหน้า">‹</button>
+        <span id="slide-counter"></span>
+        <button id="next-btn" class="nav-btn" title="สไลด์ถัดไป">›</button>
+    </div>
+
+    <script>
+        function toggleExplanation(btn, id) {
+            const explanationBox = document.querySelector(`.explanation-box[data-id="${id}"]`);
+            if (explanationBox) {
+                const isVisible = explanationBox.style.display === 'block';
+                explanationBox.style.display = isVisible ? 'none' : 'block';
+                const originalText = btn.innerHTML.includes('ปิดคำอธิบาย') ? btn.dataset.originalText : btn.innerHTML;
+                btn.dataset.originalText = originalText;
+                btn.innerHTML = isVisible ? originalText : '<i class="fas fa-times"></i> ปิดคำอธิบาย';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const slides = document.querySelectorAll('.slide');
+            const totalSlides = slides.length;
+            let currentSlideIndex = 0;
+
+            const nextBtn = document.getElementById('next-btn');
+            const prevBtn = document.getElementById('prev-btn');
+            const slideCounter = document.getElementById('slide-counter');
+            const progressBar = document.getElementById('progress-bar');
+            
+            function showSlide(index) {
+                if (index < 0 || index >= totalSlides) return;
+                slides.forEach((slide, i) => slide.classList.toggle('active', i === index));
+                currentSlideIndex = index;
+                updateControls();
+            }
+
+            function updateControls() {
+                slideCounter.textContent = `${currentSlideIndex + 1} / ${totalSlides}`;
+                progressBar.style.width = `${((currentSlideIndex + 1) / totalSlides) * 100}%`;
+                prevBtn.disabled = currentSlideIndex === 0;
+                nextBtn.disabled = currentSlideIndex === totalSlides - 1;
+            }
+
+            nextBtn.addEventListener('click', () => showSlide(currentSlideIndex + 1));
+            prevBtn.addEventListener('click', () => showSlide(currentSlideIndex - 1));
+
+            document.addEventListener('keydown', (e) => {
+                 if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) return;
+                if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); nextBtn.click(); }
+                if (e.key === 'ArrowLeft') { e.preventDefault(); prevBtn.click(); }
+            });
+
+            showSlide(0);
+        });
+    </script>
+</body>
+</html>
