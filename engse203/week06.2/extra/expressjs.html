@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ENGSE203: Express.js สำหรับสร้างเว็บเซิร์ฟเวอร์</title>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #007BFF; /* Express Blue */
+            --secondary-color: #6c757d; /* Express Gray */
+            --accent-color: #8CC84B; /* Node Green */
+            --success-color: #10B981;
+            --danger-color: #ef4444;
+            --background-gradient: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            --slide-bg: #ffffff;
+            --text-color: #212529;
+            --header-color: #20232A;
+            --base-font-size: clamp(16px, 1.5vw, 22px);
+            --border-radius: 15px;
+            --code-font: 'Fira Code', 'Courier New', monospace;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { overflow: hidden; height: 100%; }
+
+        body {
+            font-family: 'Sarabun', sans-serif;
+            background: var(--background-gradient);
+            color: var(--text-color);
+            font-size: 16px; 
+            line-height: 1.7;
+        }
+        
+        .presentation {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2vh 3vw; 
+        }
+
+        .slide {
+            background: var(--slide-bg);
+            padding: 30px 40px 80px 40px;
+            border-radius: var(--border-radius);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            height: 100%;
+            font-size: var(--base-font-size);
+            overflow-y: auto;
+            display: none;
+            animation: fadeIn 0.5s ease-in-out;
+            position: relative;
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .slide::-webkit-scrollbar { display: none; }
+
+        .slide.active { display: block; }
+        
+        .title-slide.active {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            background: linear-gradient(135deg, #20232A 0%, #282c34 100%);
+            color: white;
+        }
+        
+        .title-slide h1, .title-slide h2, .title-slide h3, .title-slide p { color: white !important; }
+        .title-slide h1 { font-size: 3em; margin-bottom: 10px; border: none; color: white !important;}
+        .title-slide h2 { font-size: 2em; margin-bottom: 20px; border: none; color: #f8f9fa !important; }
+        .title-slide h3 { font-size: 1.5em; font-weight: 400; opacity: 0.9; }
+        .title-slide .express-logo { font-size: 5em; display: block; margin-bottom: 20px; font-weight: bold; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
+
+        .progress-bar-container { position: fixed; top: 0; left: 0; width: 100%; height: 8px; background-color: rgba(0, 0, 0, 0.1); z-index: 2000; }
+        .progress-bar { height: 100%; width: 0%; background: linear-gradient(120deg, var(--primary-color) 0%, #00BFFF 100%); transition: width 0.3s ease-out; }
+
+        .presentation-controls {
+            position: fixed; bottom: 15px; left: 50%; transform: translateX(-50%);
+            display: flex; align-items: center; gap: 10px; background: rgba(32, 35, 42, 0.9);
+            padding: 10px 15px; border-radius: 50px; box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(8px); z-index: 1000;
+        }
+
+        .nav-btn, .font-btn, .fullscreen-btn {
+            background: transparent; color: white; border: none; border-radius: 50%;
+            cursor: pointer; transition: all 0.3s ease; display: flex; align-items: center; justify-content: center;
+            width: 45px; height: 45px; font-size: 1.5rem;
+        }
+        .nav-btn:hover:not(:disabled), .font-btn:hover, .fullscreen-btn:hover { background: var(--primary-color); color: white; transform: translateY(-2px); }
+        .nav-btn:disabled { background-color: transparent; color: #777; cursor: not-allowed; transform: none;}
+        
+        #slide-counter { color: white; font-weight: 500; font-size: 1.1em; min-width: 70px; text-align: center; }
+        .slide-number { position: absolute; bottom: 15px; right: 20px; background: rgba(32, 35, 42, 0.8); color: white; padding: 5px 12px; border-radius: 15px; font-size: 0.8em; font-weight: 600; }
+        
+        .slide h2 { font-size: 2.2em; color: var(--header-color); border-bottom: 3px solid var(--primary-color); padding-bottom: 8px; margin-bottom: 1em; font-weight: 700; }
+        .slide h3 { font-size: 1.6em; color: var(--header-color); margin-top: 1.5em; margin-bottom: 0.5em; font-weight: 700; }
+
+        p, ul, ol { font-size: 1em; max-width: 85ch; margin-bottom: 1rem; }
+        
+        ul { list-style: none; padding-left: 0; }
+        ul li { position: relative; padding-left: 35px; margin-bottom: 12px; }
+        ul li::before { content: attr(data-icon); position: absolute; left: 0; top: 0px; color: var(--primary-color); font-weight: bold; font-family: 'Font Awesome 6 Free'; }
+        
+        pre { background: #282c34; color: #abb2bf; border-radius: 10px; padding: 1em; margin: 1em 0; font-family: var(--code-font); font-size: 0.9em; overflow-x: auto; line-height: 1.6; }
+        code { font-family: var(--code-font); background-color: rgba(0,0,0,0.05); padding: 2px 5px; border-radius: 4px;}
+        pre code { background-color: transparent; padding: 0; }
+        
+        .solution { border-left: 4px solid var(--accent-color); background: #f0fff0; padding: 15px; margin: 10px 0; border-radius: 0 8px 8px 0; }
+        
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; margin: 20px 0; align-items: start; }
+        
+        blockquote { border-left: 5px solid var(--primary-color); margin: 1.5em 0; padding: 1em 1.5em; background-color: #f0f8ff; font-style: italic; }
+        .highlight { background-color: #007BFF33; padding: 2px 6px; border-radius: 4px; font-weight: 500; }
+
+        .interactive-demo { border: 1px solid #ddd; border-radius: 10px; padding: 1.5em; background: white; margin-top: 1em; }
+        .interactive-demo button { background-color: var(--primary-color); color: white; cursor: pointer; border: none; padding: 8px 15px; border-radius: 5px; }
+        .interactive-demo button:hover { background-color: #0056b3; }
+        
+        .explanation-btn {
+            background-color: #ffc107; color: #212529; border: none; padding: 8px 15px; border-radius: 8px; cursor: pointer;
+            font-family: 'Sarabun', sans-serif; font-size: 0.9em; font-weight: bold; margin-top: 1em; transition: all 0.2s ease;
+        }
+        .explanation-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        .explanation-box {
+            display: none; margin-top: 1em; padding: 15px; background-color: #eef7ff;
+            border-left: 5px solid #007bff; border-radius: 0 8px 8px 0; animation: fadeIn 0.3s;
+        }
+        .explanation-box h4 { margin-top: 0; margin-bottom: 0.5em; color: #0056b3; }
+        .explanation-box p { font-size: 0.95em; margin-bottom: 0.5em; }
+        .explanation-box code { font-size: 0.9em; }
+
+        table { width: 100%; border-collapse: collapse; font-size: 0.95em; text-align: left; margin-top: 1em; }
+        th, td { padding: 12px; border: 1px solid #ddd; }
+        thead tr { background-color: var(--header-color); color: white; }
+        
+        .terminal { background: #1e1e1e; color: #d4d4d4; padding: 1em; border-radius: 8px; font-family: var(--code-font); font-size: 0.9em; }
+        .terminal .prompt { color: #569cd6; }
+        .terminal .output { color: #ce9178; }
+        
+        .browser-bar { background-color: #e0e0e0; padding: 8px; border-radius: 5px 5px 0 0; font-family: sans-serif; font-size: 0.8em; color: #333; }
+        .browser-content { padding: 1em; border: 1px solid #e0e0e0; border-top: none; min-height: 100px; border-radius: 0 0 5px 5px; }
+
+        /* --- INFOGRAPHIC STYLES --- */
+        .infographic-container { background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: var(--border-radius); padding: 1.5em; margin-top: 1.5em; font-size: 0.9em; }
+        .infographic-container h4 { text-align: center; margin-top: 0; margin-bottom: 1em; color: var(--header-color); }
+        
+        .comparison-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1em; text-align: center; }
+        .comparison-box { border: 2px solid #ddd; border-radius: 10px; padding: 1em; }
+        .comparison-box h5 { margin: 0 0 0.5em 0; }
+        .comparison-box .icon { font-size: 2.5em; margin-bottom: 0.5em; }
+        .comparison-box.http .icon { color: var(--danger-color); }
+        .comparison-box.express .icon { color: var(--success-color); }
+        
+        .middleware-flow { display: flex; align-items: center; justify-content: space-around; flex-wrap: wrap; gap: 0.5em; }
+        .flow-item, .flow-arrow { display: flex; align-items: center; justify-content: center; text-align: center; }
+        .flow-item { padding: 0.8em 1em; border-radius: 8px; background-color: #e9ecef; border: 1px solid #ced4da; min-width: 80px; }
+        .flow-item.endpoint { background-color: var(--primary-color); color: white; font-weight: bold; }
+        .flow-arrow { font-size: 1.5em; color: #adb5bd; }
+
+        .cors-diagram { text-align: center; }
+        .cors-diagram .server, .cors-diagram .browser { display: flex; flex-direction: column; align-items: center; gap: 0.5em; }
+        .cors-diagram .icon { font-size: 3em; }
+        .cors-arrow { position: relative; font-size: 2.5em; margin: 0 1em; }
+        .cors-arrow.blocked::after { content: '❌'; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: var(--danger-color); font-size: 1.5em; background: white; border-radius: 50%; padding: 2px; }
+        .cors-arrow.allowed { color: var(--success-color); }
+        .cors-grid { display: flex; justify-content: space-around; align-items: center; }
+        .cors-label { font-weight: bold; font-size: 0.9em; }
+
+        .tree-view { font-family: var(--code-font); font-size: 0.9em; line-height: 1.6; }
+        .tree-view ul { list-style-type: none; position: relative; padding-left: 20px; }
+        .tree-view li { margin: 0; padding: 0 0 0 12px; }
+        .tree-view ul li::before { content: ""; position: absolute; left: 0; top: 0; border-left: 1px solid #ccc; width: 10px; height: 100%; }
+        .tree-view ul li:last-child::before { height: 1em; }
+        .tree-view li::after { content: ""; position: absolute; left: 0px; top: 0.9em; border-top: 1px solid #ccc; width: 10px; height: 100%; }
+        .tree-view .icon { margin-right: 5px; }
+        /* --- END INFOGRAPHIC STYLES --- */
+
+        @media (max-width: 900px) {
+            .grid-2 { grid-template-columns: 1fr; }
+            .slide { padding: 20px 25px 70px 25px; }
+            .slide h2 { font-size: 1.8em; }
+        }
+    </style>
+</head>
+<body>
+    <div class="progress-bar-container"><div class="progress-bar" id="progress-bar"></div></div>
+
+    <div class="presentation">
+        
+        <section class="slide title-slide active">
+            <h2>หัวข้อที่ 2: Express.js สำหรับสร้างเว็บเซิร์ฟเวอร์</h2>
+            <div class="express-logo">Express.js</div>
+            <h1>Web Framework ที่ทำให้ชีวิตง่ายขึ้น</h1>
+            <h3 style="margin-top: 30px;">จากโค้ด 50 บรรทัด สู่ 5 บรรทัด!</h3>
+            <p style="font-size: 1.2em; opacity: 0.9;">เป้าหมาย: "สร้าง Modern Web Server ด้วยโค้ดที่สั้น กระชับ และทรงพลัง"</p>
+            <div class="slide-number">1/20</div>
+        </section>
+
+        <section class="slide">
+            <h2>Express.js คืออะไร? 🤔</h2>
+            <p><strong>คำจำกัดความง่ายๆ:</strong> <span class="highlight">Express.js คือ Web Framework ที่สร้างขึ้นบน Node.js เพื่อทำให้การสร้างเว็บเซิร์ฟเวอร์และ API ง่ายและรวดเร็วยิ่งขึ้น</span></p>
+             
+            <div class="infographic-container">
+                <h4>Infographic: เปรียบเทียบการสร้างเซิร์ฟเวอร์</h4>
+                <div class="comparison-grid">
+                    <div class="comparison-box http">
+                        <h5>Node.js HTTP Module</h5>
+                        <div class="icon"><i class="fas fa-hammer"></i> + <i class="fas fa-saw"></i></div>
+                        <p>เหมือนสร้างบ้านด้วยมือเปล่า โค้ดยาว ซับซ้อน ทำทุกอย่างเอง</p>
+                    </div>
+                    <div class="comparison-box express">
+                        <h5>Express.js Framework</h5>
+                        <div class="icon"><i class="fas fa-hard-hat"></i> + <i class="fas fa-tools"></i></div>
+                        <p>เหมือนใช้เครื่องมือก่อสร้างครบชุด โค้ดสั้น รวดเร็ว เป็นมาตรฐาน</p>
+                    </div>
+                </div>
+            </div>
+            
+            <h3>บริษัทใหญ่ที่ใช้ Express.js</h3>
+            <p>Netflix, Uber, WhatsApp, IBM, Accenture และอีกมากมาย</p>
+            <blockquote>คำถามให้คิด: ถ้า HTTP Module เป็นการขับรถเกียร์ธรรมดา Express.js ก็เปรียบเสมือนการขับรถยนต์ไฟฟ้าอัตโนมัติ 🚗⚡</blockquote>
+            <div class="slide-number">2/20</div>
+        </section>
+        
+        <section class="slide">
+            <h2>ทำไม Express.js ถึงเป็นที่นิยม? 🌟</h2>
+            <div class="grid-2">
+                <div>
+                    <h3>1. เขียนโค้ดน้อยลง 📝</h3>
+                    <p>Express ช่วยลดปริมาณโค้ดที่ต้องเขียนลงได้อย่างมหาศาล ทำให้เราโฟกัสกับ Business Logic ได้มากขึ้น</p>
+                    <pre><code>// Express: สร้าง 1 API endpoint
+app.get('/api/users', (req, res) => {
+    res.json({ users: [...] });
+});</code></pre>
+                </div>
+                 <div>
+                    <h3>2. Routing ที่ยืดหยุ่น 🛣️</h3>
+                    <p>จัดการ URL ได้อย่างง่ายดาย ไม่ว่าจะเป็น URL parameters หรือ Query parameters</p>
+                     <pre><code>// รับค่า id จาก URL
+app.get('/users/:id', (req, res) => {
+    const userId = req.params.id;
+});</code></pre>
+                </div>
+                 <div>
+                    <h3>3. Middleware System 🔧</h3>
+                    <p>เปรียบเสมือน "ด่านตรวจ" ที่เราสามารถเพิ่มเข้าไปในระหว่าง Request-Response เพื่อทำงานต่างๆ เช่น ตรวจสอบสิทธิ์, Logging</p>
+                 </div>
+                 <div>
+                    <h3>4. Ecosystem ที่ใหญ่ 📦</h3>
+                    <p>มี Middleware และเครื่องมือเสริมมากมายบน NPM ที่พร้อมนำมาใช้งานได้ทันที</p>
+                </div>
+            </div>
+            <button class="explanation-btn" onclick="toggleExplanation(this, 'why-http')"><i class="fas fa-lightbulb"></i> ถ้า Express ง่ายกว่า แล้วทำไมต้องเรียน HTTP Module?</button>
+            <div class="explanation-box" data-id="why-http">
+                <h4>คำตอบคือ: เพื่อเข้าใจพื้นฐานที่แท้จริงครับ!</h4>
+                <p>การเรียนรู้ HTTP Module ก่อนเปรียบเสมือนการเรียนรู้ว่าเครื่องยนต์ทำงานอย่างไร เมื่อเราเข้าใจพื้นฐานแล้ว การไปใช้เครื่องมือที่สูงขึ้นอย่าง Express.js จะทำให้เราเข้าใจลึกซึ้งว่าเบื้องหลังความง่ายนั้นเกิดอะไรขึ้น และสามารถแก้ไขปัญหาที่ซับซ้อนได้ดีกว่าครับ</p>
+            </div>
+            <div class="slide-number">3/20</div>
+        </section>
+
+        <section class="slide">
+            <h2>การติดตั้งและเริ่มต้นโปรเจค 💻</h2>
+            <h3>ขั้นตอนที่ 1: สร้างโปรเจคและติดตั้ง Express</h3>
+            <pre><code class="language-bash"># สร้างโฟลเดอร์โปรเจค
+mkdir my-express-app && cd my-express-app
+
+# เริ่มต้น NPM project
+npm init -y
+
+# ติดตั้ง Express
+npm install express
+
+# ติดตั้ง nodemon สำหรับ development
+npm install --save-dev nodemon</code></pre>
+            <h3>ขั้นตอนที่ 2: ตั้งค่า `package.json`</h3>
+            <p>เพิ่ม `scripts` สำหรับการรันเซิร์ฟเวอร์</p>
+            <pre><code class="language-json">"scripts": {
+  "start": "node server.js",
+  "dev": "nodemon server.js"
+}</code></pre>
+            <h3>โครงสร้างโปรเจคที่ได้:</h3>
+            <pre><code>my-express-app/
+├── node_modules/
+├── package.json
+├── package-lock.json
+└── server.js      (ไฟล์นี้เราจะสร้างในสไลด์ถัดไป)</code></pre>
+            <div class="slide-number">4/20</div>
+        </section>
+
+        <section class="slide">
+            <h2>Hello World Express Server 🎉</h2>
+            <p>มาสร้างเซิร์ฟเวอร์แรกด้วย Express กันเลย! โค้ดสั้นและเข้าใจง่ายกว่าเดิมมาก</p>
+            <div class="grid-2">
+                <div class="code-pane">
+                    <h3>สร้างไฟล์ `server.js`</h3>
+                    <pre><code class="language-js">const express = require('express');
+const app = express();
+const PORT = 3000;
+
+// สร้าง Route สำหรับหน้าแรก
+app.get('/', (req, res) => {
+    res.send('&lt;h1&gt;🎉 สวัสดี Express.js!&lt;/h1&gt;');
+});
+
+// เริ่มต้นให้เซิร์ฟเวอร์ทำงาน
+app.listen(PORT, () => {
+    console.log(`🚀 Server is running...`);
+});</code></pre>
+                </div>
+                <div class="interactive-demo">
+                    <h3>ทดลองรันเซิร์ฟเวอร์ (จำลอง)</h3>
+                    <div class="terminal" id="demo-hello-server-term">
+                        <span class="prompt">$</span> npm run dev
+                        <div class="output"></div>
+                    </div>
+                    <button onclick="runHelloServer()">รันเซิร์ฟเวอร์</button>
+                    <div id="demo-hello-server-browser" style="display:none; margin-top:1em;">
+                        <div class="browser-bar">http://localhost:3000</div>
+                        <div class="browser-content"></div>
+                    </div>
+                </div>
+            </div>
+            <p class="solution">สำเร็จ! นี่คือ Express Server แรกของคุณ สร้างได้ด้วยโค้ดไม่ถึง 10 บรรทัด!</p>
+            <div class="slide-number">5/20</div>
+        </section>
+
+        <section class="slide">
+            <h2>Routing พื้นฐาน 🛣️</h2>
+            <p>Routing คือการกำหนดว่าเซิร์ฟเวอร์จะตอบสนองอย่างไรเมื่อมี request เข้ามาที่ URL และ HTTP Method ที่ต่างกัน</p>
+            <h3>Route = URL Pattern + HTTP Method + Handler</h3>
+            
+            <h4>1. Basic Routes</h4>
+            <pre><code>app.get('/', (req, res) => res.send('หน้าแรก'));
+app.get('/about', (req, res) => res.send('เกี่ยวกับเรา'));</code></pre>
+
+            <h4>2. Route Parameters (รับค่าจาก URL)</h4>
+            <p>ใช้ <code>:</code> เพื่อกำหนดตัวแปรใน URL</p>
+            <pre><code>app.get('/users/:id', (req, res) => {
+    const userId = req.params.id; // ดึงค่า id จาก URL
+    res.send(`ดูข้อมูลผู้ใช้ ID: ${userId}`);
+});</code></pre>
+
+            <h4>3. Query Parameters (รับค่าหลัง `?`)</h4>
+            <p>สำหรับ URL เช่น <code>/search?q=react&page=1</code></p>
+            <pre><code>app.get('/search', (req, res) => {
+    const keyword = req.query.q;      // 'react'
+    const page = req.query.page;    // '1'
+    res.send(`ค้นหาด้วยคำว่า: ${keyword} ที่หน้า ${page}`);
+});</code></pre>
+            <p class="solution">Routing ของ Express ทำให้การจัดการ API endpoints ที่ซับซ้อนกลายเป็นเรื่องง่าย</p>
+            <div class="slide-number">6/20</div>
+        </section>
+
+        <section class="slide">
+            <h2>HTTP Methods และ RESTful API 📡</h2>
+            <p>ใน RESTful API เราจะใช้ HTTP Methods เพื่อสื่อความหมายของการกระทำต่อข้อมูล (Resource)</p>
+            <ul>
+                <li data-icon="📥"><strong>GET:</strong> ใช้สำหรับ <strong>ดึงข้อมูล</strong> (Read)</li>
+                <li data-icon="📤"><strong>POST:</strong> ใช้สำหรับ <strong>สร้างข้อมูลใหม่</strong> (Create)</li>
+                <li data-icon="✏️"><strong>PUT/PATCH:</strong> ใช้สำหรับ <strong>แก้ไขข้อมูล</strong> ที่มีอยู่แล้ว (Update)</li>
+                <li data-icon="🗑️"><strong>DELETE:</strong> ใช้สำหรับ <strong>ลบข้อมูล</strong> (Delete)</li>
+            </ul>
+            <h3>ตัวอย่างการออกแบบ RESTful API สำหรับ "products"</h3>
+            <pre><code class="language-js">// GET /api/products -> ดึงสินค้าทั้งหมด
+app.get('/api/products', getAllProducts);
+
+// GET /api/products/123 -> ดึงสินค้า ID 123
+app.get('/api/products/:id', getProductById);
+
+// POST /api/products -> สร้างสินค้าใหม่
+app.post('/api/products', createProduct);
+
+// PUT /api/products/123 -> แก้ไขสินค้า ID 123
+app.put('/api/products/:id', updateProduct);
+
+// DELETE /api/products/123 -> ลบสินค้า ID 123
+app.delete('/api/products/:id', deleteProduct);
+</code></pre>
+            <blockquote>คำถามให้คิด: ทำไม POST ใช้สร้างข้อมูล และ PUT ใช้แก้ไขข้อมูล? เราสลับกันได้ไหม?</blockquote>
+            <div class="slide-number">7/20</div>
+        </section>
+
+        <section class="slide">
+            <h2>Static Files 📁</h2>
+            <p><strong>Static Files</strong> คือไฟล์ที่ไม่เปลี่ยนแปลง เช่น HTML, CSS, JavaScript (ฝั่ง client), และรูปภาพ ซึ่ง Express สามารถเสิร์ฟไฟล์เหล่านี้ให้เบราว์เซอร์ได้โดยตรง</p>
+            <h3>วิธีการตั้งค่า</h3>
+            <ol>
+                <li>สร้างโฟลเดอร์ชื่อ `public` ในโปรเจค</li>
+                <li>ใส่ไฟล์ static ทั้งหมด (css, js, images) ลงในโฟลเดอร์นี้</li>
+                <li>เพิ่มโค้ด 1 บรรทัดใน `server.js`:</li>
+            </ol>
+            <pre><code>app.use(express.static('public'));</code></pre>
+            <h3>ตัวอย่างโครงสร้าง</h3>
+            <pre><code>my-express-app/
+├── public/
+│   ├── index.html
+│   ├── css/style.css
+│   └── images/logo.png
+└── server.js</code></pre>
+            <p>เมื่อตั้งค่าแล้ว เราสามารถเข้าถึงไฟล์ได้โดยตรงผ่าน URL เช่น <code>http://localhost:3000/css/style.css</code> โดยไม่ต้องสร้าง route เพิ่ม</p>
+            <div class="slide-number">8/20</div>
+        </section>
+
+        <section class="slide">
+            <h2>Middleware คืออะไร? 🔧</h2>
+            <p><strong>Middleware</strong> คือฟังก์ชันที่ทำงานอยู่ <strong>ระหว่าง</strong> การรับ Request และการส่ง Response กลับไป</p>
+            
+            <div class="infographic-container">
+                <h4>Infographic: การไหลของ Middleware</h4>
+                <div class="middleware-flow">
+                    <div class="flow-item">Request</div>
+                    <div class="flow-arrow"><i class="fas fa-arrow-right"></i></div>
+                    <div class="flow-item">Logger</div>
+                    <div class="flow-arrow"><i class="fas fa-arrow-right"></i></div>
+                    <div class="flow-item">Auth</div>
+                    <div class="flow-arrow"><i class="fas fa-arrow-right"></i></div>
+                    <div class="flow-item endpoint">Route</div>
+                    <div class="flow-arrow"><i class="fas fa-arrow-left"></i></div>
+                    <div class="flow-item">Response</div>
+                </div>
+            </div>
+
+            <h3>ตัวอย่าง Middleware Signature</h3>
+            <pre><code class="language-js">function myLogger(req, res, next) {
+    console.log(`LOGGED: ${req.method} ${req.url}`);
+    
+    // สำคัญมาก! ต้องเรียก next() เพื่อส่งต่อไปยัง middleware ถัดไป
+    next(); 
+}
+
+// วิธีใช้
+app.use(myLogger);
+</code></pre>
+             <button class="explanation-btn" onclick="toggleExplanation(this, 'no-next')"><i class="fas fa-lightbulb"></i> ถ้าลืมเรียก next() จะเกิดอะไรขึ้น?</button>
+            <div class="explanation-box" data-id="no-next">
+                <h4>Request จะค้างและไม่มีการตอบสนองกลับไปครับ!</h4>
+                <p>เบราว์เซอร์ของผู้ใช้จะหมุนรอไปเรื่อยๆ จนกว่าจะหมดเวลา (Timeout) เพราะ Express ไม่รู้ว่าต้องทำอะไรต่อ การเรียก <code>next()</code> คือการบอกว่า "งานของฉันเสร็จแล้ว เชิญคนถัดไปทำงานต่อได้เลย"</p>
+            </div>
+            <div class="slide-number">9/20</div>
+        </section>
+
+        <section class="slide">
+            <h2>Middleware ที่ใช้บ่อย</h2>
+            <p>Express มาพร้อมกับ built-in middleware และมี third-party middleware ยอดนิยมมากมาย</p>
+            <h3>1. `express.json()` - ตัวแปลง JSON</h3>
+            <p>Middleware ที่สำคัญที่สุดสำหรับ API! ใช้สำหรับแปลง body ของ request ที่เป็น JSON string ให้กลายเป็น JavaScript object ที่เรานำไปใช้งานต่อได้ใน `req.body`</p>
+            <pre><code class="language-js">// ต้องวางไว้ก่อน route ที่จะใช้งาน
+app.use(express.json());
+
+app.post('/api/users', (req, res) => {
+    // ตอนนี้เราสามารถเข้าถึงข้อมูลที่ส่งมาได้ผ่าน req.body
+    const newUser = req.body;
+    console.log(newUser); // { "name": "สมชาย", "age": 30 }
+    res.status(201).send('User created');
+});
+</code></pre>
+            <h3>2. Third-party Middleware ยอดนิยม</h3>
+            <ul>
+                <li data-icon="🌐"><strong>CORS (`cors`):</strong> ใช้สำหรับแก้ปัญหา Cross-Origin Resource Sharing (จะเรียนในสไลด์ถัดไป)</li>
+                <li data-icon="🛡️"><strong>Helmet (`helmet`):</strong> ช่วยเพิ่มความปลอดภัยให้แอปพลิเคชันโดยการตั้งค่า HTTP headers ที่เหมาะสม</li>
+                <li data-icon="📝"><strong>Morgan (`morgan`):</strong> ใช้สำหรับทำ Logging HTTP requests อย่างละเอียด</li>
+            </ul>
+            <p class="solution">ลำดับของ Middleware มีความสำคัญมาก! Middleware ที่ประกาศก่อนจะได้ทำงานก่อน</p>
+            <div class="slide-number">10/20</div>
+        </section>
+        
+        <section class="slide">
+            <h2>CORS คืออะไร? 🌐</h2>
+            <p><strong>CORS (Cross-Origin Resource Sharing)</strong> คือนโยบายความปลอดภัยของเบราว์เซอร์ ที่จะป้องกันไม่ให้เว็บแอป (Frontend) จาก Origin หนึ่ง ไปเรียกใช้ API ที่อยู่คนละ Origin ได้โดยไม่ได้รับอนุญาต</p>
+            
+            <div class="infographic-container">
+                <h4>Infographic: ปัญหาและการแก้ปัญหา CORS</h4>
+                <div class="grid-2">
+                    <div>
+                        <h5>ก่อนใช้ CORS</h5>
+                        <div class="cors-diagram">
+                            <div class="cors-grid">
+                                <div class="browser"><i class="fas fa-window-maximize icon"></i> <span class="cors-label">Frontend<br>:3000</span></div>
+                                <div class="cors-arrow blocked"><i class="fas fa-arrow-right"></i></div>
+                                <div class="server"><i class="fas fa-server icon"></i> <span class="cors-label">Backend<br>:5000</span></div>
+                            </div>
+                            <p style="color: var(--danger-color); font-weight: bold;">Browser Blocked!</p>
+                        </div>
+                    </div>
+                    <div>
+                        <h5>หลังใช้ CORS</h5>
+                        <div class="cors-diagram">
+                            <div class="cors-grid">
+                                <div class="browser"><i class="fas fa-window-maximize icon"></i> <span class="cors-label">Frontend<br>:3000</span></div>
+                                <div class="cors-arrow allowed"><i class="fas fa-exchange-alt"></i></div>
+                                <div class="server"><i class="fas fa-server icon"></i> <span class="cors-label">Backend<br>:5000</span></div>
+                            </div>
+                            <p style="color: var(--success-color); font-weight: bold;">Request Allowed!</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <h3>วิธีแก้: ใช้ Middleware `cors`</h3>
+            <p>ติดตั้ง: <code>npm install cors</code> แล้วใช้งานใน `server.js`</p>
+            <pre><code>const cors = require('cors');
+// อนุญาตให้ทุก Origin เรียกเข้ามาได้
+app.use(cors());
+</code></pre>
+            <blockquote>คำถามสำคัญ: ทำไมการเปิด CORS ให้ทุก Origin (`*`) ใน Production ถึงเป็นเรื่องอันตราย?</blockquote>
+            <div class="slide-number">11/20</div>
+        </section>
+
+        <section class="slide">
+            <h2>Error Handling 🚨</h2>
+            <p>การจัดการ Error ที่ดีเป็นสิ่งจำเป็นสำหรับแอปพลิเคชันที่มีคุณภาพ Express มีกลไกสำหรับจัดการ Error โดยเฉพาะ</p>
+            <h3>สร้าง Error Handling Middleware</h3>
+            <p>เป็น Middleware พิเศษที่มี 4 parameters (<code>err, req, res, next</code>) และต้องวางไว้ <span class="highlight">ท้ายสุด</span> ของไฟล์ `server.js` ก่อน `app.listen()`</p>
+            <pre><code class="language-js">// 404 Not Found Handler (วางก่อน Error Handler)
+app.use((req, res, next) => {
+    res.status(404).send("Sorry can't find that!");
+});
+
+// Error Handling Middleware
+app.use((err, req, res, next) => {
+    console.error(err.stack); // Log error ไว้ดู
+    res.status(500).send('Something broke!');
+});
+</code></pre>
+            <p>เมื่อมี Error เกิดขึ้นใน route ใดๆ เราสามารถส่งต่อไปยัง Error Handler นี้ได้โดยการเรียก `next(error)`</p>
+            <div class="slide-number">12/20</div>
+        </section>
+
+        <section class="slide">
+            <h2>Environment Variables ⚙️</h2>
+            <p><strong>Environment Variables</strong> คือค่าที่เราตั้งค่าไว้ภายนอกโค้ดโปรแกรม เพื่อใช้กำหนดค่าต่างๆ เช่น Port, Database URL, หรือ API Keys ที่แตกต่างกันไปในแต่ละสภาพแวดล้อม (Development, Production)</p>
+            <h3>ทำไมต้องใช้?</h3>
+            <ul>
+                <li data-icon="🔒"><strong>ปลอดภัย:</strong> ไม่เก็บข้อมูลสำคัญ (เช่น รหัสผ่าน, API Key) ไว้ในโค้ดโดยตรง</li>
+                <li data-icon="🔧"><strong>ยืดหยุ่น:</strong> เปลี่ยนการตั้งค่าได้ง่ายโดยไม่ต้องแก้ไขโค้ด</li>
+            </ul>
+            <h3>วิธีใช้: แพ็คเกจ `dotenv`</h3>
+            <ol>
+                <li>ติดตั้ง: <code>npm install dotenv</code></li>
+                <li>สร้างไฟล์ชื่อ `.env` ใน root ของโปรเจค</li>
+                <li>เพิ่มโค้ดบรรทัดแรกสุดของ `server.js`: `require('dotenv').config();`</li>
+            </ol>
+            <h4>ไฟล์ `.env`</h4>
+            <pre><code>PORT=5000
+DATABASE_URL=mongodb://...
+JWT_SECRET=this-is-a-super-secret-key
+</code></pre>
+            <h4>การเรียกใช้ใน `server.js`</h4>
+            <pre><code>const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`Server on port ${PORT}`));
+</code></pre>
+            <p class="solution">อย่าลืม! เพิ่มไฟล์ `.env` ลงใน `.gitignore` เพื่อป้องกันข้อมูลสำคัญรั่วไหลขึ้น Git</p>
+            <div class="slide-number">13/20</div>
+        </section>
+
+        <section class="slide">
+            <h2>Express Router 🗂️</h2>
+            <p>เมื่อแอปพลิเคชันใหญ่ขึ้น การเขียน route ทั้งหมดไว้ในไฟล์ `server.js` ไฟล์เดียวจะทำให้จัดการได้ยาก</p>
+            <p><strong>Express Router</strong> ช่วยให้เราสามารถ <span class="highlight">แยกกลุ่มของ routes ออกเป็นไฟล์ย่อยๆ</span> ตามหน้าที่ของมันได้</p>
+            <h3>ขั้นตอนการใช้งาน</h3>
+            <ol>
+                <li>สร้างโฟลเดอร์ `routes`</li>
+                <li>สร้างไฟล์สำหรับแต่ละกลุ่มของ route เช่น `users.js`, `products.js`</li>
+                <li>นำ router ไปใช้ใน `server.js`</li>
+            </ol>
+            <h4>ไฟล์ `routes/users.js`</h4>
+            <pre><code class="language-js">const express = require('express');
+const router = express.Router();
+
+// GET /api/users/
+router.get('/', (req, res) => { /* ... */ });
+
+// GET /api/users/:id
+router.get('/:id', (req, res) => { /* ... */ });
+
+module.exports = router;</code></pre>
+             <h4>ไฟล์ `server.js`</h4>
+            <pre><code class="language-js">const userRoutes = require('./routes/users');
+
+// ทุก request ที่มาที่ /api/users จะถูกส่งไปให้ userRoutes จัดการ
+app.use('/api/users', userRoutes);
+</code></pre>
+            <p>การจัดระเบียบแบบนี้ทำให้โค้ดสะอาด อ่านง่าย และง่ายต่อการดูแลรักษาในระยะยาว</p>
+            <div class="slide-number">14/20</div>
+        </section>
+
+        <section class="slide">
+            <h2>โครงสร้างโปรเจคที่แนะนำ 🏗️</h2>
+            <p>สำหรับโปรเจคขนาดกลางถึงใหญ่ การวางโครงสร้างที่ดีจะช่วยให้ทำงานเป็นทีมได้ง่ายและขยายระบบได้สะดวก</p>
+            
+             <div class="infographic-container">
+                <h4>Infographic: โครงสร้างโปรเจคแบบ Tree View</h4>
+                <div class="tree-view">
+                    <ul>
+                        <li><i class="fas fa-folder-open icon"></i> my-api-project</li>
+                        <ul>
+                            <li><i class="fas fa-folder icon"></i> controllers</li>
+                            <li><i class="fas fa-folder icon"></i> routes</li>
+                            <li><i class="fas fa-folder icon"></i> middleware</li>
+                            <li><i class="fas fa-folder icon"></i> models</li>
+                            <li><i class="fas fa-file-alt icon"></i> .env</li>
+                            <li><i class="fas fa-file-code icon"></i> server.js</li>
+                            <li><i class="fab fa-npm icon"></i> package.json</li>
+                        </ul>
+                    </ul>
+                </div>
+            </div>
+
+            <p>โครงสร้างแบบนี้เรียกว่า **MVC (Model-View-Controller)**-like pattern ซึ่งเป็นที่นิยมในการพัฒนาเว็บแอปพลิเคชัน</p>
+            <ul>
+                <li data-icon="🗂️"><strong>Routes:</strong> รับ request และส่งต่อไปให้ Controller</li>
+                <li data-icon="🧠"><strong>Controllers:</strong> ประมวลผล business logic และเรียกใช้ Model</li>
+                <li data-icon="💾"><strong>Models:</strong> จัดการกับการเข้าถึงข้อมูล (เช่น Database)</li>
+            </ul>
+            <div class="slide-number">15/20</div>
+        </section>
+
+        <section class="slide">
+            <h2>Request & Response Objects ขั้นสูง 📨</h2>
+            <p>Object `req` และ `res` ที่ Express เตรียมไว้ให้มีความสามารถมากกว่าที่เราเห็น</p>
+            <h3>Request Object (`req`)</h3>
+            <ul>
+                <li data-icon="🌐"><code>req.ip</code>: ดู IP address ของ client</li>
+                <li data-icon="📄"><code>req.headers</code>: เข้าถึง HTTP headers ทั้งหมด</li>
+                <li data-icon="🍪"><code>req.cookies</code>: เข้าถึง cookies (ต้องใช้ middleware `cookie-parser`)</li>
+            </ul>
+             <h3>Response Object (`res`)</h3>
+            <ul>
+                <li data-icon="➡️"><code>res.redirect('/path')</code>: สั่งให้เบราว์เซอร์ redirect ไปยังหน้าอื่น</li>
+                <li data-icon="📄"><code>res.sendFile('/path/to/file')</code>: ส่งไฟล์ให้ client โดยตรง</li>
+                <li data-icon="🔽"><code>res.download('/path/to/file')</code>: สั่งให้เบราว์เซอร์ดาวน์โหลดไฟล์</li>
+                <li data-icon="🍪"><code>res.cookie('name', 'value')</code>: ตั้งค่า cookie ในเบราว์เซอร์ของ client</li>
+            </ul>
+            <h3>Method Chaining</h3>
+            <p>เราสามารถเรียกใช้ method ของ `res` ต่อกันได้เพื่อความกระชับ</p>
+            <pre><code>app.get('/api/data', (req, res) => {
+    res.status(200)
+       .cookie('visted', 'true')
+       .json({ message: 'Success' });
+});
+</code></pre>
+            <div class="slide-number">16/20</div>
+        </section>
+
+        <section class="slide">
+            <h2>Middleware ขั้นสูง</h2>
+            <p>เราสามารถสร้าง Middleware ที่มีความสามารถซับซ้อนขึ้นเพื่อใช้งานในสถานการณ์ต่างๆ ได้</p>
+            <h3>1. Authentication Middleware</h3>
+            <p>ใช้ตรวจสอบว่าผู้ใช้มีสิทธิ์เข้าถึง route นั้นๆ หรือไม่ โดยมักจะตรวจสอบจาก Token ที่ส่งมาใน Header</p>
+            <pre><code class="language-js">const checkAuth = (req, res, next) => {
+    const token = req.headers.authorization;
+    if (!token) {
+        return res.status(401).send('Access Denied');
+    }
+    // ตรวจสอบความถูกต้องของ token...
+    req.user = decodedToken; // เก็บข้อมูล user ไว้ใน request
+    next();
+};
+
+// ใช้งานกับ route ที่ต้องการความปลอดภัย
+app.get('/api/profile', checkAuth, (req, res) => {
+    // เข้าถึงข้อมูล user ได้จาก req.user
+    res.send(`Welcome user ${req.user.id}`);
+});
+</code></pre>
+            <h3>2. Validation Middleware</h3>
+            <p>ใช้ตรวจสอบข้อมูลที่ส่งเข้ามาใน `req.body` หรือ `req.query` ว่าถูกต้องตามรูปแบบที่กำหนดหรือไม่ ก่อนจะส่งต่อไปยัง Controller</p>
+            <div class="slide-number">17/20</div>
+        </section>
+        
+        <section class="slide">
+            <h2>Express Generator 🚀</h2>
+            <p><strong>Express Generator</strong> คือเครื่องมือ (command-line tool) ที่ช่วยสร้างโครงสร้างโปรเจค Express พื้นฐานให้เราโดยอัตโนมัติ ทำให้เริ่มต้นโปรเจคใหม่ได้อย่างรวดเร็ว</p>
+            <h3>วิธีการใช้งาน</h3>
+            <pre><code class="language-bash"># 1. ติดตั้งแบบ global
+npm install -g express-generator
+
+# 2. สร้างโปรเจคใหม่
+express --view=ejs my-new-app
+
+# 3. เข้าไปในโฟลเดอร์และติดตั้ง dependencies
+cd my-new-app
+npm install
+
+# 4. รันโปรเจค
+npm start
+</code></pre>
+            <p>เครื่องมือนี้จะสร้างโครงสร้างไฟล์พื้นฐานทั้งหมดให้เรา รวมถึง routes, views (สำหรับ template engine), และไฟล์ `app.js` ที่ตั้งค่า middleware ที่จำเป็นไว้ให้แล้ว</p>
+            <blockquote class="solution">เหมาะอย่างยิ่งสำหรับการสร้างโปรเจคต้นแบบ (prototype) หรือเมื่อต้องการเริ่มต้นโปรเจคอย่างรวดเร็ว</blockquote>
+            <div class="slide-number">18/20</div>
+        </section>
+
+        <section class="slide">
+            <h2>สรุปและเตรียมตัวสำหรับ JSON & API 🎯</h2>
+            <h3>สิ่งที่เราเรียนรู้ในหัวข้อนี้:</h3>
+            <ul>
+                <li data-icon="✅"><strong>Express.js Framework</strong> และข้อดีเหนือ HTTP Module</li>
+                <li data-icon="✅"><strong>Routing System</strong> ที่ยืดหยุ่น (params, query)</li>
+                <li data-icon="✅"><strong>Middleware Pattern</strong> หัวใจสำคัญของ Express</li>
+                <li data-icon="✅"><strong>Error Handling, CORS, Environment Variables</strong></li>
+                <li data-icon="✅"><strong>Project Structure</strong> ที่ดีสำหรับการพัฒนาในระยะยาว</li>
+            </ul>
+            <h3>แต่... ข้อมูลของเรายังเป็นแบบ Hard-coded</h3>
+            <p>ตอนนี้เซิร์ฟเวอร์ของเราสามารถตอบสนองได้ แต่ข้อมูลยังคงถูกเขียนไว้ในโค้ดโดยตรง ซึ่งในโลกความเป็นจริง ข้อมูลจะต้องถูกจัดเก็บ, เรียกใช้, และเปลี่ยนแปลงได้</p>
+            <h3>หัวข้อถัดไป: การทำงานกับข้อมูล JSON และ API</h3>
+            <p>เราจะเปลี่ยน Express Server ของเราให้กลายเป็น <span class="highlight">REST API ที่สมบูรณ์</span> โดยจะเรียนรู้การ:</p>
+            <ul>
+                <li data-icon="📊">ทำความเข้าใจ JSON Data Format</li>
+                <li data-icon="💾">จัดเก็บและจัดการข้อมูลในไฟล์ (File System)</li>
+                <li data-icon="🔄">สร้าง CRUD Operations (Create, Read, Update, Delete) ที่สมบูรณ์</li>
+            </ul>
+            <div class="slide-number">19/20</div>
+        </section>
+        
+        <section class="slide">
+            <h2>🎉 สรุปหัวข้อที่ 2: Express.js</h2>
+            <h3>Journey ที่เราผ่านมา:</h3>
+            <pre><code>🌐 HTTP Module (พื้นฐาน)
+        ↓
+🚀 Express.js (Framework)
+        ↓
+🛣️ Routing & Middleware
+        ↓
+🔧 Advanced Features & Structure
+        ↓
+🎯 พร้อมสำหรับสร้าง API จริงๆ!</code></pre>
+            <h3>ทักษะใหม่ที่ได้:</h3>
+            <ul>
+                <li data-icon="✨">สร้างเว็บเซิร์ฟเวอร์ด้วย Express.js ได้อย่างรวดเร็ว</li>
+                <li data-icon="🧠">ออกแบบ Routing และ Middleware สำหรับแอปพลิเคชัน</li>
+                <li data-icon="🛡️">จัดการ Static files, CORS, และ Errors ได้อย่างถูกต้อง</li>
+                <li data-icon="🏗️">วางโครงสร้างโปรเจคที่เป็นระเบียบและง่ายต่อการดูแล</li>
+            </ul>
+            <h3 style="text-align:center; margin-top:2em;">Key Takeaway:</h3>
+            <blockquote style="text-align:center; font-size:1.1em; font-weight:bold;">
+                Express.js คือเครื่องมือที่ทรงพลังที่สุด ที่เปลี่ยนความซับซ้อนของการสร้าง Backend ให้กลายเป็นเรื่องที่ง่ายและสนุก!
+            </blockquote>
+            <div class="slide-number">20/20</div>
+        </section>
+
+
+    </div>
+
+    <div class="presentation-controls">
+        <button id="prev-btn" class="nav-btn" title="สไลด์ก่อนหน้า">‹</button>
+        <span id="slide-counter"></span>
+        <button id="next-btn" class="nav-btn" title="สไลด์ถัดไป">›</button>
+        <button id="fullscreen-btn" class="fullscreen-btn" title="เต็มจอ">⛶</button>
+    </div>
+
+    <script>
+        function toggleExplanation(btn, id) {
+            const explanationBox = document.querySelector(`.explanation-box[data-id="${id}"]`);
+            if (explanationBox) {
+                const isVisible = explanationBox.style.display === 'block';
+                explanationBox.style.display = isVisible ? 'none' : 'block';
+                const originalText = btn.innerHTML.includes('ปิดคำอธิบาย') ? btn.dataset.originalText : btn.innerHTML;
+                btn.dataset.originalText = originalText;
+                btn.innerHTML = isVisible ? originalText : '<i class="fas fa-times"></i> ปิดคำอธิบาย';
+            }
+        }
+        
+        function runHelloServer() {
+            const termOutput = document.querySelector('#demo-hello-server-term .output');
+            const browser = document.querySelector('#demo-hello-server-browser');
+            const browserContent = browser.querySelector('.browser-content');
+            
+            termOutput.innerHTML = `> my-express-app@1.0.0 dev<br>> nodemon server.js<br><br>[nodemon] starting \`node server.js\`<br>🚀 Server is running...`;
+            
+            setTimeout(() => {
+                browser.style.display = 'block';
+                browserContent.innerHTML = '<h1>🎉 สวัสดี Express.js!</h1>';
+            }, 500);
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const slides = document.querySelectorAll('.slide');
+            const totalSlides = slides.length;
+            let currentSlideIndex = 0;
+
+            const nextBtn = document.getElementById('next-btn');
+            const prevBtn = document.getElementById('prev-btn');
+            const slideCounter = document.getElementById('slide-counter');
+            const progressBar = document.getElementById('progress-bar');
+            const fullscreenBtn = document.getElementById('fullscreen-btn');
+            
+            function showSlide(index) {
+                if (index < 0 || index >= totalSlides) return;
+                slides.forEach((slide, i) => slide.classList.toggle('active', i === index));
+                currentSlideIndex = index;
+                updateControls();
+            }
+
+            function updateControls() {
+                slideCounter.textContent = `${currentSlideIndex + 1} / ${totalSlides}`;
+                progressBar.style.width = `${((currentSlideIndex + 1) / totalSlides) * 100}%`;
+                prevBtn.disabled = currentSlideIndex === 0;
+                nextBtn.disabled = currentSlideIndex === totalSlides - 1;
+            }
+            
+            function toggleFullScreen() {
+                if (!document.fullscreenElement) {
+                    document.documentElement.requestFullscreen();
+                } else {
+                  if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                  }
+                }
+            }
+
+            nextBtn.addEventListener('click', () => showSlide(currentSlideIndex + 1));
+            prevBtn.addEventListener('click', () => showSlide(currentSlideIndex - 1));
+            fullscreenBtn.addEventListener('click', toggleFullScreen);
+
+            document.addEventListener('keydown', (e) => {
+                 if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) return;
+                if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); nextBtn.click(); }
+                if (e.key === 'ArrowLeft') { e.preventDefault(); prevBtn.click(); }
+                if (e.key === 'f') { toggleFullScreen(); }
+            });
+
+            showSlide(0);
+        });
+    </script>
+</body>
+</html>
