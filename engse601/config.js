@@ -6,7 +6,7 @@ window.ENGSE601 = {
   open: {
     roadmap: true,          // เส้นทาง 4 ครั้ง
     s1: true,               // เอกสารครั้งที่ 1
-    s2: false,              // เอกสารครั้งที่ 2
+    s2: true,              // เอกสารครั้งที่ 2
     s3: false,              // เอกสารครั้งที่ 3
     s4: false,              // เอกสารครั้งที่ 4
     casex: true,            // CaseX SRS v1.1 และ HLD v0.9 (ใช้ตั้งแต่ครั้งที่ 1)
