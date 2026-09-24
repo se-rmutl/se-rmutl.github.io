@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+<html lang="th"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ENGSE601 ครั้งที่ 2 สไลด์ — ออกแบบกรณีทดสอบ</title><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=Sarabun:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<style>:root{--paper:#F4F7FA;--surface:#FFFFFF;--ink:#172A3B;--muted:#586878;--line:#D3DEE7;--build:#12395B;--build-soft:#E2EBF4;--test:#0E7C86;--test-soft:#DCF0F1;--risk:#B26A08;--risk-soft:#FBEED6;--ok:#2C7A57;--ok-soft:#E0F0E7;--bad:#A3312A;--bad-soft:#F7E1DF;--code:#EEF3F7;
+  --head:'IBM Plex Sans Thai','Sarabun','Noto Sans Thai',system-ui,sans-serif;
+  --body:'Sarabun','IBM Plex Sans Thai','Noto Sans Thai',system-ui,sans-serif;
+  --mono:'IBM Plex Mono',ui-monospace,monospace;
+  box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--paper:#0B1724;--surface:#132232;--ink:#E4ECF3;--muted:#9EAFBE;--line:#2A3B4C;--build:#93BADF;--build-soft:#1A2F46;--test:#62C9D1;--test-soft:#11363A;--risk:#EBAA4A;--risk-soft:#382A12;--ok:#72C9A1;--ok-soft:#133026;--bad:#F08E86;--bad-soft:#3A1C1A;--code:#1A2B3C;}}
+:root[data-theme="dark"]{--paper:#0B1724;--surface:#132232;--ink:#E4ECF3;--muted:#9EAFBE;--line:#2A3B4C;--build:#93BADF;--build-soft:#1A2F46;--test:#62C9D1;--test-soft:#11363A;--risk:#EBAA4A;--risk-soft:#382A12;--ok:#72C9A1;--ok-soft:#133026;--bad:#F08E86;--bad-soft:#3A1C1A;--code:#1A2B3C;}
+*,*::before,*::after{box-sizing:inherit}
+
+html,body{margin:0;height:100%;background:var(--paper);color:var(--ink);font-family:var(--head)}
+body{overflow:hidden}
+button,input{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--risk);outline-offset:3px}
+.app{height:100%;display:grid;place-items:center}
+.stage{position:relative;width:min(100vw,calc(100vh*16/9));height:min(100vh,calc(100vw*9/16));overflow:hidden;background:var(--surface);
+  font-size:calc(var(--u,12.8px)*1.85*var(--fs,1));box-shadow:0 20px 60px rgba(0,0,0,.18)}
+.stage::before{content:"";position:absolute;inset:0;pointer-events:none;opacity:.5;
+  background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);
+  background-size:4.2em 4.2em;mask-image:radial-gradient(ellipse at 85% 0%,#000 0%,transparent 55%)}
+.slide{position:absolute;inset:0;display:none;flex-direction:column;padding:4.2% 5.2% 5.4%}
+.slide.active{display:flex;animation:in .22s ease-out}
+@keyframes in{from{opacity:.3;transform:translateX(.6em)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.slide.active{animation:none}}
+.chap{position:absolute;top:2.6%;left:5.2%;font-size:.62em;font-weight:600;color:var(--build);display:flex;gap:.45em;align-items:center}
+.chap .of{color:var(--muted);font-weight:500}.chap .ct{color:var(--muted);font-weight:500;padding-left:.5em;border-left:1px solid var(--line)}
+.eyebrow{font-size:.78em;font-weight:600;color:var(--test);margin:1.1em 0 .25em}
+.eyebrow.risk{color:var(--risk)}.eyebrow.bad{color:var(--bad)}.eyebrow.ok{color:var(--ok)}.eyebrow.c{color:var(--test)}
+h1{font-size:2.9em;line-height:1.14;margin:.1em 0 .35em;letter-spacing:-.01em}
+h2{font-size:1.85em;line-height:1.22;margin:0 0 .45em;letter-spacing:-.005em}
+h3{font-size:1.05em;margin:0 0 .25em}
+p{margin:0 0 .45em;line-height:1.5}
+.lead{font-size:1.25em;color:var(--muted);line-height:1.45}
+.muted{color:var(--muted)}
+b,strong{font-weight:600}
+code{font-family:var(--mono);font-size:.85em;background:var(--code);padding:.05em .35em;border-radius:.3em}
+kbd{font-family:var(--mono);font-size:.8em;border:1px solid var(--line);border-bottom-width:2px;border-radius:.3em;padding:0 .35em;background:var(--paper)}
+.body{flex:1;min-height:0;display:flex;flex-direction:column;gap:.65em}
+.center{justify-content:center}
+.center-t{text-align:center;color:var(--muted)}
+.fig{flex:1;min-height:0;display:flex;align-items:center;justify-content:center}
+.fig svg{width:100%;height:100%;max-height:100%}
+.fig.short{flex:0 0 auto;height:28%}
+.figcap{text-align:center;font-size:.72em;color:var(--muted);margin:.3em 0 0}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:.8em}
+.g21{display:grid;grid-template-columns:1.25fr 1fr;gap:1em;align-items:center;flex:1;min-height:0}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:.8em}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:.7em}
+.figs > div{background:var(--paper);border-radius:.7em;padding:.4em .5em}
+.figs svg{width:100%;height:auto;max-height:52vh}
+.lab{font-size:.72em;font-weight:600;margin:0 0 .2em}
+.lab.bad{color:var(--bad)}.lab.ok{color:var(--ok)}
+.card{border:1.5px solid var(--line);border-radius:.8em;padding:.8em 1em;background:var(--surface)}
+.card.hi{border-color:var(--build)}
+.card.now{border-color:var(--risk);background:var(--risk-soft)}
+.card .cgrp{font-size:.66em;color:var(--muted);font-weight:600;margin:0 0 .2em}
+.card.now .cgrp{color:var(--risk)}
+.card p{font-size:.82em;color:var(--muted);margin:0}
+.panel{border:1.5px solid var(--line);border-radius:.8em;padding:.8em 1em;background:var(--paper)}
+.panel.hl{border-color:var(--build)}
+.panel .big{font-family:var(--mono);font-size:1.7em;font-weight:600;color:var(--build);margin:0}
+h3.t{color:var(--test)}h3.b{color:var(--build)}
+.tbl{border:1px solid var(--line);border-radius:.7em;overflow:hidden;background:var(--surface)}
+table{width:100%;border-collapse:collapse;font-size:.8em}
+.tbl.small table{font-size:.72em}
+.tbl.big table{font-size:.98em}.tbl.big td,.tbl.big th{padding:.55em .8em}
+.qlist p{margin:.25em 0;font-size:1em}
+th{text-align:left;padding:.45em .7em;background:var(--build-soft);color:var(--build);font-weight:600}
+td{padding:.45em .7em;border-top:1px solid var(--line);vertical-align:top;line-height:1.45}
+td.blank{width:40%}td.blank.s{width:22%}
+.tag{display:inline-block;font-size:.85em;font-weight:600;padding:.05em .45em;border-radius:.35em;white-space:nowrap}
+.tag.t{background:var(--test-soft);color:var(--test)}.tag.ok{background:var(--ok-soft);color:var(--ok)}.tag.bad{background:var(--bad-soft);color:var(--bad)}
+.chip{display:inline-flex;align-items:center;font-size:.72em;font-weight:600;padding:.25em .75em;border-radius:99em;border:1.5px solid var(--line);color:var(--muted)}
+.chip.b{color:var(--build);border-color:var(--build)}.chip.c{color:var(--test);border-color:var(--test)}.chip.r{color:var(--risk);border-color:var(--risk)}
+.row-chips{display:flex;gap:.5em;flex-wrap:wrap;margin:.6em 0}
+.keys{font-size:.66em;color:var(--muted);margin-top:1.2em}
+.quote{border-left:.3em solid var(--build);background:var(--build-soft);padding:.9em 1.2em;border-radius:0 .8em .8em 0}
+.quote .qsrc{font-size:.7em;color:var(--muted);margin:0 0 .3em}
+.quote .qtxt{font-size:1.3em;line-height:1.5;margin:0}
+.term{border-left:.25em solid var(--test);background:var(--test-soft);padding:.6em 1em;border-radius:0 .7em .7em 0}
+.term .w{font-weight:600;color:var(--test);margin:0 0 .15em}
+.term p{margin:0;font-size:.9em}
+.note,.analogy,.win,.wrong,.exam,.recap,.nextup,.keep{border-radius:.8em;padding:.7em 1em}
+.note{background:var(--risk-soft)} .note p{margin:0;font-size:.85em}
+.analogy{background:var(--build-soft)} .analogy p{margin:0;font-size:.9em}
+.win{background:var(--ok-soft)} .wrong{background:var(--bad-soft)}
+.win .lab{color:var(--ok)} .wrong .lab{color:var(--bad)} .analogy .lab{color:var(--build)}
+.win p,.wrong p{margin:0}
+.exam{border:1.5px dashed var(--risk);font-size:.82em}.exam b{color:var(--risk)}
+.keep{border-left:.3em solid var(--build);background:var(--build-soft);font-weight:600;border-radius:0 .8em .8em 0}
+.recap{background:var(--ok-soft)} .recap h3{color:var(--ok)} .recap ul{margin:.2em 0 0 1.1em;padding:0} .recap li{margin:.2em 0;font-size:.9em;line-height:1.45}
+.nextup{background:var(--test-soft);font-size:.9em} .nextup b{color:var(--test)}
+.reveal{border:1.5px dashed var(--line);border-radius:.8em;padding:.5em .9em}
+.reveal > button{background:none;border:0;color:var(--risk);font-weight:600;padding:0;text-align:left}
+.reveal .ans{display:none;margin-top:.4em;padding-top:.4em;border-top:1px solid var(--line);font-size:.9em}
+.reveal.open .ans{display:block}
+.quiz .qq{font-weight:600;font-size:1.05em}
+.opts{display:flex;gap:.5em;flex-wrap:wrap}
+.opts.col{flex-direction:column}
+.opt{border:1.5px solid var(--line);background:var(--paper);border-radius:.7em;padding:.45em .9em;text-align:left;font-size:.88em;line-height:1.4}
+.opt:hover{border-color:var(--test)}
+.opt.ok{border-color:var(--ok);background:var(--ok-soft)}.opt.no{border-color:var(--bad);background:var(--bad-soft)}
+.fb{min-height:1.4em;font-size:.85em;color:var(--muted);margin:.4em 0 0}
+.fb.ok{color:var(--ok)}.fb.no{color:var(--bad)}
+.q3{display:grid;gap:.6em}
+.q3 > div{display:grid;grid-template-columns:2.2em 1fr;gap:.8em;align-items:center;border:1.5px solid var(--line);border-radius:.8em;padding:.6em .9em;background:var(--surface)}
+.q3 .n{font-family:var(--mono);font-size:1.8em;font-weight:600;color:var(--test);text-align:center}
+.q3 p{margin:0;color:var(--muted);font-size:.9em}
+.stepline{display:grid;grid-template-columns:1.8em 1fr;gap:.7em;align-items:start}
+.stepline .sn{display:grid;place-items:center;width:1.6em;height:1.6em;border-radius:50%;background:var(--test);color:var(--surface);font-weight:700;font-size:.9em}
+.doc{margin:.35em 0;padding:.45em .8em;border-left:.2em solid var(--line);background:var(--paper);font-style:italic}
+.flow{display:flex;align-items:center;gap:.5em;flex-wrap:wrap;justify-content:center}
+.flow .step{border:1.5px solid var(--test);background:var(--test-soft);border-radius:.6em;padding:.35em .8em;font-weight:600;font-size:.9em}
+.flow .arr{color:var(--muted)}
+.divider{justify-content:center}
+.divider .grp{font-size:.8em;color:var(--muted);font-weight:600;margin:0 0 .6em}
+.divider .bignum{font-family:var(--mono);font-size:5em;font-weight:600;line-height:1;color:var(--build);margin:0 0 .15em;letter-spacing:-.04em}
+.divider h2{font-size:2.3em}
+.divider .whatfor{font-size:1.15em;color:var(--muted);max-width:44ch;line-height:1.5}
+.divider .mins{display:flex;gap:.5em;flex-wrap:wrap;margin-top:1em}
+.title .body{max-width:46em}
+.sim{display:flex;gap:1.2em;flex-wrap:wrap}
+.seg{display:flex;align-items:center;gap:.3em;font-size:.82em}
+.seg span{color:var(--muted);margin-right:.3em}
+.seg button{border:1.5px solid var(--line);background:var(--paper);border-radius:.6em;padding:.3em .8em}
+.seg button.on{border-color:var(--build);background:var(--build-soft);color:var(--build);font-weight:600}
+.simres{text-align:center;font-weight:600;font-size:.95em;margin:0;min-height:1.5em}
+.simres.ok{color:var(--ok)}.simres.no{color:var(--bad)}
+#lay .hot{stroke:var(--test);stroke-width:4;stroke-dasharray:none}
+#lay .miss{stroke:var(--bad);stroke-width:4;stroke-dasharray:8 6}
+#vint [data-pair]{cursor:pointer;transition:stroke-width .15s}
+#vint [data-pair].hl{stroke-width:5}
+#vint [data-pair]:not(.hl).dim{opacity:.45}
+.rl{margin:0 0 0 1.2em;padding:0;font-size:.82em}.rl li{margin:.35em 0;line-height:1.4}
+.calcbox{display:grid;gap:.5em}
+.calcbox label{display:flex;justify-content:space-between;align-items:center;gap:1em;font-size:.85em;border-bottom:1px solid var(--line);padding:.2em 0}
+.calcbox input{width:5em;padding:.2em .4em;border:1.5px solid var(--line);border-radius:.4em;background:var(--paper);text-align:right}
+.bigtime{font-family:var(--mono);font-size:2.4em;font-weight:600;color:var(--risk);line-height:1.1;margin:.1em 0}
+.timer{display:flex;flex-direction:column;align-items:center;justify-content:center;border:1.5px solid var(--risk);border-radius:.8em;padding:.8em;background:var(--risk-soft)}
+.tbtn{display:flex;gap:.4em}
+.tbtn button{border:1.5px solid var(--risk);background:var(--surface);color:var(--risk);border-radius:.5em;padding:.2em .7em;font-size:.8em;font-weight:600}
+.sorter{display:grid;gap:.45em;max-width:40em;margin:0 auto;width:100%}
+.srow{display:grid;grid-template-columns:1fr auto auto;gap:.5em;align-items:center;border:1.5px solid var(--line);border-radius:.7em;padding:.35em .6em;background:var(--surface);font-size:.9em}
+.srow button{border:1.5px solid var(--line);background:var(--paper);border-radius:.5em;padding:.15em .7em;font-size:.85em}
+.srow.ok{border-color:var(--ok);background:var(--ok-soft)}.srow.no{border-color:var(--bad);background:var(--bad-soft)}
+.legend4{display:flex;gap:.8em;flex-wrap:wrap;font-size:.72em;justify-content:center}
+.p1,.p2,.p3,.p4{padding:0 .15em;border-radius:.2em}
+.p1{background:var(--build-soft)}.p2{background:var(--bad-soft)}.p3{background:var(--risk-soft)}.p4{background:var(--ok-soft)}
+.legend4 span{padding:.1em .5em}
+
+.svg text{font-family:var(--head);fill:var(--ink)}
+.svg .t-sm{font-size:13px}.svg .t-md{font-size:15px}.svg .t-lg{font-size:18px;font-weight:600}.svg .t-b{font-weight:600}
+.svg .muted{fill:var(--muted)}
+.svg .bx-build{fill:var(--build-soft);stroke:var(--build);stroke-width:2}
+.svg .bx-test{fill:var(--test-soft);stroke:var(--test);stroke-width:2}
+.svg .bx-risk{fill:var(--risk-soft);stroke:var(--risk);stroke-width:2}
+.svg .bx-ok{fill:var(--ok-soft);stroke:var(--ok);stroke-width:2}
+.svg .bx-bad{fill:var(--bad-soft);stroke:var(--bad);stroke-width:2}
+.svg .bx-plain{fill:var(--surface);stroke:var(--line);stroke-width:1.5}
+.svg .ln{stroke:var(--line);stroke-width:2;fill:none}
+.svg .ln-ink{stroke:var(--muted);stroke-width:2;fill:none}
+.svg .ln-build{stroke:var(--build);stroke-width:2.5;fill:none}
+.svg .ln-test{stroke:var(--test);stroke-width:2.5;fill:none}
+.svg .ln-risk{stroke:var(--risk);stroke-width:2.5;fill:none;stroke-dasharray:7 6}
+.svg .ln-bad{stroke:var(--bad);stroke-width:2.5;fill:none;stroke-dasharray:6 5}
+.svg .ln-ok{stroke:var(--ok);stroke-width:3;fill:none}
+.svg .f-build{fill:var(--build)}.svg .f-test{fill:var(--test)}.svg .f-risk{fill:var(--risk)}.svg .f-bad{fill:var(--bad)}.svg .f-ok{fill:var(--ok)}.svg .f-muted{fill:var(--muted)}
+.svg .w{fill:var(--surface)}
+.svg .t-build{fill:var(--build)}.svg .t-test{fill:var(--test)}.svg .t-risk{fill:var(--risk)}.svg .t-bad{fill:var(--bad)}.svg .t-ok{fill:var(--ok)}
+.svg .vband{fill:none;stroke:var(--line);stroke-width:26;stroke-linecap:round;stroke-linejoin:round;opacity:.7}
+
+.bar{position:fixed;left:0;right:0;bottom:0;height:4px;background:var(--line);z-index:40}
+.bar i{display:block;height:100%;width:0;background:var(--test);transition:width .25s}
+.hud{position:fixed;right:14px;bottom:12px;display:flex;gap:.35rem;align-items:center;z-index:41;font-family:var(--head);opacity:.35;transition:opacity .2s}
+.hud:hover,.hud:focus-within{opacity:1}
+.hud button{border:1px solid var(--line);background:var(--surface);color:var(--muted);border-radius:8px;padding:.25rem .55rem;font-size:.82rem}
+.hud button:hover{color:var(--build);border-color:var(--build)}
+.hud .cnt{font-family:var(--mono);font-size:.8rem;color:var(--muted);padding:0 .3rem}
+.ov{position:fixed;inset:0;background:color-mix(in srgb,var(--paper) 96%,transparent);z-index:50;display:none;overflow:auto;padding:4vh 5vw}
+.ov.open{display:block}
+.ov h3{color:var(--build);font-size:1.2rem;margin:0 0 1rem}
+.ov ol{columns:3;column-gap:2rem;margin:0;padding-left:1.4rem;font-size:.98rem}
+.ov li{margin:.3rem 0;break-inside:avoid}
+.ov a{color:var(--ink);text-decoration:none}.ov a:hover{color:var(--test)}
+.ov .grpt{column-span:all;font-weight:600;color:var(--test);margin:1rem 0 .3rem;list-style:none}
+@media (max-width:900px){.ov ol{columns:1}}
+.notes{position:fixed;left:0;right:0;bottom:4px;z-index:45;display:none;background:var(--surface);border-top:2px solid var(--risk);padding:.7rem 1.2rem .9rem;font-family:var(--body);font-size:1rem;line-height:1.6;max-height:30vh;overflow:auto}
+.notes.open{display:block}
+.notes b{font-family:var(--head);color:var(--risk);margin-right:.5rem}
+@media print{body{overflow:visible;height:auto}.hud,.bar,.notes,.ov{display:none!important}
+  .app{display:block}.stage{box-shadow:none;width:1280px;height:720px;--u:12.8px}
+  .slide{position:relative;display:flex!important;width:1280px;height:720px;break-after:page;animation:none}}
+
+.calcline{display:flex;flex-wrap:wrap;gap:.5em;align-items:center;justify-content:center;font-size:1.05em}
+.calcline span{border:1.5px solid var(--line);border-radius:.6em;padding:.35em .8em;background:var(--paper)}
+.calcline span.big{font-family:var(--mono);font-size:1.6em;font-weight:600;color:var(--risk);border-color:var(--risk);background:var(--risk-soft)}
+.calcline b{color:var(--muted)}
+pre.code{font-family:var(--mono);font-size:.85em;background:var(--code);padding:.6em .8em;border-radius:.5em;margin:.3em 0;white-space:pre-wrap}
+.epbox{border:1.5px solid var(--line);border-radius:.8em;padding:1em;background:var(--surface);display:grid;gap:.7em;justify-items:center}
+.epbox label{font-size:1.1em}.epbox input{width:5em;font-size:1em;padding:.2em .4em;border:1.5px solid var(--line);border-radius:.4em;background:var(--paper);text-align:center}
+.eprow{display:grid;grid-template-columns:1fr 2fr 1fr;width:100%;gap:.3em}
+.eprow span{text-align:center;padding:.6em;border-radius:.5em;border:1.5px solid var(--line);background:var(--paper);font-weight:600;opacity:.5}
+.eprow span.on{opacity:1}.eprow span[data-p=ok].on{background:var(--ok-soft);border-color:var(--ok);color:var(--ok)}
+.eprow span[data-p=lo].on,.eprow span[data-p=hi].on{background:var(--bad-soft);border-color:var(--bad);color:var(--bad)}
+table.dt td{text-align:center}table.dt td:first-child{text-align:left}
+table.dt tr.act td:first-child{background:var(--risk-soft)}
+td.dtr{cursor:pointer;background:var(--paper)}td.dtr:hover{background:var(--test-soft)}
+td.dtr.show{cursor:default;font-weight:700;color:var(--ok)}
+#obo td.got.hit{color:var(--bad);font-weight:700}#obo td.got.miss{color:var(--muted)}
+#obo tr.catch td{background:var(--bad-soft)}
+
+.g21x{display:grid;grid-template-columns:1.6fr 1fr;gap:.8em;align-items:stretch}
+.outbox{border:2px solid var(--build);border-radius:.8em;padding:.7em 1em;background:var(--build-soft);display:flex;flex-direction:column;justify-content:center}
+.outbox .lab{font-size:.7em;color:var(--build);font-weight:600;margin:0}
+.outbox .big{font-size:1.25em;font-weight:700;color:var(--build);margin:.1em 0}
+.outbox p{margin:.1em 0;font-size:.85em}
+.fig.short2{flex:0 0 auto;height:30%}
+.svg .t-xl{font-size:22px;font-weight:600}.svg .t-lg2{font-size:18px}
+.g31{display:grid;grid-template-columns:1.7fr 1fr;gap:1em;align-items:center;flex:1;min-height:0}
+.gshot{display:grid;grid-template-columns:2.2fr 1fr;gap:1em;align-items:center}
+.shot{border:1.5px solid var(--line);border-radius:.6em;overflow:hidden;background:#fff}
+.shot img{display:block;width:100%;height:auto}
+
+.lvgrid{display:grid;grid-template-columns:1fr 1fr;gap:.6em}
+.lv{border:1.5px solid var(--line);border-radius:.8em;padding:.6em .8em;background:var(--surface)}
+.lv h4{margin:0 0 .2em;font-family:var(--head);color:var(--test);display:flex;justify-content:space-between;gap:.5em}
+.lv h4 span{font-size:.7em;color:var(--muted);font-weight:500}
+.lv p{margin:.1em 0;font-size:.78em;line-height:1.45}.lv p.k{color:var(--muted);font-size:.68em;margin-top:.3em}
+.lv pre{font-family:var(--mono);font-size:.68em;background:var(--code);border-radius:.4em;padding:.35em .5em;margin:.2em 0;white-space:pre-wrap}
+.lvbar{display:inline-flex;gap:3px;vertical-align:middle;margin-right:.3em}.lvbar i{display:inline-block;width:1.1em;height:.45em;border-radius:2px;background:var(--line)}.lvbar i.on{background:var(--test)}
+</style></head>
+<body>
+<div class="app"><div class="stage" id="stage">
+<section class="slide title" data-title="หน้าแรก" data-group="เปิดคาบ" data-notes="ครั้งนี้ตรงกับข้อสอบส่วนที่ 2 ซึ่งมี 30 คะแนน มากที่สุด"><div class="body center">
+  <p class="eyebrow">ENGSE601 การตรวจสอบความสมเหตุสมผลและการทวนสอบซอฟต์แวร์</p>
+  <h1>ครั้งที่ 2 จาก 4<br>ออกแบบกรณีทดสอบ</h1>
+  <p class="lead">ทดสอบทุกค่าไม่ได้ จึงต้องเลือกค่าจำนวนน้อยที่จับข้อผิดพลาดได้มากที่สุด</p>
+  <div class="row-chips"><span class="chip b">แบ่งกลุ่มข้อมูล</span><span class="chip r">ค่าขอบ</span><span class="chip c">ตารางตัดสินใจ</span><span class="chip">ทบทวนกรณีทดสอบ</span></div>
+  <p class="keys">กด <kbd>→</kbd> ไปต่อ · <kbd>T</kbd> สารบัญ · <kbd>N</kbd> บันทึกผู้สอน · <kbd>L</kbd> สลับธีม · <kbd>F</kbd> เต็มจอ</p>
+</div></section>
+<section class="slide " data-title="เส้นทางของคาบ" data-group="เปิดคาบ" data-notes=""><p class="eyebrow">เส้นทางของคาบ</p><h2>180 นาที</h2>
+<div class="body center"><div class="tbl"><table>
+  <tr><th>ช่วงเวลา</th><th>ทำอะไร</th><th>บท</th></tr>
+  <tr><td>0–10 นาที</td><td>ส่งใบงานครั้งที่ 1 และสุ่มถามปากเปล่า</td><td>—</td></tr>
+  <tr><td>10–20 นาที</td><td>เฉลยใบงานครั้งที่ 1 ส่วน A</td><td>—</td></tr>
+  <tr><td>20–30 นาที</td><td>เราอยู่ตรงไหน · วันนี้ได้อะไร · แอปสาธิต</td><td>—</td></tr>
+  <tr><td>30–60 นาที</td><td>เหตุผล และแบ่งกลุ่มข้อมูล</td><td>1–3</td></tr>
+  <tr><td>60–70 นาที</td><td>พัก</td><td>—</td></tr>
+  <tr><td>70–115 นาที</td><td>ค่าขอบ และตารางตัดสินใจ</td><td>4–5</td></tr>
+  <tr><td>115–150 นาที</td><td>รวมเป็นชุด ทบทวน และส่งต่อ</td><td>6–8</td></tr>
+  <tr><td>150–180 นาที</td><td>แนะนำใบงานครั้งที่ 2 และเริ่มทำในห้อง</td><td>—</td></tr>
+</table></div></div></section>
+<section class="slide " data-title="ส่งใบงานครั้งที่ 1" data-group="ต้นคาบ: ใบงานครั้งที่ 1" data-notes="สุ่มจากรายชื่อ อธิบายไม่ได้เลยให้ข้อ 2 ได้ 0 อธิบายได้บางส่วนให้ไม่เกินครึ่ง"><p class="eyebrow risk">ต้นคาบ</p><h2>ส่งใบงานครั้งที่ 1 และสุ่มถาม</h2>
+<div class="body center"><div class="g2">
+  <div class="panel"><h3 class="b">ส่ง 2 ไฟล์</h3><p><code>S1-A_รหัสนักศึกษา.pdf</code> รายบุคคล</p><p><code>S1-B_ชื่อทีม.pdf</code> งานกลุ่ม</p></div>
+  <div class="panel hl"><h3 class="b">สุ่มถาม 3 ถึง 5 คน</h3><p>“ถ้ามีคนส่งคำสั่งตรงไปที่ C-05 จะเกิดอะไร และทำไมจึงควรตรวจที่ C-05”</p><p class="muted">คนละไม่เกิน 1 นาที อธิบายด้วยคำของตัวเองได้</p></div>
+</div>
+<div class="timer" data-min="10"><div class="bigtime">10:00</div><div class="tbtn"><button data-t="go">เริ่ม</button><button data-t="pause">หยุด</button><button data-t="reset">ตั้งใหม่</button></div></div>
+</div></section>
+<section class="slide " data-title="เฉลยใบงาน 1 ข้อ 1 และ 3" data-group="ต้นคาบ: ใบงานครั้งที่ 1" data-notes=""><p class="eyebrow ok">เฉลยใบงานครั้งที่ 1 ส่วน A</p><h2>ข้อ 1 และข้อ 3</h2>
+<div class="body center"><div class="g2">
+  <div class="tbl"><table><tr><th>ข้อ 1</th><th>ระดับ</th></tr>
+    <tr><td>(ก) AC-X-05 ไม่เป็น Ready ถ้ายังมีรายการจำเป็นไม่อนุมัติ</td><td><span class="tag t">System / UAT</span></td></tr>
+    <tr><td>(ข) บันทึกผลแล้วสถานะรวมในฐานข้อมูลเปลี่ยน</td><td><span class="tag t">Integration</span></td></tr>
+    <tr><td>(ค) ฟังก์ชันคืนค่าสถานะรวม</td><td><span class="tag t">Unit</span></td></tr></table></div>
+  <div class="tbl"><table><tr><th>ข้อ 3</th><th>คำตอบ</th></tr>
+    <tr><td>(ก) บัญชีทดสอบครบ</td><td>Entry</td></tr><tr><td>(ข) รันกรณีทดสอบครบ</td><td>Exit</td></tr>
+    <tr><td>(ค) ตัวจำลองพร้อม</td><td>Entry</td></tr><tr><td>(ง) ข้อบกพร่องแก้และทดสอบซ้ำแล้ว</td><td>Exit</td></tr>
+    <tr><td>(จ) เอกสารออกแบบผ่านการทบทวน</td><td>Entry</td></tr><tr><td>(ฉ) ผู้ใช้ตัวแทนยอมรับผล</td><td>Exit</td></tr></table></div>
+</div>
+<div class="note"><p><b>พลาดบ่อยที่สุด</b> ข้อ 1 (ก) ตอบ Unit เพราะตรรกะอยู่ในฟังก์ชันเดียว · ข้อ 3 (จ) ตอบ Exit เพราะเห็นคำว่า “แล้ว”</p></div>
+</div></section>
+<section class="slide " data-title="เฉลยใบงาน 1 ข้อ 2" data-group="ต้นคาบ: ใบงานครั้งที่ 1" data-notes="ประโยคสุดท้ายคือการวางเรื่องไว้ให้ครั้งที่ 3 อย่าเฉลยว่าแอปมีข้อบกพร่องนี้"><p class="eyebrow ok">เฉลยใบงานครั้งที่ 1 ส่วน A</p><h2>ข้อ 2 สิทธิ์ของเจ้าของ BR-X-02</h2>
+<div class="body center">
+  <div class="stepline"><span class="sn">ก</span><div>ตรวจที่ <b>C-02 หน้าจอพิจารณา</b> เท่านั้น ด้วยการซ่อนปุ่มตาม D-04 · <b>C-05 ไม่ได้ตรวจ</b></div></div>
+  <div class="stepline"><span class="sn">ข</span><div>C-05 จะบันทึกผลการพิจารณาจาก<b>ผู้ที่ไม่ใช่เจ้าของรายการ</b> ขัดกับ BR-X-02 และ UC-X-02 E1</div></div>
+  <div class="stepline"><span class="sn">ค</span><div>ให้ <b>C-05 บริการตัดสินใจ</b> ตรวจว่าผู้ใช้เป็นเจ้าของรายการก่อนบันทึก เพราะทุกคำสั่งต้องผ่าน C-05</div></div>
+  <div class="note"><p><b>จำข้อนี้ไว้</b> แอปสาธิตที่จะเห็นวันนี้ก็ออกแบบไว้แบบเดียวกัน ครั้งที่ 3 เราจะรันการทดสอบดูว่าจริงหรือไม่</p></div>
+</div></section>
+<section class="slide " data-title="เราอยู่ตรงไหน" data-group="ภาพรวมของวันนี้" data-notes="ชี้กล่องสีส้ม วันนี้เราอยู่ตรงนี้ ผลงานวันนี้คือกล่องขวาของแถวที่สอง"><p class="eyebrow">ภาพรวม</p><h2>แต่ละครั้งส่งอะไรต่อให้ครั้งถัดไป</h2>
+<div class="fig"><svg class="svg" viewBox="0 0 960 470" role="img" aria-label="สิ่งที่แต่ละครั้งส่งต่อให้ครั้งถัดไป"><rect class="bx-build" x="40" y="20" width="360" height="70" rx="12"/><text class="t-xl" x="220.0" y="49.0" text-anchor="middle">ครั้งที่ 1 วางแผน</text><text class="t-lg2 muted" x="220.0" y="75.0" text-anchor="middle">กฎอยู่ส่วนประกอบไหน</text><rect class="bx-plain" x="540" y="20" width="380" height="70" rx="12"/><text class="t-xl" x="730.0" y="49.0" text-anchor="middle">ตำแหน่งของกฎ</text><text class="t-lg2 muted" x="730.0" y="75.0" text-anchor="middle">เช่น C-05 ชั้นบริการ</text><path class="ln-ink" d="M400 55 H540"/><path class="ln-ink" d="M730 90 V111 H220 V132"/><rect class="bx-risk" x="40" y="132" width="360" height="70" rx="12"/><text class="t-xl" x="220.0" y="161.0" text-anchor="middle">ครั้งที่ 2 ออกแบบ</text><text class="t-lg2 muted" x="220.0" y="187.0" text-anchor="middle">ทดสอบด้วยค่าอะไร</text><rect class="bx-risk" x="296" y="118" width="96" height="28" rx="14"/><text class="t-md t-risk t-b" x="344" y="137" text-anchor="middle">วันนี้</text><rect class="bx-plain" x="540" y="132" width="380" height="70" rx="12"/><text class="t-xl" x="730.0" y="161.0" text-anchor="middle">ชุดกรณีทดสอบเชิงตรรกะ</text><text class="t-lg2 muted" x="730.0" y="187.0" text-anchor="middle">ผ่านการทบทวนแล้ว</text><path class="ln-ink" d="M400 167 H540"/><path class="ln-ink" d="M730 202 V223 H220 V244"/><rect class="bx-build" x="40" y="244" width="360" height="70" rx="12"/><text class="t-xl" x="220.0" y="273.0" text-anchor="middle">ครั้งที่ 3 ลงมือ</text><text class="t-lg2 muted" x="220.0" y="299.0" text-anchor="middle">รันที่ระดับไหน อย่างไร</text><rect class="bx-plain" x="540" y="244" width="380" height="70" rx="12"/><text class="t-xl" x="730.0" y="273.0" text-anchor="middle">ผลการรันจริง</text><text class="t-lg2 muted" x="730.0" y="299.0" text-anchor="middle">Pass · Fail · Blocked</text><path class="ln-ink" d="M400 279 H540"/><path class="ln-ink" d="M730 314 V335 H220 V356"/><rect class="bx-build" x="40" y="356" width="360" height="70" rx="12"/><text class="t-xl" x="220.0" y="385.0" text-anchor="middle">ครั้งที่ 4 รายงาน</text><text class="t-lg2 muted" x="220.0" y="411.0" text-anchor="middle">พร้อมส่งมอบไหม</text><rect class="bx-plain" x="540" y="356" width="380" height="70" rx="12"/><text class="t-xl" x="730.0" y="385.0" text-anchor="middle">คำตัดสินการส่งมอบ</text><text class="t-lg2 muted" x="730.0" y="411.0" text-anchor="middle">Ready หรือ Not Ready</text><path class="ln-ink" d="M400 391 H540"/></svg></div>
+<p class="figcap">ครั้งที่ 1 ให้ตำแหน่งของกฎ วันนี้ใช้กฎนั้นออกแบบกรณีทดสอบ ครั้งที่ 3 นำทั้งสองอย่างไปรันจริง</p></section>
+<section class="slide " data-title="วันนี้ตอบคำถามไหน" data-group="ภาพรวมของวันนี้" data-notes="ย้ำว่าวันนี้ยังไม่เขียนโค้ดทดสอบ ยังไม่รัน ภาพนี้จะกลับมาอีกครั้งตอนปิดคาบ"><p class="eyebrow">วันนี้ตอบคำถามไหน</p><h2>ทดสอบด้วยค่าอะไร และต้องเห็นอะไร</h2>
+<div class="fig"><svg class="svg" viewBox="0 0 960 560" role="img" aria-label="ครั้งที่ 2 ตอบว่าทดสอบด้วยค่าอะไร ครั้งที่ 3 นำกรณีทดสอบเดียวกันไปรันที่ Unit API System และ UAT">
+  <rect class="bx-plain" x="330" y="20" width="300" height="64" rx="12"/><text class="t-xl" x="480.0" y="46.0" text-anchor="middle">กฎหนึ่งข้อ</text><text class="t-lg2 muted" x="480.0" y="72.0" text-anchor="middle">R-A ขอล่วงหน้า 3–30 วัน</text>
+  <rect class="bx-build" x="230" y="124" width="500" height="68" rx="12"/><text class="t-xl" x="480.0" y="152.0" text-anchor="middle">ครั้งที่ 2 ออกแบบกรณีทดสอบ</text><text class="t-lg2 muted" x="480.0" y="178.0" text-anchor="middle">ทดสอบด้วยค่าอะไร และต้องเห็นอะไร</text><rect class="bx-risk" x="626" y="110" width="96" height="28" rx="14"/><text class="t-md t-risk t-b" x="674" y="129" text-anchor="middle">วันนี้</text>
+  <rect class="bx-plain" x="280" y="232" width="400" height="64" rx="12"/><text class="t-xl" x="480.0" y="258.0" text-anchor="middle">กรณีทดสอบเชิงตรรกะ TC-02</text><text class="t-lg2 muted" x="480.0" y="284.0" text-anchor="middle">ขอล่วงหน้า 3 วัน ต้องรับคำขอ</text>
+  <rect class="bx-test" x="230" y="336" width="500" height="68" rx="12"/><text class="t-xl" x="480.0" y="364.0" text-anchor="middle">ครั้งที่ 3 เลือกระดับและรัน</text><text class="t-lg2 muted" x="480.0" y="390.0" text-anchor="middle">รันที่ไหน ผ่านช่องทางไหน</text>
+  <rect class="bx-test" x="40" y="460" width="200" height="64" rx="12"/><text class="t-xl" x="140.0" y="486.0" text-anchor="middle">Unit</text><text class="t-lg2 muted" x="140.0" y="512.0" text-anchor="middle">เรียกฟังก์ชันตรง</text>
+  <rect class="bx-test" x="266" y="460" width="200" height="64" rx="12"/><text class="t-xl" x="366.0" y="486.0" text-anchor="middle">API</text><text class="t-lg2 muted" x="366.0" y="512.0" text-anchor="middle">ส่งคำขอ HTTP</text>
+  <rect class="bx-test" x="492" y="460" width="200" height="64" rx="12"/><text class="t-xl" x="592.0" y="486.0" text-anchor="middle">System</text><text class="t-lg2 muted" x="592.0" y="512.0" text-anchor="middle">กดผ่านหน้าจอ</text>
+  <rect class="bx-test" x="718" y="460" width="200" height="64" rx="12"/><text class="t-xl" x="818.0" y="486.0" text-anchor="middle">UAT</text><text class="t-lg2 muted" x="818.0" y="512.0" text-anchor="middle">ผู้ใช้ทำงานจริง</text>
+  <path class="ln-ink" d="M480 84 V124 M480 192 V232 M480 296 V336"/>
+  <path class="ln-ink" d="M420 404 L140 460 M460 404 L366 460 M500 404 L592 460 M540 404 L818 460"/>
+</svg></div>
+<p class="figcap">วันนี้ทำแค่กล่องสีน้ำเงิน ได้กรณีทดสอบเชิงตรรกะที่ยังไม่ผูกกับระดับ ครั้งที่ 3 จึงนำไปรันในสี่ช่องล่าง</p></section>
+<section class="slide " data-title="วันนี้ได้อะไร" data-group="ภาพรวมของวันนี้" data-notes="ให้นักศึกษาเห็นผลลัพธ์ปลายทางตั้งแต่ต้นคาบ จะได้รู้ว่ากำลังเดินไปไหน"><p class="eyebrow ok">ผลงานของวันนี้</p><h2>จบคาบ ทุกคนมีชุดกรณีทดสอบที่ผ่านการทบทวน</h2>
+<div class="fig short2"><svg class="svg" viewBox="0 0 960 190" role="img" aria-label="จากกฎและเกณฑ์ ใช้เทคนิค ได้ชุดกรณีทดสอบเชิงตรรกะ ทบทวน แล้วเป็นชุดอ้างอิงที่ส่งต่อครั้งที่ 3 และเขียนลงเล่มบทที่ 3.5">
+  <rect class="bx-plain" x="10" y="40" width="170" height="80" rx="12"/><text class="t-xl" x="95.0" y="74.0" text-anchor="middle">กฎและเกณฑ์</text><text class="t-lg2 muted" x="95.0" y="100.0" text-anchor="middle">ฐานการทดสอบ</text>
+  <rect class="bx-build" x="202" y="40" width="170" height="80" rx="12"/><text class="t-xl" x="287.0" y="74.0" text-anchor="middle">เทคนิค</text><text class="t-lg2 muted" x="287.0" y="100.0" text-anchor="middle">EP · BVA · ตาราง</text>
+  <rect class="bx-build" x="394" y="40" width="170" height="80" rx="12"/><text class="t-xl" x="479.0" y="74.0" text-anchor="middle">ชุดกรณีทดสอบ</text><text class="t-lg2 muted" x="479.0" y="100.0" text-anchor="middle">เชิงตรรกะ</text>
+  <rect class="bx-risk" x="586" y="40" width="170" height="80" rx="12"/><text class="t-xl" x="671.0" y="74.0" text-anchor="middle">ทบทวน</text><text class="t-lg2 muted" x="671.0" y="100.0" text-anchor="middle">ก่อนส่งต่อ</text>
+  <rect class="bx-ok" x="778" y="40" width="172" height="80" rx="12"/><text class="t-xl" x="864.0" y="74.0" text-anchor="middle">ชุดอ้างอิง v1</text><text class="t-lg2 muted" x="864.0" y="100.0" text-anchor="middle">ส่งครั้งที่ 3</text>
+  <path class="ln-ink" d="M180 80 H202 M372 80 H394 M564 80 H586 M756 80 H778"/>
+  <text class="t-sm muted" x="480" y="160" text-anchor="middle">ผลงานของวันนี้คือชุดกรณีทดสอบที่ผ่านการทบทวน ยังไม่ต้องรัน</text>
+</svg></div>
+<div class="tbl small"><table><tr><th>TC</th><th>กฎ</th><th>เงื่อนไขก่อน</th><th>ข้อมูลที่ป้อน</th><th>ผลที่คาดหวัง</th><th>เทคนิค</th></tr>
+<tr><td>TC-01</td><td>R-A</td><td>ผู้จัดเข้าสู่ระบบ ห้อง A ว่าง</td><td>ล่วงหน้า 2 วัน</td><td>ไม่ให้ส่ง แจ้งว่าต้องขออย่างน้อย 3 วัน</td><td>ค่าขอบ</td></tr>
+<tr><td>TC-02</td><td>R-A</td><td>ผู้จัดเข้าสู่ระบบ ห้อง A ว่าง</td><td>ล่วงหน้า 3 วัน</td><td>รับคำขอ สถานะ Awaiting Decisions</td><td>ค่าขอบ</td></tr>
+<tr><td>TC-11</td><td>FR-X-04</td><td>ผู้จัดเข้าสู่ระบบ</td><td>โปรเจกเตอร์ ไม่ระบุผู้รับผิดชอบ</td><td>ไม่ให้ส่ง บอกว่าโปรเจกเตอร์ขาดผู้รับผิดชอบ</td><td>ตาราง</td></tr>
+</table></div>
+<p class="figcap">ตัวอย่างสามแถวจากชุดเต็ม ชุดนี้คือเนื้อหาของบทที่ 3.5 ในเล่มปริญญานิพนธ์ มีตัวอย่างฉบับเต็มให้ดาวน์โหลด</p></section>
+<section class="slide " data-title="แผนที่ของคาบ" data-group="ภาพรวมของวันนี้" data-notes=""><p class="eyebrow">อ่านก่อน</p><h2>วันนี้มี 8 บท แบ่งเป็น 3 กลุ่ม</h2>
+<div class="body"><div class="g3">
+  <div class="card"><p class="cgrp">กลุ่มที่ 1 บทที่ 1–2</p><h3>เหตุผล</h3><p>ทำไมทดสอบทุกค่าไม่ได้ · กรณีทดสอบเชิงตรรกะที่ดี</p></div>
+  <div class="card hi"><p class="cgrp">กลุ่มที่ 2 บทที่ 3–5</p><h3>เทคนิค</h3><p>แบ่งกลุ่มข้อมูล · ค่าขอบ · ตารางตัดสินใจ</p></div>
+  <div class="card"><p class="cgrp">กลุ่มที่ 3 บทที่ 6–8</p><h3>ผลลัพธ์และการส่งต่อ</h3><p>รวมเป็นชุด · ทบทวน · ส่งต่อครั้งที่ 3</p></div>
+</div>
+<div class="exam"><b>เชื่อมข้อสอบปลายภาค ส่วนที่ 2 (30 คะแนน)</b> บทที่ 3–4 → ข้อ 2.1 และ 2.2 · บทที่ 5 → ข้อ 2.3 · บทที่ 2 และ 6 → ข้อ 2.4 · ใบงานครั้งที่ 2 ส่วน A มีรูปแบบเดียวกับข้อสอบทุกข้อ</div></div></section>
+<section class="slide divider" data-title="บทที่ 1 ทำไมทดสอบทุกค่าไม่ได้" data-group="กลุ่มที่ 1 เหตุผล: ทำไมต้องเลือกค่า" data-notes="บทสั้น แนะนำแอปสาธิตในบทนี้ด้วย"><p class="grp">กลุ่มที่ 1 เหตุผล: ทำไมต้องเลือกค่า</p><div class="bignum">01</div><h2>ทำไมทดสอบทุกค่าไม่ได้</h2>
+<p class="whatfor">ค่าที่ป้อนได้มีมากเกินกว่าจะทดสอบครบ ผู้ทดสอบจึงต้องเลือก</p><div class="mins"><span class="chip">ประมาณ 12 นาที</span><span class="chip b">ผลงานของบทนี้: เข้าใจว่าทำไมต้องเลือกค่า</span><span class="chip c">อ่านเพิ่ม: เอกสาร บทที่ 1</span></div></section>
+<section class="slide " data-title="ค่าที่ป้อนได้" data-group="กลุ่มที่ 1 เหตุผล: ทำไมต้องเลือกค่า" data-notes="ถามว่าถ้าข้อละ 1 นาที ต้องใช้กี่ชั่วโมง คำตอบคือกว่า 220 ชั่วโมง"><span class="chap">บทที่ 1 <span class="of">จาก 8</span> <span class="ct">ทำไมทดสอบทุกค่าไม่ได้</span></span><p class="eyebrow">ลองนับดู</p><h2>คำขอหนึ่งใบของ Case X มีกี่แบบ</h2>
+<div class="body center">
+  <div class="calcline"><span>10 จำนวนรายการ</span><b>×</b><span>28 วันล่วงหน้า</span><b>×</b><span>24 ช่วงเวลา</span><b>×</b><span>2 จำเป็น/ไม่จำเป็น</span><b>=</b><span class="big">13,440</span></div>
+  <p class="center-t">ตัวเลขสมมติ และยังไม่นับชื่อกิจกรรม ผู้รับผิดชอบ และสถานะของทรัพยากร</p>
+  <div class="keep">ทดสอบทุกค่าเป็นไปไม่ได้ ผู้ทดสอบจึงต้อง<b>เลือก</b> และต้องเลือกอย่างมีเหตุผล</div>
+</div></section>
+<section class="slide " data-title="คัดให้เหลือไม่กี่ข้อ" data-group="กลุ่มที่ 1 เหตุผล: ทำไมต้องเลือกค่า" data-notes=""><span class="chap">บทที่ 1 <span class="of">จาก 8</span> <span class="ct">ทำไมทดสอบทุกค่าไม่ได้</span></span><p class="eyebrow">วิธีคิดของวันนี้</p><h2>คัดจากค่าทั้งหมด ให้เหลือกรณีทดสอบไม่กี่ข้อ</h2>
+<div class="fig"><svg class="svg" viewBox="0 0 960 300" role="img" aria-label="จากค่าที่เป็นไปได้จำนวนมาก คัดเหลือกลุ่ม ตัวแทนและค่าขอบ จนเป็นกรณีทดสอบไม่กี่ข้อ">
+  <path d="M20 30 H250 V270 H20 Z" class="bx-plain"/>
+  <path d="M270 55 H480 V245 H270 Z" class="bx-build"/>
+  <path d="M500 85 H690 V215 H500 Z" class="bx-risk"/>
+  <path d="M710 110 H940 V190 H710 Z" class="bx-ok"/>
+  <text class="t-lg" x="135" y="120" text-anchor="middle">ค่าที่ป้อนได้</text>
+  <text class="t-lg" x="135" y="148" text-anchor="middle">ทั้งหมด</text>
+  <text class="t-sm muted" x="135" y="180" text-anchor="middle">นับไม่ถ้วน</text>
+  <text class="t-lg" x="375" y="140" text-anchor="middle">กลุ่มที่ระบบ</text>
+  <text class="t-lg" x="375" y="166" text-anchor="middle">ทำเหมือนกัน</text>
+  <text class="t-sm muted" x="375" y="196" text-anchor="middle">แบ่งกลุ่ม EP</text>
+  <text class="t-lg" x="595" y="146" text-anchor="middle">ตัวแทน</text>
+  <text class="t-lg" x="595" y="172" text-anchor="middle">และค่าขอบ</text>
+  <text class="t-lg" x="825" y="146" text-anchor="middle">กรณีทดสอบ</text>
+  <text class="t-sm muted" x="825" y="172" text-anchor="middle">ไม่กี่ข้อ แต่ครอบคลุม</text>
+  <path d="M250 150 H270 M480 150 H500 M690 150 H710" class="ln-ink"/>
+</svg></div>
+<p class="figcap">สามเทคนิควันนี้ใช้ความต้องการเป็นฐาน ไม่ต้องดูโค้ด จึงเริ่มได้ตั้งแต่ฝั่งซ้ายของ V</p></section>
+<section class="slide " data-title="แอปสาธิต" data-group="กลุ่มที่ 1 เหตุผล: ทำไมต้องเลือกค่า" data-notes="ชื่อไฟล์ในโค้ดตรงกับชื่อส่วนประกอบใน HLD วันนี้ยังไม่ดูโค้ด ดูแค่ว่าแอปทำอะไร"><span class="chap">บทที่ 1 <span class="of">จาก 8</span> <span class="ct">ทำไมทดสอบทุกค่าไม่ได้</span></span><p class="eyebrow">แอปที่ใช้ตลอดครั้งที่ 2 ถึง 4</p><h2>Case X Mini: กฎชุดเดียวกับที่ใช้สอนวันนี้</h2>
+<div class="body"><div class="g31">
+  <div class="fig"><svg class="svg" viewBox="0 0 960 470" role="img" aria-label="แอปสาธิต Case X Mini สี่ชั้น และเครื่องมือทดสอบของแต่ละชั้น">
+  <rect class="bx-build" x="40" y="20" width="520" height="72" rx="12"/><text class="t-xl" x="300.0" y="50.0" text-anchor="middle">React หน้าบ้าน</text><text class="t-lg2 muted" x="300.0" y="76.0" text-anchor="middle">C-01 สร้างคำขอ · C-02 พิจารณา</text>
+  <rect class="bx-build" x="40" y="132" width="520" height="72" rx="12"/><text class="t-xl" x="300.0" y="162.0" text-anchor="middle">Express routes</text><text class="t-lg2 muted" x="300.0" y="188.0" text-anchor="middle">/api/requests · /api/.../decision</text>
+  <rect class="bx-build" x="40" y="244" width="520" height="72" rx="12"/><text class="t-xl" x="300.0" y="274.0" text-anchor="middle">services กฎทั้งหมดอยู่ที่นี่</text><text class="t-lg2 muted" x="300.0" y="300.0" text-anchor="middle">C-03 คำขอ · C-05 ตัดสิน · สถานะรวม BR-X-01</text>
+  <rect class="bx-build" x="40" y="356" width="520" height="72" rx="12"/><text class="t-xl" x="300.0" y="386.0" text-anchor="middle">repository และไฟล์ JSON</text><text class="t-lg2 muted" x="300.0" y="412.0" text-anchor="middle">C-10 data/*.json ไม่ใช้ฐานข้อมูล</text>
+  <rect class="bx-test" x="660" y="20" width="260" height="72" rx="12"/><text class="t-xl" x="790.0" y="50.0" text-anchor="middle">System</text><text class="t-lg2 muted" x="790.0" y="76.0" text-anchor="middle">Playwright</text>
+  <rect class="bx-test" x="660" y="132" width="260" height="72" rx="12"/><text class="t-xl" x="790.0" y="162.0" text-anchor="middle">API · Integration</text><text class="t-lg2 muted" x="790.0" y="188.0" text-anchor="middle">Supertest</text>
+  <rect class="bx-test" x="660" y="244" width="260" height="72" rx="12"/><text class="t-xl" x="790.0" y="274.0" text-anchor="middle">Unit</text><text class="t-lg2 muted" x="790.0" y="300.0" text-anchor="middle">Jest</text>
+  <rect class="bx-test" x="660" y="356" width="260" height="72" rx="12"/><text class="t-xl" x="790.0" y="386.0" text-anchor="middle">ข้อมูลทดสอบ</text><text class="t-lg2 muted" x="790.0" y="412.0" text-anchor="middle">fixtures รีเซ็ตทุกรอบ</text>
+  <path class="ln-ink" d="M300 92 V132 M300 204 V244 M300 316 V356"/>
+  <path class="ln" style="stroke-dasharray:6 6" d="M560 56 H660 M560 168 H660 M560 280 H660 M560 392 H660"/>
+  <text class="t-sm muted" x="300" y="458" text-anchor="middle">ชั้นของแอป · ครั้งที่ 2 ออกแบบจากกฎ ยังไม่ดูโค้ด</text>
+  <text class="t-sm muted" x="790" y="458" text-anchor="middle">การทดสอบที่ชั้นนั้น · ครั้งที่ 3</text>
+</svg></div>
+  <div class="tbl small"><table><tr><th>กฎที่แอปต้องทำ</th><th>ที่มา</th></tr>
+  <tr><td>R-A ขอล่วงหน้า 3–30 วัน</td><td><span class="tag r">สมมติ</span></td></tr>
+  <tr><td>R-B มีทรัพยากร 1–10 รายการ</td><td><span class="tag r">สมมติ</span></td></tr>
+  <tr><td>FR-X-04 อุปกรณ์ต้องมีผู้รับผิดชอบ</td><td>SRS</td></tr>
+  <tr><td>BR-X-01 สถานะรวม</td><td>SRS</td></tr>
+  <tr><td>BR-X-02 ตัดสินเฉพาะรายการของตน</td><td>SRS</td></tr>
+  <tr><td>UC-X-02 ขั้น 5 ปฏิเสธต้องมีเหตุผล</td><td>SRS</td></tr></table></div>
+</div></div></section>
+<section class="slide " data-title="เดโม ขอ 3 วัน" data-group="กลุ่มที่ 1 เหตุผล: ทำไมต้องเลือกค่า" data-notes="เปิดแอปจริงให้ดู ถ้าไม่มีเครื่องใช้ภาพนี้ได้ อย่าเพิ่งบอกว่าเป็นข้อบกพร่องที่ฝังไว้ ให้นักศึกษาสรุปเอง"><span class="chap">บทที่ 1 <span class="of">จาก 8</span> <span class="ct">ทำไมทดสอบทุกค่าไม่ได้</span></span><p class="eyebrow risk">เดโม 5 นาที · v0.9</p><h2>ขอล่วงหน้า 3 วัน แอปตอบแบบนี้</h2>
+<div class="body center"><div class="gshot">
+  <div class="shot"><img src="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBAUEBAYFBQUGBgYHCQ4JCQgICRINDQoOFRIWFhUSFBQXGiEcFxgfGRQUHScdHyIjJSUlFhwpLCgkKyEkJST/2wBDAQYGBgkICREJCREkGBQYJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCT/wAARCAHbBEwDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwD6aRHunZVYpEpwzDqx9BU40+17wI3u3Jo08f6FEfVdx+p5qxVNkpEH9n2n/PvF/wB80f2faf8APvF/3zU9FK7HZEH9n2n/AD7xf980f2faf8+8X/fNT0UXYWRB/Z9p/wA+8X/fNH9n2n/PvF/3zU9FF2FkQf2faf8APvF/3zR/Z9p/z7xf981PRRdhZEH9n2n/AD7xf980f2faf8+8X/fNT0UXYWRB/Z9p/wA+8X/fNH9n2n/PvF/3zU9FF2FkQf2faf8APvF/3zR/Z9p/z7xf981PRRdhZEH9n2n/AD7xf980f2faf8+8X/fNT0UXYWRB/Z9p/wA+8X/fNH9n2n/PvF/3zU9FF2FkQf2faf8APvF/3zR/Z9p/z7xf981PRRdhZEH9n2n/AD7xf980f2faf8+8X/fNT0UXYWRB/Z9p/wA+8X/fNH9n2n/PvF/3zU9FF2FkQf2faf8APvF/3zR/Z9p/z7xf981PRRdhZEH9n2n/AD7xf980f2faf8+8X/fNT0UXYWRB/Z9p/wA+8X/fNH9n2n/PvF/3zU9FF2FkQf2faf8APvF/3zR/Z9p/z7xf981PRRdhZEH9n2n/AD7xf980f2faf8+8X/fNT0UXYWRB/Z9p/wA+8X/fNH9n2n/PvF/3zU9FF2FkQf2faf8APvF/3zR/Z9p/z7xf981PRRdhZEH9n2n/AD7xf980f2faf8+8X/fNT0UXYWRB/Z9p/wA+8X/fNH9n2n/PvF/3zU9FF2FkQf2faf8APvF/3zR/Z9p/z7xf981PRRdhZEH9n2n/AD7xf980f2faf8+8X/fNT0UXYWRB/Z9p/wA+8X/fNH9n2n/PvF/3zU9FF2FkQf2faf8APvF/3zR/Z9p/z7xf981PRRdhZEH9n2n/AD7xf980f2faf8+8X/fNT0UXYWRB/Z9p/wA+8X/fNH9n2n/PvF/3zU9FF2FkQf2faf8APvF/3zR/Z9p/z7xf981PRRdhZEH9n2n/AD7xf980f2faf8+8X/fNT0UXYWRB/Z9p/wA+8X/fNH9n2n/PvF/3zU9FF2FkQf2faf8APvF/3zR/Z9p/z7xf981PRRdhZEH9n2n/AD7xf980f2faf8+8X/fNT0UXYWRB/Z9p/wA+8X/fNH9n2n/PvF/3zU9FF2FkQf2faf8APvF/3zR/Z9p/z7xf981PRRdhZEH9n2n/AD7xf980f2faf8+8X/fNT0UXYWRB/Z9p/wA+8X/fNH9n2n/PvF/3zU9FF2FkQf2faf8APvF/3zR/Z9p/z7xf981PRRdhZEH9n2n/AD7xf980f2faf8+8X/fNT0UXYWRB/Z9p/wA+8X/fNH9n2n/PvF/3zU9FF2FkQf2faf8APvF/3zR/Z9p/z7xf981PRRdhZEH9n2n/AD7xf980f2faf8+8X/fNT0UXYWRB/Z9p/wA+8X/fNH9n2n/PvF/3zU9FF2FkQf2faf8APvF/3zR/Z9p/z7xf981PRRdhZEH9n2n/AD7xf980f2faf8+8X/fNT0UXYWRB/Z9p/wA+8X/fNH9n2n/PvF/3zU9FF2FkQf2faf8APvF/3zR/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dk+hIyKuUUAQ3llbahbvbXlvDcwOMNFKgdW+oPFFnZWunwLb2dtDbQr0jhQIo/AcVNRQBBDp9nbzvPDaW8U0n35EjAZu/JHJqeiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigArn9d/4/R/uD+tdBXP67/x+j/cH9aunuRU2NnT/APjyg/3BU9Qaf/x5Qf7gqepe5S2Ciiq9/qFppdubm+uYraAMqGSVgq5YhVGT6kgfjSGWKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAK5/Xf+P0f7g/rXQVz+u/8fo/3B/Wrp7kVNjZ0/8A48oP9wVPUGn/APHlB/uCp6l7lLYR3WNGd2CqoySTwBXkXjf4maL4i8PSm30fVNR0KKYSz6jAyqqiJt6sFBMhQyIgLFAMEnNeheNvEK+FvC2oas1k18YIwFtgQPNZiFVSTwASwyfSvFpPF2kvo+rNrXw98PSzwabJdxrYWwPlMsphaOYYG0K3JYEgqCRTir6g30Pd9C1I6zomn6kY/KN3bRzmPOdu5Q2M9+tWrm4hs7eW5uJFihiQySOxwFUDJJ9sVwF54p1vw9onh3TdL0/R2lnsomk1C6uTb6dD8oCojcs7H+FRzgZzVjSvG97Jqer+HPGGk2cF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0/8A48oP9wVPUGn/APHlB/uCp6l7lLYKKKKQwooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigArn9d/4/R/uD+tdBXP67/wAfo/3B/Wrp7kVNjZ0//jyg/wBwVPUGn/8AHlB/uCp6l7lLYKKwPHsGvXPhHUovDMnl6s0eIGDBW6jdtJ4Dbc4J6HFeEeH/AIpeJLPw94t0u0vNUl1Ealb6ZpKapMtxdQSyllcM44bbtYjqBTjFyvYJSS3PpavCrnxJ8QPCfxDebUNM8V6rYtdXJeOziWezltyP3CxKBlHBxuLH161S+HniTxvpOtfELw0uq3vie90e33WP2ptztPnHGT0yc4zjiuQt9d8a6Y8dr4u8c+NPCl9fSbJJr6x82z5PHluGyh9wABVxhrp2/MiUtNe/5Htvws07xdcalrvijxWLqxOqyqLPSJJy4s4VHGRnAY8Zx6e9eiV89fGPVvGngO6tdRj1jW5LKMWdvp11DdIIJJACZvtMeMuz4JB6VX1D4peJT408SXS39xFoNzaXun6cVb5I7u3hVyy+hznn3pON1ddP0BSs7Pr+p9G0V83Xnj/xZB8A/Deuf2jqU8lxqJj1K9ik2z+QJHGBJj5M4A3duKPFvjfxBpPwdS80/wAVtLerrQRZbbUFupoLZgxSKWVfvNgcn6UOm02vO35f5gqiav8AP8/8j6RoryPX/DnxH8b+KoraHxBeeG/C8NlG6XdjIvnXMxVSc4IYck9eML71mfC3xx4stZfHXh3UbifxNeeGyxs3K/vrg5cBD65Kj35NLk0Y+fY9vor5p8LyeMviVousa/F8SNc0/XtMDvLpkVu0NpCy5IjyDtbp7kd81sRfET4heN/gja3/AIcs7ifXpLtrO6uLNQHWNBkyKOzH5Rx3JxTdNr8PxBTT/rse/UV83fD/AFPWdR8ZaZoGp/ETxhptxE4nfStYshHNdFRkosu45U4PDdgcc19I0pQ5QjLmCiiioLCiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAK5/Xf8Aj9H+4P610Fc/rv8Ax+j/AHB/Wrp7kVNjZ0//AI8oP9wVPUGn/wDHlB/uCp6l7lLYK+b/AIU+AdYuvjLrmp6rpd7a6XYX9xewNcQMiTzM7LGVJADYUscj2r6Qopxlyu4pR5lY8Z+GGi6nZfG3x/f3Wm3tvZ3JHkXEsDLHL8/8LEYb8Kw/2hrXxR4o1MeHobW9ayR7aXTobawaVb2ZiRIXmHEewHoeoOa+gqKFKzi+wOO/meNftK6LqupfDzSrbS9OvL+5hvomaO1haVlAjcZwoJxnHNZXin4X38X7Pun2Vtazy67YbdSaOOMtK8shPmrgck7XIx/s171RRzOzXncOVXT8rHzVdeCfFeo/s3aPpdjpl8Ly1vWnutPZGjlliEj8bDgnqpx+NZ/ivb458N2Pg7wT8NNY0S4lvIri7eWz8iFGVSvzN369TjpX1LRV+01ba63J9npZPyIrOE21pBAxBMcaoSO+BivDvAmiazZeN/ixdSaZqEEd2shtJWgdROf3mPLOPm6jpXu1FZ33fdNfeXbRLtb8Dx34D6LqOlfBi9sr7TbuzvHe7PkTwNHI2VwPlIBOe1Wv2ZtJ1HRfhsbXU7C7sLj7fM3lXMLRPghcHDAHFesUVbqXbfclQskux88W1j4q8UfHTQ9V1W1vBNps9yk0P2BooLO2Xd5REx4l37s5HrX0PRRUuV0l2Glq33CiiipKCiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAK5/Xf+P0f7g/rXQVz+u/8fo/3B/Wrp7kVNjZ0/wD48oP9wVPUGn/8eUH+4KnqXuUtgooopDCiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACuf13/AI/R/uD+tdBXP67/AMfo/wBwf1q6e5FTY2dP/wCPKD/cFT1Bp/8Ax5Qf7gqepe5S2Ciik3r/AHl/OkMWik3r/eX86N6/3l/OgBaKTev95fzo3r/eX86AFopN6/3l/Ojev95fzoAWik3r/eX86N6/3l/OgBaKTev95fzo3r/eX86AFopN6/3l/Ojev95fzoAWik3r/eX86N6/3l/OgBaKTev95fzo3r/eX86AFopAyngEH8aWgAooooAKKKKACiiigAooooAKKjmuYLby/Pmji8xxGm9gu9j0UZ6k+lSUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUU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UOrL4t0zX5fEsuoT27RSS3V4X86IqxMiQKpEaRyAhSpBwB3r1Kiihyb0BRSCiiikMKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigArn9d/wCP0f7g/rXQVz+u/wDH6P8AcH9aunuRU2NnT/8Ajyg/3BU9Qaf/AMeUH+4KnqXuUtgorO1/VjoumtcpD50rSJDFGW2hndgq5PYZIzWT9t8Xf3NB/Ob/AApDOnormPtvi7+7oH5zf4UfbfFx/g0H85v8KAOnormPtvi7+7oH5zf4UfbfF393QPzm/wAKAOnormPtvi7+7oH5zf4UfbfF393QPzm/woA6eiuY+2+Lv7ugfnN/hR9t8Xf3dA/Ob/CgDp6K5j7b4u/u6B+c3+FH23xd/d0D85v8KAOnormPtvi7+7oH5zf4UfbfF393QPzm/wAKAOnormPtvi7+7oH5zf4Va0XWr+bU5dL1WC1S5EIuI5LZmKOm7aQQ3IIP86AN2iiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAK5/Xf+P0f7g/rXQVz+u/8fo/3B/Wrp7kVNjZ0/wD48oP9wVPUGn/8eUH+4KnqXuUtjn/HH/IJtf8AsI2f/o9Kt1U8cf8AIJtf+wjZ/wDo9Kt96QwJ2gk8ADJPtXlepfFrw94i2aXc/wBqaVYXN7HbxagJY4pS6yKVJiJ8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8SrceLLjw/8AZWRobKO884t13MV247EYrR1OybUbCe0S6uLRpV2ie3bbJH7qexqr3V0YuDi0pabfiWaK8k1mOPwvf6cfCni7UtV1Z71IZdNlvhdCZCcPuX+DAyc8Yr1uphPmNK9D2aTTun8jH1LxXpularBplwZ/Pl2ZZIiyR72KpvYcLuYECp7HXrTUdX1HS7fe0uneWJ3x8gZwSFB9QOo9xXn/AIpvoPEjz6w/gm7v7DSHdRqC3n2a4Ow/MY1GGZQckZI9RVyTxvoHguLS7bSdMRbDUI47syNNskkErhQQGyZXGctk5A71Eamur0/qx0vCXilFPm+W/wB/4f5HotFYuteJF0fWdE0w2xlOrTSQiQNjytqFs479MVtVqnc4ZQcUm+v/AAwUUUUyQooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAK5/Xf+P0f7g/rXQVz+u/8AH6P9wf1q6e5FTY2dP/48oP8AcFT1Bp//AB5Qf7gqepe5S2CiiikMKKKKAOA+Jfwlt/iHd2d7/aUljcWyGIkR+YrpnPTIwQSefeuv8P6Lb+HNEstItWdobSJYlZzy2O5+taFFQoRUnJbs3niak6apSfurYK8h1/RrvVPiDrXh6wj4v1tdRaaRQ0MGFaNy6n7xIxtH97B7V69RgZzSnTU7XHh8Q6LbS3X6pnnGiWk1trvj20tXmkmjtLWKJ8/OzC2IBz65xXD213pa/DW60uDVYLnXNVa1j/suCIpJHIjKGBTJO/glmOM4zXv+BTBBEJPMEaB/720Z/OodHzOmGP5Xdx/l6/ypLt5XOE8df2t4ft9R1NfO1LRru1aK6tCN7Wb7CFljH93puX8fWs46DBd/CGy1OKxWbVrTRR9mlVSXU7MjHqRyR6HkV6fR0qpUr313/Dcyhi3GMUlqn9/keV+D7zStT8Y+HF0KWOe107QXinMIysLsyYVj2YkHjrWNouo6bol74oute1qGz1IPe262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008NssmMmPzJFUsAe4BrL/sG6/6GPXf+/wBH/wDEVc8cf8gm1/7CNn/6PSrdIZkf2Dc/9DHrv/f6P/4ij+wbn/oY9d/7/R//ABFN1TxhoGk3n9m3Wu6RbanIpMNpcXcccjtjgbSc81FoHiu01Dwha+IdQvNPt4vJ33U6TD7PE44fDngqGBGehoAn/sG5/wChj13/AL/R/wDxFH9g3P8A0Meu/wDf6P8A+Iqxc6/pFnpQ1i51Wxg01kEgvJJ1WEqehDk4wa4vwv4t8TeJPHt6bN9Nv/Biq6w3to8UiZCrtxIrli5YuGUqAAAQTR1sHS51n9g3P/Qx67/3+j/+Io/sG5/6GPXf+/0f/wART9M8U6Brd5cWWl63pt/dW3+uhtrlJHi5x8wByOadD4l0O51eTRYdZ06XVIhueyS4QzIPdM5H5UARf2Dc/wDQx67/AN/o/wD4ij+wbn/oY9d/7/R//EVYm8QaPbaW2rTarYxacuQ1286iIYOD85OOoI+op2ka5pXiCzF7o+pWeo2pJXzrWZZUyO2VJGaAMvU47/w9ZnU4dc1O5MDx7obl0eORS4UggKCOD1zXbVyHjL/kW7v6xf8Ao1K6+gAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAK5/Xf+P0f7g/rXQVz+u/8fo/3B/Wrp7kVNjZ0/8A48oP9wVPUGn/APHlB/uCp6l7lLY5/wAcf8gm1/7CNn/6PSrdVPHH/IJtf+wjZ/8Ao9Kt0hnz94oebxNqnxE0PTzp+mtYxTy/YZNIilj1ALGrPJLOf3gkJcbcYAwDzzXUXWrWcPhjwRouvTW1n4e1fSE8y7aXyDBdRRxyxYkyAucNwepFeqfZLbzZJvs0HmyqEkfyxukUdAx6kexplxp9leWwtbmztp7cYxDL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" alt="หน้าจอสร้างคำขอ ป้อน 3 วัน แอปแจ้งว่าต้องขอล่วงหน้าอย่างน้อย 3 วัน"></div>
+  <div class="reveal"><button type="button">ตามกฎ R-A ค่า 3 ควรรับหรือปฏิเสธ (กดเพื่อดู)</button>
+  <div class="ans"><b>ควรรับ</b> เพราะ 3 อยู่ในช่วง 3 ถึง 30 แต่แอปปฏิเสธ และข้อความก็ขัดกันเอง ถ้าเราเขียนผลที่คาดหวังตามที่แอปทำ เราจะไม่มีวันพบความผิดนี้</div></div>
+</div>
+<div class="keep">ผลที่คาดหวังต้องมาจาก<b>กฎ</b> ไม่ใช่จากสิ่งที่แอปทำ</div></div></section>
+<section class="slide " data-title="จบบทที่ 1" data-group="กลุ่มที่ 1 เหตุผล: ทำไมต้องเลือกค่า" data-notes="อ่านสรุปพร้อมกัน ชี้กล่องผลงานของบท ถามหนึ่งคนว่าข้อไหนยังไม่ชัด"><span class="chap">บทที่ 1 <span class="of">จาก 8</span> <span class="ct">ทำไมทดสอบทุกค่าไม่ได้</span></span><p class="eyebrow ok">จบบทที่ 1</p><h2>ทำไมทดสอบทุกค่าไม่ได้</h2>
+<div class="body center"><div class="g21x"><div class="recap"><h3>สิ่งที่ต้องจำจากบทนี้</h3><ul><li>ทดสอบทุกค่าเป็นไปไม่ได้ ต้องเลือกอย่างมีเหตุผล</li><li>เทคนิควันนี้ใช้ความต้องการเป็นฐาน เริ่มได้ก่อนมีโค้ด</li><li>แอปสาธิตใช้กฎชุดเดียวกับที่เรียน · ผลที่คาดหวังมาจากกฎ ไม่ใช่จากแอป</li></ul></div>
+<div class="outbox"><p class="lab">ผลงานของบทนี้</p><p class="big">เข้าใจว่าทำไมต้องเลือกค่า</p></div></div>
+<div class="nextup"><b>ต่อไป</b> กรณีทดสอบเชิงตรรกะหน้าตาเป็นอย่างไร</div></div></section>
+<section class="slide divider" data-title="บทที่ 2 กรณีทดสอบเชิงตรรกะที่ดี" data-group="กลุ่มที่ 1 เหตุผล: ทำไมต้องเลือกค่า" data-notes="บทนี้ตรงกับข้อสอบ 2.4 ผลที่คาดหวังคือจุดที่เสียคะแนนบ่อยที่สุด"><p class="grp">กลุ่มที่ 1 เหตุผล: ทำไมต้องเลือกค่า</p><div class="bignum">02</div><h2>กรณีทดสอบเชิงตรรกะที่ดี</h2>
+<p class="whatfor">รู้ก่อนว่าผลลัพธ์ปลายทางหน้าตาเป็นอย่างไร และผลที่คาดหวังต้องมาจากไหน</p><div class="mins"><span class="chip">ประมาณ 15 นาที</span><span class="chip r">ข้อสอบ 2.4</span><span class="chip b">ผลงานของบทนี้: แม่แบบกรณีทดสอบ 5 ช่อง</span><span class="chip c">อ่านเพิ่ม: เอกสาร บทที่ 2</span></div></section>
+<section class="slide " data-title="เชิงตรรกะ กับ รันได้" data-group="กลุ่มที่ 1 เหตุผล: ทำไมต้องเลือกค่า" data-notes="จุดนี้สำคัญมาก ใช้ภาพสองคำถามช่วยได้"><span class="chap">บทที่ 2 <span class="of">จาก 8</span> <span class="ct">กรณีทดสอบเชิงตรรกะที่ดี</span></span><p class="eyebrow">สองคำที่ต้องแยกให้ออก</p><h2>วันนี้เขียนกรณีทดสอบเชิงตรรกะ</h2>
+<div class="body center"><div class="g2">
+  <div class="panel hl"><h3 class="b">กรณีทดสอบเชิงตรรกะ · ครั้งที่ 2</h3><p>logical หรือ high-level test case</p><p>บอกว่า <b>ทดสอบค่าอะไร และต้องเห็นอะไร</b> ยังไม่ผูกกับระดับหรือเครื่องมือ</p><p class="muted">“ขอล่วงหน้า 3 วัน ต้องรับคำขอ”</p></div>
+  <div class="panel"><h3 class="t">กรณีทดสอบที่รันได้ · ครั้งที่ 3</h3><p>concrete หรือ low-level test case</p><p>นำข้อทางซ้ายมาเขียนเป็น <b>โค้ด Jest คำขอ HTTP หรือขั้นตอนหน้าจอ</b> แล้วรัน</p><p class="muted">expect(validateRequest(...).ok).toBe(true)</p></div>
+</div><p class="center-t">ศัพท์ทั้งสองมาจาก ISTQB ข้อเดียวกันในทางซ้าย กลายเป็นหลายข้อทางขวาได้ ในหลายระดับ</p></div></section>
+<section class="slide " data-title="ส่วนประกอบของกรณีทดสอบ" data-group="กลุ่มที่ 1 เหตุผล: ทำไมต้องเลือกค่า" data-notes="ชี้ทีละช่อง ช่องที่สำคัญที่สุดคือผลที่คาดหวัง"><span class="chap">บทที่ 2 <span class="of">จาก 8</span> <span class="ct">กรณีทดสอบเชิงตรรกะที่ดี</span></span><p class="eyebrow">ส่วนประกอบ</p><h2>กรณีทดสอบเชิงตรรกะที่ดีมี 5 ช่อง</h2>
+<div class="fig"><svg class="svg" viewBox="0 0 960 360" role="img" aria-label="ส่วนประกอบของกรณีทดสอบที่ดี ห้าช่อง พร้อมเหตุผลของแต่ละช่อง">
+  <rect x="20" y="20" width="520" height="320" rx="14" class="bx-plain"/>
+  <rect x="20" y="20" width="520" height="46" rx="14" class="bx-build"/>
+  <text class="t-lg" x="40" y="50">TC-03</text>
+  <text class="t-sm t-b" x="40" y="96">ทดสอบกฎ</text><text class="t-md" x="170" y="96">R-A (สมมติ) ขอห้องล่วงหน้า 3 ถึง 30 วัน</text>
+  <line x1="36" y1="116" x2="524" y2="116" class="ln"/>
+  <text class="t-sm t-b" x="40" y="146">เงื่อนไขก่อน</text><text class="t-md" x="170" y="146">ผู้จัดเข้าสู่ระบบแล้ว ห้อง A ว่าง</text>
+  <line x1="36" y1="166" x2="524" y2="166" class="ln"/>
+  <text class="t-sm t-b" x="40" y="196">ข้อมูลที่ป้อน</text><text class="t-md" x="170" y="196">ขอห้อง A ล่วงหน้า 2 วัน</text>
+  <line x1="36" y1="216" x2="524" y2="216" class="ln"/>
+  <text class="t-sm t-b" x="40" y="246">ผลที่คาดหวัง</text><text class="t-md" x="170" y="246">ระบบไม่ให้ส่ง และแจ้งว่าต้องขอ</text>
+  <text class="t-md" x="170" y="270">ล่วงหน้าอย่างน้อย 3 วัน</text>
+  <line x1="36" y1="290" x2="524" y2="290" class="ln"/>
+  <text class="t-sm t-b" x="40" y="320">เทคนิค</text><text class="t-md" x="170" y="320">ค่าขอบล่าง ค่าที่เลยขอบไปหนึ่ง</text>
+  <path d="M540 96 H600" class="ln-risk"/><text class="t-md t-risk t-b" x="610" y="92">สอบกลับได้ว่าทดสอบกฎข้อไหน</text>
+  <path d="M540 146 H600" class="ln-risk"/><text class="t-md t-risk t-b" x="610" y="142">ผลต้องไม่เปลี่ยนตามสภาพระบบ</text>
+  <path d="M540 196 H600" class="ln-risk"/><text class="t-md t-risk t-b" x="610" y="192">ค่าที่ชัดเจน ไม่ใช่ “ค่าผิด”</text>
+  <path d="M540 256 H600" class="ln-risk"/><text class="t-md t-risk t-b" x="610" y="252">มองเห็นได้ ตัดสินได้ทันที</text>
+  <path d="M540 320 H600" class="ln-risk"/><text class="t-md t-risk t-b" x="610" y="316">บอกที่มาของค่านี้</text>
+</svg></div></section>
+<section class="slide " data-title="ผลที่คาดหวัง" data-group="กลุ่มที่ 1 เหตุผล: ทำไมต้องเลือกค่า" data-notes=""><span class="chap">บทที่ 2 <span class="of">จาก 8</span> <span class="ct">กรณีทดสอบเชิงตรรกะที่ดี</span></span><p class="eyebrow bad">จุดที่เสียคะแนนบ่อยที่สุด</p><h2>ผลที่คาดหวังต้องมองเห็นได้ และมาจากกฎ</h2>
+<div class="body center"><div class="g2">
+  <div class="wrong"><p class="lab">ใช้ไม่ได้</p><p>“ระบบทำงานถูกต้อง”</p><p>“ระบบแสดงข้อผิดพลาด”</p><p>“ตามที่แอปแสดง”</p></div>
+  <div class="win"><p class="lab">ใช้ได้</p><p>“ระบบไม่ให้ส่ง และแจ้งว่าต้องขอล่วงหน้าอย่างน้อย 3 วัน”</p><p>“คำขอถูกบันทึก สถานะเป็น Awaiting Decisions”</p></div>
+</div>
+<div class="quiz"><p class="qq">ข้อใดเป็นผลที่คาดหวังที่ดีที่สุด สำหรับการขอห้องล่วงหน้า 31 วัน (R-A)</p><div class="opts col"><button class="opt" data-why="ผิดพลาดแบบไหน คนสองคนอ่านแล้วตัดสินต่างกันได้">ระบบทำงานผิดพลาด</button><button class="opt" data-why="ดีขึ้น แต่ยังไม่บอกว่าผู้ใช้เห็นอะไร">ระบบปฏิเสธคำขอ</button><button class="opt" data-a="1" data-why="บอกทั้งสิ่งที่เกิดและสิ่งที่ผู้ใช้เห็น ตัดสินได้ทันที">ระบบไม่ให้ส่ง และแจ้งว่าขอได้ไม่เกิน 30 วัน</button></div><p class="fb"></p></div>
+</div></section>
+<section class="slide " data-title="ข้อควรระวังอื่น" data-group="กลุ่มที่ 1 เหตุผล: ทำไมต้องเลือกค่า" data-notes=""><span class="chap">บทที่ 2 <span class="of">จาก 8</span> <span class="ct">กรณีทดสอบเชิงตรรกะที่ดี</span></span><p class="eyebrow">ข้อควรระวัง</p><h2>สามเรื่องที่ทำให้กรณีทดสอบใช้ไม่ได้</h2>
+<div class="body center"><div class="q3">
+  <div><span class="n">1</span><div><h3>ไม่มีเงื่อนไขก่อน</h3><p>ผลเปลี่ยนตามสภาพระบบ เช่น ห้องว่างหรือไม่ว่าง รันสองครั้งได้ผลต่างกัน</p></div></div>
+  <div><span class="n">2</span><div><h3>ข้อมูลไม่ชัด</h3><p>เขียนว่า “ป้อนค่าที่ผิด” แทนที่จะบอกค่าจริง เช่น 31</p></div></div>
+  <div><span class="n">3</span><div><h3>สอบกลับไม่ได้</h3><p>ไม่บอกว่าทดสอบกฎข้อใด ผ่านแล้วก็ไม่รู้ว่ายืนยันอะไร</p></div></div>
+</div></div></section>
+<section class="slide " data-title="จบบทที่ 2" data-group="กลุ่มที่ 1 เหตุผล: ทำไมต้องเลือกค่า" data-notes="อ่านสรุปพร้อมกัน ชี้กล่องผลงานของบท ถามหนึ่งคนว่าข้อไหนยังไม่ชัด"><span class="chap">บทที่ 2 <span class="of">จาก 8</span> <span class="ct">กรณีทดสอบเชิงตรรกะที่ดี</span></span><p class="eyebrow ok">จบบทที่ 2</p><h2>กรณีทดสอบเชิงตรรกะที่ดี</h2>
+<div class="body center"><div class="g21x"><div class="recap"><h3>สิ่งที่ต้องจำจากบทนี้</h3><ul><li>เชิงตรรกะ = ค่าอะไร เห็นอะไร · รันได้ = โค้ดหรือขั้นตอนที่รันจริง (ครั้งที่ 3)</li><li>กรณีทดสอบมี 5 ช่อง: กฎ · เงื่อนไขก่อน · ข้อมูล · ผลที่คาดหวัง · เทคนิค</li><li>ผลที่คาดหวังต้องมองเห็นได้ และเขียนจากกฎก่อนรัน</li></ul></div>
+<div class="outbox"><p class="lab">ผลงานของบทนี้</p><p class="big">แม่แบบกรณีทดสอบ 5 ช่อง</p></div></div>
+<div class="nextup"><b>ต่อไป</b> เทคนิคแรก แบ่งกลุ่มข้อมูล</div></div></section>
+<section class="slide divider" data-title="บทที่ 3 แบ่งกลุ่มข้อมูล (EP)" data-group="กลุ่มที่ 2 เทคนิคออกแบบกรณีทดสอบ" data-notes="ใช้กฎสมมติ R-A ตลอดบท ซึ่งแอปสาธิตทำจริง"><p class="grp">กลุ่มที่ 2 เทคนิคออกแบบกรณีทดสอบ</p><div class="bignum">03</div><h2>แบ่งกลุ่มข้อมูล (EP)</h2>
+<p class="whatfor">ค่าที่ระบบทำเหมือนกัน ทดสอบค่าเดียวก็พอ</p><div class="mins"><span class="chip">ประมาณ 18 นาที</span><span class="chip r">ข้อสอบ 2.1–2.2</span><span class="chip b">ผลงานของบทนี้: ตารางกลุ่ม พร้อมตัวแทน</span><span class="chip c">อ่านเพิ่ม: เอกสาร บทที่ 3</span></div></section>
+<section class="slide " data-title="แนวคิด EP" data-group="กลุ่มที่ 2 เทคนิคออกแบบกรณีทดสอบ" data-notes=""><span class="chap">บทที่ 3 <span class="of">จาก 8</span> <span class="ct">แบ่งกลุ่มข้อมูล (EP)</span></span><p class="eyebrow">Equivalence Partitioning</p><h2>ค่าที่ระบบทำเหมือนกัน ทดสอบค่าเดียวก็พอ</h2>
+<div class="body center">
+  <div class="term"><p class="w">กลุ่มสมมูล (Equivalence partition)</p><p>กลุ่มของค่าที่คาดว่าระบบจะทำเหมือนกันทุกค่า ถ้าค่าหนึ่งผ่าน ค่าอื่นในกลุ่มก็น่าจะผ่าน</p></div>
+  <div class="g2">
+    <div class="panel"><h3 class="b">กลุ่มที่ถูกต้อง (valid)</h3><p>ค่าที่ระบบต้องรับ</p></div>
+    <div class="panel"><h3 class="b">กลุ่มที่ไม่ถูกต้อง (invalid)</h3><p>ค่าที่ระบบต้องปฏิเสธ มักมีทั้งฝั่งต่ำกว่าและฝั่งสูงกว่า</p></div>
+  </div>
+</div></section>
+<section class="slide " data-title="ตัวอย่าง R-A" data-group="กลุ่มที่ 2 เทคนิคออกแบบกรณีทดสอบ" data-notes=""><span class="chap">บทที่ 3 <span class="of">จาก 8</span> <span class="ct">แบ่งกลุ่มข้อมูล (EP)</span></span><p class="eyebrow">ตัวอย่างเดินให้ดู <span class="tag r">สมมติ</span></p><h2>R-A ขอห้องล่วงหน้าได้ 3 ถึง 30 วัน</h2>
+<div class="fig"><svg class="svg" viewBox="0 0 900 250" role="img" aria-label="R-A ขอห้องล่วงหน้าได้ 3 ถึง 30 วัน แบ่งเป็นสามกลุ่ม">
+  <text class="t-md t-b" x="30" y="32">R-A ขอห้องล่วงหน้าได้ 3 ถึง 30 วัน</text>
+  <text class="t-sm t-risk t-b" x="870" y="32" text-anchor="end">กฎสมมติเพื่อฝึก</text>
+  <rect x="60" y="70" width="190" height="60" class="bx-bad"/><text class="t-md t-bad t-b" x="155" y="106" text-anchor="middle">น้อยกว่า 3 · ปฏิเสธ</text>
+  <rect x="250" y="70" width="400" height="60" class="bx-ok"/><text class="t-md t-ok t-b" x="450" y="106" text-anchor="middle">3 ถึง 30 · รับ</text>
+  <rect x="650" y="70" width="190" height="60" class="bx-bad"/><text class="t-md t-bad t-b" x="745" y="106" text-anchor="middle">มากกว่า 30 · ปฏิเสธ</text>
+  <line x1="60" y1="162" x2="840" y2="162" class="ln-ink"/>
+  <circle cx="220" cy="162" r="9" class="f-risk"/><text class="t-md" x="220" y="192" text-anchor="middle">2</text>
+  <circle cx="280" cy="162" r="9" class="f-risk"/><text class="t-md" x="280" y="192" text-anchor="middle">3</text>
+  <circle cx="620" cy="162" r="9" class="f-risk"/><text class="t-md" x="620" y="192" text-anchor="middle">30</text>
+  <circle cx="680" cy="162" r="9" class="f-risk"/><text class="t-md" x="680" y="192" text-anchor="middle">31</text>
+  <circle cx="450" cy="162" r="7" class="f-ok"/><text class="t-md" x="450" y="192" text-anchor="middle">ตัวแทน</text>
+  <text class="t-md t-risk t-b" x="450" y="232" text-anchor="middle">ค่าขอบ: 2 · 3 · 30 · 31</text>
+</svg></div>
+<div class="tbl"><table><tr><th>กลุ่ม</th><th>ถูกหรือไม่</th><th>ตัวแทน</th><th>ระบบควรทำ</th></tr>
+<tr><td>น้อยกว่า 3</td><td>invalid</td><td>1</td><td>ไม่ให้ส่ง แจ้งว่าต้องขอล่วงหน้าอย่างน้อย 3 วัน</td></tr>
+<tr><td>3 ถึง 30</td><td>valid</td><td>15</td><td>รับคำขอ</td></tr>
+<tr><td>มากกว่า 30</td><td>invalid</td><td>40</td><td>ไม่ให้ส่ง แจ้งว่าขอได้ไม่เกิน 30 วัน</td></tr></table></div></section>
+<section class="slide " data-title="ลองเล่น EP" data-group="กลุ่มที่ 2 เทคนิคออกแบบกรณีทดสอบ" data-notes=""><span class="chap">บทที่ 3 <span class="of">จาก 8</span> <span class="ct">แบ่งกลุ่มข้อมูล (EP)</span></span><p class="eyebrow risk">ลองเล่น</p><h2>ป้อนจำนวนวัน แล้วดูว่าอยู่กลุ่มไหน</h2>
+<div class="body center">
+  <div class="epbox"><label>ขอห้องล่วงหน้า <input type="number" id="epIn" value="15"> วัน</label><div class="eprow"><span data-p="lo">น้อยกว่า 3</span><span data-p="ok">3 ถึง 30</span><span data-p="hi">มากกว่า 30</span></div><p id="epOut" class="simres"></p></div>
+  <p class="center-t">นี่คือสิ่งที่กฎบอก ลองป้อน 3 แล้วเทียบกับภาพหน้าจอของแอปเมื่อครู่</p>
+</div></section>
+<section class="slide " data-title="กลุ่มตามพฤติกรรม" data-group="กลุ่มที่ 2 เทคนิคออกแบบกรณีทดสอบ" data-notes="จุดนี้คือกับดักในใบงานครั้งที่ 2 ข้อ 1"><span class="chap">บทที่ 3 <span class="of">จาก 8</span> <span class="ct">แบ่งกลุ่มข้อมูล (EP)</span></span><p class="eyebrow">สำคัญ</p><h2>กลุ่มที่ถูกต้อง อาจมีมากกว่าหนึ่งกลุ่ม</h2>
+<div class="fig"><svg class="svg" viewBox="0 0 900 230" role="img" aria-label="กฎที่มีกลุ่มถูกต้องสองกลุ่มซึ่งระบบทำต่างกัน">
+  <text class="t-md t-b" x="30" y="32">R-C ใช้ห้องได้ 1–4 ชั่วโมง อนุมัติได้เลย · 5–8 ชั่วโมง ต้องให้ผู้ดูแลอาคารรับรอง · เกิน 8 ไม่รับ</text>
+  <text class="t-sm t-risk t-b" x="870" y="56" text-anchor="end">กฎสมมติเพื่อฝึก</text>
+  <rect x="40" y="80" width="140" height="60" class="bx-bad"/><text class="t-sm t-bad t-b" x="110" y="115" text-anchor="middle">น้อยกว่า 1 · ปฏิเสธ</text>
+  <rect x="180" y="80" width="250" height="60" class="bx-ok"/><text class="t-sm t-ok t-b" x="305" y="108" text-anchor="middle">1 ถึง 4 · รับ</text><text class="t-sm" x="305" y="127" text-anchor="middle">อนุมัติได้เลย</text>
+  <rect x="430" y="80" width="250" height="60" class="bx-test"/><text class="t-sm t-test t-b" x="555" y="108" text-anchor="middle">5 ถึง 8 · รับ</text><text class="t-sm" x="555" y="127" text-anchor="middle">ส่งผู้ดูแลอาคารรับรอง</text>
+  <rect x="680" y="80" width="180" height="60" class="bx-bad"/><text class="t-sm t-bad t-b" x="770" y="115" text-anchor="middle">มากกว่า 8 · ปฏิเสธ</text>
+  <text class="t-md t-b" x="450" y="180" text-anchor="middle">กลุ่มแบ่งตามสิ่งที่ระบบทำ ไม่ใช่แค่ถูกหรือผิด</text>
+  <text class="t-md t-risk t-b" x="450" y="210" text-anchor="middle">ค่าขอบ: 0 · 1 · 4 · 5 · 8 · 9</text>
+</svg></div>
+<div class="note"><p>ค่า 3 และ 6 ถูกต้องทั้งคู่ แต่ระบบทำต่างกัน จึงต้อง<b>แยกเป็นคนละกลุ่ม</b> ถ้ารวมเป็นกลุ่มเดียว จะไม่มีกรณีทดสอบที่ตรวจการส่งไปผู้ดูแลอาคารเลย</p></div></section>
+<section class="slide " data-title="ทำด้วยกัน R-B" data-group="กลุ่มที่ 2 เทคนิคออกแบบกรณีทดสอบ" data-notes="ให้เวลา 3 นาที เดินดูว่าใครลืมกลุ่มฝั่งต่ำ"><span class="chap">บทที่ 3 <span class="of">จาก 8</span> <span class="ct">แบ่งกลุ่มข้อมูล (EP)</span></span><p class="eyebrow risk">ทำด้วยกันทั้งห้อง <span class="tag r">สมมติ</span></p><h2>R-B หนึ่งคำขอมีทรัพยากรได้ 1 ถึง 10 รายการ</h2>
+<div class="body center">
+  <div class="reveal"><button type="button">แบ่งกลุ่มให้ได้ก่อน แล้วกดเพื่อดูแนวคำตอบ</button>
+  <div class="ans"><div class="tbl"><table><tr><th>กลุ่ม</th><th>ถูกหรือไม่</th><th>ตัวแทน</th><th>ระบบควรทำ</th></tr>
+  <tr><td>น้อยกว่า 1</td><td>invalid</td><td>0</td><td>ไม่ให้ส่ง แจ้งว่าต้องมีอย่างน้อย 1 รายการ</td></tr>
+  <tr><td>1 ถึง 10</td><td>valid</td><td>5</td><td>รับคำขอ</td></tr>
+  <tr><td>มากกว่า 10</td><td>invalid</td><td>12</td><td>ไม่ให้ส่ง แจ้งว่ามีได้ไม่เกิน 10 รายการ</td></tr></table></div></div></div>
+</div></section>
+<section class="slide " data-title="จบบทที่ 3" data-group="กลุ่มที่ 2 เทคนิคออกแบบกรณีทดสอบ" data-notes="อ่านสรุปพร้อมกัน ชี้กล่องผลงานของบท ถามหนึ่งคนว่าข้อไหนยังไม่ชัด"><span class="chap">บทที่ 3 <span class="of">จาก 8</span> <span class="ct">แบ่งกลุ่มข้อมูล (EP)</span></span><p class="eyebrow ok">จบบทที่ 3</p><h2>แบ่งกลุ่มข้อมูล (EP)</h2>
+<div class="body center"><div class="g21x"><div class="recap"><h3>สิ่งที่ต้องจำจากบทนี้</h3><ul><li>กลุ่มสมมูลคือค่าที่ระบบทำเหมือนกัน ทดสอบกลุ่มละ 1 ค่า</li><li>มีทั้งกลุ่มถูกต้องและไม่ถูกต้อง อย่าลืมฝั่งต่ำกว่า</li><li>แบ่งตาม<b>สิ่งที่ระบบทำ</b> กลุ่มถูกต้องอาจมีหลายกลุ่ม</li></ul></div>
+<div class="outbox"><p class="lab">ผลงานของบทนี้</p><p class="big">ตารางกลุ่ม พร้อมตัวแทน</p></div></div>
+<div class="nextup"><b>ต่อไป</b> ค่าที่อยู่ติดกับกลุ่มอื่น คือจุดที่โปรแกรมมักผิด</div></div></section>
+<section class="slide " data-title="พัก" data-group="กลุ่มที่ 2 เทคนิคออกแบบกรณีทดสอบ" data-notes=""><div class="body center" style="align-items:center;text-align:center"><p class="eyebrow">พัก 10 นาที</p>
+<h2>กลับมาแล้วดูว่าทำไมแอปของเราผิดตรงค่า 3</h2>
+<div class="timer" data-min="10"><div class="bigtime">10:00</div><div class="tbtn"><button data-t="go">เริ่ม</button><button data-t="pause">หยุด</button><button data-t="reset">ตั้งใหม่</button></div></div></div></section>
+<section class="slide divider" data-title="บทที่ 4 ค่าขอบ (BVA)" data-group="กลุ่มที่ 2 เทคนิคออกแบบกรณีทดสอบ" data-notes="จุดขายของบทคือตัวจำลองข้อผิดพลาด ซึ่งเป็นสาเหตุเดียวกับที่เห็นในเดโม"><p class="grp">กลุ่มที่ 2 เทคนิคออกแบบกรณีทดสอบ</p><div class="bignum">04</div><h2>ค่าขอบ (BVA)</h2>
+<p class="whatfor">โปรแกรมมักผิดตรงขอบของกลุ่ม และแอปสาธิตของเราก็ผิดตรงนั้นจริง</p><div class="mins"><span class="chip">ประมาณ 18 นาที</span><span class="chip r">ข้อสอบ 2.1–2.2</span><span class="chip b">ผลงานของบทนี้: รายการค่าขอบ</span><span class="chip c">อ่านเพิ่ม: เอกสาร บทที่ 4</span></div></section>
+<section class="slide " data-title="ทำไมผิดตรงขอบ" data-group="กลุ่มที่ 2 เทคนิคออกแบบกรณีทดสอบ" data-notes=""><span class="chap">บทที่ 4 <span class="of">จาก 8</span> <span class="ct">ค่าขอบ (BVA)</span></span><p class="eyebrow">Boundary Value Analysis</p><h2>โปรแกรมมักผิดตรงขอบของกลุ่ม</h2>
+<div class="body center"><div class="g2">
+  <div class="panel"><h3 class="b">ผู้เขียนตั้งใจ</h3><pre class="code">if (days &lt; 3 || days &gt; 30) reject()</pre></div>
+  <div class="panel hl"><h3 class="b">ผู้เขียนพิมพ์จริง</h3><pre class="code">if (days &lt;= 3 || days &gt; 30) reject()</pre></div>
+</div>
+<p class="center-t">ต่างกันแค่เครื่องหมายเดียว ค่าตัวแทน 15 ผ่านทั้งสองแบบ ความผิดนี้เห็นได้ที่ค่าเดียวเท่านั้น</p></div></section>
+<section class="slide " data-title="ลองเล่น หาข้อผิดพลาด" data-group="กลุ่มที่ 2 เทคนิคออกแบบกรณีทดสอบ" data-notes="สลับเป็นโค้ดผิด ชี้ว่ามีเพียงค่า 3 ที่จับได้ แล้วโยงกลับไปที่ภาพหน้าจอของแอป"><span class="chap">บทที่ 4 <span class="of">จาก 8</span> <span class="ct">ค่าขอบ (BVA)</span></span><p class="eyebrow risk">ลองเล่น</p><h2>ค่าไหนจับข้อผิดพลาดนี้ได้</h2>
+<div class="body center">
+  <div class="seg" data-g="obo"><span>โค้ดที่ใช้</span><button data-v="ok" class="on">ถูกต้อง &lt; 3</button><button data-v="bug">ผิด &lt;= 3</button></div>
+  <div class="tbl"><table id="obo"><tr><th>ค่าที่ทดสอบ</th><th>ที่มา</th><th>ผลที่คาดหวัง</th><th>ผลจริง</th><th>จับได้ไหม</th></tr>
+  <tr data-d="15"><td>15</td><td>ตัวแทน</td><td>รับ</td><td class="act"></td><td class="got"></td></tr>
+  <tr data-d="2"><td>2</td><td>เลยขอบล่าง</td><td>ปฏิเสธ</td><td class="act"></td><td class="got"></td></tr>
+  <tr data-d="3"><td>3</td><td>ขอบล่าง</td><td>รับ</td><td class="act"></td><td class="got"></td></tr>
+  <tr data-d="30"><td>30</td><td>ขอบบน</td><td>รับ</td><td class="act"></td><td class="got"></td></tr>
+  <tr data-d="31"><td>31</td><td>เลยขอบบน</td><td>ปฏิเสธ</td><td class="act"></td><td class="got"></td></tr></table></div>
+  <p class="center-t">ภาพหน้าจอในบทที่ 1 คืออาการแบบนี้ ครั้งที่ 3 เราจะรันการทดสอบกับแอปจริงเพื่อยืนยัน</p>
+</div></section>
+<section class="slide " data-title="วิธีหาค่าขอบ" data-group="กลุ่มที่ 2 เทคนิคออกแบบกรณีทดสอบ" data-notes=""><span class="chap">บทที่ 4 <span class="of">จาก 8</span> <span class="ct">ค่าขอบ (BVA)</span></span><p class="eyebrow">วิธีหาค่าขอบ</p><h2>ทุกขอบ ทดสอบสองค่า</h2>
+<div class="fig"><svg class="svg" viewBox="0 0 900 250" role="img" aria-label="R-A ขอห้องล่วงหน้าได้ 3 ถึง 30 วัน แบ่งเป็นสามกลุ่ม">
+  <text class="t-md t-b" x="30" y="32">R-A ขอห้องล่วงหน้าได้ 3 ถึง 30 วัน</text>
+  <text class="t-sm t-risk t-b" x="870" y="32" text-anchor="end">กฎสมมติเพื่อฝึก</text>
+  <rect x="60" y="70" width="190" height="60" class="bx-bad"/><text class="t-md t-bad t-b" x="155" y="106" text-anchor="middle">น้อยกว่า 3 · ปฏิเสธ</text>
+  <rect x="250" y="70" width="400" height="60" class="bx-ok"/><text class="t-md t-ok t-b" x="450" y="106" text-anchor="middle">3 ถึง 30 · รับ</text>
+  <rect x="650" y="70" width="190" height="60" class="bx-bad"/><text class="t-md t-bad t-b" x="745" y="106" text-anchor="middle">มากกว่า 30 · ปฏิเสธ</text>
+  <line x1="60" y1="162" x2="840" y2="162" class="ln-ink"/>
+  <circle cx="220" cy="162" r="9" class="f-risk"/><text class="t-md" x="220" y="192" text-anchor="middle">2</text>
+  <circle cx="280" cy="162" r="9" class="f-risk"/><text class="t-md" x="280" y="192" text-anchor="middle">3</text>
+  <circle cx="620" cy="162" r="9" class="f-risk"/><text class="t-md" x="620" y="192" text-anchor="middle">30</text>
+  <circle cx="680" cy="162" r="9" class="f-risk"/><text class="t-md" x="680" y="192" text-anchor="middle">31</text>
+  <circle cx="450" cy="162" r="7" class="f-ok"/><text class="t-md" x="450" y="192" text-anchor="middle">ตัวแทน</text>
+  <text class="t-md t-risk t-b" x="450" y="232" text-anchor="middle">ค่าขอบ: 2 · 3 · 30 · 31</text>
+</svg></div>
+<div class="g2"><div class="term"><p class="w">ค่าที่ขอบพอดี</p><p>ค่าต่ำสุดและสูงสุดของกลุ่มที่ถูกต้อง: 3 และ 30</p></div>
+<div class="term"><p class="w">ค่าที่เลยขอบไปหนึ่ง</p><p>ค่าที่อยู่นอกกลุ่มติดกันพอดี: 2 และ 31</p></div></div></section>
+<section class="slide " data-title="ขอบที่ไม่ใช่ตัวเลข" data-group="กลุ่มที่ 2 เทคนิคออกแบบกรณีทดสอบ" data-notes=""><span class="chap">บทที่ 4 <span class="of">จาก 8</span> <span class="ct">ค่าขอบ (BVA)</span></span><p class="eyebrow">ไม่ใช่แค่ตัวเลข</p><h2>อะไรที่มีช่วง ก็มีขอบ</h2>
+<div class="body center"><div class="tbl"><table><tr><th>ชนิด</th><th>ตัวอย่างกฎ <span class="tag r">สมมติ</span></th><th>ค่าขอบ</th></tr>
+<tr><td><b>ความยาวข้อความ</b></td><td>เหตุผลการปฏิเสธยาว 10 ถึง 300 ตัวอักษร</td><td>9 · 10 · 300 · 301 ตัวอักษร</td></tr>
+<tr><td><b>วันที่</b></td><td>จัดกิจกรรมได้ไม่ก่อนวันนี้</td><td>เมื่อวาน · วันนี้</td></tr>
+<tr><td><b>จำนวนรายการ</b></td><td>R-B 1 ถึง 10 รายการ</td><td>0 · 1 · 10 · 11</td></tr></table></div>
+<div class="note"><p><b>ถ้ากฎไม่บอกขอบบน</b> ไม่ต้องเดาตัวเลขเอง ให้ทดสอบขอบที่รู้ และเขียนคำถามถึงผู้กำหนด</p></div></div></section>
+<section class="slide " data-title="ทำด้วยกัน ค่าขอบ" data-group="กลุ่มที่ 2 เทคนิคออกแบบกรณีทดสอบ" data-notes=""><span class="chap">บทที่ 4 <span class="of">จาก 8</span> <span class="ct">ค่าขอบ (BVA)</span></span><p class="eyebrow risk">ทำด้วยกันทั้งห้อง</p><h2>ค่าขอบของ R-B และ R-C</h2>
+<div class="body center">
+<div class="quiz"><p class="qq">R-B หนึ่งคำขอมีทรัพยากรได้ 1 ถึง 10 รายการ ค่าขอบคือชุดใด</p><div class="opts"><button class="opt" data-why="5 เป็นค่าตัวแทน ไม่ใช่ค่าขอบ และขาดค่าที่เลยขอบ">1 · 5 · 10</button><button class="opt" data-a="1" data-why="ครบทั้งค่าที่ขอบพอดีและค่าที่เลยขอบไปหนึ่ง ทั้งสองฝั่ง">0 · 1 · 10 · 11</button><button class="opt" data-why="ขาดค่าที่เลยขอบ ถ้าโปรแกรมรับ 11 รายการ จะไม่มีกรณีทดสอบจับได้">1 · 10</button></div><p class="fb"></p></div>
+<div class="reveal"><button type="button">R-C มีกลุ่มถูกต้องสองกลุ่ม ค่าขอบคืออะไร (กดเพื่อดู)</button>
+<div class="ans">0 · 1 · 4 · 5 · 8 · 9 — ขอบระหว่าง 4 กับ 5 ก็ต้องทดสอบ เพราะเป็นจุดที่ระบบเปลี่ยนพฤติกรรม</div></div>
+</div></section>
+<section class="slide " data-title="จบบทที่ 4" data-group="กลุ่มที่ 2 เทคนิคออกแบบกรณีทดสอบ" data-notes="อ่านสรุปพร้อมกัน ชี้กล่องผลงานของบท ถามหนึ่งคนว่าข้อไหนยังไม่ชัด"><span class="chap">บทที่ 4 <span class="of">จาก 8</span> <span class="ct">ค่าขอบ (BVA)</span></span><p class="eyebrow ok">จบบทที่ 4</p><h2>ค่าขอบ (BVA)</h2>
+<div class="body center"><div class="g21x"><div class="recap"><h3>สิ่งที่ต้องจำจากบทนี้</h3><ul><li>โปรแกรมมักผิดตรงขอบ เช่น เขียน <= แทน <</li><li>ทุกขอบทดสอบสองค่า: ค่าที่ขอบพอดี และค่าที่เลยขอบไปหนึ่ง</li><li>ขอบระหว่างกลุ่มที่ถูกต้องสองกลุ่มก็ต้องทดสอบ · กฎไม่บอกขอบ ให้ถาม ไม่เดา</li></ul></div>
+<div class="outbox"><p class="lab">ผลงานของบทนี้</p><p class="big">รายการค่าขอบ</p></div></div>
+<div class="nextup"><b>ต่อไป</b> เมื่อผลขึ้นกับหลายเงื่อนไขพร้อมกัน</div></div></section>
+<section class="slide divider" data-title="บทที่ 5 ตารางตัดสินใจ" data-group="กลุ่มที่ 2 เทคนิคออกแบบกรณีทดสอบ" data-notes="ใช้กฎจริงของ Case X ทั้งบท และทุกกฎอยู่ในแอปสาธิต"><p class="grp">กลุ่มที่ 2 เทคนิคออกแบบกรณีทดสอบ</p><div class="bignum">05</div><h2>ตารางตัดสินใจ</h2>
+<p class="whatfor">เมื่อผลขึ้นกับหลายเงื่อนไขพร้อมกัน ตารางช่วยให้ไม่ลืมกรณีใด</p><div class="mins"><span class="chip">ประมาณ 20 นาที</span><span class="chip r">ข้อสอบ 2.3</span><span class="chip b">ผลงานของบทนี้: ตารางตัดสินใจ</span><span class="chip c">อ่านเพิ่ม: เอกสาร บทที่ 5</span></div></section>
+<section class="slide " data-title="เมื่อไรใช้ตาราง" data-group="กลุ่มที่ 2 เทคนิคออกแบบกรณีทดสอบ" data-notes=""><span class="chap">บทที่ 5 <span class="of">จาก 8</span> <span class="ct">ตารางตัดสินใจ</span></span><p class="eyebrow">Decision Table</p><h2>ผลขึ้นกับหลายเงื่อนไขพร้อมกัน</h2>
+<div class="body center"><div class="g2">
+  <div class="panel"><h3 class="b">ส่วนบน: เงื่อนไข</h3><p>แต่ละแถวคือเงื่อนไขหนึ่งข้อ ตอบใช่หรือไม่</p><p class="muted">เงื่อนไข 2 ข้อ = 4 กรณี · 3 ข้อ = 8 กรณี</p></div>
+  <div class="panel"><h3 class="b">ส่วนล่าง: ผลการกระทำ</h3><p>สิ่งที่ระบบทำในแต่ละกรณี</p><p class="muted">แต่ละคอลัมน์คือหนึ่งกรณี = หนึ่งกรณีทดสอบ</p></div>
+</div><div class="keep">ประโยชน์หลักคือ<b>ไม่ลืมกรณีใด</b> โดยเฉพาะกรณีที่ไม่มีใครเขียนไว้ในความต้องการ</div></div></section>
+<section class="slide " data-title="ตัวอย่าง FR-X-04" data-group="กลุ่มที่ 2 เทคนิคออกแบบกรณีทดสอบ" data-notes="ถามก่อนเปิดทุกช่อง กรณี 3 กับ 4 ชวนคิดว่า “ไม่มีอุปกรณ์ แล้วทุกรายการมีผู้รับผิดชอบหรือไม่” ตอบได้ว่าไม่มีผล"><span class="chap">บทที่ 5 <span class="of">จาก 8</span> <span class="ct">ตารางตัดสินใจ</span></span><p class="eyebrow">ตัวอย่างเดินให้ดู กฎจริงของ Case X</p><h2>ส่งคำขอได้เมื่อไร เรื่องผู้รับผิดชอบอุปกรณ์</h2>
+<div class="body center">
+<p>FR-X-04 และ UC-X-01 E1: ถ้ามีอุปกรณ์ที่ยังไม่มีผู้รับผิดชอบ ระบบต้องไม่ให้ส่ง และชี้รายการที่ขาด</p>
+<div class="tbl"><table class="dt"><tr><th></th><th>กรณี 1</th><th>กรณี 2</th><th>กรณี 3</th><th>กรณี 4</th></tr>
+<tr><td><b>คำขอมีอุปกรณ์</b></td><td>ใช่</td><td>ใช่</td><td>ไม่</td><td>ไม่</td></tr>
+<tr><td><b>อุปกรณ์ทุกรายการมีผู้รับผิดชอบ</b></td><td>ใช่</td><td>ไม่</td><td>ใช่</td><td>ไม่</td></tr>
+<tr class="act"><td>ส่งคำขอได้</td><td class="dtr" data-v="✓"></td><td class="dtr" data-v=""></td><td class="dtr" data-v="✓"></td><td class="dtr" data-v="✓"></td></tr>
+<tr class="act"><td>ไม่ให้ส่ง และชี้รายการที่ขาด</td><td class="dtr" data-v=""></td><td class="dtr" data-v="✓"></td><td class="dtr" data-v=""></td><td class="dtr" data-v=""></td></tr>
+<tr><td><i>กรณีทดสอบ</i></td><td>TC-10</td><td>TC-11</td><td colspan="2">TC-12</td></tr>
+</table></div><p class="center-t">กดช่องว่างเพื่อเปิดคำตอบทีละช่อง · กรณี 3 และ 4 ไม่มีอุปกรณ์ให้ตรวจ จึงรวมเป็นกรณีทดสอบเดียว</p></div></section>
+<section class="slide " data-title="ย่อตาราง" data-group="กลุ่มที่ 2 เทคนิคออกแบบกรณีทดสอบ" data-notes=""><span class="chap">บทที่ 5 <span class="of">จาก 8</span> <span class="ct">ตารางตัดสินใจ</span></span><p class="eyebrow">ย่อตาราง</p><h2>เงื่อนไขที่ไม่มีผล ใช้เครื่องหมายขีด</h2>
+<div class="body center"><div class="g2">
+<div class="tbl"><table class="dt"><tr><th></th><th>กรณี 1</th><th>กรณี 2</th><th>กรณี 3–4</th></tr>
+<tr><td><b>มีอุปกรณ์</b></td><td>ใช่</td><td>ใช่</td><td>ไม่</td></tr>
+<tr><td><b>มีผู้รับผิดชอบครบ</b></td><td>ใช่</td><td>ไม่</td><td>—</td></tr>
+<tr class="act"><td>ผล</td><td>ส่งได้</td><td>ไม่ให้ส่ง</td><td>ส่งได้</td></tr></table></div>
+<div class="note"><p>เมื่อไม่มีอุปกรณ์ เงื่อนไขที่สอง<b>ไม่มีผล</b> รวมสองคอลัมน์เป็นหนึ่งได้ ลดจาก 4 เหลือ 3 กรณีทดสอบ ข้อสอบไม่บังคับให้ย่อ</p></div>
+</div></div></section>
+<section class="slide " data-title="ทำด้วยกัน ตาราง" data-group="กลุ่มที่ 2 เทคนิคออกแบบกรณีทดสอบ" data-notes="รูปแบบเดียวกับข้อสอบ 2.3 ให้ทำในกระดาษ 3 นาทีก่อนเปิด"><span class="chap">บทที่ 5 <span class="of">จาก 8</span> <span class="ct">ตารางตัดสินใจ</span></span><p class="eyebrow risk">ทำด้วยกันทั้งห้อง กฎจริงของ Case X</p><h2>ตัดสินใจรายการได้หรือไม่</h2>
+<div class="body center"><p>CON-X-01 ต้องเข้าสู่ระบบ · BR-X-02 ตัดสินได้เฉพาะรายการของตน · UC-X-02 E1 ไม่มีสิทธิ์ต้องปฏิเสธและบันทึกเหตุการณ์</p>
+<div class="tbl"><table class="dt"><tr><th></th><th>กรณี 1</th><th>กรณี 2</th><th>กรณี 3</th><th>กรณี 4</th></tr>
+<tr><td><b>เข้าสู่ระบบแล้ว</b></td><td>ใช่</td><td>ใช่</td><td>ไม่</td><td>ไม่</td></tr>
+<tr><td><b>เป็นเจ้าของรายการ</b></td><td>ใช่</td><td>ไม่</td><td>ใช่</td><td>ไม่</td></tr>
+<tr class="act"><td>บันทึกผลการพิจารณา</td><td class="dtr" data-v="✓"></td><td class="dtr" data-v=""></td><td class="dtr" data-v=""></td><td class="dtr" data-v=""></td></tr>
+<tr class="act"><td>ปฏิเสธ และบันทึกเหตุการณ์</td><td class="dtr" data-v=""></td><td class="dtr" data-v="✓"></td><td class="dtr" data-v=""></td><td class="dtr" data-v=""></td></tr>
+<tr class="act"><td>ให้เข้าสู่ระบบก่อน</td><td class="dtr" data-v=""></td><td class="dtr" data-v=""></td><td class="dtr" data-v="✓"></td><td class="dtr" data-v="✓"></td></tr>
+</table></div><p class="center-t">กรณี 2 คือเรื่องเดียวกับใบงานครั้งที่ 1 ข้อ 2 ตอนนี้กลายเป็นกรณีทดสอบ TC-18 แล้ว</p></div></section>
+<section class="slide " data-title="กรณีที่เป็นไปไม่ได้" data-group="กลุ่มที่ 2 เทคนิคออกแบบกรณีทดสอบ" data-notes=""><span class="chap">บทที่ 5 <span class="of">จาก 8</span> <span class="ct">ตารางตัดสินใจ</span></span><p class="eyebrow">ข้อควรรู้</p><h2>บางกรณีเป็นไปไม่ได้ ให้เขียนว่าเป็นไปไม่ได้</h2>
+<div class="body center">
+<div class="note"><p>ถ้ามีเงื่อนไข “รายการที่จำเป็นอนุมัติครบ” และ “มีรายการที่จำเป็นถูกปฏิเสธ” กรณีที่ทั้งสองเป็นใช่<b>เกิดขึ้นไม่ได้</b> ให้กำกับว่าเป็นไปไม่ได้ ไม่ต้องสร้างกรณีทดสอบ แต่ต้องแสดงว่าคิดถึงแล้ว</p></div>
+<div class="quiz"><p class="qq">เงื่อนไข 3 ข้อ แต่ละข้อตอบใช่หรือไม่ ตารางเต็มมีกี่กรณี</p><div class="opts"><button class="opt" data-why="แต่ละเงื่อนไขมี 2 ค่า จึงคูณกัน ไม่ใช่บวกกัน">3 กรณี</button><button class="opt" data-why="แต่ละเงื่อนไขมี 2 ค่า จึงเป็น 2 × 2 × 2">6 กรณี</button><button class="opt" data-a="1" data-why="2 × 2 × 2 = 8 ก่อนย่อหรือตัดกรณีที่เป็นไปไม่ได้">8 กรณี</button></div><p class="fb"></p></div>
+</div></section>
+<section class="slide " data-title="จบบทที่ 5" data-group="กลุ่มที่ 2 เทคนิคออกแบบกรณีทดสอบ" data-notes="อ่านสรุปพร้อมกัน ชี้กล่องผลงานของบท ถามหนึ่งคนว่าข้อไหนยังไม่ชัด"><span class="chap">บทที่ 5 <span class="of">จาก 8</span> <span class="ct">ตารางตัดสินใจ</span></span><p class="eyebrow ok">จบบทที่ 5</p><h2>ตารางตัดสินใจ</h2>
+<div class="body center"><div class="g21x"><div class="recap"><h3>สิ่งที่ต้องจำจากบทนี้</h3><ul><li>ใช้เมื่อผลขึ้นกับหลายเงื่อนไขพร้อมกัน</li><li>เงื่อนไขบน ผลล่าง แต่ละคอลัมน์คือหนึ่งกรณีทดสอบ · n เงื่อนไข มี 2 ยกกำลัง n กรณี</li><li>ย่อได้เมื่อผลเหมือนกัน · กรณีที่ขัดกันเองให้กำกับว่าเป็นไปไม่ได้</li></ul></div>
+<div class="outbox"><p class="lab">ผลงานของบทนี้</p><p class="big">ตารางตัดสินใจ</p></div></div>
+<div class="nextup"><b>ต่อไป</b> รวมผลจากทุกเทคนิคเป็นชุดเดียว</div></div></section>
+<section class="slide divider" data-title="บทที่ 6 จากเทคนิคสู่ชุดกรณีทดสอบ" data-group="กลุ่มที่ 3 ผลลัพธ์และการส่งต่อ" data-notes="บทรวม ใช้ feature ส่งคำขอของแอปสาธิตเป็นตัวอย่างทั้งบท"><p class="grp">กลุ่มที่ 3 ผลลัพธ์และการส่งต่อ</p><div class="bignum">06</div><h2>จากเทคนิคสู่ชุดกรณีทดสอบ</h2>
+<p class="whatfor">รวมผลจากทุกเทคนิค เป็นชุดกรณีทดสอบที่สอบกลับได้</p><div class="mins"><span class="chip">ประมาณ 12 นาที</span><span class="chip r">ข้อสอบ 2.4</span><span class="chip b">ผลงานของบทนี้: ชุดกรณีทดสอบ และตารางสอบกลับ</span><span class="chip c">อ่านเพิ่ม: เอกสาร บทที่ 6</span></div></section>
+<section class="slide " data-title="ห้าขั้น" data-group="กลุ่มที่ 3 ผลลัพธ์และการส่งต่อ" data-notes=""><span class="chap">บทที่ 6 <span class="of">จาก 8</span> <span class="ct">จากเทคนิคสู่ชุดกรณีทดสอบ</span></span><p class="eyebrow">ขั้นตอนที่ใช้ทุกครั้ง</p><h2>จากกฎหนึ่งข้อ ถึงกรณีทดสอบที่สอบกลับได้</h2>
+<div class="fig"><svg class="svg" viewBox="0 0 960 170" role="img" aria-label="จากกฎ เลือกเทคนิค หาค่า เขียนกรณีทดสอบ แล้วสอบกลับ">
+  <rect x="10" y="40" width="160" height="80" rx="12" class="bx-plain"/><text class="t-lg" x="90" y="76" text-anchor="middle">กฎ</text><text class="t-sm muted" x="90" y="100" text-anchor="middle">ความต้องการ เกณฑ์</text>
+  <rect x="200" y="40" width="160" height="80" rx="12" class="bx-build"/><text class="t-lg" x="280" y="76" text-anchor="middle">เลือกเทคนิค</text><text class="t-sm muted" x="280" y="100" text-anchor="middle">EP · BVA · ตาราง</text>
+  <rect x="390" y="40" width="160" height="80" rx="12" class="bx-risk"/><text class="t-lg" x="470" y="76" text-anchor="middle">หาค่า</text><text class="t-sm muted" x="470" y="100" text-anchor="middle">ตัวแทน ค่าขอบ กรณี</text>
+  <rect x="580" y="40" width="160" height="80" rx="12" class="bx-test"/><text class="t-lg" x="660" y="76" text-anchor="middle">กรณีทดสอบ</text><text class="t-sm muted" x="660" y="100" text-anchor="middle">พร้อมผลคาดหวัง</text>
+  <rect x="770" y="40" width="180" height="80" rx="12" class="bx-ok"/><text class="t-lg" x="860" y="76" text-anchor="middle">สอบกลับ</text><text class="t-sm muted" x="860" y="100" text-anchor="middle">ทุกกฎมีกรณีทดสอบ</text>
+  <path d="M170 80 H200 M360 80 H390 M550 80 H580 M740 80 H770" class="ln-ink"/>
+</svg></div>
+<div class="tbl"><table><tr><th>กฎมีลักษณะแบบนี้</th><th>ใช้เทคนิค</th><th>ตัวอย่างใน feature ส่งคำขอ</th></tr>
+<tr><td>มีช่วงตัวเลข ความยาว หรือวันที่</td><td>แบ่งกลุ่ม และค่าขอบ</td><td>R-A · R-B</td></tr>
+<tr><td>ผลขึ้นกับเงื่อนไขหลายข้อพร้อมกัน</td><td>ตารางตัดสินใจ</td><td>FR-X-04</td></tr>
+<tr><td>ไม่มีทั้งสองอย่าง</td><td>เขียนตรงจากเกณฑ์การยอมรับ</td><td>CON-X-01 ต้องเข้าสู่ระบบ</td></tr></table></div></section>
+<section class="slide " data-title="รวมและตัดซ้ำ" data-group="กลุ่มที่ 3 ผลลัพธ์และการส่งต่อ" data-notes="รหัสเหล่านี้ตรงกับรหัสในชุดทดสอบของแอปสาธิต ครั้งที่ 3 จะเห็นชื่อเดียวกันในโค้ด"><span class="chap">บทที่ 6 <span class="of">จาก 8</span> <span class="ct">จากเทคนิคสู่ชุดกรณีทดสอบ</span></span><p class="eyebrow">รวมเป็นชุด</p><h2>feature ส่งคำขอ ได้กรณีทดสอบ 14 ข้อ</h2>
+<div class="body center"><div class="tbl"><table><tr><th>ที่มา</th><th>กรณีทดสอบ</th><th>จำนวน</th></tr>
+<tr><td>R-A ค่าขอบ และตัวแทน</td><td>TC-01 ถึง TC-05 · ค่า 2 · 3 · 15 · 30 · 31</td><td>5</td></tr>
+<tr><td>R-B ค่าขอบ</td><td>TC-06 ถึง TC-09 · ค่า 0 · 1 · 10 · 11</td><td>4</td></tr>
+<tr><td>FR-X-04 ตารางตัดสินใจ</td><td>TC-10 ถึง TC-12</td><td>3</td></tr>
+<tr><td>CON-X-01 เกณฑ์การยอมรับ</td><td>TC-23 ไม่เข้าสู่ระบบ</td><td>1</td></tr>
+<tr><td>AC-X-02 เกณฑ์การยอมรับ</td><td>SYS-01 ส่งสำเร็จ เห็นสถานะ</td><td>1</td></tr></table></div>
+<div class="note"><p>R-A ตัดค่าตัวแทนของกลุ่มที่ไม่ถูกต้องออก เพราะค่า 2 และ 31 เป็นตัวแทนของกลุ่มนั้นอยู่แล้ว เหลือ 5 ค่าแทน 7</p></div></div></section>
+<section class="slide " data-title="ค่าที่ป้อน" data-group="กลุ่มที่ 3 ผลลัพธ์และการส่งต่อ" data-notes=""><span class="chap">บทที่ 6 <span class="of">จาก 8</span> <span class="ct">จากเทคนิคสู่ชุดกรณีทดสอบ</span></span><p class="eyebrow">ข้อมูลที่ป้อน</p><h2>ค่าในกรณีทดสอบต้องเป็นค่าจริง และไม่ใช่ข้อมูลของคนจริง</h2>
+<div class="body center"><div class="g2">
+<div class="wrong"><p class="lab">ห้าม</p><p>ใช้ชื่อ อีเมล หรือรหัสนักศึกษาของคนจริง แม้เป็นของเพื่อนในทีม ขัดกับ NFR-X-01</p></div>
+<div class="win"><p class="lab">ควร</p><p>ใช้ข้อมูลสมมติที่อ่านแล้วรู้ว่าเป็นข้อมูลทดสอบ เช่น <code>test_organizer_01</code> ตรงกับผู้ใช้ทดสอบในแอปสาธิต</p></div></div>
+<div class="nextup"><b>ย้ายไปครั้งที่ 3</b> การเตรียมข้อมูลตั้งต้น บัญชีทดสอบ และการล้างข้อมูลก่อนรันแต่ละรอบ เพราะเป็นเรื่องของการรัน</div></div></section>
+<section class="slide " data-title="สอบกลับ" data-group="กลุ่มที่ 3 ผลลัพธ์และการส่งต่อ" data-notes="เชื่อมกับตารางสอบกลับในบทที่ 10 ของ SRS v1.1"><span class="chap">บทที่ 6 <span class="of">จาก 8</span> <span class="ct">จากเทคนิคสู่ชุดกรณีทดสอบ</span></span><p class="eyebrow">สอบกลับ</p><h2>ทุกความต้องการมีกรณีทดสอบ ทุกกรณีทดสอบมีที่มา</h2>
+<div class="fig"><svg class="svg" viewBox="0 0 900 320" role="img" aria-label="ตารางสอบกลับ ความต้องการกับกรณีทดสอบ มีหนึ่งความต้องการที่ยังไม่มีกรณีทดสอบ และหนึ่งกรณีทดสอบที่ไม่ได้ทดสอบความต้องการใด">
+  <g class="t-md">
+  <text class="t-sm t-b" x="170" y="40" text-anchor="middle">TC-01</text><text class="t-sm t-b" x="260" y="40" text-anchor="middle">TC-02</text><text class="t-sm t-b" x="350" y="40" text-anchor="middle">TC-03</text>
+  <text class="t-sm t-b" x="440" y="40" text-anchor="middle">TC-04</text><text class="t-sm t-b" x="530" y="40" text-anchor="middle">TC-05</text><text class="t-sm t-b" x="620" y="40" text-anchor="middle">TC-06</text>
+  </g>
+  <text class="t-md t-b" x="30" y="90">REQ-01</text><text class="t-md t-b" x="30" y="150">REQ-02</text><text class="t-md t-b" x="30" y="210">REQ-03</text><text class="t-md t-b" x="30" y="270">REQ-04</text>
+  <path d="M120 60 H670 M120 120 H670 M120 180 H670 M120 240 H670 M120 300 H670" class="ln"/>
+  <circle cx="170" cy="90" r="11" class="f-build"/><circle cx="260" cy="90" r="11" class="f-build"/>
+  <circle cx="350" cy="150" r="11" class="f-build"/><circle cx="440" cy="150" r="11" class="f-build"/>
+  <circle cx="530" cy="210" r="11" class="f-build"/><circle cx="350" cy="210" r="11" class="f-build"/>
+  <rect x="122" y="244" width="546" height="52" class="bx-bad" opacity=".55"/>
+  <rect x="598" y="62" width="44" height="232" class="bx-risk" opacity=".55"/>
+  <text class="t-md t-bad t-b" x="690" y="276">ยังไม่มีกรณีทดสอบ</text>
+  <text class="t-md t-risk t-b" x="690" y="96">ทดสอบอะไร</text>
+  <text class="t-sm muted" x="690" y="118">ไม่ได้สอบกลับไปหา</text>
+  <text class="t-sm muted" x="690" y="138">ความต้องการใดเลย</text>
+</svg></div>
+<p class="figcap">แถวว่างคือความต้องการที่ยังไม่มีใครทดสอบ คอลัมน์ว่างคือกรณีทดสอบที่ไม่รู้ว่ายืนยันอะไร ต้องแก้ก่อนส่งต่อ</p></section>
+<section class="slide " data-title="จบบทที่ 6" data-group="กลุ่มที่ 3 ผลลัพธ์และการส่งต่อ" data-notes="อ่านสรุปพร้อมกัน ชี้กล่องผลงานของบท ถามหนึ่งคนว่าข้อไหนยังไม่ชัด"><span class="chap">บทที่ 6 <span class="of">จาก 8</span> <span class="ct">จากเทคนิคสู่ชุดกรณีทดสอบ</span></span><p class="eyebrow ok">จบบทที่ 6</p><h2>จากเทคนิคสู่ชุดกรณีทดสอบ</h2>
+<div class="body center"><div class="g21x"><div class="recap"><h3>สิ่งที่ต้องจำจากบทนี้</h3><ul><li>ห้าขั้น: กฎ · เลือกเทคนิค · หาค่า · เขียนกรณีทดสอบ · สอบกลับ</li><li>เลือกเทคนิคจากลักษณะของกฎ แล้วรวมและตัดซ้ำ</li><li>ค่าที่ป้อนต้องเป็นค่าจริง ไม่ใช่ข้อมูลของคนจริง</li></ul></div>
+<div class="outbox"><p class="lab">ผลงานของบทนี้</p><p class="big">ชุดกรณีทดสอบ และตารางสอบกลับ</p></div></div>
+<div class="nextup"><b>ต่อไป</b> ก่อนส่งต่อ ต้องทบทวนชุดนี้ก่อน</div></div></section>
+<section class="slide divider" data-title="บทที่ 7 ทบทวนชุดกรณีทดสอบก่อนส่งต่อ" data-group="กลุ่มที่ 3 ผลลัพธ์และการส่งต่อ" data-notes="ใช้การทบทวนจากครั้งที่ 1 มาตรวจกรณีทดสอบ"><p class="grp">กลุ่มที่ 3 ผลลัพธ์และการส่งต่อ</p><div class="bignum">07</div><h2>ทบทวนชุดกรณีทดสอบก่อนส่งต่อ</h2>
+<p class="whatfor">ใช้การทบทวนจากครั้งที่ 1 ตรวจชุดกรณีทดสอบ ผ่านแล้วจึงเป็นชุดอ้างอิง</p><div class="mins"><span class="chip">ประมาณ 10 นาที</span><span class="chip b">ผลงานของบทนี้: ชุดอ้างอิง v1</span><span class="chip c">อ่านเพิ่ม: เอกสาร บทที่ 7</span></div></section>
+<section class="slide " data-title="ทำไมต้องทบทวน" data-group="กลุ่มที่ 3 ผลลัพธ์และการส่งต่อ" data-notes=""><span class="chap">บทที่ 7 <span class="of">จาก 8</span> <span class="ct">ทบทวนชุดกรณีทดสอบก่อนส่งต่อ</span></span><p class="eyebrow">ทำไมต้องทบทวนกรณีทดสอบ</p><h2>กรณีทดสอบที่ผิด ทำให้ผลการทดสอบผิดทั้งชุด</h2>
+<div class="body center"><div class="g2">
+<div class="panel"><h3 class="b">ครั้งที่ 1 ทบทวนเอกสารออกแบบ</h3><p>หาปัญหาก่อนเขียนโค้ด</p></div>
+<div class="panel hl"><h3 class="b">ครั้งที่ 2 ทบทวนชุดกรณีทดสอบ</h3><p>หาปัญหาก่อนเขียนโค้ดทดสอบ ใช้วิธีเดียวกัน คือการทดสอบแบบสถิต</p></div></div>
+<div class="note"><p>ถ้าผลที่คาดหวังของ TC-02 เขียนว่า “ปฏิเสธ” ตามที่แอปทำ ครั้งที่ 3 การทดสอบจะผ่าน และข้อบกพร่องจะหลุดไปโดยไม่มีใครรู้</p></div></div></section>
+<section class="slide " data-title="รายการตรวจ 6 ข้อ" data-group="กลุ่มที่ 3 ผลลัพธ์และการส่งต่อ" data-notes=""><span class="chap">บทที่ 7 <span class="of">จาก 8</span> <span class="ct">ทบทวนชุดกรณีทดสอบก่อนส่งต่อ</span></span><p class="eyebrow">รายการตรวจ</p><h2>หกคำถามก่อนส่งชุดกรณีทดสอบต่อ</h2>
+<div class="body center"><div class="tbl"><table><tr><th>ข้อ</th><th>ตรวจอะไร</th><th>ผลของชุดตัวอย่าง</th></tr>
+<tr><td>1</td><td>ทุกความต้องการมีกรณีทดสอบ</td><td><span class="tag ok">สอดคล้อง</span></td></tr>
+<tr><td>2</td><td>ทุกกลุ่มและทุกขอบมีกรณีทดสอบ</td><td><span class="tag ok">สอดคล้อง</span></td></tr>
+<tr><td>3</td><td>ทุกคอลัมน์ของตารางมีกรณีทดสอบ หรือกำกับว่าเป็นไปไม่ได้</td><td><span class="tag ok">สอดคล้อง</span></td></tr>
+<tr><td>4</td><td>ผลที่คาดหวังมาจากกฎ และมองเห็นได้</td><td><span class="tag ok">สอดคล้อง</span></td></tr>
+<tr><td>5</td><td>เงื่อนไขก่อนครบ ค่าที่ป้อนชัด</td><td><span class="tag ok">สอดคล้อง</span></td></tr>
+<tr><td>6</td><td>ไม่มีข้อมูลส่วนตัวของคนจริง</td><td><span class="tag ok">สอดคล้อง</span></td></tr></table></div>
+<p class="center-t">ใช้คำว่าสอดคล้อง หรือไม่สอดคล้อง ไม่ใช้คำว่าผ่าน เพราะผ่านสงวนไว้สำหรับผลการรันจริงในครั้งที่ 3</p></div></section>
+<section class="slide " data-title="ชุดอ้างอิง" data-group="กลุ่มที่ 3 ผลลัพธ์และการส่งต่อ" data-notes="คำว่าผ่านในระดับตรรกะ หมายถึงผ่านการทบทวน ไม่ใช่ผ่านการรัน ใช้คำว่าสอดคล้องเพื่อไม่ให้ปนกัน"><span class="chap">บทที่ 7 <span class="of">จาก 8</span> <span class="ct">ทบทวนชุดกรณีทดสอบก่อนส่งต่อ</span></span><p class="eyebrow ok">ผลของการทบทวน</p><h2>ชุดกรณีทดสอบ v1 พร้อมส่งต่อ</h2>
+<div class="body center"><div class="g2">
+<div class="panel hl"><h3 class="b">บันทึกผลการทบทวน</h3><p>ชุด: feature ส่งคำขอ · รุ่น v1 · 14 กรณี</p><p>ผู้ทบทวน: สมาชิกที่ไม่ได้เขียนกรณีทดสอบชุดนี้</p><p>ผล: สอดคล้องทั้ง 6 ข้อ · เป็นชุดอ้างอิงสำหรับครั้งที่ 3</p></div>
+<div class="outbox"><p class="lab">ไปอยู่ในเล่มปริญญานิพนธ์</p><p class="big">บทที่ 3.5</p><p>การออกแบบการทดสอบ มีตัวอย่างฉบับเต็มของ Case X Mini ให้ดาวน์โหลด ใช้เป็นแม่แบบของทีม</p></div></div>
+<div class="keep">หลังจากนี้ถ้าจะแก้กรณีทดสอบ ต้องออกรุ่นใหม่ และบอกว่าแก้อะไร ไม่แก้ทับเงียบ ๆ</div></div></section>
+<section class="slide " data-title="จบบทที่ 7" data-group="กลุ่มที่ 3 ผลลัพธ์และการส่งต่อ" data-notes="อ่านสรุปพร้อมกัน ชี้กล่องผลงานของบท ถามหนึ่งคนว่าข้อไหนยังไม่ชัด"><span class="chap">บทที่ 7 <span class="of">จาก 8</span> <span class="ct">ทบทวนชุดกรณีทดสอบก่อนส่งต่อ</span></span><p class="eyebrow ok">จบบทที่ 7</p><h2>ทบทวนชุดกรณีทดสอบก่อนส่งต่อ</h2>
+<div class="body center"><div class="g21x"><div class="recap"><h3>สิ่งที่ต้องจำจากบทนี้</h3><ul><li>ทบทวนชุดกรณีทดสอบก่อนเขียนโค้ดทดสอบ ด้วยรายการตรวจ 6 ข้อ</li><li>ผู้ทบทวนไม่ควรเป็นผู้เขียนกรณีทดสอบชุดนั้น</li><li>สอดคล้องครบแล้วเป็นชุดอ้างอิง มีรุ่น แก้แล้วต้องออกรุ่นใหม่</li></ul></div>
+<div class="outbox"><p class="lab">ผลงานของบทนี้</p><p class="big">ชุดอ้างอิง v1</p></div></div>
+<div class="nextup"><b>ต่อไป</b> ส่งต่อให้ครั้งที่ 3</div></div></section>
+<section class="slide divider" data-title="บทที่ 8 ส่งต่อครั้งที่ 3" data-group="กลุ่มที่ 3 ผลลัพธ์และการส่งต่อ" data-notes="บทปิด ให้เห็นภาพว่าชุดกรณีทดสอบนี้จะไปอยู่ที่ไหนต่อ"><p class="grp">กลุ่มที่ 3 ผลลัพธ์และการส่งต่อ</p><div class="bignum">08</div><h2>ส่งต่อครั้งที่ 3</h2>
+<p class="whatfor">กรณีทดสอบเดียวกัน จะไปรันได้หลายระดับ และสิ่งที่เทคนิควันนี้จับไม่ได้</p><div class="mins"><span class="chip">ประมาณ 8 นาที</span><span class="chip b">ผลงานของบทนี้: รู้ว่าครั้งหน้าจะทำอะไรต่อ</span><span class="chip c">อ่านเพิ่ม: เอกสาร บทที่ 8</span></div></section>
+<section class="slide " data-title="หนึ่งข้อ หลายระดับ" data-group="กลุ่มที่ 3 ผลลัพธ์และการส่งต่อ" data-notes="ไม่ต้องอธิบายโค้ด ให้เห็นแค่ว่าข้อเดียวกันมีหน้าตาต่างกันตามระดับ และค่าขอบใช้มากที่สุดที่ Unit และ API"><span class="chap">บทที่ 8 <span class="of">จาก 8</span> <span class="ct">ส่งต่อครั้งที่ 3</span></span><p class="eyebrow">ตัวอย่างล่วงหน้าของครั้งที่ 3</p><h2>TC-02 ข้อเดียว เขียนได้สี่แบบ</h2>
+<div class="body"><div class="lvgrid">
+<div class="lv"><h4>Unit <span>ผู้พัฒนา · Jest</span></h4><p class="k">เรียกผ่าน</p><p>ฟังก์ชันตรง ไม่มีหน้าจอ</p><pre>expect(validateRequest({daysAhead:3}).ok)
+  .toBe(true)</pre><p class="k">ใช้ค่าขอบ</p><p><b class="lvbar"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></b> ทุกค่า เร็วที่สุด</p></div>
+<div class="lv"><h4>API · Integration <span>Supertest</span></h4><p class="k">เรียกผ่าน</p><p>คำขอ HTTP ไม่ผ่านหน้าจอ</p><pre>POST /api/requests {"daysAhead":3}
+→ 201 และบันทึกลงไฟล์</pre><p class="k">ใช้ค่าขอบ</p><p><b class="lvbar"><i class="on"></i><i class="on"></i><i class="on"></i><i></i></b> เกือบทุกค่า ตรวจกฎที่ข้ามหน้าจอได้</p></div>
+<div class="lv"><h4>System <span>Playwright</span></h4><p class="k">เรียกผ่าน</p><p>หน้าจอ บนระบบที่ติดตั้งครบ</p><pre>ขอห้อง A ล่วงหน้า 3 วัน กดส่ง
+→ เห็น Awaiting Decisions</pre><p class="k">ใช้ค่าขอบ</p><p><b class="lvbar"><i class="on"></i><i class="on"></i><i></i><i></i></b> บางค่า เพราะช้า</p></div>
+<div class="lv"><h4>UAT <span>ผู้ใช้จริง</span></h4><p class="k">เรียกผ่าน</p><p>งานจริงของผู้ใช้</p><pre>ผู้จัดจองห้องสำหรับงานสัปดาห์หน้า
+ผ่านเมื่อทำเสร็จเองโดยไม่ต้องถาม</pre><p class="k">ใช้ค่าขอบ</p><p><b class="lvbar"><i></i><i></i><i></i><i></i></b> ไม่ใช้ ใช้สถานการณ์แทน</p></div>
+</div></div></section>
+<section class="slide " data-title="สิ่งที่เทคนิคจับไม่ได้" data-group="กลุ่มที่ 3 ผลลัพธ์และการส่งต่อ" data-notes=""><span class="chap">บทที่ 8 <span class="of">จาก 8</span> <span class="ct">ส่งต่อครั้งที่ 3</span></span><p class="eyebrow">ขอบเขตของเทคนิค</p><h2>สามเทคนิควันนี้จับอะไรไม่ได้</h2>
+<div class="body center"><div class="tbl"><table><tr><th>ปัญหา</th><th>ทำไมจับไม่ได้</th><th>ต้องใช้อะไรเพิ่ม</th></tr>
+<tr><td>ความต้องการที่ไม่มีใครเขียน</td><td>เทคนิคเริ่มจากความต้องการที่มีอยู่</td><td>การทบทวน ครั้งที่ 1</td></tr>
+<tr><td>กฎถูกตรวจแค่ที่หน้าจอ</td><td>ออกแบบจากกฎ ไม่ได้ดูว่ากฎอยู่ส่วนประกอบไหน</td><td>API test ครั้งที่ 3</td></tr>
+<tr><td>ช้า ใช้งานยาก ไม่ปลอดภัย</td><td>เป็นความต้องการที่ไม่ใช่หน้าที่</td><td>NFR ครั้งที่ 3</td></tr></table></div>
+<div class="keep">ทดสอบพอหรือยัง ไม่ได้ดูจากจำนวนข้อ แต่ดูว่าทุกความต้องการที่เสี่ยงมีกรณีทดสอบครอบคลุมหรือไม่</div></div></section>
+<section class="slide " data-title="จบบทที่ 8" data-group="กลุ่มที่ 3 ผลลัพธ์และการส่งต่อ" data-notes="อ่านสรุปพร้อมกัน ชี้กล่องผลงานของบท ถามหนึ่งคนว่าข้อไหนยังไม่ชัด"><span class="chap">บทที่ 8 <span class="of">จาก 8</span> <span class="ct">ส่งต่อครั้งที่ 3</span></span><p class="eyebrow ok">จบบทที่ 8</p><h2>ส่งต่อครั้งที่ 3</h2>
+<div class="body center"><div class="g21x"><div class="recap"><h3>สิ่งที่ต้องจำจากบทนี้</h3><ul><li>กรณีทดสอบเชิงตรรกะข้อเดียว รันได้หลายระดับ</li><li>ค่าขอบใช้มากที่สุดที่ Unit และ API · UAT ใช้สถานการณ์แทน</li><li>สิ่งที่เทคนิควันนี้จับไม่ได้ ต้องใช้การทบทวน API test และ NFR</li></ul></div>
+<div class="outbox"><p class="lab">ผลงานของบทนี้</p><p class="big">รู้ว่าครั้งหน้าจะทำอะไรต่อ</p></div></div>
+<div class="nextup"><b>ต่อไป</b> ใบงานครั้งที่ 2</div></div></section>
+<section class="slide " data-title="ใบงานครั้งที่ 2" data-group="ใบงานครั้งที่ 2" data-notes="เปิดแนวทางการทำใบงาน 10 นาที เน้นข้อ 1 ที่มีกลุ่มถูกต้องสองกลุ่ม แล้วเริ่มทำในห้อง 20 นาที"><p class="eyebrow risk">ใบงานครั้งที่ 2 · ทำต่อที่บ้าน</p><h2>สองส่วน ส่งก่อนเริ่มเรียนครั้งที่ 3</h2>
+<div class="body center"><div class="g2">
+  <div class="card hi"><p class="cgrp">ส่วน A · รายบุคคล · 30 คะแนน</p><h3>ซ้อมข้อสอบส่วนที่ 2</h3><p>ข้อ 1 แบ่งกลุ่มแบบมีตัวช่วย · ข้อ 2 แบ่งกลุ่มเอง · ข้อ 3 ตารางตัดสินใจของ BR-X-01 · ข้อ 4 กรณีทดสอบ 2 ข้อ</p></div>
+  <div class="card now"><p class="cgrp">ส่วน B · งานกลุ่ม · 20 คะแนน</p><h3>ชุดกรณีทดสอบของ feature ทีม</h3><p>ความต้องการ 3–5 ข้อ · เลือกเทคนิค · กรณีทดสอบ 6–10 ข้อ · สอบกลับ · ทบทวน 6 ข้อ = Evidence Pack ส่วนที่ 2 และบทที่ 3.5</p></div>
+</div>
+<div class="g2"><div class="note"><p><b>ดูตัวอย่างวิธีทำ</b> ในแนวทางการทำใบงานครั้งที่ 2 และตัวอย่างบทที่ 3.5 ของ Case X Mini · ส่วน A สุ่มถามข้อ 1 ครั้งหน้า</p></div>
+<div class="timer" data-min="20"><div class="bigtime">20:00</div><div class="tbtn"><button data-t="go">เริ่ม</button><button data-t="pause">หยุด</button><button data-t="reset">ตั้งใหม่</button></div></div></div>
+</div></section>
+<section class="slide " data-title="ข้อ 1 และ 2" data-group="ใบงานครั้งที่ 2" data-notes=""><p class="eyebrow">ใบงานส่วน A ข้อ 1 และ 2 · 14 คะแนน</p><h2>แบ่งกลุ่มและหาค่าขอบ</h2>
+<div class="body center">
+  <div class="panel"><h3 class="b">ข้อ 1 · 8 คะแนน · มีตัวช่วย</h3><p>กิจกรรม SE Career Talk จากแบบฝึก ENGSE206: <b>ถ้าผู้เข้าร่วมเกิน 100 คน ต้องขออนุมัติเพิ่มจากหัวหน้าภาค</b> · เติมตารางกลุ่มที่แบ่งไว้ให้ แล้วเขียนค่าขอบ</p></div>
+  <div class="panel"><h3 class="b">ข้อ 2 · 6 คะแนน · แบ่งเอง</h3><p>กฎสมมติ: <b>ชื่อกิจกรรมต้องยาว 5 ถึง 80 ตัวอักษร</b> · แบ่งกลุ่มเอง เลือกตัวแทน และเขียนค่าขอบ</p></div>
+</div></section>
+<section class="slide " data-title="ข้อ 3 และ 4" data-group="ใบงานครั้งที่ 2" data-notes=""><p class="eyebrow">ใบงานส่วน A ข้อ 3 และ 4 · 16 คะแนน</p><h2>ตารางตัดสินใจ และกรณีทดสอบ</h2>
+<div class="body center">
+  <div class="panel"><h3 class="b">ข้อ 3 · 8 คะแนน · กฎจริง BR-X-01</h3><p>เงื่อนไข: รายการที่จำเป็นอนุมัติครบ · มีรายการไม่จำเป็นที่ไม่พร้อม · ผล: Ready · Ready พร้อมคำเตือน · ไม่เป็น Ready · แล้วตอบว่าต้องเพิ่มเงื่อนไขอะไรจึงแยก Awaiting Decisions กับ Action Required ได้</p></div>
+  <div class="panel"><h3 class="b">ข้อ 4 · 8 คะแนน</h3><p>เขียนกรณีทดสอบเชิงตรรกะ 2 ข้อ ข้อแรกจากค่าขอบในข้อ 1 หรือ 2 ข้อที่สองจากกรณีหนึ่งในข้อ 3</p></div>
+</div></section>
+<section class="slide " data-title="ใบงานส่วน B" data-group="ใบงานครั้งที่ 2" data-notes="ย้ำว่าครั้งนี้ยังไม่ต้องรัน ถ้ามีคอลัมน์ผลแล้วเติม Pass คือหลักฐานเท็จ"><p class="eyebrow c">ใบงานส่วน B · งานกลุ่ม</p><h2>ชุดกรณีทดสอบของ feature เดิมของทีม</h2>
+<div class="body center">
+  <div class="flow"><span class="step">ความต้องการ 3–5 ข้อ</span><span class="arr">→</span><span class="step">เลือกเทคนิค</span><span class="arr">→</span><span class="step">กรณีทดสอบ 6–10 ข้อ</span><span class="arr">→</span><span class="step">สอบกลับ</span><span class="arr">→</span><span class="step">ทบทวน 6 ข้อ</span></div>
+  <div class="note"><p>ใช้ feature เดิมจากใบงานครั้งที่ 1 · ความต้องการที่เขียนย้อนหลังให้ติดป้าย “สร้างย้อนหลัง” · <b>ยังไม่ต้องรัน</b> ห้ามมีคอลัมน์ผลจริงหรือ Pass/Fail</p></div>
+  <div class="nextup"><b>ใช้ต่อที่ไหน</b> Evidence Pack ส่วนที่ 2 · เขียนลงบทที่ 3.5 ของเล่มได้เลย · ครั้งที่ 3 จะนำชุดนี้ไปรันจริง</div>
+</div></section>
+<section class="slide " data-title="สรุปวันนี้" data-group="ปิดคาบ" data-notes=""><p class="eyebrow ok">สรุปครั้งที่ 2</p><h2>วันนี้เดินจากกฎ ถึงชุดกรณีทดสอบที่พร้อมส่งต่อ</h2>
+<div class="fig short2"><svg class="svg" viewBox="0 0 960 190" role="img" aria-label="จากกฎและเกณฑ์ ใช้เทคนิค ได้ชุดกรณีทดสอบเชิงตรรกะ ทบทวน แล้วเป็นชุดอ้างอิงที่ส่งต่อครั้งที่ 3 และเขียนลงเล่มบทที่ 3.5">
+  <rect class="bx-plain" x="10" y="40" width="170" height="80" rx="12"/><text class="t-xl" x="95.0" y="74.0" text-anchor="middle">กฎและเกณฑ์</text><text class="t-lg2 muted" x="95.0" y="100.0" text-anchor="middle">ฐานการทดสอบ</text>
+  <rect class="bx-build" x="202" y="40" width="170" height="80" rx="12"/><text class="t-xl" x="287.0" y="74.0" text-anchor="middle">เทคนิค</text><text class="t-lg2 muted" x="287.0" y="100.0" text-anchor="middle">EP · BVA · ตาราง</text>
+  <rect class="bx-build" x="394" y="40" width="170" height="80" rx="12"/><text class="t-xl" x="479.0" y="74.0" text-anchor="middle">ชุดกรณีทดสอบ</text><text class="t-lg2 muted" x="479.0" y="100.0" text-anchor="middle">เชิงตรรกะ</text>
+  <rect class="bx-risk" x="586" y="40" width="170" height="80" rx="12"/><text class="t-xl" x="671.0" y="74.0" text-anchor="middle">ทบทวน</text><text class="t-lg2 muted" x="671.0" y="100.0" text-anchor="middle">ก่อนส่งต่อ</text>
+  <rect class="bx-ok" x="778" y="40" width="172" height="80" rx="12"/><text class="t-xl" x="864.0" y="74.0" text-anchor="middle">ชุดอ้างอิง v1</text><text class="t-lg2 muted" x="864.0" y="100.0" text-anchor="middle">ส่งครั้งที่ 3</text>
+  <path class="ln-ink" d="M180 80 H202 M372 80 H394 M564 80 H586 M756 80 H778"/>
+  <text class="t-sm muted" x="480" y="160" text-anchor="middle">ผลงานของวันนี้คือชุดกรณีทดสอบที่ผ่านการทบทวน ยังไม่ต้องรัน</text>
+</svg></div>
+<div class="g2">
+  <div class="recap"><h3>เทคนิค</h3><ul><li>แบ่งกลุ่มตามสิ่งที่ระบบทำ</li><li>ทุกขอบทดสอบสองค่า</li><li>ตารางตัดสินใจไล่ทุกกรณี</li></ul></div>
+  <div class="recap"><h3>ผลงาน</h3><ul><li>กรณีทดสอบเชิงตรรกะ ผลที่คาดหวังมาจากกฎ</li><li>สอบกลับครบ ทบทวนแล้ว เป็นชุดอ้างอิง v1</li><li>เขียนลงบทที่ 3.5 ได้</li></ul></div>
+</div></section>
+<section class="slide " data-title="กลับมาที่ภาพเดิม" data-group="ปิดคาบ" data-notes=""><p class="eyebrow">กลับมาที่ภาพแรก</p><h2>วันนี้ทำกล่องสีน้ำเงินเสร็จแล้ว</h2>
+<div class="fig"><svg class="svg" viewBox="0 0 960 560" role="img" aria-label="ครั้งที่ 2 ตอบว่าทดสอบด้วยค่าอะไร ครั้งที่ 3 นำกรณีทดสอบเดียวกันไปรันที่ Unit API System และ UAT">
+  <rect class="bx-plain" x="330" y="20" width="300" height="64" rx="12"/><text class="t-xl" x="480.0" y="46.0" text-anchor="middle">กฎหนึ่งข้อ</text><text class="t-lg2 muted" x="480.0" y="72.0" text-anchor="middle">R-A ขอล่วงหน้า 3–30 วัน</text>
+  <rect class="bx-build" x="230" y="124" width="500" height="68" rx="12"/><text class="t-xl" x="480.0" y="152.0" text-anchor="middle">ครั้งที่ 2 ออกแบบกรณีทดสอบ</text><text class="t-lg2 muted" x="480.0" y="178.0" text-anchor="middle">ทดสอบด้วยค่าอะไร และต้องเห็นอะไร</text><rect class="bx-risk" x="626" y="110" width="96" height="28" rx="14"/><text class="t-md t-risk t-b" x="674" y="129" text-anchor="middle">วันนี้</text>
+  <rect class="bx-plain" x="280" y="232" width="400" height="64" rx="12"/><text class="t-xl" x="480.0" y="258.0" text-anchor="middle">กรณีทดสอบเชิงตรรกะ TC-02</text><text class="t-lg2 muted" x="480.0" y="284.0" text-anchor="middle">ขอล่วงหน้า 3 วัน ต้องรับคำขอ</text>
+  <rect class="bx-test" x="230" y="336" width="500" height="68" rx="12"/><text class="t-xl" x="480.0" y="364.0" text-anchor="middle">ครั้งที่ 3 เลือกระดับและรัน</text><text class="t-lg2 muted" x="480.0" y="390.0" text-anchor="middle">รันที่ไหน ผ่านช่องทางไหน</text>
+  <rect class="bx-test" x="40" y="460" width="200" height="64" rx="12"/><text class="t-xl" x="140.0" y="486.0" text-anchor="middle">Unit</text><text class="t-lg2 muted" x="140.0" y="512.0" text-anchor="middle">เรียกฟังก์ชันตรง</text>
+  <rect class="bx-test" x="266" y="460" width="200" height="64" rx="12"/><text class="t-xl" x="366.0" y="486.0" text-anchor="middle">API</text><text class="t-lg2 muted" x="366.0" y="512.0" text-anchor="middle">ส่งคำขอ HTTP</text>
+  <rect class="bx-test" x="492" y="460" width="200" height="64" rx="12"/><text class="t-xl" x="592.0" y="486.0" text-anchor="middle">System</text><text class="t-lg2 muted" x="592.0" y="512.0" text-anchor="middle">กดผ่านหน้าจอ</text>
+  <rect class="bx-test" x="718" y="460" width="200" height="64" rx="12"/><text class="t-xl" x="818.0" y="486.0" text-anchor="middle">UAT</text><text class="t-lg2 muted" x="818.0" y="512.0" text-anchor="middle">ผู้ใช้ทำงานจริง</text>
+  <path class="ln-ink" d="M480 84 V124 M480 192 V232 M480 296 V336"/>
+  <path class="ln-ink" d="M420 404 L140 460 M460 404 L366 460 M500 404 L592 460 M540 404 L818 460"/>
+</svg></div>
+<p class="figcap">ครั้งที่ 3 จะนำ TC-02 และชุดกรณีทดสอบทั้งหมด ไปรันกับแอปสาธิตจริงในสี่ช่องล่าง แล้วดูว่าค่า 3 ที่แอปปฏิเสธเมื่อต้นคาบ การทดสอบจะจับได้หรือไม่</p></section>
+<section class="slide " data-title="ครั้งหน้า" data-group="ปิดคาบ" data-notes=""><div class="body center" style="text-align:center;align-items:center"><p class="eyebrow">ครั้งที่ 3</p><h2>ลงมือทดสอบ</h2>
+<p class="lead">เลือกระดับ แปลงกรณีทดสอบเป็นโค้ด Jest คำขอ HTTP และ Playwright<br>แล้วรันกับแอปสาธิตจริง</p>
+<p class="muted">ส่งใบงานครั้งที่ 2 ทั้งสองส่วนก่อนเริ่มเรียน · ติดตั้ง Node.js รุ่น 18 ขึ้นไปในเครื่องให้พร้อม</p></div></section>
+</div></div>
+<div class="bar"><i id="bar"></i></div>
+<div class="hud" role="toolbar" aria-label="ควบคุมสไลด์">
+  <button id="bPrev" aria-label="สไลด์ก่อนหน้า">←</button><span class="cnt" id="cnt">1 / 65</span><button id="bNext" aria-label="สไลด์ถัดไป">→</button>
+  <button id="bToc">สารบัญ</button><button id="bNotes">บันทึกผู้สอน</button><button id="bMinus" aria-label="ลดขนาดตัวอักษร">A−</button><button id="bPlus" aria-label="เพิ่มขนาดตัวอักษร">A+</button><button id="bTheme">สว่าง/มืด</button><button id="bFull">เต็มจอ</button>
+</div>
+<div class="ov" id="toc" role="dialog" aria-label="สารบัญ"><h3>สารบัญ กด T หรือ Esc เพื่อปิด</h3><ol id="tocList"></ol></div>
+<div class="notes" id="notes" aria-live="polite"><b>บันทึกผู้สอน</b><span id="ntxt"></span></div>
+<script>
+(function(){
+'use strict';
+var stage=document.getElementById('stage'),slides=[].slice.call(document.querySelectorAll('.slide')),cur=0;
+function unit(){stage.style.setProperty('--u',(stage.clientWidth/100)+'px');}
+window.addEventListener('resize',unit);unit();
+var cnt=document.getElementById('cnt'),bar=document.getElementById('bar'),notes=document.getElementById('notes'),ntxt=document.getElementById('ntxt');
+function show(i){cur=Math.max(0,Math.min(slides.length-1,i));
+  slides.forEach(function(s,n){s.classList.toggle('active',n===cur);});
+  cnt.textContent=(cur+1)+' / '+slides.length;bar.style.width=((cur+1)/slides.length*100)+'%';
+  ntxt.textContent=slides[cur].getAttribute('data-notes')||'ไม่มีบันทึกสำหรับสไลด์นี้';
+  try{history.replaceState(null,'','#s'+(cur+1));}catch(e){}}
+function go(d){show(cur+d);}
+document.getElementById('bPrev').onclick=function(){go(-1);};
+document.getElementById('bNext').onclick=function(){go(1);};
+var ov=document.getElementById('toc');
+function tog(el,v){el.classList.toggle('open',v===undefined?!el.classList.contains('open'):v);}
+document.getElementById('bToc').onclick=function(){tog(ov);};
+document.getElementById('bNotes').onclick=function(){tog(notes);};
+var fs=1;function setFs(v){fs=Math.max(.8,Math.min(1.4,v));stage.style.setProperty('--fs',fs);}
+document.getElementById('bMinus').onclick=function(){setFs(fs-.06);};
+document.getElementById('bPlus').onclick=function(){setFs(fs+.06);};
+function theme(){var r=document.documentElement,now=r.getAttribute('data-theme');
+  var dark=now?now==='dark':window.matchMedia('(prefers-color-scheme: dark)').matches;r.setAttribute('data-theme',dark?'light':'dark');}
+document.getElementById('bTheme').onclick=theme;
+function full(){if(!document.fullscreenElement){if(document.documentElement.requestFullscreen)document.documentElement.requestFullscreen();}else if(document.exitFullscreen)document.exitFullscreen();}
+document.getElementById('bFull').onclick=full;
+document.addEventListener('keydown',function(e){if(e.target.tagName==='INPUT')return;var k=e.key;
+  if(k==='ArrowRight'||k===' '||k==='PageDown'){e.preventDefault();go(1);}
+  else if(k==='ArrowLeft'||k==='PageUp'){e.preventDefault();go(-1);}
+  else if(k==='Home')show(0);else if(k==='End')show(slides.length-1);
+  else if(k==='t'||k==='T')tog(ov);else if(k==='Escape'){tog(ov,false);}
+  else if(k==='n'||k==='N')tog(notes);else if(k==='l'||k==='L')theme();
+  else if(k==='f'||k==='F')full();else if(k==='+'||k==='=')setFs(fs+.06);else if(k==='-')setFs(fs-.06);});
+// toc
+var list=document.getElementById('tocList'),lastG='';
+slides.forEach(function(s,i){var g=s.getAttribute('data-group')||'';
+  if(g&&g!==lastG){var h=document.createElement('li');h.className='grpt';h.textContent=g;list.appendChild(h);lastG=g;}
+  var li=document.createElement('li'),a=document.createElement('a');a.href='#s'+(i+1);a.textContent=(i+1)+'. '+(s.getAttribute('data-title')||'');
+  a.onclick=function(ev){ev.preventDefault();show(i);tog(ov,false);};li.appendChild(a);list.appendChild(li);});
+// reveal
+[].forEach.call(document.querySelectorAll('.reveal > button'),function(b){b.onclick=function(){b.parentNode.classList.toggle('open');};});
+// quiz
+[].forEach.call(document.querySelectorAll('.quiz'),function(q){var fb=q.querySelector('.fb');
+  [].forEach.call(q.querySelectorAll('.opt'),function(b){b.onclick=function(){
+    [].forEach.call(q.querySelectorAll('.opt'),function(x){x.classList.remove('ok','no');});
+    var ok=b.getAttribute('data-a')==='1';b.classList.add(ok?'ok':'no');
+    fb.className='fb '+(ok?'ok':'no');fb.textContent=(ok?'ถูกต้อง ':'ยังไม่ใช่ ')+(b.getAttribute('data-why')||'');};});});
+// V pairing
+var V=document.getElementById('vint'),vcap=document.getElementById('vcap');
+var VT={'1':'ความต้องการ คู่กับ System Test และ UAT · ฐานการทดสอบคือ FR BR และเกณฑ์การยอมรับ',
+        '2':'ออกแบบสถาปัตยกรรม คู่กับ Integration Test · ฐานคือส่วนประกอบและข้อมูลที่ส่งหากัน',
+        '3':'ออกแบบรายละเอียด คู่กับ Unit Test · ฐานคือตรรกะภายในส่วนประกอบหนึ่ง'};
+if(V){var ps=[].slice.call(V.querySelectorAll('[data-pair]'));
+  function pick(n){ps.forEach(function(p){var on=p.getAttribute('data-pair')===n;p.classList.toggle('hl',on);p.classList.toggle('dim',!on);});vcap.textContent=VT[n];}
+  ps.forEach(function(p){p.addEventListener('click',function(){pick(p.getAttribute('data-pair'));});
+    p.addEventListener('keydown',function(e){if(e.key==='Enter'){e.stopPropagation();pick(p.getAttribute('data-pair'));}});});}
+// layer simulator
+var st={rule:'ui',path:'a'},L=document.getElementById('lay'),res=document.getElementById('simres');
+function sim(){if(!L)return;
+  document.getElementById('bUI').style.display=st.rule==='ui'?'':'none';
+  document.getElementById('bSV').style.display=st.rule==='sv'?'':'none';
+  ['pA','pA2','pB'].forEach(function(id){document.getElementById(id).setAttribute('class','ln-ink');});
+  var checked=(st.rule==='sv')||(st.path==='a');
+  var cls=checked?'ln-ink hot':'ln-ink miss';
+  if(st.path==='a'){document.getElementById('pA').setAttribute('class',cls);document.getElementById('pA2').setAttribute('class',cls);}
+  else document.getElementById('pB').setAttribute('class',cls);
+  res.className='simres '+(checked?'ok':'no');
+  res.textContent=checked?(st.rule==='sv'?'ถูกตรวจ ทุกทางต้องผ่านชั้นบริการ':'ถูกตรวจ เพราะคำสั่งผ่านหน้าจอ')
+    :'ไม่ถูกตรวจ คำสั่งข้ามหน้าจอไปถึงชั้นบริการโดยตรง กฎจึงไม่ทำงาน';}
+[].forEach.call(document.querySelectorAll('.seg'),function(g){var key=g.getAttribute('data-g');
+  [].forEach.call(g.querySelectorAll('button'),function(b){b.onclick=function(){
+    [].forEach.call(g.querySelectorAll('button'),function(x){x.classList.remove('on');});b.classList.add('on');st[key]=b.getAttribute('data-v');sim();};});});
+sim();
+// calculator
+function calc(){var n=+document.getElementById('cN').value||0,d=+document.getElementById('cD').value||0,r=+document.getElementById('cR').value||0,p=+document.getElementById('cP').value||0;
+  var base=n*(d+r),re=n*r*p/100,tot=base+re;
+  document.getElementById('cOut').textContent=(tot/60).toFixed(1)+' ชม.';
+  document.getElementById('cHow').textContent=n+' × ('+d+' + '+r+') = '+base+' นาที · เผื่อรันซ้ำ '+n+' × '+r+' × '+p+'% = '+Math.round(re)+' นาที · รวม '+Math.round(tot)+' นาที';}
+['cN','cD','cR','cP'].forEach(function(id){var el=document.getElementById(id);if(el)el.addEventListener('input',calc);});
+if(document.getElementById('cN'))calc();
+// sorter
+[].forEach.call(document.querySelectorAll('.srow'),function(row){var bs=row.querySelectorAll('button');
+  [].forEach.call(bs,function(b,i){b.onclick=function(){var ok=(i===0&&row.getAttribute('data-a')==='e')||(i===1&&row.getAttribute('data-a')==='x');
+    row.classList.remove('ok','no');row.classList.add(ok?'ok':'no');
+    var done=document.querySelectorAll('.srow.ok').length,all=document.querySelectorAll('.srow').length;
+    document.getElementById('sortfb').textContent=ok?(done===all?'ครบทุกข้อ เคล็ดลับ: เป็นจริงได้ก่อนรันข้อแรก คือ Entry':'ถูกต้อง'):'ลองใหม่ ข้อนี้เป็นจริงได้ก่อนเริ่มรันกรณีทดสอบหรือไม่';};});});
+// timers
+[].forEach.call(document.querySelectorAll('.timer'),function(t){var m=+t.getAttribute('data-min'),left=m*60,id=null,el=t.querySelector('.bigtime');
+  function draw(){el.textContent=String(Math.floor(left/60)).padStart(2,'0')+':'+String(left%60).padStart(2,'0');}
+  t.querySelector('[data-t=go]').onclick=function(){if(id)return;id=setInterval(function(){if(left>0){left--;draw();}else{clearInterval(id);id=null;}},1000);};
+  t.querySelector('[data-t=pause]').onclick=function(){clearInterval(id);id=null;};
+  t.querySelector('[data-t=reset]').onclick=function(){clearInterval(id);id=null;left=m*60;draw();};draw();});
+var h=parseInt((location.hash||'').replace('#s',''),10);show(isNaN(h)?0:h-1);
+})();
+
+(function(){
+var ep=document.getElementById('epIn');
+if(ep){var out=document.getElementById('epOut');
+ function f(){var v=parseFloat(ep.value),p=isNaN(v)?'':(v<3?'lo':(v>30?'hi':'ok'));
+  [].forEach.call(document.querySelectorAll('.eprow span'),function(s){s.classList.toggle('on',s.getAttribute('data-p')===p);});
+  var edge=(v===2||v===3||v===30||v===31);
+  out.className='simres '+(p==='ok'?'ok':'no');
+  out.textContent=isNaN(v)?'ป้อนตัวเลข':(p==='ok'?'รับคำขอ':'ไม่ให้ส่ง')+(edge?' · ค่านี้อยู่ติดกับกลุ่มอื่น':'');}
+ ep.addEventListener('input',f);f();}
+var t=document.getElementById('obo');
+if(t){var mode='ok';
+ function run(){[].forEach.call(t.querySelectorAll('tr[data-d]'),function(r){var d=+r.getAttribute('data-d');
+  var rej=mode==='ok'?(d<3||d>30):(d<=3||d>30);var act=rej?'ปฏิเสธ':'รับ';var exp=r.children[2].textContent;
+  r.querySelector('.act').textContent=act;var g=r.querySelector('.got');var hit=act!==exp;
+  g.textContent=mode==='ok'?'—':(hit?'จับได้':'ไม่เห็น');g.className='got '+(mode==='ok'?'':(hit?'hit':'miss'));r.classList.toggle('catch',hit);});}
+ [].forEach.call(document.querySelectorAll('.seg[data-g=obo] button'),function(b){b.addEventListener('click',function(){mode=b.getAttribute('data-v');run();});});
+ run();}
+[].forEach.call(document.querySelectorAll('td.dtr'),function(c){c.addEventListener('click',function(){c.textContent=c.getAttribute('data-v')||'—';c.classList.add('show');});});
+})();
+</script>
+</body></html>
