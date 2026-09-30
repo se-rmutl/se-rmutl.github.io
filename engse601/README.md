@@ -26,7 +26,7 @@ pre-test/  images/    ของเดิม
 
 | เมื่อไร | เปลี่ยน |
 |---|---|
-| เริ่มครั้งที่ 1 | `current: 's1'` · `s1` `casex` `roadmap` `exam` = true |
+| เริ่มครั้งที่ 1 | `current: 's1'` · `s1` `casex` `roadmap` `exam` = true · `casex` เปิด HLD อ่านด้วยภาพด้วย |
 | เริ่มครั้งที่ 2 | `current: 's2'` · `s2` `app_s2` = true |
 | เริ่มครั้งที่ 3 (หลังส่งใบงาน 2) | `current: 's3'` · `s3` `app_s3` = true |
 | เริ่มครั้งที่ 4 | `current: 's4'` · `s4` `thesis` = true |
