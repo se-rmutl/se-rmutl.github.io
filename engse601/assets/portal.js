@@ -14,6 +14,11 @@
     else if (C.open[k]) { el.textContent = 'เปิดแล้ว'; el.className += ' text-emerald-600'; }
     else { el.textContent = 'ยังไม่เปิด'; el.className += ' text-slate-400'; }
   });
+  document.querySelectorAll('[data-form]').forEach(function(a){
+    var k = a.getAttribute('data-form'), u = (C.form || {})[k], n = document.querySelector('[data-form-note="' + k + '"]');
+    if (u) { a.setAttribute('href', u); a.setAttribute('target', '_blank'); a.setAttribute('rel', 'noopener'); }
+    else { a.classList.add('locked'); a.setAttribute('aria-disabled', 'true'); if (n) n.textContent = 'ผู้สอนจะแจ้งลิงก์ฟอร์ม'; }
+  });
   document.querySelectorAll('[data-due]').forEach(function(el){ el.textContent = C.due[el.getAttribute('data-due')] || 'ผู้สอนจะแจ้ง'; });
   var card = document.getElementById('now-card');
   if (card && C.current && names[C.current]) {
