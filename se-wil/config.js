@@ -23,6 +23,7 @@ window.SEWIL = {
     { key: 'orientation', title: 'ห้องปฐมนิเทศออนไลน์', desc: 'สัปดาห์ที่ 1 ประมาณ 2–3 ชั่วโมง', url: '', roles: ['student', 'teacher'], icon: 'video' },
     { key: 'group', title: 'กลุ่มสื่อสารรายวิชา', desc: 'ประกาศด่วนและถามตอบระหว่างภาค', url: '', roles: ['student', 'teacher'], icon: 'chat' },
     { key: 'concept', title: 'เอกสารแนวคิดการดำเนินงาน', desc: 'อธิบายทั้งภาค พร้อมแผนภาพ ตารางคะแนน และเอกสารอ้างอิง', url: 'docs/concept.html', roles: ['student', 'teacher', 'company'], icon: 'doc' },
+    { key: 'systemRoles', title: 'ใครทำอะไรในระบบ SE-WIL', desc: 'บัญชีผู้ใช้ของแต่ละฝ่าย ใครใส่ข้อมูลของใคร และลำดับงาน 8–18 พ.ย.', url: 'docs/system-roles.html', roles: ['teacher', 'company'], icon: 'list' },
     { key: 'proposalTemplate', title: 'แม่แบบข้อเสนอโครงงาน (SE-WIL05)', desc: 'ใช้ส่งในสัปดาห์ที่ 3', url: '', roles: ['student', 'teacher'], icon: 'doc' },
     { key: 'srsTemplate', title: 'แม่แบบ SRS และ RTM', desc: 'ตาม ISO/IEC/IEEE 29148 สำหรับ ENGSE304', url: '', roles: ['student', 'teacher'], icon: 'doc' },
     { key: 'reportTemplate', title: 'แม่แบบรายงาน', desc: 'รายงานโครงงาน (ENGSE304) และรายงานสะท้อนการเรียนรู้ (ENGSE305)', url: '', roles: ['student', 'teacher'], icon: 'doc' },
