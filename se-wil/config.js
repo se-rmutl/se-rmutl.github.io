@@ -24,6 +24,7 @@ window.SEWIL = {
     { key: 'group', title: 'กลุ่มสื่อสารรายวิชา', desc: 'ประกาศด่วนและถามตอบระหว่างภาค', url: '', roles: ['student', 'teacher'], icon: 'chat' },
     { key: 'concept', title: 'เอกสารแนวคิดการดำเนินงาน', desc: 'อธิบายทั้งภาค พร้อมแผนภาพ ตารางคะแนน และเอกสารอ้างอิง', url: 'docs/concept.html', roles: ['student', 'teacher', 'company'], icon: 'doc' },
     { key: 'slides', title: 'สไลด์นำเสนอกรรมการบริหารหลักสูตร', desc: 'ภาพรวม ปฏิทิน การประเมิน ระบบ SE-WIL และสิ่งที่หลักสูตรต้องทำ', url: 'docs/slides/', roles: ['teacher'], icon: 'doc' },
+    { key: 'slidesVisual', title: 'สไลด์ฉบับภาพประกอบ (ธีมสว่าง)', desc: 'เนื้อหาเดียวกัน ตัวหนังสือน้อย ภาพอธิบายกลไกของระบบและการประเมิน', url: 'docs/slides/visual.html', roles: ['teacher'], icon: 'doc' },
     { key: 'systemRoles', title: 'ใครทำอะไรในระบบ SE-WIL', desc: 'บัญชีผู้ใช้ การจับคู่อาจารย์นิเทศ หน้าในระบบตลอดภาค คะแนน และการปิดภาค', url: 'docs/system-roles.html', roles: ['teacher', 'company'], icon: 'list' },
     { key: 'proposalTemplate', title: 'แม่แบบข้อเสนอโครงงาน (SE-WIL05)', desc: 'ใช้ส่งในสัปดาห์ที่ 3', url: '', roles: ['student', 'teacher'], icon: 'doc' },
     { key: 'srsTemplate', title: 'แม่แบบ SRS และ RTM', desc: 'ตาม ISO/IEC/IEEE 29148 สำหรับ ENGSE304', url: '', roles: ['student', 'teacher'], icon: 'doc' },
