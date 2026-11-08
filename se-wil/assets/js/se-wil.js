@@ -170,6 +170,11 @@
           h('li', {}, h('a', { href: ROOT + 'forms/index.html' }, 'แบบฟอร์มและเอกสาร')),
           h('li', {}, h('a', { href: ROOT + 'help/index.html' }, 'คำถามพบบ่อยและผู้ติดต่อ')),
           h('li', {}, h('a', { href: ROOT + 'help/privacy.html' }, 'การคุ้มครองข้อมูลส่วนบุคคล'))))),
+      (function () {
+        var pc = (C.contacts || []).filter(function (c) { return c.primary && (c.name || c.email); })[0];
+        return pc ? h('p', { class: 'contact-line' }, h('b', {}, 'ติดต่อ: '), pc.role.replace(/\s*\(.*\)$/, '') + ' ' + (pc.name || ''),
+          pc.email ? [' ', h('a', { href: 'mailto:' + pc.email }, pc.email)] : null) : null;
+      })(),
       h('div', { class: 'base' },
         h('span', {}, 'ปรับปรุงล่าสุด ' + th(C.updated, 'full')),
         h('span', {}, C.version),
@@ -342,14 +347,14 @@
     if (compact) {
       add(el, h('ul', { class: 'res' }, list.map(function (c) {
         return h('li', {}, h('div', { class: 'off', style: 'color:inherit' }, h('span', { class: 'ico' }, icon('teacher')),
-          h('span', {}, h('span', { class: 't', style: 'color:var(--navy)' }, c.role), h('span', { class: 'd' }, c.name ? c.name + (c.email ? ' ' : '') : 'รอประกาศรายชื่อ', c.email ? h('a', { href: 'mailto:' + c.email }, c.email) : null)), h('span', {})));
+          h('span', {}, h('span', { class: 't', style: 'color:var(--navy)' }, c.role), h('span', { class: 'd' }, c.name ? c.name + (c.email ? ' ' : '') : (c.hint || 'รอประกาศรายชื่อ'), c.email ? h('a', { href: 'mailto:' + c.email }, c.email) : null)), h('span', {})));
       })));
       return;
     }
     add(el, h('div', { class: 'table' }, h('table', {},
       h('thead', {}, h('tr', {}, ['บทบาท', 'ชื่อ', 'อีเมล', 'ติดต่อเรื่อง'].map(function (t) { return h('th', { scope: 'col' }, t); }))),
       h('tbody', {}, list.map(function (c) {
-        return h('tr', {}, h('td', {}, h('b', { style: 'font-family:var(--head);font-weight:600' }, c.role)), h('td', {}, c.name || h('span', { class: 'muted' }, 'รอประกาศ')),
+        return h('tr', {}, h('td', {}, h('b', { style: 'font-family:var(--head);font-weight:600' }, c.role)), h('td', {}, c.name || h('span', { class: 'muted' }, c.hint || 'รอประกาศ')),
           h('td', {}, c.email ? h('a', { href: 'mailto:' + c.email }, c.email) : h('span', { class: 'muted' }, '–')), h('td', {}, c.topic));
       })))));
   };
