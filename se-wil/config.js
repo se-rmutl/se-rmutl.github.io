@@ -5,7 +5,7 @@
 // หลังแก้แล้ว commit ขึ้น GitHub หน้าเว็บจะเปลี่ยนภายใน 1–2 นาที
 // ===================================================================================
 window.SEWIL = {
-  updated: '2026-11-08',  // ปรับล่าสุด: ผู้ประสานงาน SE-WIL เป็นผู้ติดต่อหลัก
+  updated: '2026-11-08',  // ปรับล่าสุด: อาจารย์เลือกนักศึกษาที่จะดูแลเองในระบบ SE-WIL
   version: 'ฉบับร่าง 1.0 รอมติกรรมการบริหารหลักสูตร',
   term: {
     label: '2/2569',
@@ -23,7 +23,7 @@ window.SEWIL = {
     { key: 'orientation', title: 'ห้องปฐมนิเทศออนไลน์', desc: 'สัปดาห์ที่ 1 ประมาณ 2–3 ชั่วโมง', url: '', roles: ['student', 'teacher'], icon: 'video' },
     { key: 'group', title: 'กลุ่มสื่อสารรายวิชา', desc: 'ประกาศด่วนและถามตอบระหว่างภาค', url: '', roles: ['student', 'teacher'], icon: 'chat' },
     { key: 'concept', title: 'เอกสารแนวคิดการดำเนินงาน', desc: 'อธิบายทั้งภาค พร้อมแผนภาพ ตารางคะแนน และเอกสารอ้างอิง', url: 'docs/concept.html', roles: ['student', 'teacher', 'company'], icon: 'doc' },
-    { key: 'systemRoles', title: 'ใครทำอะไรในระบบ SE-WIL', desc: 'บัญชีผู้ใช้ของแต่ละฝ่าย ใครใส่ข้อมูลของใคร และลำดับงาน 8–18 พ.ย.', url: 'docs/system-roles.html', roles: ['teacher', 'company'], icon: 'list' },
+    { key: 'systemRoles', title: 'ใครทำอะไรในระบบ SE-WIL', desc: 'บัญชีผู้ใช้ การจับคู่อาจารย์นิเทศ หน้าในระบบตลอดภาค คะแนน และการปิดภาค', url: 'docs/system-roles.html', roles: ['teacher', 'company'], icon: 'list' },
     { key: 'proposalTemplate', title: 'แม่แบบข้อเสนอโครงงาน (SE-WIL05)', desc: 'ใช้ส่งในสัปดาห์ที่ 3', url: '', roles: ['student', 'teacher'], icon: 'doc' },
     { key: 'srsTemplate', title: 'แม่แบบ SRS และ RTM', desc: 'ตาม ISO/IEC/IEEE 29148 สำหรับ ENGSE304', url: '', roles: ['student', 'teacher'], icon: 'doc' },
     { key: 'reportTemplate', title: 'แม่แบบรายงาน', desc: 'รายงานโครงงาน (ENGSE304) และรายงานสะท้อนการเรียนรู้ (ENGSE305)', url: '', roles: ['student', 'teacher'], icon: 'doc' },
@@ -47,9 +47,11 @@ window.SEWIL = {
     { date: '2026-11-13', title: 'ส่งข้อมูลที่ฝึกในระบบ SE-WIL', roles: ['student'], course: 'both' },
     { date: '2026-11-16', title: 'ยืนยันข้อตกลง SE-WIL01 ผ่านลิงก์ในอีเมล', roles: ['company'], course: 'both' },
     { date: '2026-11-14', title: 'อนุมัติข้อมูลที่ฝึกครบทุกคน (ระบบส่งข้อตกลงให้สถานประกอบการทันทีที่อนุมัติ)', roles: ['teacher'], course: 'both' },
+    { date: '2026-11-14', title: 'อาจารย์นิเทศเลือกนักศึกษาที่จะดูแลในระบบ SE-WIL (แท็บ จับคู่อาจารย์นิเทศ)', roles: ['teacher'], course: 'both' },
     { date: '2026-11-17', title: 'ตรวจหน่วยกิต ประกันอุบัติเหตุ และขอคำสั่งแต่งตั้งอาจารย์', roles: ['teacher'], course: 'both' },
     { date: '2026-11-18', title: 'เปิดภาค รายงานตัว เริ่มบันทึก logbook', roles: ['student', 'teacher', 'company'], course: 'both' },
     { date: '2026-11-20', title: 'รับรอง logbook ครั้งแรก (ต่อจากนั้นทุกวันศุกร์)', roles: ['company'], course: 'both' },
+    { date: '2026-11-27', title: 'อาจารย์นิเทศนัดพบนักศึกษาที่ดูแลครั้งแรก', roles: ['teacher'], course: 'both' },
     { date: '2026-12-01', title: 'ส่งรายงานตัวและแผนงาน 15 สัปดาห์ (SE-WIL03)', roles: ['student', 'company'], course: '305' },
     { date: '2026-12-08', title: 'ส่งข้อเสนอโครงงาน (SE-WIL05)', roles: ['student', 'company'], course: '304' },
     { date: '2026-12-15', title: 'แจ้งผลพิจารณาข้อเสนอโครงงาน', roles: ['teacher', 'student'], course: '304' },
