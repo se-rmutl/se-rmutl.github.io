@@ -21,6 +21,7 @@ window.SEWIL = {
   links: [
     { key: 'sewil', title: 'ระบบ SE-WIL (rmutl.link/sewil)', desc: 'กรอกข้อมูลที่ฝึก ยืนยันข้อตกลง บันทึกและรับรอง logbook ดูชั่วโมงสะสม', url: 'https://rmutl.link/sewil', roles: ['student', 'teacher', 'company'], icon: 'login' },
     { key: 'studentStart', title: 'เริ่มที่นี่: คู่มือเข้าระบบและกรอกข้อมูลที่ฝึก', desc: 'ทีละขั้นพร้อมภาพหน้าจอ สิ่งที่ต้องเตรียมจากผู้นิเทศงาน และสิ่งที่ต้องทำจนจบการฝึก', url: 'student/start.html', roles: ['student'], icon: 'doc' },
+    { key: 'introLetter', title: 'หนังสือแนะนำรายวิชา + แบบตอบรับเบื้องต้น (SE-WIL00)', desc: 'พิมพ์ให้สถานประกอบการอ่านก่อนตกลง และให้กรอกข้อมูลที่จะใช้ในระบบ ใช้เมื่อหาที่ฝึกใหม่หรือบริษัทยังไม่รู้จักรายวิชา', url: 'forms/intro-letter.html', roles: ['student', 'company'], icon: 'doc' },
     { key: 'slidesStudent', title: 'สไลด์ประชุมชี้แจงนักศึกษา 9 พ.ย. 2569', desc: 'ภาพรวมสองวิชา สิ่งที่ต้องทำสัปดาห์นี้ วิธีเข้าระบบและกรอกข้อมูลที่ฝึก', url: 'docs/slides/students.html', roles: ['student'], icon: 'doc' },
     { key: 'orientation', title: 'ห้องปฐมนิเทศออนไลน์', desc: 'สัปดาห์ที่ 1 ประมาณ 2–3 ชั่วโมง', url: '', roles: ['student', 'teacher'], icon: 'video' },
     { key: 'group', title: 'กลุ่มสื่อสารรายวิชา', desc: 'ประกาศด่วนและถามตอบระหว่างภาค', url: '', roles: ['student', 'teacher'], icon: 'chat' },
@@ -145,6 +146,7 @@ window.SEWIL = {
   // ---------------- แบบฟอร์ม ----------------
   // link: key ของลิงก์ข้างบน (เช่น 'sewil') หรือ URL ตรง · roles = ผู้กรอกหรือผู้เกี่ยวข้อง
   forms: [
+    { code: 'SE-WIL00', name: 'หนังสือแนะนำรายวิชาถึงสถานประกอบการ + แบบตอบรับเบื้องต้น (พิมพ์ได้)', course: 'both', week: '0', by: 'หลักสูตรออกให้ นักศึกษานำไปติดต่อ สถานประกอบการกรอกตอบรับ', roles: ['student', 'company', 'teacher'], link: 'forms/intro-letter.html' },
     { code: 'SE-WIL01', name: 'ข้อตกลงการฝึกภาค 2 (TOR รวมสองวิชา)', course: 'both', week: '0', by: 'นักศึกษากรอก สถานประกอบการยืนยัน', roles: ['student', 'company', 'teacher'], link: 'sewil' },
     { code: 'SE-WIL02', name: 'คำร้องขอเปลี่ยนหรือยุติการฝึก', course: 'both', week: 'เมื่อเกิดเหตุ', by: 'นักศึกษา', roles: ['student', 'teacher', 'company'], link: '' },
     { code: 'SE-WIL03', name: 'รายงานตัวและแผนงาน 15 สัปดาห์', course: '305', week: '1–2', by: 'นักศึกษา ผู้นิเทศงานยืนยัน', roles: ['student', 'company'], link: '' },
