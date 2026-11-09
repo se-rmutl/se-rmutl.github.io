@@ -21,7 +21,7 @@ window.SEWIL = {
   links: [
     { key: 'sewil', title: 'ระบบ SE-WIL (rmutl.link/sewil)', desc: 'กรอกข้อมูลที่ฝึก ยืนยันข้อตกลง บันทึกและรับรอง logbook ดูชั่วโมงสะสม', url: 'https://rmutl.link/sewil', roles: ['student', 'teacher', 'company'], icon: 'login' },
     { key: 'studentStart', title: 'เริ่มที่นี่: คู่มือเข้าระบบและกรอกข้อมูลที่ฝึก', desc: 'ทีละขั้นพร้อมภาพหน้าจอ สิ่งที่ต้องเตรียมจากผู้นิเทศงาน และสิ่งที่ต้องทำจนจบการฝึก', url: 'student/start.html', roles: ['student'], icon: 'doc' },
-    { key: 'introLetter', title: 'หนังสือแนะนำรายวิชา + แบบตอบรับเบื้องต้น (SE-WIL00)', desc: 'พิมพ์ให้สถานประกอบการอ่านก่อนตกลง และให้กรอกข้อมูลที่จะใช้ในระบบ ใช้เมื่อหาที่ฝึกใหม่หรือบริษัทยังไม่รู้จักรายวิชา', url: 'forms/intro-letter.html', roles: ['student', 'company'], icon: 'doc' },
+    { key: 'introLetter', title: 'หนังสือแนะนำรายวิชา + แบบตอบรับเบื้องต้น (SE-WIL00)', desc: 'ทุกคนต้องมีแบบตอบรับที่สถานประกอบการลงนาม แม้ฝึกที่เดิม ยังไม่มีข้อมูลในระบบพิมพ์ฉบับเปล่าที่นี่ ส่งข้อมูลแล้วพิมพ์ฉบับมีข้อมูลจากหน้าแรกของระบบ SE-WIL', url: 'forms/intro-letter.html', roles: ['student', 'company'], icon: 'doc' },
     { key: 'slidesStudent', title: 'สไลด์ประชุมชี้แจงนักศึกษา 9 พ.ย. 2569', desc: 'ภาพรวมสองวิชา สิ่งที่ต้องทำสัปดาห์นี้ วิธีเข้าระบบและกรอกข้อมูลที่ฝึก', url: 'docs/slides/students.html', roles: ['student'], icon: 'doc' },
     { key: 'orientation', title: 'ห้องปฐมนิเทศออนไลน์', desc: 'สัปดาห์ที่ 1 ประมาณ 2–3 ชั่วโมง', url: '', roles: ['student', 'teacher'], icon: 'video' },
     { key: 'group', title: 'กลุ่มสื่อสารรายวิชา', desc: 'ประกาศด่วนและถามตอบระหว่างภาค', url: '', roles: ['student', 'teacher'], icon: 'chat' },
@@ -53,6 +53,7 @@ window.SEWIL = {
   deadlines: [
     { date: '2026-11-13', title: 'ส่งข้อมูลที่ฝึกในระบบ SE-WIL', roles: ['student'], course: 'both' },
     { date: '2026-11-16', title: 'ยืนยันข้อตกลง SE-WIL01 ผ่านลิงก์ในอีเมล', roles: ['company'], course: 'both' },
+    { date: '2026-11-16', title: 'แนบแบบตอบรับ SE-WIL00 ที่สถานประกอบการลงนามในระบบ SE-WIL', roles: ['student'], course: 'both' },
     { date: '2026-11-14', title: 'อนุมัติข้อมูลที่ฝึกครบทุกคน (ระบบส่งข้อตกลงให้สถานประกอบการทันทีที่อนุมัติ)', roles: ['teacher'], course: 'both' },
     { date: '2026-11-14', title: 'อาจารย์นิเทศเลือกนักศึกษาที่จะดูแลในระบบ SE-WIL (แท็บ จับคู่อาจารย์นิเทศ)', roles: ['teacher'], course: 'both' },
     { date: '2026-11-17', title: 'ตรวจหน่วยกิต ประกันอุบัติเหตุ และขอคำสั่งแต่งตั้งอาจารย์', roles: ['teacher'], course: 'both' },
@@ -146,7 +147,7 @@ window.SEWIL = {
   // ---------------- แบบฟอร์ม ----------------
   // link: key ของลิงก์ข้างบน (เช่น 'sewil') หรือ URL ตรง · roles = ผู้กรอกหรือผู้เกี่ยวข้อง
   forms: [
-    { code: 'SE-WIL00', name: 'หนังสือแนะนำรายวิชาถึงสถานประกอบการ + แบบตอบรับเบื้องต้น (พิมพ์ได้)', course: 'both', week: '0', by: 'หลักสูตรออกให้ นักศึกษานำไปติดต่อ สถานประกอบการกรอกตอบรับ', roles: ['student', 'company', 'teacher'], link: 'forms/intro-letter.html' },
+    { code: 'SE-WIL00', name: 'หนังสือแนะนำรายวิชาถึงสถานประกอบการ + แบบตอบรับเบื้องต้น (พิมพ์ได้)', course: 'both', week: '0', by: 'หลักสูตรออกให้ (หัวหน้าหลักสูตรลงนาม) สถานประกอบการลงนามตอบรับ นักศึกษาแนบในระบบ ฉบับมีข้อมูลพิมพ์จากระบบ SE-WIL', roles: ['student', 'company', 'teacher'], link: 'forms/intro-letter.html' },
     { code: 'SE-WIL01', name: 'ข้อตกลงการฝึกภาค 2 (TOR รวมสองวิชา)', course: 'both', week: '0', by: 'นักศึกษากรอก สถานประกอบการยืนยัน', roles: ['student', 'company', 'teacher'], link: 'sewil' },
     { code: 'SE-WIL02', name: 'คำร้องขอเปลี่ยนหรือยุติการฝึก', course: 'both', week: 'เมื่อเกิดเหตุ', by: 'นักศึกษา', roles: ['student', 'teacher', 'company'], link: '' },
     { code: 'SE-WIL03', name: 'รายงานตัวและแผนงาน 15 สัปดาห์', course: '305', week: '1–2', by: 'นักศึกษา ผู้นิเทศงานยืนยัน', roles: ['student', 'company'], link: '' },
