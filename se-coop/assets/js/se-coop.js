@@ -165,6 +165,7 @@
         return pc ? h('p', { class: 'contact-line' }, h('b', {}, 'ติดต่อ: '), pc.role.replace(/\s*\(.*\)$/, '') + ' ' + (pc.name || ''),
           pc.email ? [' ', h('a', { href: 'mailto:' + pc.email }, pc.email)] : null) : null;
       })(),
+      C.org && C.org.address ? h('p', { class: 'org-line' }, h('b', {}, 'ที่ตั้ง: '), (C.org.name ? C.org.name + ' ' : '') + C.org.address) : null,
       h('div', { class: 'base' },
         h('span', {}, 'ปรับปรุงล่าสุด ' + th(C.updated, 'full')),
         h('span', {}, C.version),
