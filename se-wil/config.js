@@ -5,7 +5,7 @@
 // หลังแก้แล้ว commit ขึ้น GitHub หน้าเว็บจะเปลี่ยนภายใน 1–2 นาที
 // ===================================================================================
 window.SEWIL = {
-  updated: '2026-11-12',  // ปรับล่าสุด: หน้าเส้นทางนักศึกษา (ช่วงเริ่มต้น และระหว่างภาคถึงจบ)
+  updated: '2026-11-12',  // ปรับล่าสุด: หน้าเส้นทางนักศึกษาและอาจารย์ (ช่วงเริ่มต้น และระหว่างภาคถึงจบ)
   version: 'ฉบับร่าง 1.0 รอมติกรรมการบริหารหลักสูตร',
   term: {
     label: '2/2569',
@@ -29,6 +29,8 @@ window.SEWIL = {
     { key: 'group', title: 'กลุ่มสื่อสารรายวิชา', desc: 'ประกาศด่วนและถามตอบระหว่างภาค', url: '', roles: ['student', 'teacher'], icon: 'chat' },
     { key: 'concept', title: 'เอกสารแนวคิดการดำเนินงาน', desc: 'อธิบายทั้งภาค พร้อมแผนภาพ ตารางคะแนน และเอกสารอ้างอิง', url: 'docs/concept.html', roles: ['student', 'teacher', 'company'], icon: 'doc' },
     { key: 'brief', title: 'เอกสารแนวคิดฉบับย่อ', desc: 'สรุปสั้นของเอกสารแนวคิด อ่านจบในไม่กี่นาที: ใครทำอะไร เมื่อไร ประเมินอย่างไร', url: 'docs/brief.html', roles: ['student', 'teacher', 'company'], icon: 'doc' },
+    { key: 'teacherJourneyStart', title: 'เส้นทางอาจารย์ช่วงเริ่มต้น (แผนภาพทีละขั้น)', desc: 'ตรวจและอนุมัติข้อมูลที่ฝึก จับคู่อาจารย์นิเทศ หนังสือแนะนำ ข้อตกลง และบันทึกขออนุมัติแต่งตั้ง', url: 'teacher/journey-start.html', roles: ['teacher'], icon: 'list' },
+    { key: 'teacherJourneyTerm', title: 'เส้นทางอาจารย์ระหว่างภาคถึงจบภาค (แผนภาพ)', desc: 'ติดตาม logbook พิจารณาข้อเสนอ นิเทศ ประเมิน และใครให้คะแนนส่วนใด', url: 'teacher/journey-term.html', roles: ['teacher'], icon: 'list' },
     { key: 'slides', title: 'สไลด์นำเสนอกรรมการบริหารหลักสูตร', desc: 'ภาพรวม ปฏิทิน การประเมิน ระบบ SE-WIL และสิ่งที่หลักสูตรต้องทำ', url: 'docs/slides/', roles: ['teacher'], icon: 'doc' },
     { key: 'slidesVisual', title: 'สไลด์ฉบับภาพประกอบ (ธีมสว่าง)', desc: 'เนื้อหาเดียวกัน ตัวหนังสือน้อย ภาพอธิบายกลไกของระบบและการประเมิน', url: 'docs/slides/visual.html', roles: ['teacher'], icon: 'doc' },
     { key: 'systemRoles', title: 'ใครทำอะไรในระบบ SE-WIL', desc: 'บัญชีผู้ใช้ การจับคู่อาจารย์นิเทศ หน้าในระบบตลอดภาค คะแนน และการปิดภาค', url: 'docs/system-roles.html', roles: ['teacher', 'company'], icon: 'list' },
