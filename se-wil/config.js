@@ -5,7 +5,7 @@
 // หลังแก้แล้ว commit ขึ้น GitHub หน้าเว็บจะเปลี่ยนภายใน 1–2 นาที
 // ===================================================================================
 window.SEWIL = {
-  updated: '2026-11-09',  // ปรับล่าสุด: แบบตอบรับ SE-WIL00 ทุกคน และ logbook ฉบับใหม่ (หลักฐาน วันที่ไม่ได้ปฏิบัติงาน เกณฑ์ 15 คะแนน)
+  updated: '2026-11-12',  // ปรับล่าสุด: หน้าเส้นทางนักศึกษา (ช่วงเริ่มต้น และระหว่างภาคถึงจบ)
   version: 'ฉบับร่าง 1.0 รอมติกรรมการบริหารหลักสูตร',
   term: {
     label: '2/2569',
@@ -21,6 +21,8 @@ window.SEWIL = {
   links: [
     { key: 'sewil', title: 'ระบบ SE-WIL (rmutl.link/sewil)', desc: 'กรอกข้อมูลที่ฝึก ยืนยันข้อตกลง บันทึกและรับรอง logbook ดูชั่วโมงสะสม', url: 'https://rmutl.link/sewil', roles: ['student', 'teacher', 'company'], icon: 'login' },
     { key: 'studentStart', title: 'เริ่มที่นี่: คู่มือเข้าระบบและกรอกข้อมูลที่ฝึก', desc: 'ทีละขั้นพร้อมภาพหน้าจอ สิ่งที่ต้องเตรียมจากผู้นิเทศงาน และสิ่งที่ต้องทำจนจบการฝึก', url: 'student/start.html', roles: ['student'], icon: 'doc' },
+    { key: 'journeyStart', title: 'เส้นทางช่วงเริ่มต้น (แผนภาพทีละขั้น)', desc: 'จากคุยกับบริษัทถึงเริ่มงานวันเปิดภาค: ส่งข้อมูล แบบตอบรับ SE-WIL00 ข้อตกลง SE-WIL01 ใครทำ ส่งอะไร ภายในเมื่อไร', url: 'student/journey-start.html', roles: ['student'], icon: 'list' },
+    { key: 'journeyTerm', title: 'เส้นทางระหว่างภาคถึงจบภาค (แผนภาพ)', desc: 'วงรอบ logbook รายสัปดาห์ งานที่ต้องส่ง การนิเทศ และการประเมินจนส่งผล', url: 'student/journey-term.html', roles: ['student'], icon: 'list' },
     { key: 'introLetter', title: 'หนังสือแนะนำรายวิชา + แบบตอบรับเบื้องต้น (SE-WIL00)', desc: 'ทุกคนต้องมีแบบตอบรับที่สถานประกอบการลงนาม แม้ฝึกที่เดิม ยังไม่มีข้อมูลในระบบพิมพ์ฉบับเปล่าที่นี่ ส่งข้อมูลแล้วพิมพ์ฉบับมีข้อมูลจากหน้าแรกของระบบ SE-WIL', url: 'forms/intro-letter.html', roles: ['student', 'company'], icon: 'doc' },
     { key: 'slidesStudent', title: 'สไลด์ประชุมชี้แจงนักศึกษา 9 พ.ย. 2569', desc: 'ภาพรวมสองวิชา สิ่งที่ต้องทำสัปดาห์นี้ วิธีเข้าระบบและกรอกข้อมูลที่ฝึก', url: 'docs/slides/students.html', roles: ['student'], icon: 'doc' },
     { key: 'orientation', title: 'ห้องปฐมนิเทศออนไลน์', desc: 'สัปดาห์ที่ 1 ประมาณ 2–3 ชั่วโมง', url: '', roles: ['student', 'teacher'], icon: 'video' },
