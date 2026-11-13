@@ -26,7 +26,11 @@
     text("fact-sections", `${course.sections} ${course.sections === 1 ? common.section : common.sections}`);
     text("fact-delivery", content.delivery);
     text("overview-copy", content.overview);
-    text("course-symbol", course.symbol);
+    const artwork = document.getElementById("course-art");
+    if (artwork) {
+      artwork.src = `../assets/course-art/${code.toLowerCase()}.svg`;
+      artwork.alt = "";
+    }
     const list = document.getElementById("learning-list");
     if (list) list.innerHTML = content.learning.map((item, index) => `<li><b>${String(index + 1).padStart(2, "0")}</b><span>${item}</span></li>`).join("");
     const resource = document.getElementById("primary-resource");

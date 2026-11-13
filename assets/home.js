@@ -14,7 +14,7 @@
       return `<article class="course-card" data-tone="${course.tone}">
         <a href="./${code}/" aria-label="${copy.open}: ${code} ${text.title}">
           <div class="course-top"><span class="course-code">${code}</span><span class="course-credit">${course.credits} ${copy.creditUnit}</span></div>
-          <span class="course-symbol" aria-hidden="true">${course.symbol}</span>
+          <span class="course-art" aria-hidden="true"><img src="./assets/course-art/${code.toLowerCase()}.svg" alt="" width="560" height="360" loading="lazy"></span>
           <h3>${text.title}</h3><p>${text.short}</p>
           <span class="course-go">${copy.open} · ${sec} ${copy.secUnit}</span>
         </a>
