@@ -1,0 +1,1261 @@
+<script>
+(function () {
+  'use strict';
+  var S = { session: null, me: null, tab: null, editEntry: null };
+  var KEY = 'sewil_session';
+  var MONTHS = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+  var DOW = ['อา.', 'จ.', 'อ.', 'พ.', 'พฤ.', 'ศ.', 'ส.'];
+  var STATUS = { none: 'ยังไม่กรอก', draft: 'ร่าง', submitted: 'รอหลักสูตรตรวจ', returned: 'ส่งกลับให้แก้ไข', agreement_sent: 'รอสถานประกอบการยืนยัน', signed: 'ยืนยันแล้ว' };
+  var ESTATUS = { draft: 'ร่าง', pending: 'รอรับรอง', certified: 'รับรองแล้ว', returned: 'ส่งกลับ', partial: 'รับรองบางส่วน' };
+
+  /* ---------- helpers ---------- */
+  function store(v) {
+    try {
+      if (v === undefined) return localStorage.getItem(KEY);
+      if (v === null) localStorage.removeItem(KEY); else localStorage.setItem(KEY, v);
+    } catch (e) { }
+    return null;
+  }
+  function add(el, c) {
+    if (c === null || c === undefined || c === false) return;
+    if (Array.isArray(c)) { c.forEach(function (x) { add(el, x); }); return; }
+    if (typeof c === 'string' || typeof c === 'number') el.appendChild(document.createTextNode(String(c)));
+    else el.appendChild(c);
+  }
+  function h(tag, attrs) {
+    var el = document.createElement(tag);
+    attrs = attrs || {};
+    Object.keys(attrs).forEach(function (k) {
+      var v = attrs[k];
+      if (v === null || v === undefined || v === false) return;
+      if (k === 'class') el.className = v;
+      else if (k.slice(0, 2) === 'on' && typeof v === 'function') el.addEventListener(k.slice(2), v);
+      else if (k === 'value') el.value = v;
+      else if (k === 'checked') el.checked = !!v;
+      else el.setAttribute(k, v === true ? '' : v);
+    });
+    for (var i = 2; i < arguments.length; i++) add(el, arguments[i]);
+    return el;
+  }
+  function mount(node) {
+    var app = document.getElementById('app');
+    app.innerHTML = '';
+    add(app, node);
+    try { window.scrollTo(0, 0); } catch (e) { }
+  }
+  function loading() { return h('p', { class: 'muted' }, 'กำลังโหลด…'); }
+  var toastTimer = null;
+  function toast(msg, bad) {
+    var t = document.getElementById('toast');
+    t.textContent = msg; t.className = 'toast' + (bad ? ' bad' : ''); t.hidden = false;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { t.hidden = true; }, bad ? 7000 : 3500);
+  }
+  function call(fn) {
+    var args = [].slice.call(arguments, 1);
+    return new Promise(function (resolve) {
+      var runner = google.script.run
+        .withSuccessHandler(function (r) {
+          r = r || { ok: false, error: 'ไม่มีคำตอบจากเซิร์ฟเวอร์' };
+          if (r.auth && S.session) { store(null); S.session = null; showLogin(r.error); }
+          resolve(r);
+        })
+        .withFailureHandler(function (e) { resolve({ ok: false, error: (e && e.message) || String(e) }); });
+      runner[fn].apply(runner, args);
+    });
+  }
+  function fail(r) {
+    if (r.auth) return;
+    mount(h('div', { class: 'note bad' }, h('p', {}, r.error || 'เกิดข้อผิดพลาด'), h('button', { class: 'btn sec small', onclick: function () { location.reload(); } }, 'ลองใหม่')));
+  }
+  function errorList(r) {
+    var list = r.errors && r.errors.length ? r.errors : [r.error || 'เกิดข้อผิดพลาด'];
+    return h('ul', { class: 'errors' }, list.map(function (e) { return h('li', {}, e); }));
+  }
+  function parseD(s) { var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(s || '')); return m ? new Date(Date.UTC(+m[1], +m[2] - 1, +m[3])) : null; }
+  function fmtTh(s) { var d = parseD(s); return d ? d.getUTCDate() + ' ' + MONTHS[d.getUTCMonth()] + ' ' + String(d.getUTCFullYear() + 543).slice(2) : '—'; }
+  function dowTh(s) { var d = parseD(s); return d ? DOW[d.getUTCDay()] : ''; }
+  function fmtTs(iso) {
+    if (!iso) return '—';
+    var d = new Date(iso); if (isNaN(d)) return String(iso);
+    var p = function (n) { return (n < 10 ? '0' : '') + n; };
+    return d.getDate() + ' ' + MONTHS[d.getMonth()] + ' ' + String(d.getFullYear() + 543).slice(2) + ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
+  }
+  function mondayOf(d) { return new Date(d.getTime() - ((d.getUTCDay() + 6) % 7) * 864e5); }
+  function weekIdx(date, start) { return Math.floor((mondayOf(parseD(date)) - mondayOf(parseD(start))) / (7 * 864e5)) + 1; }
+  function weekRangeTh(n, start) {
+    var a = new Date(mondayOf(parseD(start)).getTime() + (n - 1) * 7 * 864e5), b = new Date(a.getTime() + 6 * 864e5);
+    return fmtTh(a.toISOString()) + ' – ' + fmtTh(b.toISOString());
+  }
+  function mins(t) { var m = /^(\d{1,2}):(\d{2})$/.exec(String(t || '')); return m ? (+m[1]) * 60 + (+m[2]) : null; }
+  function hoursOf(s, e, b) { var a = mins(s), z = mins(e), br = Number(b || 0); if (a === null || z === null || z <= a || br < 0) return null; var x = z - a - br; return x > 0 ? Math.round(x / 60 * 100) / 100 : null; }
+  function r2(x) { return Math.round(x * 100) / 100; }
+  function fld(id, label, el, hint) { return h('div', { class: 'field' }, h('label', { for: id }, label), el, hint ? h('span', { class: 'hint' }, hint) : null); }
+  function kv(k, v) { return [h('dt', {}, k), h('dd', {}, v === undefined || v === null || v === '' ? '—' : String(v))]; }
+  function tile(n, label) { return h('div', { class: 'tile' }, h('b', {}, String(n)), h('span', {}, label)); }
+
+  /* ---------- สิ่งที่ต้องทำ และคำแนะนำตามบทบาท ---------- */
+  var TODO_KIND = { do: 'ต้องทำ', late: 'เลยกำหนด', wait: 'รอ', ok: 'เรียบร้อย' };
+  function todoCard(t, go) {
+    if (!t) return null;
+    var now = t.now || [], next = t.next || [];
+    return h('section', { class: 'card todo', 'aria-label': 'สิ่งที่ต้องทำ' },
+      h('div', { class: 'todo-grid' },
+        h('div', {}, h('h2', {}, 'สิ่งที่ต้องทำ'),
+          h('ul', { class: 'todo-list' }, now.map(function (it) {
+            return h('li', { class: 'k-' + it.kind }, h('span', { class: 'tk' }, TODO_KIND[it.kind] || ''),
+              h('span', { class: 'tt' }, it.text, it.due ? h('span', { class: 'small muted' }, ' · กำหนด ' + fmtTh(it.due)) : null),
+              it.go && go ? h('button', { class: 'btn sec small', type: 'button', onclick: function () { go(it.go); } }, 'ไปที่รายการ') : null);
+          }))),
+        next.length ? h('div', { class: 'todo-next' }, h('h3', {}, 'กำหนดการถัดไป'),
+          h('ul', {}, next.map(function (x) { return h('li', {}, h('b', {}, fmtTh(x.date)), h('span', {}, x.title)); }))) : null));
+  }
+  var GUIDE = {
+    student: { title: 'คำแนะนำสำหรับนักศึกษา', path: 'student/index.html', items: [
+      'แจ้งผู้นิเทศงานก่อนกรอกชื่อ อีเมล และเบอร์ของท่านในฟอร์ม เพราะระบบจะส่งข้อตกลงไปที่อีเมลนั้น',
+      'ทุกคนต้องมีแบบตอบรับ SE-WIL00 ที่สถานประกอบการลงนาม แม้ฝึกที่เดิม ส่งข้อมูลแล้วพิมพ์ฉบับมีข้อมูลได้ในหน้านี้ แล้วแนบฉบับที่ลงนามภายในวันยืนยันข้อตกลง',
+      'เมื่อหลักสูตรอนุมัติ ผู้นิเทศงานจะได้อีเมลให้ยืนยันข้อตกลง SE-WIL01 คุณจะได้สำเนาด้วย',
+      'บันทึก logbook ทุกวันทำงาน บอกว่าทำอะไร ได้ผลอะไร ใช้เครื่องมืออะไร แท็ก 305 งานตามตำแหน่ง 304 งานโครงงาน วันที่ไม่ได้ไปทำงานให้บันทึกเหตุ (ป่วย ลากิจ บริษัทหยุด)',
+      'ชั่วโมงนับเมื่อผู้นิเทศงานรับรองแล้วเท่านั้น ระบบส่งให้รับรองทุกวันศุกร์ รายการที่ถูกส่งกลับให้แก้แล้วจะส่งรอบถัดไป',
+      'ทุกเรื่องของรายวิชา ติดต่อผู้ประสานงาน SE-WIL ก่อน'] },
+    teacher: { title: 'คำแนะนำสำหรับอาจารย์นิเทศ', path: 'teacher/index.html', items: [
+      'เลือกนักศึกษาที่จะดูแลในแท็บ "จับคู่อาจารย์นิเทศ" ควรเลือกนักศึกษาที่อยู่สถานประกอบการเดียวกัน เพื่อให้นิเทศครั้งเดียวพบได้หลายคน',
+      'เมื่อท่านยืนยันแล้ว อาจารย์ท่านอื่นเลือกนักศึกษาคนนั้นไม่ได้ ท่านยกเลิกได้เอง หรือให้ผู้ประสานงานเปลี่ยนให้',
+      'หลังเลือก แท็บ "นักศึกษาของฉัน" แสดงข้อมูลที่ฝึก ข้อตกลง CV ผู้ติดต่อ และชั่วโมงของนักศึกษาที่ท่านดูแลเท่านั้น',
+      'ติดตามคอลัมน์ข้อสังเกตทุกสัปดาห์ และติดต่อนักศึกษาที่ไม่ได้บันทึก logbook เกิน 7 วัน',
+      'ข้อเสนอโครงงาน บันทึกการนิเทศ และคะแนน จะเปิดในระบบตามสัปดาห์ที่ใช้งาน'] },
+    admin: { title: 'คำแนะนำสำหรับผู้ประสานงานและผู้ดูแล', path: 'docs/system-roles.html', items: [
+      'ตรวจและอนุมัติข้อมูลที่ฝึกให้ครบภายในกำหนด การอนุมัติส่งข้อตกลงให้สถานประกอบการทันที',
+      'ดูให้นักศึกษาทุกคนมีอาจารย์นิเทศ กำหนดหรือเปลี่ยนให้ได้ในแท็บ "จับคู่อาจารย์นิเทศ" ชื่ออาจารย์ที่อนุมัติไปแล้วไม่เปลี่ยนใน PDF',
+      'อาจารย์ต้องมีแถวในชีต Users (role = teacher) ก่อนจึงจะเข้าระบบและเลือกนักศึกษาได้',
+      'ปิดการเลือกเองหลังจัดเสร็จ: ชีต Config ADVISOR_SELF_ASSIGN = FALSE · จำนวนสูงสุดต่ออาจารย์: ADVISOR_MAX',
+      'รายการที่ยังไม่ยืนยันหลังกำหนด เปิดรายคนแล้วกด "ส่งข้อตกลงซ้ำ" หรือบันทึกการลงนามในเอกสาร',
+      'แท็บ "เอกสาร": พิมพ์หนังสือแนะนำและแบบตอบรับของทุกคนครั้งเดียวให้หัวหน้าหลักสูตรลงนาม และเมื่อจับคู่อาจารย์ครบ ออกบันทึกขออนุมัติแต่งตั้งอาจารย์นิเทศ (Word หรือ PDF) เสนอคณะออกคำสั่ง',
+      'ช่วงทดลอง แท็บ "รีเซ็ตเพื่อทดสอบ" ทำให้นักศึกษา ผู้นิเทศงาน หรืออาจารย์นิเทศกลับไปเหมือนเพิ่งเข้าใหม่ ปิดด้วย Config RESET_ENABLED = FALSE เมื่อเริ่มใช้จริง'] },
+    supervisor: { title: 'คำแนะนำสำหรับผู้นิเทศงาน', path: 'company/supervisor.html', items: [
+      'ยืนยันข้อตกลง SE-WIL01 ด้านล่างภายในกำหนด หรือลงนามในเอกสารแล้วส่งให้หลักสูตร',
+      'ทุกวันศุกร์ระบบส่งอีเมลสรุปบันทึกของนักศึกษา ใช้ลิงก์นี้รับรองหรือส่งกลับพร้อมเหตุผล',
+      'ตรวจว่าเวลาตรงกับที่ทำงานจริง และแท็กถูก: งานตามตำแหน่ง = 305 งานโครงงาน = 304 วันที่นักศึกษาแจ้งว่าไม่ได้ปฏิบัติงานไม่นับชั่วโมง เลือกไว้ = รับทราบ',
+      'มีปัญหาเรื่องนักศึกษา ติดต่อผู้ประสานงาน SE-WIL ได้ทันที หรือตอบกลับอีเมลจากระบบ'] }
+  };
+  function guideCard(role) {
+    var g = GUIDE[role];
+    if (!g) return null;
+    return h('details', { class: 'card guide' }, h('summary', {}, g.title),
+      h('ol', {}, g.items.map(function (x) { return h('li', {}, x); })),
+      BOOT.portal ? h('p', { class: 'small' }, h('a', { href: BOOT.portal + g.path, target: '_blank', rel: 'noopener' }, 'อ่านคู่มือฉบับเต็ม'), ' · ',
+        h('a', { href: BOOT.portal + 'docs/system-roles.html', target: '_blank', rel: 'noopener' }, 'ใครทำอะไรในระบบ SE-WIL')) : null);
+  }
+  /* ---------- ผู้ติดต่อและไฟล์แนบ ---------- */
+  function telLink(ph) { return ph ? h('a', { href: 'tel:' + String(ph).replace(/[^\d+]/g, '') }, ph) : null; }
+  function contactLine(role, c) {
+    if (!c || !(c.name || c.email || c.phone)) return null;
+    return h('li', {}, h('span', { class: 'crole' }, role), h('span', {}, c.name || '',
+      c.phone ? [' โทร ', telLink(c.phone)] : null, c.email ? [' ', h('a', { href: 'mailto:' + c.email }, c.email)] : null));
+  }
+  /** รวมบุคคลเดียวกัน (อีเมลเดียวกัน) ให้เหลือบรรทัดเดียว เช่น ผู้ประสานงานที่เป็นอาจารย์นิเทศด้วย */
+  function mergeContacts(items) {
+    var out = [], byEmail = {};
+    items.forEach(function (x) {
+      var c = x[1];
+      if (!c || !(c.name || c.email || c.phone)) return;
+      var key = c.email ? String(c.email).toLowerCase() : '';
+      if (key && byEmail[key]) { byEmail[key][0] += ' และ' + x[0]; return; }
+      var row = [x[0], c]; out.push(row);
+      if (key) byEmail[key] = row;
+    });
+    return out;
+  }
+  function contactLines(items) { return mergeContacts(items).map(function (x) { return contactLine(x[0], x[1]); }); }
+  function contactsCard(title, items, note) {
+    var lis = contactLines(items);
+    if (!lis.length) return null;
+    return h('div', { class: 'card' }, h('h2', { style: 'margin-top:0' }, title),
+      note ? h('p', { class: 'small muted', style: 'margin-top:0' }, note) : null, h('ul', { class: 'clist' }, lis));
+  }
+  function b64ToUrl(x) {
+    var bin = atob(x.data), arr = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+    return URL.createObjectURL(new Blob([arr], { type: x.mime }));
+  }
+  /** ปุ่มเตรียมไฟล์: กดครั้งแรกดึงไฟล์จากระบบ แล้วแสดงลิงก์ให้กดดาวน์โหลด (ต้องเป็นการกดของผู้ใช้เอง) */
+  function fileButton(label, fn, args) {
+    var box = h('span', { class: 'filebtn' });
+    var b = h('button', { class: 'btn sec small', type: 'button' }, label);
+    b.onclick = function () {
+      b.disabled = true; b.textContent = 'กำลังเตรียมไฟล์…';
+      call.apply(null, [fn].concat(args)).then(function (x) {
+        if (!x.ok) { b.disabled = false; b.textContent = label; if (!x.auth) toast(x.error, true); return; }
+        box.innerHTML = '';
+        add(box, h('a', { class: 'btn small', href: b64ToUrl(x), download: x.name, target: '_blank', rel: 'noopener' }, 'ดาวน์โหลด ' + x.name));
+      });
+    };
+    add(box, b);
+    return box;
+  }
+  /** ปุ่มเตรียมลิงก์: กดแล้วขอลิงก์จากระบบ แล้วแสดงลิงก์ให้กดเปิดในแท็บใหม่ (ต้องเป็นการกดของผู้ใช้เอง) */
+  function linkButton(label, fn, args, openLabel) {
+    var box = h('span', { class: 'filebtn' });
+    var b = h('button', { class: 'btn sec small', type: 'button' }, label);
+    b.onclick = function () {
+      b.disabled = true; b.textContent = 'กำลังเตรียม…';
+      call.apply(null, [fn].concat(args)).then(function (x) {
+        if (!x.ok) { b.disabled = false; b.textContent = label; if (!x.auth) toast(x.error, true); return; }
+        box.innerHTML = '';
+        add(box, h('a', { class: 'btn small', href: x.url, target: '_blank', rel: 'noopener noreferrer' }, openLabel + (x.count > 1 ? ' (' + x.count + ' คน)' : '')));
+      });
+    };
+    add(box, b);
+    return box;
+  }
+  /** รูปสถานประกอบการแบบย่อ โหลดเมื่อกด */
+  function photoButton(fn, args, label) {
+    label = label || 'ดูรูปสถานประกอบการ';
+    var box = h('div', { class: 'photo' });
+    var b = h('button', { class: 'btn sec small', type: 'button' }, label);
+    b.onclick = function () {
+      b.disabled = true; b.textContent = 'กำลังโหลดรูป…';
+      call.apply(null, [fn].concat(args)).then(function (x) {
+        if (!x.ok) { b.disabled = false; b.textContent = label; if (!x.auth) toast(x.error, true); return; }
+        box.innerHTML = ''; add(box, h('img', { src: b64ToUrl(x), alt: label }));
+      });
+    };
+    add(box, b);
+    return box;
+  }
+  function linkOrDash(href, text) { return href ? h('a', { href: href, target: '_blank', rel: 'noopener' }, text || href) : '—'; }
+  function kvNode(k, node) { return [h('dt', {}, k), h('dd', {}, node || '—')]; }
+
+
+  function setBar(title) {
+    var bar = document.getElementById('bar');
+    bar.innerHTML = ''; bar.hidden = false;
+    var right = S.session ? h('button', { class: 'btn sec small', onclick: logout }, 'ออกจากระบบ') : null;
+    add(bar, h('div', { class: 'in' }, brand(), h('span', { class: 'small muted' }, 'ENGSE304/305 ภาค ' + BOOT.semester + ' (vTest)'), h('span', { class: 'who' }, title || ''),
+      BOOT.portal ? h('a', { class: 'guide', href: BOOT.portal + guidePath(), target: '_blank', rel: 'noopener' }, 'คู่มือและปฏิทิน') : null, right));
+  }
+  function logos() {
+    if (!BOOT.portal) return [];
+    return [h('img', { src: BOOT.portal + 'assets/img/rmutl-logo.jpg', alt: 'ตรามหาวิทยาลัยเทคโนโลยีราชมงคลล้านนา' }),
+      h('img', { src: BOOT.portal + 'assets/img/se-logo.jpg', alt: 'ตราสาขาวิชาวิศวกรรมซอฟต์แวร์' })];
+  }
+  function brand() { return h('span', { class: 'brand' }, logos(), 'SE-WIL'); }
+  function guidePath() {
+    if (S.sv) return 'company/supervisor.html';
+    if (S.me && S.me.role === 'student') return 'student/index.html';
+    if (S.me) return 'teacher/index.html';
+    return '';
+  }
+  function hideBar() { var bar = document.getElementById('bar'); bar.hidden = true; bar.innerHTML = ''; }
+  function logout() { var s = S.session; store(null); S.session = null; S.me = null; call('api_logout', s); showLogin(); }
+
+  /* ---------- start ---------- */
+  function init() {
+    if (BOOT.page === 'sv' && BOOT.k) { showSupervisor(BOOT.k); return; }
+    if (BOOT.page === 'auth' && BOOT.t) {
+      mount(h('p', { class: 'muted' }, 'กำลังเข้าระบบ…'));
+      call('api_exchange', BOOT.t).then(function (r) {
+        try { google.script.history.replace(null, {}, ''); } catch (e) { }
+        if (!r.ok) { showLogin(r.error); return; }
+        S.session = r.session; store(r.session); S.me = r.me; route();
+      });
+      return;
+    }
+    var s = store();
+    if (!s) { showLogin(); return; }
+    S.session = s;
+    call('api_me', s).then(function (r) {
+      if (!r.ok) { if (!r.auth) showLogin(r.error); return; }
+      S.me = r.me; route();
+    });
+  }
+  function route() {
+    setBar(S.me.name + ' · ' + ({ student: 'นักศึกษา', teacher: 'อาจารย์', admin: 'ผู้ดูแล' })[S.me.role]);
+    if (S.me.role === 'student') showStudent(); else showAdmin();
+  }
+
+  function showLogin(msg) {
+    hideBar();
+    var email = h('input', { type: 'email', id: 'login-email', autocomplete: 'email', placeholder: 'อีเมลมหาวิทยาลัย', required: true });
+    var status = h('div', {});
+    var btn = h('button', { class: 'btn', type: 'submit' }, 'ส่งลิงก์เข้าระบบ');
+    var form = h('form', {
+      onsubmit: function (ev) {
+        ev.preventDefault(); btn.disabled = true;
+        call('api_requestLogin', email.value).then(function (r) {
+          btn.disabled = false; status.innerHTML = '';
+          if (!r.ok) { add(status, errorList(r)); return; }
+          add(status, h('div', { class: 'note ok' },
+            h('p', {}, 'ถ้าอีเมลนี้ลงทะเบียนไว้ ระบบจะส่งลิงก์เข้าระบบภายใน 1–2 นาที ลิงก์ใช้ได้ครั้งเดียว'),
+            h('p', { class: 'small muted' }, 'ไม่พบอีเมล? ตรวจกล่องจดหมายขยะ (Junk) หรือติดต่อผู้ประสานงาน SE-WIL' + (BOOT.coordinator ? ' ' + BOOT.coordinator : ''))));
+        });
+      }
+    }, fld('login-email', 'อีเมล', email), btn);
+    mount(h('div', { class: 'login' },
+      h('div', { class: 'card c305' },
+        BOOT.portal ? h('div', { class: 'logos' }, logos()) : null,
+        h('h1', {}, 'ระบบ SE-WIL'),
+        h('p', { class: 'muted' }, 'ENGSE305 การฝึกเฉพาะตำแหน่ง และ ENGSE304 ปัญหาพิเศษจากสถานประกอบการ · ภาคการศึกษาที่ ' + BOOT.semester),
+        msg ? h('p', { class: 'errors' }, msg) : null, form, status),
+      h('p', { class: 'small muted' }, 'ผู้นิเทศงานในสถานประกอบการไม่ต้องเข้าระบบที่หน้านี้ ให้ใช้ลิงก์เฉพาะท่านในอีเมลจากหลักสูตร'),
+      BOOT.portal ? h('p', { class: 'small' }, h('a', { href: BOOT.portal + 'help/index.html', target: '_blank', rel: 'noopener' }, 'เข้าระบบไม่ได้หรือไม่ได้รับอีเมล อ่านวิธีแก้ที่พอร์ทัลรายวิชา')) : null,
+      BOOT.privacy ? h('p', { class: 'small' }, h('a', { href: BOOT.privacy, target: '_blank', rel: 'noopener' }, 'ประกาศการคุ้มครองข้อมูลส่วนบุคคลของระบบ SE-WIL')) : null,
+      h('p', { class: 'small muted' }, 'ถ้าใช้เครื่องสาธารณะหรือเครื่องของผู้อื่น กด "ออกจากระบบ" ทุกครั้งหลังใช้งาน')));
+  }
+
+  /* ---------- นักศึกษา ---------- */
+  function showStudent(tab) {
+    mount(loading());
+    Promise.all([call('api_placementGet', S.session), call('api_logList', S.session)]).then(function (rs) {
+      if (!rs[0].ok) return fail(rs[0]);
+      if (!rs[1].ok) return fail(rs[1]);
+      S.pl = rs[0]; S.lg = rs[1];
+      S.tab = tab || S.tab || (S.pl.logbookOpen ? 'log' : 'place');
+      renderStudent();
+    });
+  }
+  function tabBtn(id, label) {
+    return h('button', { class: 'tab', role: 'tab', 'aria-selected': String(S.tab === id), onclick: function () { S.tab = id; renderStudent(); } }, label);
+  }
+  function renderStudent() {
+    var adv = S.pl.advisor;
+    mount([
+      h('h1', {}, 'สวัสดี ' + S.me.name),
+      h('p', { class: 'muted small' }, 'รหัส ' + S.me.student_id + (adv ? ' · อาจารย์นิเทศ ' + adv.name : '')),
+      todoCard(S.pl.todo, function (go) { S.tab = go === 'log' && S.pl.logbookOpen ? 'log' : 'place'; renderStudent(); }),
+      guideCard('student'),
+      h('div', { class: 'tabs', role: 'tablist' }, tabBtn('place', 'ข้อมูลที่ฝึกและข้อตกลง'), tabBtn('log', 'Logbook')),
+      S.tab === 'place' ? placementPanel() : logbookPanel()
+    ]);
+  }
+  function statusBanner(st, p) {
+    var text = {
+      none: 'กรอกข้อมูลสถานประกอบการ ตำแหน่งงาน และโจทย์ แล้วกด "ส่งให้หลักสูตรตรวจ" ' + (BOOT.placementDue ? 'ภายใน ' + BOOT.placementDue : 'ก่อนวันเปิดภาค'),
+      draft: 'บันทึกร่างไว้แล้ว เมื่อข้อมูลครบให้กด "ส่งให้หลักสูตรตรวจ"' + (BOOT.placementDue ? ' ภายใน ' + BOOT.placementDue : ''),
+      submitted: 'ส่งแล้ว รออาจารย์ตรวจ เมื่ออนุมัติ ระบบจะส่งข้อตกลง SE-WIL01 ให้ผู้นิเทศงานยืนยันทางอีเมล',
+      returned: 'อาจารย์ส่งกลับให้แก้ไข แก้แล้วกดส่งอีกครั้ง',
+      agreement_sent: 'หลักสูตรอนุมัติแล้ว ส่งข้อตกลง ' + (p && p.agreement_no || '') + ' ให้ผู้นิเทศงานยืนยัน' + (BOOT.agreementDue ? 'ภายใน ' + BOOT.agreementDue : '') + ' ระหว่างนี้บันทึก logbook ได้',
+      signed: 'สถานประกอบการยืนยันข้อตกลง ' + (p && p.agreement_no || '') + ' แล้ว'
+    }[st];
+    var cls = st === 'returned' ? 'note bad' : (st === 'signed' ? 'note ok' : 'note');
+    return h('div', { class: cls },
+      h('div', { class: 'row' }, h('span', { class: 'chip s-' + st }, STATUS[st]), h('span', {}, text)),
+      st === 'returned' && p.review_comment ? h('p', {}, 'เหตุผล: ' + p.review_comment) : null,
+      st === 'signed' && p.accepted_at ? h('p', { class: 'small muted' }, 'ยืนยันโดย ' + p.accepted_by_name + ' เมื่อ ' + fmtTs(p.accepted_at) + (p.accepted_via === 'paper' ? ' (ลงนามในเอกสาร)' : ' (ออนไลน์)')) : null);
+  }
+  function placementPanel() {
+    var r = S.pl, p = r.placement, st = p ? p.status : 'none';
+    var contacts = contactsCard('ผู้ติดต่อของฉัน', [['ผู้ประสานงาน SE-WIL (ติดต่อหลัก)', r.coordinator], ['อาจารย์นิเทศ', r.advisor],
+      ['ผู้นิเทศงาน', p && p.supervisor_name ? { name: p.supervisor_name, email: p.supervisor_email, phone: p.supervisor_phone } : null],
+      ['ที่ปรึกษาร่วม', p && p.coadvisor_same === 'no' ? { name: p.coadvisor_name, email: p.coadvisor_email, phone: p.coadvisor_phone } : null],
+      ['หัวหน้าหลักสูตร (กรณีจำเป็น)', r.head]],
+      'เรื่องข้อตกลง การฝึก และระบบ SE-WIL ติดต่อผู้ประสานงานก่อน เบอร์โทรในรายการนี้ใช้เพื่อการฝึกเท่านั้น ห้ามส่งต่อ');
+    return h('div', {}, statusBanner(st, p), letterCard(r, p), contacts,
+      !r.editable && p ? phoneEditor(p) : null,
+      r.editable ? placementForm(p || {}, r) : placementSummary(p, r.options, { file: 'api_placementFile', args: [S.session] }));
+  }
+  /** แก้หรือลบเบอร์มือถือของตนเองหลังส่งข้อมูลแล้ว */
+  function phoneEditor(p) {
+    var inp = h('input', { type: 'tel', id: 'my-phone', maxlength: 40, value: p.student_phone || '', placeholder: 'เว้นว่างถ้าต้องการให้ติดต่อทางอีเมลเท่านั้น' });
+    var b = h('button', { class: 'btn sec small', type: 'button' }, 'บันทึกเบอร์');
+    b.onclick = function () {
+      b.disabled = true;
+      call('api_placementPhone', S.session, inp.value).then(function (x) {
+        b.disabled = false;
+        if (!x.ok) { if (!x.auth) toast(x.error, true); return; }
+        p.student_phone = x.phone; toast(x.phone ? 'บันทึกเบอร์แล้ว' : 'ลบเบอร์แล้ว');
+      });
+    };
+    return h('div', { class: 'card' }, fld('my-phone', 'เบอร์มือถือของฉัน (ไม่บังคับ)', h('div', { class: 'row' }, inp, b),
+      'อาจารย์ของหลักสูตร ผู้นิเทศงาน และที่ปรึกษาร่วมของคุณเห็นเบอร์นี้ ลบได้ทุกเมื่อโดยเว้นว่างแล้วกดบันทึก'));
+  }
+  /** ช่องแนบไฟล์ของนักศึกษา kind = 'cv' | 'photo' | 'reply' */
+  var UPLOAD_UI = {
+    cv: { has: 'has_cv', nameKey: 'cv_file_name', accept: 'application/pdf,.pdf', label: 'CV (PDF ไม่เกิน {mb} MB)', short: 'CV (PDF)', open: 'เปิดไฟล์ที่แนบ',
+      hint: 'ผู้นิเทศงานและที่ปรึกษาร่วมของคุณ และอาจารย์ของหลักสูตรเปิด CV ได้ ไม่ต้องใส่เลขบัตรประชาชน วันเกิด ศาสนา ข้อมูลสุขภาพ บ้านเลขที่ หรือรูปถ่าย' },
+    photo: { has: 'has_photo', nameKey: '', accept: 'image/jpeg,image/png,image/webp', label: 'รูปสถานประกอบการ (ถ้ามี JPG PNG ไม่เกิน {mb} MB)', short: 'รูปสถานประกอบการ (ถ้ามี)', open: 'เปิดรูปที่แนบ',
+      hint: 'รูปหน้าอาคารหรือป้ายบริษัทเพื่อให้อาจารย์นิเทศหาสถานที่ได้ง่าย อย่าให้มีหน้าคนหรือป้ายทะเบียนรถในรูป' },
+    reply: { has: 'has_reply', nameKey: 'reply_file_name', accept: 'application/pdf,.pdf,image/jpeg,image/png,image/webp', label: 'แบบตอบรับที่สถานประกอบการลงนามแล้ว (PDF หรือรูปถ่าย ไม่เกิน {mb} MB)', short: 'แบบตอบรับที่ลงนามแล้ว', open: 'เปิดไฟล์ที่แนบ',
+      hint: 'สแกนหรือถ่ายรูปหน้า 2 ที่ลงนามให้เห็นชัดทั้งหน้า อาจารย์นิเทศของคุณและผู้ประสานงานเปิดไฟล์นี้ได้ เก็บฉบับจริงไว้ส่งหลักสูตรเมื่อขอ' }
+  };
+  function uploader(kind, p, r) {
+    var U = UPLOAD_UI[kind], has = !!p[U.has];
+    function doneText(name) { return kind === 'photo' ? 'แนบรูปแล้ว' : 'แนบแล้ว: ' + (name || U.short); }
+    var status = h('span', { class: 'small' }, has ? doneText(U.nameKey ? p[U.nameKey] : '') : 'ยังไม่ได้แนบ');
+    var input = h('input', { type: 'file', id: 'up-' + kind, accept: U.accept });
+    var max = (r.uploads && r.uploads.maxMb) || 5;
+    input.onchange = function () {
+      var f = input.files && input.files[0];
+      if (!f) return;
+      if (f.size > max * 1048576) { toast('ไฟล์ใหญ่เกิน ' + max + ' MB', true); input.value = ''; return; }
+      status.textContent = 'กำลังอัปโหลด…'; input.disabled = true;
+      var rd = new FileReader();
+      rd.onload = function () {
+        call('api_placementUpload', S.session, kind, f.name, String(rd.result)).then(function (x) {
+          input.disabled = false; input.value = '';
+          if (!x.ok) { status.textContent = has ? 'ไฟล์เดิมยังอยู่' : 'ยังไม่ได้แนบ'; if (!x.auth) toast(x.error, true); return; }
+          has = true; p[U.has] = true;
+          status.textContent = doneText(x.name); toast('แนบไฟล์แล้ว');
+        });
+      };
+      rd.onerror = function () { input.disabled = false; status.textContent = 'อ่านไฟล์ไม่ได้'; };
+      rd.readAsDataURL(f);
+    };
+    if (!p.placement_id) return fld('up-' + kind, U.short, h('p', { class: 'small muted', style: 'margin:0' }, 'กด "บันทึกร่าง" ข้อมูลที่ฝึกก่อน แล้วจึงแนบไฟล์ได้'));
+    var removeBtn = h('button', { class: 'btn warn small', type: 'button', onclick: function () {
+      removeBtn.disabled = true;
+      call('api_placementRemoveFile', S.session, kind).then(function (x) {
+        removeBtn.disabled = false;
+        if (!x.ok) { if (!x.auth) toast(x.error, true); return; }
+        toast('ลบไฟล์แล้ว'); showStudent('place');
+      });
+    } }, 'ลบไฟล์');
+    return fld('up-' + kind, U.label.replace('{mb}', max) + (kind === 'cv' && r.uploads && r.uploads.cvRequired ? ' *' : ''),
+      h('div', { class: 'row' }, input, status, has ? fileButton(U.open, 'api_placementFile', [S.session, kind]) : null, has ? removeBtn : null), U.hint);
+  }
+  /** หนังสือแนะนำและแบบตอบรับ SE-WIL00 ของนักศึกษา: พิมพ์ฉบับมีข้อมูลหรือฉบับเปล่า แล้วแนบฉบับที่ลงนาม */
+  var LETTER_FILLED = ['submitted', 'returned', 'agreement_sent', 'signed'];
+  function letterCard(r, p) {
+    var st = p ? p.status : 'none', filled = LETTER_FILLED.indexOf(st) >= 0;
+    var blankUrl = BOOT.portal ? BOOT.portal.replace(/\/?$/, '/') + 'forms/intro-letter.html' : '';
+    return h('div', { class: 'card' }, h('h2', { style: 'margin-top:0' }, 'หนังสือแนะนำและแบบตอบรับ (SE-WIL00)'),
+      h('p', { class: 'small', style: 'margin-top:0' }, 'ทุกคนต้องมีแบบตอบรับที่สถานประกอบการลงนาม แม้ฝึกที่เดิมจาก ENGSE301 หน้า 1 คือหนังสือแนะนำที่หัวหน้าหลักสูตรลงนาม (นำไปให้ท่านลงนาม หรือรับฉบับที่ลงนามแล้วจากผู้ประสานงาน) หน้า 2 คือแบบตอบรับที่สถานประกอบการลงนามและประทับตรา'),
+      filled ? h('p', { class: 'small' }, 'ข้อมูลของคุณผ่านการส่งแล้ว ระบบเติมข้อมูลลงแบบตอบรับให้ สถานประกอบการตรวจแล้วลงนามอย่างเดียว ถ้าข้อมูลใดไม่ถูกต้อง ให้แก้ด้วยปากกาและลงนามกำกับ แล้วแจ้งผู้ประสานงาน')
+        : h('p', { class: 'small' }, 'ยังไม่ได้ส่งข้อมูลที่ฝึก: พิมพ์ฉบับเปล่า (มีชื่อคุณแล้ว) ไปให้สถานประกอบการกรอกและลงนาม แล้วนำข้อมูลมากรอกในระบบ เมื่อกด "ส่งให้หลักสูตรตรวจ" แล้ว ปุ่มนี้จะพิมพ์ฉบับที่มีข้อมูลครบให้'),
+      h('div', { class: 'row' }, linkButton(filled ? 'เตรียมฉบับมีข้อมูลของฉัน' : 'เตรียมฉบับเปล่าที่มีชื่อของฉัน', 'api_letterLink', [S.session], 'เปิดแล้วกดพิมพ์ (2 หน้า)'),
+        blankUrl ? h('a', { class: 'small', href: blankUrl, target: '_blank', rel: 'noopener' }, 'ฉบับเปล่าไม่มีชื่อ') : null),
+      h('p', { class: 'small muted' }, 'ข้อมูลที่เติมให้ส่งไปกับลิงก์และอยู่ในเบราว์เซอร์ของคุณเท่านั้น ไม่ถูกเก็บในพอร์ทัล'),
+      p ? uploader('reply', p, r) : h('p', { class: 'small muted' }, 'เมื่อได้แบบตอบรับที่ลงนามแล้ว ให้กรอกข้อมูลที่ฝึกและกด "บันทึกร่าง" ก่อน แล้วแนบไฟล์ที่นี่'));
+  }
+
+  function placementSummary(p, o, files) {
+    if (!p) return h('p', { class: 'muted' }, 'ยังไม่มีข้อมูล');
+    return h('div', { class: 'card' }, h('dl', { class: 'kv' },
+      kv('เลขที่ข้อตกลง', p.agreement_no),
+      kvNode('โทรศัพท์นักศึกษา', telLink(p.student_phone)),
+      kvNode('CV', p.has_cv && files ? fileButton('เปิด CV', files.file, files.args.concat(files.byId ? [p.placement_id, 'cv'] : ['cv'])) : (p.has_cv ? 'แนบแล้ว' : 'ยังไม่ได้แนบ')),
+      kvNode('แบบตอบรับที่ลงนาม', p.has_reply && files ? fileButton('เปิดแบบตอบรับ', files.file, files.args.concat(files.byId ? [p.placement_id, 'reply'] : ['reply'])) : (p.has_reply ? 'แนบแล้ว' : 'ยังไม่ได้แนบ')),
+      kv('สถานประกอบการ', p.company_name + ' (' + p.company_type + ')'), kv('ที่อยู่', p.company_address + ' จ.' + p.province),
+      kvNode('โทรศัพท์สถานประกอบการ', telLink(p.company_phone)),
+      kvNode('เว็บไซต์', linkOrDash(p.company_website)),
+      kvNode('แผนที่', linkOrDash(p.map_href, 'เปิดใน Google Maps')),
+      kvNode('รูปสถานประกอบการ', p.has_photo && files ? photoButton(files.file, files.args.concat(files.byId ? [p.placement_id, 'photo'] : ['photo'])) : (p.has_photo ? 'แนบแล้ว' : 'ไม่มี')),
+      kv('ที่ฝึกเดิมจาก ENGSE301', p.same_as_301 === 'yes' ? 'ใช่' : 'ไม่ใช่ · ' + p.change_reason),
+      kv('ผู้นิเทศงาน', p.supervisor_name + ' · ' + p.supervisor_position + ' · ' + p.supervisor_email + ' · ' + p.supervisor_phone),
+      kv('ที่ปรึกษาร่วม', p.coadvisor_same === 'yes' ? 'คนเดียวกับผู้นิเทศงาน' : p.coadvisor_name + ' · ' + p.coadvisor_position + ' · ' + p.coadvisor_email + (p.coadvisor_phone ? ' · ' + p.coadvisor_phone : '')),
+      kv('ตำแหน่งงาน (305)', p.position_title), kv('ลักษณะงาน', p.job_description),
+      kv('โจทย์ที่ 1 (304)', p.problem1_title + '\n' + p.problem1_detail),
+      kv('โจทย์ที่ 2', p.problem2_title ? p.problem2_title + '\n' + p.problem2_detail : ''),
+      kv('รูปแบบการทำงาน', o.workModes[p.work_mode] || p.work_mode),
+      kv('ตารางเวลา 305', p.schedule_305), kv('ตารางเวลา 304', p.schedule_304),
+      kv('ทรัพย์สินทางปัญญา', o.ipOwners[p.ip_owner] || p.ip_owner), kv('ค่าตอบแทน/สวัสดิการ', p.compensation),
+      kv('ส่งเมื่อ', fmtTs(p.submitted_at))));
+  }
+  function placementForm(p, r) {
+    var d = r.defaults, o = r.options, F = {};
+    function v(k) { return p[k] !== undefined && p[k] !== '' ? String(p[k]) : (d[k] || ''); }
+    function text(k, label, opt) {
+      opt = opt || {};
+      var el = opt.area ? h('textarea', { id: 'f-' + k, maxlength: opt.max || null }) : h('input', { id: 'f-' + k, type: opt.type || 'text', maxlength: opt.max || null, value: v(k) });
+      if (opt.area) el.value = v(k);
+      F[k] = el;
+      return fld('f-' + k, label + (opt.req ? ' *' : ''), el, opt.hint);
+    }
+    function radios(k, label, choices, onchange) {
+      var fs = h('fieldset', {}, h('legend', {}, label + ' *'));
+      F[k] = { radios: [] };
+      Object.keys(choices).forEach(function (val) {
+        var id = 'f-' + k + '-' + val;
+        var rb = h('input', { type: 'radio', name: 'f-' + k, id: id, value: val, checked: v(k) === val, onchange: onchange || null });
+        F[k].radios.push(rb);
+        add(fs, h('label', { class: 'choice', for: id }, rb, h('span', {}, choices[val])));
+      });
+      return fs;
+    }
+    function radioVal(k) { var c = F[k].radios.filter(function (x) { return x.checked; })[0]; return c ? c.value : ''; }
+    var typeSel = h('select', { id: 'f-company_type' }, h('option', { value: '' }, '— เลือก —'),
+      o.companyTypes.map(function (x) { return h('option', { value: x, selected: v('company_type') === x }, x); }));
+    F.company_type = typeSel;
+
+    var changeBox = h('div', {}, text('change_reason', 'เหตุผลที่เปลี่ยนสถานประกอบการ', { area: true, max: 600, req: true }));
+    var coBox = h('div', { class: 'grid2' },
+      text('coadvisor_name', 'ชื่อ-นามสกุล', { req: true, max: 120 }), text('coadvisor_position', 'ตำแหน่ง', { req: true, max: 120 }),
+      text('coadvisor_email', 'อีเมล', { type: 'email', req: true, max: 120 }), text('coadvisor_phone', 'โทรศัพท์ (ไม่บังคับ)', { type: 'tel', max: 40, hint: 'เบอร์ที่ทำงานที่ท่านยินยอมให้ใช้ ถ้าไม่สะดวกให้เว้นว่าง หลักสูตรจะติดต่อทางอีเมล' }));
+    function toggle() {
+      changeBox.hidden = radioVal('same_as_301') !== 'no';
+      coBox.hidden = radioVal('coadvisor_same') !== 'no';
+    }
+    var consent = h('input', { type: 'checkbox', id: 'f-pdpa', checked: !!p.pdpa_consent_at });
+    var errs = h('div', {});
+    var confirmBox = h('div', {});
+    function values() {
+      var out = {};
+      Object.keys(F).forEach(function (k) { out[k] = F[k].radios ? radioVal(k) : F[k].value; });
+      out.pdpa_consent = consent.checked;
+      return out;
+    }
+    function save(submit, btn) {
+      btn.disabled = true; errs.innerHTML = '';
+      call('api_placementSave', S.session, values(), submit).then(function (x) {
+        btn.disabled = false;
+        if (!x.ok) { if (x.auth) return; add(errs, errorList(x)); errs.scrollIntoView({ block: 'center' }); return; }
+        toast(submit ? 'ส่งให้หลักสูตรตรวจแล้ว' : 'บันทึกร่างแล้ว');
+        showStudent('place');
+      });
+    }
+    var bSave = h('button', { class: 'btn sec', type: 'button', onclick: function () { save(false, bSave); } }, 'บันทึกร่าง');
+    var bSubmit = h('button', {
+      class: 'btn', type: 'button', onclick: function () {
+        confirmBox.innerHTML = '';
+        var yes = h('button', { class: 'btn', type: 'button', onclick: function () { confirmBox.innerHTML = ''; save(true, bSubmit); } }, 'ยืนยันส่ง');
+        add(confirmBox, h('div', { class: 'confirm' }, h('p', {}, 'เมื่อส่งแล้วจะแก้ไขไม่ได้จนกว่าอาจารย์จะส่งกลับ ตรวจข้อมูลผู้นิเทศงานและอีเมลให้ถูกต้อง เพราะระบบจะส่งข้อตกลงไปที่อีเมลนี้'),
+          h('div', { class: 'row' }, yes, h('button', { class: 'btn sec', type: 'button', onclick: function () { confirmBox.innerHTML = ''; } }, 'ยกเลิก'))));
+      }
+    }, 'ส่งให้หลักสูตรตรวจ');
+
+    var form = h('div', {},
+      h('fieldset', {}, h('legend', {}, 'ก. สถานประกอบการ'),
+        h('div', { class: 'grid2' }, text('company_name', 'ชื่อสถานประกอบการ', { req: true, max: 200 }), fld('f-company_type', 'ประเภท *', typeSel)),
+        text('company_address', 'ที่อยู่', { area: true, req: true, max: 400 }),
+        h('div', { class: 'grid2' }, text('province', 'จังหวัด', { req: true, max: 80 }), text('company_phone', 'โทรศัพท์สถานประกอบการ (ไม่บังคับ)', { type: 'tel', max: 40, hint: 'เบอร์กลางของบริษัท' })),
+        h('div', { class: 'grid2' },
+          text('company_website', 'เว็บไซต์', { type: 'url', max: 300, hint: 'เช่น https://www.example.co.th ถ้าไม่มีเว้นว่างได้' }),
+          text('company_map_url', 'ตำแหน่งบน Google Maps', { req: true, max: 500, hint: 'เปิด Google Maps ค้นหาบริษัท กด "แชร์" แล้วคัดลอกลิงก์มาวาง หรือใส่พิกัด เช่น 18.7953, 98.9529' })),
+        uploader('photo', p, r),
+        radios('same_as_301', 'เป็นสถานประกอบการเดียวกับที่ฝึก ENGSE301 หรือไม่', { yes: 'ใช่ ฝึกต่อที่เดิม', no: 'ไม่ใช่ เปลี่ยนสถานประกอบการ' }, toggle),
+        changeBox),
+      h('fieldset', {}, h('legend', {}, 'ข. ข้อมูลติดต่อของนักศึกษา'),
+        h('div', { class: 'grid2' }, text('student_phone', 'โทรศัพท์มือถือของคุณ (ไม่บังคับ)', { type: 'tel', max: 40, hint: 'ระบบเติมเบอร์ที่หลักสูตรมีไว้ให้ (ถ้ามี) ถ้าส่งไว้ ผู้นิเทศงานและที่ปรึกษาร่วมของคุณจะเห็นเบอร์นี้และเบอร์จะพิมพ์ลงข้อตกลง ถ้าไม่สะดวกให้ลบออก ทุกคนจะติดต่อคุณทางอีเมล แก้หรือลบภายหลังได้' })),
+        uploader('cv', p, r)),
+      h('fieldset', {}, h('legend', {}, 'ค. ผู้นิเทศงาน (ENGSE305)'),
+        h('p', { class: 'small muted' }, 'ระบบจะส่งข้อตกลงและสรุปบันทึกรายสัปดาห์ไปที่อีเมลนี้ ผู้นิเทศงานควรมีวุฒิหรือความเชี่ยวชาญในสาขา'),
+        h('div', { class: 'grid2' },
+          text('supervisor_name', 'ชื่อ-นามสกุล', { req: true, max: 120 }), text('supervisor_position', 'ตำแหน่ง', { req: true, max: 120 }),
+          text('supervisor_email', 'อีเมล', { type: 'email', req: true, max: 120 }), text('supervisor_phone', 'โทรศัพท์ (ไม่บังคับ)', { type: 'tel', max: 40, hint: 'ถามผู้นิเทศงานก่อนว่ายินยอมให้เบอร์ใด ถ้าไม่สะดวกให้เว้นว่าง' }))),
+      h('fieldset', {}, h('legend', {}, 'ง. ที่ปรึกษาร่วมจากสถานประกอบการ (ENGSE304)'),
+        radios('coadvisor_same', 'ที่ปรึกษาร่วมเป็นคนเดียวกับผู้นิเทศงานหรือไม่', { yes: 'ใช่ คนเดียวกัน', no: 'ไม่ใช่ ระบุคนอื่น' }, toggle),
+        coBox),
+      h('fieldset', {}, h('legend', {}, 'จ. ตำแหน่งงาน ENGSE305 การฝึกเฉพาะตำแหน่ง'),
+        text('position_title', 'ชื่อตำแหน่ง', { req: true, max: 200, hint: 'เช่น Junior Software Developer, QA Engineer' }),
+        text('job_description', 'ลักษณะงานที่ได้รับมอบหมาย', { area: true, req: true, max: 1500 })),
+      h('fieldset', {}, h('legend', {}, 'ฉ. โจทย์ปัญหา ENGSE304 ปัญหาพิเศษจากสถานประกอบการ'),
+        h('p', { class: 'small muted' }, 'โจทย์ต้องเป็นปัญหาจริงที่สถานประกอบการรับรอง ระบุได้ 1–2 หัวข้อ ข้อเสนอโครงงานฉบับเต็มส่งในสัปดาห์ที่ 3'),
+        text('problem1_title', 'หัวข้อโจทย์ที่ 1', { req: true, max: 200 }), text('problem1_detail', 'รายละเอียดโจทย์ที่ 1', { area: true, req: true, max: 1500 }),
+        text('problem2_title', 'หัวข้อโจทย์ที่ 2 (ถ้ามี)', { max: 200 }), text('problem2_detail', 'รายละเอียดโจทย์ที่ 2', { area: true, max: 1500 })),
+      h('fieldset', {}, h('legend', {}, 'ช. รูปแบบการทำงานและตารางเวลา'),
+        radios('work_mode', 'รูปแบบการทำงาน', o.workModes),
+        text('schedule_305', 'ตารางเวลา ENGSE305', { req: true, max: 200, hint: 'ไม่น้อยกว่า 20 ชั่วโมงต่อสัปดาห์' }),
+        text('schedule_304', 'ตารางเวลา ENGSE304', { req: true, max: 200, hint: 'ไม่น้อยกว่า 6 ชั่วโมงต่อสัปดาห์ ณ สถานประกอบการ' })),
+      h('fieldset', {}, h('legend', {}, 'ซ. ข้อตกลงอื่น'),
+        radios('ip_owner', 'ความเป็นเจ้าของผลงาน (ตกลงกับสถานประกอบการก่อนเลือก)', o.ipOwners),
+        text('compensation', 'ค่าตอบแทนหรือสวัสดิการ', { max: 200, hint: 'ถ้าไม่มี ให้พิมพ์ว่า ไม่มี' })),
+      h('label', { class: 'choice', for: 'f-pdpa' }, consent,
+        h('span', {}, 'ข้าพเจ้ารับทราบ',
+          BOOT.privacy ? [' ', h('a', { href: BOOT.privacy, target: '_blank', rel: 'noopener' }, 'ประกาศการคุ้มครองข้อมูลส่วนบุคคล'), ' '] : ' ',
+          'และยินยอมให้หลักสูตรใช้ข้อมูลในแบบฟอร์มนี้เพื่อบริหารรายวิชา ENGSE304/ENGSE305 โดยเบอร์มือถือและ CV ของข้าพเจ้าเปิดให้เฉพาะอาจารย์ของหลักสูตร ผู้นิเทศงาน และที่ปรึกษาร่วมของข้าพเจ้า ข้าพเจ้าได้แจ้งผู้นิเทศงานและที่ปรึกษาร่วมแล้วว่าจะให้ชื่อ ตำแหน่ง อีเมล และเบอร์โทร (ถ้าท่านยินยอม) ของท่านแก่หลักสูตร')),
+      errs, confirmBox,
+      h('div', { class: 'row', style: 'margin-top:12px' }, bSave, bSubmit));
+    toggle();
+    return h('div', { class: 'card' }, form);
+  }
+
+  function meter(c, label, sum, target, expected) {
+    var cert = sum.certified[c], pend = sum.pending[c];
+    function pc(x) { return Math.min(100, (x / target) * 100) + '%'; }
+    return h('div', { class: 'progress' },
+      h('div', { class: 'top' }, h('span', { class: 'lbl' }, label), h('span', {}, cert + ' / ' + target + ' ชม.' + (pend ? ' (รอรับรอง ' + pend + ')' : ''))),
+      h('div', { class: 'meter', role: 'img', 'aria-label': label + ' รับรองแล้ว ' + cert + ' จาก ' + target + ' ชั่วโมง' },
+        h('span', { class: 'pend' + c, style: 'width:' + pc(cert + pend) }),
+        h('span', { class: 'cert' + c, style: 'width:' + pc(cert) }),
+        expected ? h('span', { class: 'exp', style: 'left:' + pc(expected) }) : null));
+  }
+
+  /** logbook ใช้ประเมินอะไร: คะแนนตรง หลักฐานให้ส่วนอื่น เกณฑ์ SE-WIL04 และจังหวะการบันทึก */
+  var LOG_RUBRIC = [
+    ['สม่ำเสมอและส่งรับรองตรงเวลา', 5, 'บันทึกทุกวันทำงาน ไม่ทิ้งค้างเกิน 1 สัปดาห์ วันที่ไม่ได้ไปทำงานบันทึกเหตุไว้'],
+    ['รายละเอียดชัดเจนและมีหลักฐาน', 5, 'บอกว่าทำอะไร ได้ผลอะไร ใช้เครื่องมืออะไร แนบลิงก์หรือรูปเมื่อมี'],
+    ['แท็กถูกต้องและสอดคล้องกับแผนงาน', 2, '305 หรือ 304 ตรงกับลักษณะงาน และสอดคล้องกับแผน 15 สัปดาห์ (SE-WIL03)'],
+    ['สะท้อนปัญหาและการเรียนรู้', 3, 'บันทึกปัญหา วิธีแก้ และสิ่งที่ได้เรียนรู้อย่างสม่ำเสมอ']];
+  function logScoreCard(nEntries) {
+    function chip(cls, t) { return h('span', { class: 'chip ' + cls, style: 'margin:2px 4px 2px 0' }, t); }
+    return h('details', { class: 'card', open: (nEntries || 0) < 5 },
+      h('summary', {}, h('b', {}, 'logbook ใช้ประเมินอะไร และอาจารย์พิจารณาอะไร')),
+      h('p', { class: 'small', style: 'margin:10px 0 4px' }, 'คะแนนตรง'),
+      h('div', {}, chip('k305', 'ENGSE305 logbook และงานรายสัปดาห์ 15%')),
+      h('p', { class: 'small', style: 'margin:10px 0 4px' }, 'เป็นหลักฐานให้คะแนนส่วนอื่น'),
+      h('div', {}, chip('s-pending', 'ผู้นิเทศงานประเมินกลางภาค 10% และปลายภาค 30%'), chip('k305', 'การนิเทศและประชุมสามฝ่าย 20%'),
+        chip('k305', 'รายงานสะท้อนการเรียนรู้ 15%'), chip('k305', 'แฟ้มผลงาน 10%'),
+        chip('k304', 'ENGSE304 ทบทวนความก้าวหน้า 15%'), chip('k304', 'สิ่งประดิษฐ์ทาง SE 25%')),
+      h('p', { class: 'small', style: 'margin:12px 0 4px' }, 'เกณฑ์ logbook 15 คะแนน (SE-WIL04)'),
+      h('div', { class: 'tblwrap' }, h('table', {}, h('tbody', {}, LOG_RUBRIC.map(function (r) {
+        return h('tr', {}, h('td', {}, h('b', {}, r[0]), h('div', { class: 'small muted' }, r[2])), h('td', { class: 'num' }, String(r[1])));
+      })))),
+      h('p', { class: 'small muted', style: 'margin-bottom:0' }, 'จังหวะ: บันทึกทุกวันทำงาน → ตรวจก่อนวันศุกร์ 15:00 ระบบส่งให้ผู้นิเทศงานรับรอง → สัปดาห์ 5–7 อาจารย์ใช้ logbook เตรียมนิเทศ → สัปดาห์ 8 ประเมินกลางภาค → สัปดาห์ 14 ประเมินปลายภาคและรายงานสะท้อน ชั่วโมงที่รับรองครบ 300 และ 135 เป็นเงื่อนไขผ่าน'));
+  }
+
+  function logbookPanel() {
+    var r = S.lg;
+    if (!r.open) return h('div', { class: 'note w' }, 'บันทึก logbook ได้หลังหลักสูตรอนุมัติข้อมูลที่ฝึก (สถานะตอนนี้: ' + STATUS[r.placement ? r.placement.status : 'none'] + ')');
+    var sem = r.semester, sum = r.summary;
+    var drafts = r.entries.filter(function (e) { return e.status === 'draft'; }).length;
+    var sendBtn = h('button', {
+      class: 'btn sec', onclick: function () {
+        sendBtn.disabled = true;
+        call('api_logSendNow', S.session).then(function (x) {
+          sendBtn.disabled = false;
+          if (!x.ok) { if (!x.auth) toast(x.error, true); return; }
+          toast('ส่งให้ผู้นิเทศงานรับรองแล้ว'); showStudent('log');
+        });
+      }
+    }, 'ส่งให้ผู้นิเทศงานรับรองตอนนี้ (' + drafts + ' รายการ)');
+    return h('div', {},
+      h('div', { class: 'card' }, h('h2', { style: 'margin-top:0' }, 'ชั่วโมงสะสม'),
+        meter('305', 'ENGSE305 การฝึกเฉพาะตำแหน่ง', sum, sem.target305, r.expected['305']),
+        meter('304', 'ENGSE304 ปัญหาพิเศษจากสถานประกอบการ', sum, sem.target304, r.expected['304']),
+        h('p', { class: 'small muted' }, 'สีเข้ม = ผู้นิเทศงานรับรองแล้ว · สีอ่อน = รอรับรอง · เส้นสีทอง = ชั่วโมงที่ควรมี ณ สิ้นสัปดาห์ที่แล้ว · ชั่วโมงนับเมื่อรับรองแล้วเท่านั้น')),
+      logScoreCard(r.entries.length),
+      entryForm(),
+      drafts ? h('div', { class: 'row' }, sendBtn, h('span', { class: 'small muted' }, 'ระบบส่งให้รับรองอัตโนมัติทุกสัปดาห์ ส่งเองได้วันละครั้ง')) : null,
+      weekList(r.entries, sem, {}));
+  }
+
+  /** ย่อรูปในเบราว์เซอร์ให้ด้านยาวไม่เกิน max px แล้วคืน data URL แบบ JPEG */
+  function shrinkImage(file, max, cb) {
+    var url = URL.createObjectURL(file), img = new Image();
+    img.onload = function () {
+      var k = Math.min(1, max / Math.max(img.width, img.height));
+      var c = document.createElement('canvas'); c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+      URL.revokeObjectURL(url); cb(c.toDataURL('image/jpeg', 0.82));
+    };
+    img.onerror = function () { URL.revokeObjectURL(url); cb(null); };
+    img.src = url;
+  }
+  var COURSE_GUIDE = {
+    '305': ['งานที่หัวหน้าหรือผู้นิเทศงานมอบหมายตามตำแหน่ง', 'ประชุมทีม งานประจำ งานสนับสนุนทีม', 'การอบรมภายในที่บริษัทจัด หรืองานอื่นนอกขอบเขตโครงงาน'],
+    '304': ['เก็บและวิเคราะห์ความต้องการ ออกแบบ เขียนโค้ด ทดสอบ', 'ประชุมกับที่ปรึกษาหรือที่ปรึกษาร่วมเรื่องโครงงาน', 'ศึกษาด้วยตนเองและเขียนรายงานโครงงาน หรืองานอื่นในขอบเขตข้อเสนอโครงงาน']
+  };
+  var ABSENCE_TH = { sick: 'ป่วย', personal: 'ลากิจ', closed: 'บริษัทหยุดหรือวันหยุด', other: 'อื่นๆ' };
+  function entryForm() {
+    var e = S.editEntry || {}, sem = S.lg.semester, pl = S.lg.placement || {};
+    var isAbs = e.kind === 'absence';
+    var maxDate = sem.today < sem.end ? sem.today : sem.end;
+    var date = h('input', { type: 'date', id: 'e-date', value: e.date || maxDate, min: sem.start, max: maxDate, required: true });
+    var kWork = h('input', { type: 'radio', name: 'e-kind', id: 'e-kw', value: 'work', checked: !isAbs });
+    var kAbs = h('input', { type: 'radio', name: 'e-kind', id: 'e-ka', value: 'absence', checked: isAbs });
+    var start = h('input', { type: 'time', id: 'e-start', value: e.start || '08:00' });
+    var end = h('input', { type: 'time', id: 'e-end', value: e.end || '12:00' });
+    var brk = h('input', { type: 'number', id: 'e-break', min: '0', max: '240', step: '5', value: String(e.break_min !== undefined && e.break_min !== '' ? e.break_min : 0) });
+    var c305 = h('input', { type: 'radio', name: 'e-course', id: 'e-c305', value: '305', checked: (e.course || '305') === '305' });
+    var c304 = h('input', { type: 'radio', name: 'e-course', id: 'e-c304', value: '304', checked: e.course === '304' });
+    var defMode = e.work_mode || (pl.work_mode === 'remote' ? 'remote' : 'onsite');
+    var mode = h('select', { id: 'e-mode' },
+      h('option', { value: 'onsite', selected: defMode === 'onsite' }, 'ณ สถานประกอบการ'),
+      h('option', { value: 'remote', selected: defMode === 'remote' }, 'ทางไกล'));
+    var act = h('textarea', { id: 'e-act', maxlength: '1000', placeholder: 'ตัวอย่าง: แก้บั๊กหน้าค้นหาสินค้าที่กรองราคาผิด เขียน unit test 6 กรณี ผ่านทั้งหมด ใช้ Jest และ GitLab' });
+    act.value = e.activity || '';
+    var count = h('span', { class: 'small muted' });
+    function cnt() { var n = act.value.trim().length; count.textContent = n + ' ตัวอักษร' + (n < 30 ? ' (อย่างน้อย 30)' : ''); count.style.color = n < 30 ? 'var(--work)' : ''; }
+    act.addEventListener('input', cnt); cnt();
+    var link = h('input', { type: 'text', id: 'e-link', maxlength: '1000', value: e.link_url || '', placeholder: 'https://gitlab.example.com/team/app/-/merge_requests/42' });
+    var prob = h('textarea', { id: 'e-prob', maxlength: '500', placeholder: 'ข้อมูลทดสอบไม่ครบ จึงขอชุดข้อมูลตัวอย่างจากทีม QA' });
+    prob.value = e.problems || '';
+    var learned = h('textarea', { id: 'e-learn', maxlength: '500', placeholder: 'การเขียน test แบบ mock API และการอ่าน log บนเซิร์ฟเวอร์ทดสอบ' });
+    learned.value = e.learned || '';
+    var photo = h('input', { type: 'file', id: 'e-photo', accept: 'image/*' });
+    var photoNow = null;
+    if (e.has_photo) {
+      var rm = h('button', { class: 'btn warn small', type: 'button', onclick: function () {
+        rm.disabled = true;
+        call('api_logPhotoRemove', S.session, e.entry_id).then(function (x) { rm.disabled = false; if (!x.ok) { if (!x.auth) toast(x.error, true); return; } e.has_photo = false; photoNow.innerHTML = ''; add(photoNow, h('span', { class: 'small muted' }, 'ลบรูปแล้ว')); });
+      } }, 'ลบรูป');
+      photoNow = h('div', { class: 'row' }, photoButton('api_logPhoto', [S.session, e.entry_id], 'ดูรูปที่แนบ'), rm);
+    }
+    var reasons = Object.keys(ABSENCE_TH).map(function (k) {
+      var r = h('input', { type: 'radio', name: 'e-reason', id: 'e-r-' + k, value: k, checked: (e.absence_reason || 'sick') === k });
+      return h('label', { class: 'choice', for: 'e-r-' + k }, r, h('span', {}, ABSENCE_TH[k]));
+    });
+    var note = h('input', { type: 'text', id: 'e-note', maxlength: '200', value: e.absence_note || '', placeholder: 'เช่น ไปสอบกลางภาควิชาเลือก หรือบริษัทหยุดวันปีใหม่' });
+    var preview = h('span', { class: 'small muted' });
+    function upd() { var x = hoursOf(start.value, end.value, brk.value); preview.textContent = kAbs.checked ? 'ไม่นับชั่วโมง' : (x ? 'รวม ' + x + ' ชั่วโมง' : 'ตรวจเวลาเริ่มและเวลาเลิก'); }
+    [start, end, brk].forEach(function (x) { x.addEventListener('input', upd); });
+    function guide(c) { return h('ul', { class: 'small muted', style: 'margin:2px 0 6px 28px;padding-left:1em' }, COURSE_GUIDE[c].map(function (t) { return h('li', {}, t); })); }
+    var hasExtra = !!(e.link_url || e.problems || e.learned || e.has_photo);
+    var workBox = h('div', {},
+      h('div', { class: 'row' }, h('div', { style: 'flex:1;min-width:90px' }, fld('e-start', 'เริ่ม', start)), h('div', { style: 'flex:1;min-width:90px' }, fld('e-end', 'เลิก', end)), h('div', { style: 'flex:1;min-width:90px' }, fld('e-break', 'พัก (นาที)', brk)), h('div', { style: 'flex:1.4;min-width:150px' }, fld('e-mode', 'รูปแบบการทำงานวันนี้', mode))),
+      h('fieldset', {}, h('legend', {}, 'นับให้รายวิชา'),
+        h('label', { class: 'choice', for: 'e-c305' }, c305, h('span', {}, h('b', {}, '305 งานตามตำแหน่ง'))), guide('305'),
+        h('label', { class: 'choice', for: 'e-c304' }, c304, h('span', {}, h('b', {}, '304 งานโครงงาน'))), guide('304'),
+        h('p', { class: 'small', style: 'margin:4px 0 0' }, 'ไม่แน่ใจ: งานเพื่อโครงงาน รวมการเตรียมข้อเสนอโครงงาน = 304 งานที่บริษัทมอบหมายตามตำแหน่ง = 305 งานประจำที่จะใช้เป็นโครงงานแท็ก 305 จนกว่าข้อเสนอโครงงานจะอนุมัติ ชั่วโมงเดียวกันนับได้วิชาเดียว')),
+      fld('e-act', 'รายละเอียดงาน: ทำอะไร ได้ผลอะไร ใช้เครื่องมืออะไร', act), count,
+      h('details', { class: 'more', open: hasExtra }, h('summary', {}, 'รายละเอียดเพิ่ม (ไม่บังคับ) ช่วยเป็นหลักฐานและใช้เขียนรายงานสะท้อน'),
+        fld('e-link', 'ลิงก์ผลงานหรือหลักฐาน (ไม่เกิน 3 ลิงก์ คั่นด้วยเว้นวรรค)', link, 'เช่น merge request, เอกสาร, ตั๋วงาน ลิงก์ภายในบริษัทใส่ได้ ผู้นิเทศงานเปิดดูได้'),
+        h('div', { class: 'grid2' }, fld('e-prob', 'ปัญหาและอุปสรรค วิธีแก้', prob), fld('e-learn', 'สิ่งที่ได้เรียนรู้', learned)),
+        fld('e-photo', 'รูปหลักฐาน 1 รูป (ระบบย่อรูปให้)', h('div', {}, photoNow, photo), 'เช่น หน้าจอผลงาน แผนภาพบนกระดาน ห้ามมีหน้าคน ข้อมูลลูกค้า หรือข้อมูลลับของบริษัท อาจารย์นิเทศ ผู้ประสานงาน และผู้นิเทศงานเปิดดูได้')));
+    var absBox = h('div', {},
+      h('fieldset', {}, h('legend', {}, 'เหตุที่ไม่ได้ปฏิบัติงาน'), reasons),
+      fld('e-note', 'รายละเอียด (จำเป็นเมื่อเลือก อื่นๆ)', note, 'กรณีป่วยไม่ต้องระบุอาการหรือโรค'),
+      h('p', { class: 'small muted' }, 'ไม่นับชั่วโมง และยังต้องทำชั่วโมงให้ครบ 300 และ 135 ระบบส่งให้ผู้นิเทศงานรับทราบพร้อมชุดรับรองรายสัปดาห์ ถ้าไม่ได้ไปทำงานครึ่งวัน ให้บันทึกงานส่วนที่ทำตามปกติด้วย'));
+    function sw() { workBox.style.display = kAbs.checked ? 'none' : ''; absBox.style.display = kAbs.checked ? '' : 'none'; upd(); }
+    [kWork, kAbs].forEach(function (x) { x.addEventListener('change', sw); });
+    var errs = h('div', {});
+    var save = h('button', { class: 'btn', type: 'submit' }, e.entry_id ? 'บันทึกการแก้ไข' : 'เพิ่มบันทึก');
+    var form = h('form', {
+      class: 'card', onsubmit: function (ev) {
+        ev.preventDefault(); save.disabled = true; errs.innerHTML = '';
+        var abs = kAbs.checked, reason = (form.querySelector('input[name="e-reason"]:checked') || {}).value || '';
+        call('api_logSave', S.session, {
+          entry_id: e.entry_id || '', kind: abs ? 'absence' : 'work', date: date.value, start: start.value, end: end.value, break_min: brk.value,
+          course: c304.checked ? '304' : '305', work_mode: mode.value, activity: act.value,
+          link_url: link.value, problems: prob.value, learned: learned.value, absence_reason: reason, absence_note: note.value
+        }).then(function (x) {
+          if (!x.ok) { save.disabled = false; if (!x.auth) add(errs, errorList(x)); return; }
+          var f = !abs && photo.files && photo.files[0];
+          function done(msg) { save.disabled = false; toast(msg); S.editEntry = null; showStudent('log'); }
+          if (!f) return done(abs ? 'บันทึกวันที่ไม่ได้ปฏิบัติงานแล้ว' : 'บันทึกแล้ว ' + x.hours + ' ชั่วโมง');
+          shrinkImage(f, 1600, function (dataUrl) {
+            if (!dataUrl) return done('บันทึกแล้ว แต่อ่านรูปไม่ได้ ลองแนบใหม่ในปุ่มแก้ไข');
+            call('api_logPhotoUpload', S.session, x.entry_id, dataUrl).then(function (y) {
+              done(y.ok ? 'บันทึกแล้ว ' + x.hours + ' ชั่วโมง พร้อมรูป' : 'บันทึกแล้ว แต่แนบรูปไม่สำเร็จ: ' + y.error);
+            });
+          });
+        });
+      }
+    },
+      h('h2', { style: 'margin-top:0' }, e.entry_id ? 'แก้ไขบันทึก' : 'บันทึกการปฏิบัติงาน'),
+      e.return_comment ? h('div', { class: 'note bad' }, 'ผู้นิเทศงานส่งกลับ: ' + e.return_comment) : null,
+      h('div', { class: 'grid2' }, fld('e-date', 'วันที่', date),
+        h('fieldset', { style: 'margin:0' }, h('legend', {}, 'ประเภท'),
+          h('div', { class: 'row' }, h('label', { class: 'choice', for: 'e-kw' }, kWork, h('span', {}, 'ทำงาน')),
+            h('label', { class: 'choice', for: 'e-ka' }, kAbs, h('span', {}, 'ไม่ได้ปฏิบัติงาน (ป่วย ลากิจ บริษัทหยุด อื่นๆ)'))))),
+      workBox, absBox,
+      errs,
+      h('div', { class: 'row', style: 'margin-top:10px' }, save,
+        e.entry_id ? h('button', { class: 'btn sec', type: 'button', onclick: function () { S.editEntry = null; renderStudent(); } }, 'ยกเลิก') : null,
+        preview));
+    sw();
+    return form;
+  }
+
+  /** รายละเอียดเพิ่มของรายการ: ลิงก์ ปัญหา สิ่งที่เรียนรู้ และรูป photoFn = [fn, argsPrefix] */
+  function entryExtras(e, photoFn) {
+    var links = String(e.link_url || '').split(/\s+/).filter(function (u) { return /^https?:\/\//i.test(u); });
+    var parts = [];
+    if (links.length) parts.push(h('div', { class: 'small' }, 'ลิงก์: ', links.map(function (u, i) { return [i ? ' · ' : '', h('a', { href: u, target: '_blank', rel: 'noopener noreferrer' }, 'หลักฐาน ' + (i + 1))]; })));
+    if (e.problems) parts.push(h('div', { class: 'small' }, h('b', {}, 'ปัญหา: '), e.problems));
+    if (e.learned) parts.push(h('div', { class: 'small' }, h('b', {}, 'ได้เรียนรู้: '), e.learned));
+    if (e.has_photo && photoFn) parts.push(photoButton(photoFn[0], photoFn[1].concat([e.entry_id]), 'ดูรูปหลักฐาน'));
+    return parts.length ? h('div', { class: 'extras' }, parts) : null;
+  }
+  function absenceText(e) { return 'ไม่ได้ปฏิบัติงาน: ' + (ABSENCE_TH[e.absence_reason] || e.absence_reason) + (e.absence_note ? ' · ' + e.absence_note : ''); }
+
+  function weekList(entries, sem, opts) {
+    if (!entries.length) return h('p', { class: 'muted' }, 'ยังไม่มีบันทึก');
+    var groups = {};
+    entries.forEach(function (e) { var w = weekIdx(e.date, sem.start); (groups[w] = groups[w] || []).push(e); });
+    return h('div', {}, Object.keys(groups).map(Number).sort(function (a, b) { return b - a; }).map(function (w) {
+      var es = groups[w].slice().sort(function (a, b) { return a.date === b.date ? String(a.start).localeCompare(String(b.start)) : (a.date < b.date ? -1 : 1); });
+      var t = { '305': 0, '304': 0 };
+      es.forEach(function (e) { if (t[e.course] !== undefined) t[e.course] = r2(t[e.course] + Number(e.hours || 0)); });
+      return h('section', {},
+        h('div', { class: 'week' }, h('b', {}, 'สัปดาห์ที่ ' + w), h('span', { class: 'muted small' }, weekRangeTh(w, sem.start)),
+          h('span', { class: 'chip k305' }, '305: ' + t['305'] + ' ชม.'), h('span', { class: 'chip k304' }, '304: ' + t['304'] + ' ชม.')),
+        h('div', { class: 'tblwrap' }, h('table', {},
+          h('thead', {}, h('tr', {}, h('th', {}, 'วันที่'), h('th', {}, 'เวลา'), h('th', { class: 'num' }, 'ชม.'), h('th', {}, 'วิชา'), h('th', {}, 'งาน'), h('th', {}, 'สถานะ'), opts.readonly ? null : h('th', {}, ''))),
+          h('tbody', {}, es.map(function (e) { return entryRow(e, opts); })))));
+    }));
+  }
+
+  function entryRow(e, opts) {
+    var editable = !opts.readonly && (e.status === 'draft' || e.status === 'returned');
+    var del = null;
+    if (editable) {
+      del = h('button', {
+        class: 'btn warn small', type: 'button', onclick: function () {
+          if (!del.dataset.armed) { del.dataset.armed = '1'; del.textContent = 'ยืนยันลบ'; setTimeout(function () { del.dataset.armed = ''; del.textContent = 'ลบ'; }, 4000); return; }
+          del.disabled = true;
+          call('api_logDelete', S.session, e.entry_id).then(function (x) {
+            if (!x.ok) { del.disabled = false; if (!x.auth) toast(x.error, true); return; }
+            toast('ลบแล้ว'); showStudent('log');
+          });
+        }
+      }, 'ลบ');
+    }
+    var abs = e.kind === 'absence';
+    return h('tr', abs ? { class: 'absent' } : {},
+      h('td', {}, dowTh(e.date) + ' ' + fmtTh(e.date)),
+      h('td', { class: 'mono' }, abs ? '—' : e.start + '–' + e.end + (Number(e.break_min) ? ' (พัก ' + e.break_min + ')' : '')),
+      h('td', { class: 'num' }, abs ? '0' : String(e.hours)),
+      h('td', {}, abs ? h('span', { class: 'chip' }, 'หยุด') : h('span', { class: 'chip k' + e.course }, e.course)),
+      h('td', { style: 'white-space:pre-wrap;min-width:220px' }, abs ? absenceText(e) : e.activity, !abs && e.work_mode === 'remote' ? h('div', { class: 'small muted' }, 'ทางไกล') : null,
+        entryExtras(e, opts.photo || (opts.readonly ? null : ['api_logPhoto', [S.session]]))),
+      h('td', {}, h('span', { class: 'chip s-' + e.status }, ESTATUS[e.status] || e.status),
+        e.status === 'returned' && e.return_comment ? h('div', { class: 'small', style: 'color:var(--bad)' }, e.return_comment) : null),
+      opts.readonly ? null : h('td', {}, editable ? h('div', { class: 'row' },
+        h('button', { class: 'btn sec small', type: 'button', onclick: function () { S.editEntry = e; renderStudent(); } }, 'แก้ไข'), del) : null));
+  }
+
+  /* ---------- อาจารย์ / ผู้ดูแล ---------- */
+  function showAdmin(tab) {
+    if (typeof tab === 'string') S.atab = tab;
+    S.atab = S.atab || 'overview';
+    mount(loading());
+    var calls = [call('api_adminOverview', S.session)];
+    if (S.atab === 'assign') calls.push(call('api_assignList', S.session));
+    if (S.atab === 'docs') calls.push(call('api_docsStatus', S.session));
+    if (S.atab === 'reset') calls.push(call('api_resetTargets', S.session));
+    Promise.all(calls).then(function (rs) {
+      if (!rs[0].ok) return fail(rs[0]);
+      if (rs[1] && !rs[1].ok) return fail(rs[1]);
+      S.ov = rs[0]; S.as = S.atab === 'assign' ? rs[1] : null; S.ds = S.atab === 'docs' ? rs[1] : null; S.rs = S.atab === 'reset' ? rs[1] : null; renderAdmin();
+    });
+  }
+  function staffTabs() {
+    var isAdmin = S.me.role === 'admin';
+    function b(id, label) {
+      return h('button', { class: 'tab', role: 'tab', 'aria-selected': String(S.atab === id), onclick: function () { showAdmin(id); } }, label);
+    }
+    return h('div', { class: 'tabs', role: 'tablist' }, b('overview', isAdmin ? 'ภาพรวมนักศึกษา' : 'นักศึกษาของฉัน'), b('assign', 'จับคู่อาจารย์นิเทศ'),
+      isAdmin ? b('docs', 'เอกสาร') : null, isAdmin ? b('reset', 'รีเซ็ตเพื่อทดสอบ') : null);
+  }
+  function staffHead() {
+    var isAdmin = S.me.role === 'admin';
+    return [todoCard(S.ov.todo, function (go) { showAdmin(go === 'assign' || ((go === 'docs' || go === 'reset') && isAdmin) ? go : 'overview'); }), guideCard(isAdmin ? 'admin' : 'teacher'), staffTabs()];
+  }
+  /** ปุ่มสองจังหวะ: กดครั้งแรกขึ้นปุ่มยืนยัน (ไม่ใช้ confirm() เพราะหน้าเว็บแอปอยู่ใน iframe) */
+  function twoStep(label, confirmLabel, run, cls) {
+    var box = h('span', { class: 'twostep' });
+    var b = h('button', { class: 'btn small ' + (cls || ''), type: 'button' }, label);
+    b.onclick = function () {
+      box.innerHTML = '';
+      var yes = h('button', { class: 'btn small', type: 'button' }, confirmLabel);
+      var no = h('button', { class: 'btn sec small', type: 'button', onclick: function () { box.innerHTML = ''; add(box, b); } }, 'ไม่ใช่');
+      yes.onclick = function () { yes.disabled = true; no.disabled = true; run(); };
+      add(box, [yes, no]);
+    };
+    add(box, b);
+    return box;
+  }
+  function assignPanel() {
+    var r = S.as, isAdmin = S.me.role === 'admin';
+    if (!r) return loading();
+    function done(x, msg) {
+      if (!x.ok) { if (!x.auth) toast(x.error, true); showAdmin('assign'); return; }
+      toast(msg); showAdmin('assign');
+    }
+    var q = h('input', { type: 'text', id: 'aq', placeholder: 'ค้นหาชื่อ รหัส หรือสถานประกอบการ', 'aria-label': 'ค้นหา' });
+    var fsel = h('select', { id: 'af', 'aria-label': 'กรอง' },
+      h('option', { value: '' }, 'ทั้งหมด (' + r.rows.length + ')'),
+      h('option', { value: 'free' }, 'ยังไม่มีอาจารย์นิเทศ (' + r.unassigned + ')'),
+      h('option', { value: 'mine' }, 'ของฉัน (' + r.myCount + ')'));
+    var tbody = h('tbody', {});
+    function actionCell(x) {
+      if (isAdmin) {
+        var sel = h('select', { 'aria-label': 'อาจารย์นิเทศของ ' + x.name },
+          h('option', { value: '' }, '— ยังไม่กำหนด —'),
+          r.staff.map(function (s) { return h('option', { value: s.email, selected: s.email === x.advisor_email ? 'selected' : null }, s.name + ' (' + s.count + ')'); }));
+        var save = h('button', { class: 'btn sec small', type: 'button' }, 'บันทึก');
+        save.onclick = function () {
+          if (sel.value === x.advisor_email) { toast('ไม่มีการเปลี่ยนแปลง'); return; }
+          save.disabled = true;
+          call('api_assignSet', S.session, x.email, sel.value).then(function (y) { done(y, sel.value ? 'กำหนดอาจารย์นิเทศแล้ว' : 'ยกเลิกอาจารย์นิเทศแล้ว'); });
+        };
+        return h('div', { class: 'row' }, sel, save);
+      }
+      if (x.mine) return twoStep('ยกเลิก', 'ยืนยันยกเลิก', function () { call('api_assignRelease', S.session, x.email).then(function (y) { done(y, 'ยกเลิกแล้ว อาจารย์ท่านอื่นเลือกนักศึกษาคนนี้ได้'); }); }, 'sec');
+      if (x.advisor_email) return h('span', { class: 'small muted' }, 'ยืนยันแล้ว');
+      if (!r.selfOpen) return h('span', { class: 'small muted' }, 'ปิดการเลือกเอง');
+      if (r.max && r.myCount >= r.max) return h('span', { class: 'small muted' }, 'ท่านเลือกครบ ' + r.max + ' คน');
+      return twoStep('รับดูแล', 'ยืนยันรับดูแล', function () { call('api_assignClaim', S.session, x.email).then(function (y) { done(y, 'ท่านเป็นอาจารย์นิเทศของ ' + x.name + ' แล้ว'); }); });
+    }
+    function draw() {
+      tbody.innerHTML = '';
+      var term = q.value.trim().toLowerCase();
+      r.rows.filter(function (x) {
+        if (fsel.value === 'free' && x.advisor_email) return false;
+        if (fsel.value === 'mine' && !x.mine) return false;
+        return !term || (x.name + ' ' + x.student_id + ' ' + x.company_name + ' ' + x.province).toLowerCase().indexOf(term) >= 0;
+      }).forEach(function (x) {
+        var issued = x.status === 'agreement_sent' || x.status === 'signed';
+        add(tbody, h('tr', { class: x.mine ? 'mine' : null },
+          h('td', {}, x.name || x.email, h('div', { class: 'small muted' }, x.student_id + (x.section ? ' · ' + x.section : ''))),
+          h('td', {}, x.company_name || h('span', { class: 'muted' }, 'ยังไม่กรอก'), x.province ? h('div', { class: 'small muted' }, x.province) : null),
+          h('td', {}, h('span', { class: 'chip s-' + x.status }, STATUS[x.status])),
+          h('td', {}, x.advisor_email ? [h('b', {}, x.advisor_name), x.set_at ? h('div', { class: 'small muted' }, 'ยืนยันโดย ' + x.set_by_name + ' ' + fmtTs(x.set_at)) : null]
+            : h('span', { class: 'muted' }, 'ยังไม่มี'),
+            x.advisor_email && issued ? h('div', { class: 'small muted' }, 'ข้อตกลงออกแล้ว เปลี่ยนอาจารย์ได้ แต่ชื่อใน PDF ไม่เปลี่ยน') : null),
+          h('td', {}, actionCell(x))));
+      });
+      if (!tbody.childNodes.length) add(tbody, h('tr', {}, h('td', { colspan: '5', class: 'muted' }, 'ไม่พบรายการ')));
+    }
+    q.addEventListener('input', draw); fsel.addEventListener('change', draw); draw();
+    var load = r.staff.filter(function (s) { return s.count > 0 || s.role === 'teacher'; });
+    return h('div', {},
+      h('div', { class: 'note' + (r.selfOpen ? '' : ' bad') },
+        r.selfOpen ? (isAdmin ? 'อาจารย์ที่มีชื่อในชีต Users เลือกนักศึกษาที่จะดูแลเองได้ ท่านกำหนดหรือเปลี่ยนให้ใครก็ได้ด้วยรายการเลือกในคอลัมน์ขวา'
+          : 'กด "รับดูแล" แล้วกดยืนยัน นักศึกษาคนนั้นจะเป็นของท่านทันที และอาจารย์ท่านอื่นเลือกไม่ได้ ท่านยกเลิกได้เอง หรือให้ผู้ประสานงานเปลี่ยนให้'
+            + (r.max ? ' เลือกได้สูงสุด ' + r.max + ' คน (ตอนนี้ ' + r.myCount + ' คน)' : ''))
+          : 'ผู้ประสานงานปิดการเลือกเองแล้ว ถ้าต้องการเปลี่ยนอาจารย์นิเทศ กรุณาติดต่อผู้ประสานงาน SE-WIL'),
+      load.length ? h('p', { class: 'small muted' }, 'จำนวนที่ดูแล: ', load.map(function (s, i) { return [i ? ' · ' : '', s.name + ' ' + s.count]; }), r.unassigned ? ' · ยังไม่มีอาจารย์ ' + r.unassigned + ' คน' : '') : null,
+      h('div', { class: 'row' }, h('div', { style: 'flex:2;min-width:220px' }, q), h('div', { style: 'flex:1;min-width:180px' }, fsel)),
+      h('div', { class: 'tblwrap', style: 'margin-top:10px' }, h('table', {},
+        h('thead', {}, h('tr', {}, ['นักศึกษา', 'สถานประกอบการ', 'สถานะที่ฝึก', 'อาจารย์นิเทศ', isAdmin ? 'กำหนด' : ''].map(function (t) { return h('th', {}, t); }))),
+        tbody)),
+      h('p', { class: 'small muted' }, 'รายการนี้แสดงเฉพาะชื่อ รหัส sec และสถานประกอบการ เพื่อใช้จับคู่ ข้อมูลอื่นของนักศึกษาเห็นได้เฉพาะอาจารย์นิเทศของคนนั้นและผู้ดูแล'));
+  }
+  function hrs(hh, c, t) { var cert = hh.certified[c], pend = hh.pending[c]; return cert + (pend ? ' (+' + pend + ')' : '') + ' / ' + t; }
+  /** แท็บเอกสารคำสั่ง (admin): บันทึกขออนุมัติแต่งตั้งอาจารย์นิเทศ (คณะออกคำสั่งเอง) */
+  function docsPanel() {
+    var d = S.ds, cf = d.config;
+    function warn(title, names) {
+      if (!names.length) return null;
+      return h('li', { style: 'color:var(--bad)' }, title + ' ' + names.length + ' คน: ' + names.slice(0, 8).join(', ') + (names.length > 8 ? ' และอีก ' + (names.length - 8) + ' คน' : ''));
+    }
+    var warns = [warn('ยังไม่มีอาจารย์นิเทศ', d.missingAdvisor), warn('ยังไม่ส่งข้อมูลที่ฝึก', d.missingPlacement), warn('ข้อมูลที่ฝึกยังไม่อนุมัติ', d.notApproved)].filter(Boolean);
+    function cfgRow(label, v) { return h('tr', {}, h('th', { style: 'width:34%' }, label), h('td', {}, v ? v : h('span', { class: 'muted' }, '(ว่าง ระบบเว้นเส้นประไว้)'))); }
+    function docRow(title, desc, kind) {
+      return h('div', { class: 'card', style: 'margin:10px 0 0' }, h('h3', { style: 'margin-top:0' }, title), h('p', { class: 'small muted', style: 'margin-top:0' }, desc),
+        h('div', { class: 'row' }, fileButton('สร้างไฟล์ Word (.docx)', 'api_docAppointment', [S.session, kind, 'docx']), fileButton('สร้างไฟล์ PDF', 'api_docAppointment', [S.session, kind, 'pdf'])));
+    }
+    var L = d.letters || { filled: 0, noreply: 0, blank: 0 };
+    function lb(label, which, n) { return n ? linkButton(label + ' (' + n + ')', 'api_adminLettersAll', [S.session, which], 'เปิดแล้วกดพิมพ์') : h('span', { class: 'small muted' }, label + ' (0)'); }
+    var letters = h('div', { class: 'card' }, h('h2', { style: 'margin-top:0' }, '1. หนังสือแนะนำและแบบตอบรับ (SE-WIL00) พิมพ์รวม'),
+      h('p', { class: 'small', style: 'margin-top:0' }, 'พิมพ์ครั้งเดียวให้หัวหน้าหลักสูตรลงนามหน้า 1 ทุกฉบับ แล้วให้นักศึกษามารับไปให้สถานประกอบการลงนามหน้า 2 ชุดละ 2 หน้า เรียงตาม sec และรหัส มีชื่อและรหัสนักศึกษาที่ท้ายกระดาษ นักศึกษาพิมพ์ฉบับของตนเองได้ด้วย'),
+      h('div', { class: 'row' }, lb('ทุกคนที่ส่งข้อมูลแล้ว (มีข้อมูล)', 'filled', L.filled), lb('เฉพาะที่ยังไม่แนบแบบตอบรับ', 'noreply', L.noreply), lb('ยังไม่ส่งข้อมูล (ฉบับเปล่ามีชื่อ)', 'blank', L.blank)),
+      h('p', { class: 'small muted' }, 'ข้อมูลส่งไปกับลิงก์และอยู่ในเบราว์เซอร์ของท่านเท่านั้น ไม่ถูกเก็บในพอร์ทัล ติดตามว่าใครแนบแบบตอบรับแล้วได้ที่หน้าภาพรวม (ตัวกรอง "ยังไม่แนบแบบตอบรับ")'));
+    return h('div', {}, letters,
+      h('h2', {}, '2. บันทึกขออนุมัติแต่งตั้งอาจารย์นิเทศ'),
+      h('p', { class: 'small muted' }, 'ลำดับงาน: นักศึกษาได้แบบตอบรับ → อาจารย์จับคู่เป็นอาจารย์นิเทศและที่ปรึกษาโครงงาน → ออกบันทึกนี้เสนอคณะ คณะออกคำสั่งแต่งตั้ง ใช้ทำงบเบิกและหนังสือขอเข้านิเทศ'),
+      h('div', { class: 'card' }, h('h2', { style: 'margin-top:0' }, 'ความพร้อมของข้อมูล'),
+        h('p', {}, 'นักศึกษา ' + d.students + ' คน สถานประกอบการ ' + d.companies + ' แห่ง อาจารย์นิเทศ ' + d.advisors.length + ' คน'),
+        d.advisors.length ? h('ul', { class: 'clist' }, d.advisors.map(function (a) { return h('li', {}, a.name + ' · ' + a.count + ' คน'); })) : null,
+        warns.length ? [h('p', { class: 'small', style: 'margin-bottom:4px' }, 'ออกเอกสารได้ แต่รายการเหล่านี้จะแสดงเป็น "ยังไม่กำหนด" ในบัญชีรายชื่อ:'), h('ul', {}, warns)]
+          : h('p', { class: 'small', style: 'color:var(--ok)' }, 'ข้อมูลครบ นักศึกษาทุกคนมีที่ฝึกที่อนุมัติแล้วและมีอาจารย์นิเทศ')),
+      h('div', { class: 'card' }, h('h2', { style: 'margin-top:0' }, 'ข้อความในเอกสาร (แก้ได้ในชีต Config)'),
+        h('div', { class: 'tblwrap' }, h('table', {}, h('tbody', {},
+          cfgRow('ส่วนราชการ (DOC_OFFICE)', cf.office), cfgRow('เรียน (DOC_TO)', cf.to), cfgRow('ผ่าน (DOC_VIA)', cf.via),
+          cfgRow('หัวหน้าสาขา (DEPT_HEAD_NAME)', cf.deptHead), cfgRow('ผู้เสนอ (PROGRAM_HEAD_NAME)', cf.head),
+          cfgRow('ช่วงนิเทศครั้งที่ 1 (VISIT_FROM, VISIT_TO)', fmtTh(cf.visitFrom) + ' ถึง ' + fmtTh(cf.visitTo)), cfgRow('นิเทศครั้งที่ 2 ภายใน (VISIT2_BY)', fmtTh(cf.visit2By)))))),
+      docRow('สร้างบันทึกข้อความขออนุมัติแต่งตั้งอาจารย์นิเทศและอาจารย์ที่ปรึกษาโครงงาน',
+        'หัวหน้าหลักสูตรเสนอผ่านหัวหน้าสาขาถึงคณบดี พร้อมบัญชีรายชื่อนักศึกษา สถานประกอบการ อาจารย์นิเทศ และสรุปรายอาจารย์ ขออนุมัติการเดินทางนิเทศและเบิกค่าใช้จ่าย เว้นเลขที่และวันที่ไว้ให้ธุรการลง เมื่ออนุมัติแล้ว คณะออกคำสั่งแต่งตั้ง และงานพัฒนาทักษะวิชาชีพฯ ออกหนังสือขอเข้านิเทศ', 'memo'),
+      h('p', { class: 'small muted' }, 'ไฟล์ Word ใช้ฟอนต์ TH Sarabun New ตามระเบียบงานสารบรรณ แก้ต่อได้ ไฟล์ PDF สร้างผ่าน Google Docs จึงใช้ฟอนต์ Sarabun ซึ่งหน้าตาใกล้เคียงกัน ระบบเก็บสำเนาทุกไฟล์ในโฟลเดอร์ "เอกสารคำสั่ง" ของภาคใน Google Drive'));
+  }
+  /** แท็บรีเซ็ตเพื่อทดสอบ (admin): ทำให้นักศึกษา ผู้นิเทศงาน หรืออาจารย์นิเทศกลับไปเหมือนเพิ่งเข้าใหม่ */
+  function resetPanel() {
+    var d = S.rs || {};
+    if (!d.enabled) return h('div', { class: 'note' }, 'เครื่องมือนี้ปิดอยู่ เปิดได้ที่ชีต Config ตั้ง RESET_ENABLED = TRUE');
+    function summary(kind, x) {
+      var c = x.counts;
+      if (kind === 'student') return [h('li', {}, 'ข้อมูลที่ฝึก ' + c.placement + ' รายการ' + (c.placement ? ' (สถานะ ' + (STATUS[c.status] || c.status) + ') รวมข้อตกลง SE-WIL01 และแบบตอบรับที่แนบ' : '')),
+        h('li', {}, 'logbook ' + c.entries + ' รายการ · ชุดรับรอง ' + c.batches + ' ชุด · ไฟล์ใน Drive ' + c.files + ' ไฟล์ (ย้ายไปถังขยะ)'),
+        h('li', {}, 'การเข้าระบบ ' + c.sessions + ' รายการ (ต้องขอลิงก์เข้าระบบใหม่)'),
+        c.advisor ? h('li', {}, 'อาจารย์นิเทศปัจจุบัน ' + c.advisor + ' (ล้างเฉพาะเมื่อติ๊กด้านล่าง)') : null];
+      if (kind === 'supervisor') return [h('li', {}, 'ลิงก์เฉพาะคน ' + c.link + ' ลิงก์ (ลิงก์เดิมใช้ไม่ได้ทันที)'),
+        h('li', {}, 'นักศึกษาที่ดูแล ' + c.students + ' คน · ข้อตกลงที่ยืนยันแล้วกลับเป็นรอยืนยัน ' + c.signed + ' ฉบับ'),
+        h('li', {}, 'ชุดรับรองที่ถูกลบ ' + c.batches + ' ชุด · logbook ที่กลับเป็นร่าง ' + c.entries + ' รายการ'),
+        h('li', { class: 'muted' }, 'หลังรีเซ็ต เปิดหน้านักศึกษาแล้วกด "ส่งอีเมลข้อตกลงซ้ำ" ผู้นิเทศงานจะได้ลิงก์ใหม่')];
+      return [h('li', {}, 'นักศึกษาที่ท่านดูแล ' + c.advisees + ' คน กลับเป็นยังไม่มีอาจารย์นิเทศ'), h('li', {}, 'การเข้าระบบ ' + c.sessions + ' รายการ')];
+    }
+    function card(kind, title, desc, items, label, extra) {
+      var sel = h('select', { 'aria-label': 'เลือก' + title }, h('option', { value: '' }, 'เลือก…'), items.map(function (x) { return h('option', { value: x.email }, label(x)); }));
+      var out = h('div', {});
+      var pv = h('button', { class: 'btn sec small', type: 'button' }, 'ดูสิ่งที่จะถูกล้าง');
+      pv.onclick = function () {
+        out.innerHTML = '';
+        if (!sel.value) { toast('เลือกรายชื่อก่อน', true); return; }
+        pv.disabled = true;
+        call('api_resetPreview', S.session, kind, sel.value).then(function (x) {
+          pv.disabled = false;
+          if (!x.ok) { if (!x.auth) toast(x.error, true); return; }
+          var conf = h('input', { type: 'text', placeholder: x.email, 'aria-label': 'พิมพ์อีเมลเพื่อยืนยัน', autocomplete: 'off' });
+          var go = h('button', { class: 'btn warn small', type: 'button' }, 'รีเซ็ต ' + x.name);
+          go.onclick = function () {
+            go.disabled = true;
+            call('api_resetRole', S.session, kind, x.email, conf.value, { clearAdvisor: !!(extra && extra.input.checked) }).then(function (y) {
+              go.disabled = false;
+              if (!y.ok) { if (!y.auth) toast(y.error, true); return; }
+              toast('รีเซ็ตแล้ว: ' + x.name); showAdmin('reset');
+            });
+          };
+          var warns = (x.warnings || []).length ? [h('b', {}, 'สิ่งที่ออกไปนอกระบบแล้ว รีเซ็ตตามไปแก้ไม่ได้ ต้องแจ้งหรือแก้เอง'),
+            h('ul', { style: 'margin:6px 0' }, x.warnings.map(function (t) { return h('li', {}, t); }))] : null;
+          add(out, h('div', { class: 'note w', style: 'margin-top:10px' }, h('b', {}, x.name + ' (' + x.email + ')'), h('ul', { style: 'margin:6px 0' }, summary(kind, x)),
+            warns, fld('', 'พิมพ์อีเมลของผู้ที่จะรีเซ็ตเพื่อยืนยัน', conf), h('div', { class: 'row' }, go)));
+        });
+      };
+      return h('div', { class: 'card' }, h('h2', { style: 'margin-top:0' }, title), h('p', { class: 'small muted', style: 'margin-top:0' }, desc),
+        h('div', { class: 'row' }, sel, pv), extra ? extra.node : null, out);
+    }
+    var cb = h('input', { type: 'checkbox', id: 'rs-adv' });
+    return h('div', {},
+      h('div', { class: 'note bad' }, h('b', {}, 'ใช้เฉพาะช่วงทดลอง '), 'ทุกแถวที่ถูกลบหรือแก้เก็บสำเนาไว้ในชีต Trash ไฟล์ย้ายไปถังขยะของ Google Drive (กู้คืนได้ 30 วัน) และบันทึกใน Audit ปิดเครื่องมือนี้เมื่อเริ่มใช้จริง: ชีต Config ตั้ง RESET_ENABLED = FALSE'),
+      card('student', 'นักศึกษา', 'กลับไปเหมือนเพิ่งเข้าระบบครั้งแรก: ยังไม่ได้กรอกข้อมูลที่ฝึก ไม่มี logbook ไม่มีไฟล์แนบ ชื่อ รหัส และ sec ในชีต Users คงเดิม',
+        d.students, function (x) { return x.name + ' · ' + x.student_id + ' · ' + (STATUS[x.status] || x.status) + (x.active ? '' : ' · ปิดใช้งาน'); },
+        { input: cb, node: h('label', { class: 'choice', for: 'rs-adv' }, cb, h('span', {}, 'ล้างอาจารย์นิเทศของนักศึกษาคนนี้ด้วย')) }),
+      card('supervisor', 'ผู้นิเทศงาน (สถานประกอบการ)', 'กลับไปเหมือนยังไม่เคยเปิดลิงก์: ยังไม่ได้ยืนยันข้อตกลง ยังไม่ได้รับรอง logbook ข้อมูลที่ฝึกของนักศึกษาคงเดิม',
+        d.supervisors, function (x) { return (x.name || x.email) + ' · ' + x.email + ' · นักศึกษา ' + x.students + ' คน'; }),
+      card('teacher', 'อาจารย์นิเทศ', 'กลับไปเหมือนยังไม่ได้เลือกนักศึกษา: ล้างการจับคู่ทั้งหมดของท่าน บทบาทในชีต Users คงเดิม',
+        d.teachers, function (x) { return x.name + ' · ' + x.email + ' · ดูแล ' + x.advisees + ' คน'; }));
+  }
+  function renderAdmin() {
+    if (S.atab === 'assign') {
+      mount([h('h1', {}, 'จับคู่อาจารย์นิเทศ ภาค ' + S.ov.semester.label), staffHead(), assignPanel()]);
+      return;
+    }
+    if (S.atab === 'docs') {
+      mount([h('h1', {}, 'เอกสาร ภาค ' + S.ov.semester.label), staffHead(), docsPanel()]);
+      return;
+    }
+    if (S.atab === 'reset') {
+      mount([h('h1', {}, 'รีเซ็ตเพื่อทดสอบ'), staffHead(), resetPanel()]);
+      return;
+    }
+    var r = S.ov, isAdmin = S.me.role === 'admin', c = r.counts;
+    var q = h('input', { type: 'text', id: 'q', placeholder: 'ค้นหาชื่อ รหัส หรือสถานประกอบการ', 'aria-label': 'ค้นหา' });
+    var myCount = r.rows.filter(function (x) { return x.advisor_email === S.me.email; }).length;
+    var fs = h('select', { id: 'fs', 'aria-label': 'กรองตามสถานะ' }, h('option', { value: '' }, 'ทุกสถานะ'),
+      isAdmin ? h('option', { value: '__mine' }, 'นักศึกษาที่ฉันเป็นอาจารย์นิเทศ (' + myCount + ')') : null,
+      h('option', { value: '__noreply' }, 'ส่งข้อมูลแล้วแต่ยังไม่แนบแบบตอบรับ (' + r.rows.filter(noReply).length + ')'),
+      Object.keys(STATUS).map(function (k) { return h('option', { value: k }, STATUS[k]); }));
+    var tbody = h('tbody', {});
+    function noReply(x) { return LETTER_FILLED.indexOf(x.status) >= 0 && !x.has_reply; }
+    function draw() {
+      tbody.innerHTML = '';
+      var term = q.value.trim().toLowerCase();
+      r.rows.filter(function (x) {
+        var okFilter = !fs.value || (fs.value === '__mine' ? x.advisor_email === S.me.email : (fs.value === '__noreply' ? noReply(x) : x.status === fs.value));
+        return okFilter && (!term || (x.name + ' ' + x.student_id + ' ' + x.company_name + ' ' + x.email).toLowerCase().indexOf(term) >= 0);
+      }).forEach(function (x) {
+        add(tbody, h('tr', { class: 'click', tabindex: '0', onclick: function () { showDetail(x.email); }, onkeydown: function (ev) { if (ev.key === 'Enter') showDetail(x.email); } },
+          h('td', {}, x.name, h('div', { class: 'small muted' }, x.student_id + (x.section ? ' · ' + x.section : ''))),
+          h('td', {}, h('span', { class: 'chip s-' + x.status }, STATUS[x.status])),
+          h('td', {}, x.company_name || '—', x.supervisor_name ? h('div', { class: 'small muted' }, x.supervisor_name) : null,
+            LETTER_FILLED.indexOf(x.status) >= 0 ? h('div', { class: 'small', style: x.has_reply ? 'color:var(--ok)' : 'color:var(--work)' }, x.has_reply ? 'แบบตอบรับ: แนบแล้ว' : 'แบบตอบรับ: ยังไม่แนบ') : null),
+          h('td', { class: 'num' }, hrs(x.hours, '305', r.semester.target305)),
+          h('td', { class: 'num' }, hrs(x.hours, '304', r.semester.target304)),
+          h('td', {}, x.last_entry ? fmtTh(x.last_entry) : '—'),
+          h('td', {}, x.flags.map(function (f) { return h('div', { class: 'small', style: 'color:var(--bad)' }, f); }))));
+      });
+      if (!tbody.childNodes.length) add(tbody, h('tr', {}, h('td', { colspan: '7', class: 'muted' }, 'ไม่พบรายการ')));
+    }
+    q.addEventListener('input', draw); fs.addEventListener('change', draw); draw();
+    var digestBtn = isAdmin ? h('button', {
+      class: 'btn sec small', style: 'margin-left:auto', onclick: function () {
+        digestBtn.disabled = true;
+        call('api_adminRunDigest', S.session).then(function (x) {
+          digestBtn.disabled = false;
+          if (!x.ok) { if (!x.auth) toast(x.error, true); return; }
+          toast('สร้างชุดรับรอง ' + x.result.batches + ' ชุด ส่งอีเมล ' + x.result.emails + ' ฉบับ'); showAdmin();
+        });
+      }
+    }, 'ส่งสรุปให้ผู้นิเทศงานตอนนี้') : null;
+    mount([
+      h('div', { class: 'row' }, h('h1', {}, (isAdmin ? 'ภาพรวม' : 'นักศึกษาของฉัน') + ' ENGSE304/305 ภาค ' + r.semester.label),
+        h('span', { class: 'muted small' }, 'วันนี้ ' + fmtTh(r.semester.today) + (r.semester.week > 0 ? ' · สัปดาห์ที่ ' + r.semester.week : ' · ก่อนเปิดภาค')), digestBtn),
+      staffHead(),
+      r.scope === 'advisees' ? h('div', { class: 'note' }, r.rows.length ? 'แสดงเฉพาะนักศึกษาที่ท่านเป็นอาจารย์นิเทศ ตามหลักการเข้าถึงข้อมูลเท่าที่จำเป็น'
+        : 'ท่านยังไม่มีนักศึกษาที่ดูแล เลือกได้ในแท็บ "จับคู่อาจารย์นิเทศ"') : null,
+      h('div', { class: 'tiles' }, tile(r.rows.length, 'นักศึกษาทั้งหมด'), tile((c.none || 0) + (c.draft || 0), 'ยังไม่ส่งข้อมูลที่ฝึก'),
+        tile(c.submitted || 0, 'รอหลักสูตรตรวจ'), tile(c.returned || 0, 'ส่งกลับแก้ไข'), tile(c.agreement_sent || 0, 'รอสถานประกอบการยืนยัน'), tile(c.signed || 0, 'ยืนยันแล้ว')),
+      h('p', { class: 'small muted' }, 'ชั่วโมงที่ควรมี ณ สิ้นสัปดาห์ที่แล้ว: 305 = ' + r.expected['305'] + ' ชม. · 304 = ' + r.expected['304'] + ' ชม. · ในตาราง: รับรองแล้ว (+รอรับรอง) / เป้าหมาย'),
+      h('div', { class: 'row' }, h('div', { style: 'flex:2;min-width:220px' }, q), h('div', { style: 'flex:1;min-width:160px' }, fs)),
+      h('div', { class: 'tblwrap', style: 'margin-top:10px' }, h('table', {},
+        h('thead', {}, h('tr', {}, ['นักศึกษา', 'สถานะที่ฝึก', 'สถานประกอบการ', '305', '304', 'บันทึกล่าสุด', 'ข้อสังเกต'].map(function (t, i) { return h('th', { class: (i === 3 || i === 4) ? 'num' : null }, t); }))),
+        tbody))
+    ]);
+  }
+
+  /** สรุปหลักฐานใน logbook สำหรับอาจารย์ ใช้ประกอบการให้คะแนน SE-WIL04 */
+  function logEvidence(entries) {
+    var work = entries.filter(function (e) { return e.kind !== 'absence'; });
+    if (!entries.length) return null;
+    var n = function (f) { return work.filter(f).length; };
+    var abs = entries.filter(function (e) { return e.kind === 'absence'; });
+    var why = {};
+    abs.forEach(function (e) { var k = ABSENCE_TH[e.absence_reason] || e.absence_reason; why[k] = (why[k] || 0) + 1; });
+    return h('div', { class: 'card' }, h('p', { style: 'margin:0' },
+      'รายการทำงาน ' + work.length + ' · มีลิงก์ ' + n(function (e) { return !!e.link_url; }) + ' · มีรูป ' + n(function (e) { return e.has_photo; }) +
+      ' · บันทึกปัญหา ' + n(function (e) { return !!e.problems; }) + ' · บันทึกสิ่งที่ได้เรียนรู้ ' + n(function (e) { return !!e.learned; }) +
+      ' · ไม่ได้ปฏิบัติงาน ' + abs.length + ' วัน' + (abs.length ? ' (' + Object.keys(why).map(function (k) { return k + ' ' + why[k]; }).join(', ') + ')' : '')),
+      h('p', { class: 'small muted', style: 'margin:4px 0 0' }, 'ใช้ประกอบเกณฑ์ logbook 15 คะแนน: สม่ำเสมอ 5 · ชัดเจนและมีหลักฐาน 5 · แท็กถูกต้อง 2 · สะท้อนปัญหาและการเรียนรู้ 3'));
+  }
+  function showDetail(email) {
+    mount(loading());
+    call('api_adminStudent', S.session, email).then(function (r) { if (!r.ok) return fail(r); renderDetail(r); });
+  }
+  function renderDetail(r) {
+    var p = r.placement, st = p ? p.status : 'none', isAdmin = S.me.role === 'admin', sem = r.semester;
+    function act(btn, fn, arg, okMsg) {
+      btn.disabled = true;
+      call(fn, S.session, p.placement_id, arg).then(function (x) {
+        btn.disabled = false;
+        if (!x.ok) { if (!x.auth) toast(x.error, true); return; }
+        toast(okMsg); showDetail(r.student.email);
+      });
+    }
+    var actions = null;
+    if (isAdmin && p) {
+      var cm = h('textarea', { id: 'a-comment', placeholder: 'ความเห็นถึงนักศึกษา (จำเป็นเมื่อส่งกลับ) หรือชื่อผู้ลงนามเมื่อบันทึกการลงนามในเอกสาร' });
+      var btns = h('div', { class: 'row' });
+      if (st === 'submitted') {
+        var bA = h('button', { class: 'btn', onclick: function () { act(bA, 'api_adminApprove', cm.value, 'อนุมัติและส่งข้อตกลงแล้ว'); } }, 'อนุมัติและส่งข้อตกลง SE-WIL01');
+        add(btns, bA);
+      }
+      if (st === 'submitted' || st === 'agreement_sent') {
+        var bR = h('button', { class: 'btn warn', onclick: function () { act(bR, 'api_adminReturn', cm.value, 'ส่งกลับให้นักศึกษาแก้ไขแล้ว'); } }, 'ส่งกลับให้แก้ไข');
+        add(btns, bR);
+      }
+      if (st === 'agreement_sent') {
+        var bS = h('button', { class: 'btn sec', onclick: function () { act(bS, 'api_adminMarkSigned', cm.value, 'บันทึกการลงนามแล้ว'); } }, 'บันทึกว่าลงนามในเอกสารแล้ว');
+        var bE = h('button', { class: 'btn sec', onclick: function () { act(bE, 'api_adminResendAgreement', null, 'ส่งอีเมลข้อตกลงซ้ำแล้ว'); } }, 'ส่งอีเมลข้อตกลงซ้ำ');
+        add(btns, [bS, bE]);
+      }
+      if (btns.childNodes.length) {
+        actions = h('div', { class: 'card w' }, h('h2', { style: 'margin-top:0' }, 'การดำเนินการ'), fld('a-comment', 'ความเห็นหรือเหตุผล', cm), btns,
+          st === 'submitted' ? h('p', { class: 'small muted' }, 'เมื่ออนุมัติ ระบบจะสร้างข้อตกลง PDF แล้วส่งอีเมลถึงผู้นิเทศงานและนักศึกษา อาจใช้เวลา 10–30 วินาที') : null);
+      }
+    }
+    var stu = r.student;
+    var batches = r.batches.slice().sort(function (a, b) { return String(b.created_at).localeCompare(String(a.created_at)); });
+    mount([
+      h('button', { class: 'btn sec small', onclick: function () { showAdmin('overview'); } }, S.me.role === 'admin' ? '← กลับไปภาพรวม' : '← กลับไปนักศึกษาของฉัน'),
+      h('h1', { style: 'margin-top:12px' }, stu.name),
+      h('p', { class: 'muted small' }, 'รหัส ' + stu.student_id + ' · ' + stu.email + (stu.advisor_email ? ' · อาจารย์นิเทศ ' + stu.advisor_email : '')),
+      statusBanner(st, p), actions,
+      h('div', { class: 'row', style: 'margin:8px 0' }, linkButton('พิมพ์หนังสือแนะนำและแบบตอบรับ' + (p && LETTER_FILLED.indexOf(st) >= 0 ? ' (มีข้อมูล)' : ' (ฉบับเปล่ามีชื่อ)'), 'api_adminLetterLink', [S.session, r.student.email], 'เปิดแล้วกดพิมพ์'),
+        p ? h('span', { class: 'small ' + (p.has_reply ? '' : 'muted') }, p.has_reply ? 'แนบแบบตอบรับที่ลงนามแล้ว' : 'ยังไม่แนบแบบตอบรับที่ลงนาม') : null),
+      p && p.agreement_pdf_url ? h('p', {}, h('a', { href: p.agreement_pdf_url, target: '_blank', rel: 'noopener' }, 'เปิดไฟล์ข้อตกลง PDF ' + p.agreement_no), h('span', { class: 'small muted' }, ' (เปิดได้ด้วยบัญชี Google ที่ดูแลระบบ)')) : null,
+      contactsCard('ผู้ติดต่อ', [['นักศึกษา', { name: stu.name, email: stu.email, phone: (p && p.student_phone) || stu.phone }], ['อาจารย์นิเทศ', r.advisor],
+        ['ผู้นิเทศงาน', p ? { name: p.supervisor_name, email: p.supervisor_email, phone: p.supervisor_phone } : null],
+        ['ที่ปรึกษาร่วม', p && p.coadvisor_same === 'no' ? { name: p.coadvisor_name, email: p.coadvisor_email, phone: p.coadvisor_phone } : null],
+        ['สถานประกอบการ', p ? { name: p.company_name, phone: p.company_phone } : null]]),
+      h('h2', {}, 'ข้อมูลที่ฝึก'), placementSummary(p, r.options, { file: 'api_adminFile', args: [S.session], byId: true }),
+      h('h2', {}, 'ชั่วโมงสะสม'),
+      h('div', { class: 'card' }, meter('305', 'ENGSE305', r.summary, sem.target305, 0), meter('304', 'ENGSE304', r.summary, sem.target304, 0)),
+      batches.length ? [h('h2', {}, 'ชุดรับรอง'), h('div', { class: 'tblwrap' }, h('table', {},
+        h('thead', {}, h('tr', {}, h('th', {}, 'ส่งเมื่อ'), h('th', { class: 'num' }, '305'), h('th', { class: 'num' }, '304'), h('th', {}, 'สถานะ'), h('th', {}, 'ผู้พิจารณา'), h('th', {}, 'ความเห็น'))),
+        h('tbody', {}, batches.map(function (b) {
+          return h('tr', {}, h('td', {}, fmtTs(b.created_at)), h('td', { class: 'num' }, String(b.hours_305)), h('td', { class: 'num' }, String(b.hours_304)),
+            h('td', {}, h('span', { class: 'chip s-' + b.status }, ESTATUS[b.status] || b.status)), h('td', {}, b.decided_by_name || '—'), h('td', {}, b.comment || ''));
+        }))))] : null,
+      h('h2', {}, 'Logbook'), logEvidence(r.entries), weekList(r.entries, sem, { readonly: true, photo: ['api_adminLogPhoto', [S.session]] })
+    ]);
+  }
+
+  /* ---------- ผู้นิเทศงาน ---------- */
+  function showSupervisor(k) {
+    S.k = k; mount(loading());
+    call('api_svGet', k).then(function (r) {
+      if (!r.ok) {
+        hideBar();
+        mount(h('div', { class: 'login' }, h('div', { class: 'card' }, h('h1', {}, 'เปิดหน้านี้ไม่ได้'), h('p', {}, r.error))));
+        return;
+      }
+      S.sv = r; renderSupervisor();
+    });
+  }
+  function agreementCard(a) {
+    var name = h('input', { type: 'text', id: 'acc-' + a.placement_id, placeholder: 'ชื่อ-นามสกุลของท่าน', maxlength: '200' });
+    var cb = h('input', { type: 'checkbox', id: 'cb-' + a.placement_id });
+    var btn = h('button', {
+      class: 'btn', onclick: function () {
+        btn.disabled = true;
+        call('api_svAcceptAgreement', S.k, a.placement_id, name.value, cb.checked).then(function (x) {
+          btn.disabled = false;
+          if (!x.ok) { toast(x.error, true); return; }
+          toast('ยืนยันข้อตกลงแล้ว ขอบคุณที่ร่วมพัฒนานักศึกษา'); showSupervisor(S.k);
+        });
+      }
+    }, 'ยืนยันข้อตกลง');
+    return h('div', { class: 'card c305' },
+      h('h3', { style: 'margin-top:0' }, a.agreement_no + ' · ' + a.student_name + ' (' + a.student_id + ')'),
+      h('dl', { class: 'kv' }, kv('ตำแหน่งงาน (ENGSE305)', a.position_title), kv('ลักษณะงาน', a.job_description),
+        kv('โจทย์ (ENGSE304)', a.problem1_title + (a.problem2_title ? ' / ' + a.problem2_title : '')), kv('รูปแบบการทำงาน', a.work_mode),
+        kv('ตารางเวลา ENGSE305', a.schedule_305), kv('ตารางเวลา ENGSE304', a.schedule_304), kv('ทรัพย์สินทางปัญญา', a.ip_owner), kv('ค่าตอบแทน/สวัสดิการ', a.compensation)),
+      svContacts(a),
+      h('p', { class: 'small muted' }, 'ข้อตกลงฉบับเต็มเป็นไฟล์ PDF ที่แนบในอีเมลจากหลักสูตร' + (BOOT.agreementDue ? ' กรุณายืนยันภายใน ' + BOOT.agreementDue : '')),
+      h('label', { class: 'choice', for: 'cb-' + a.placement_id }, cb, h('span', {}, 'ข้าพเจ้าในนามสถานประกอบการได้อ่านและยอมรับข้อตกลง SE-WIL01 ฉบับนี้')),
+      fld('acc-' + a.placement_id, 'ชื่อ-นามสกุลผู้ยืนยัน', name), btn);
+  }
+  function svContacts(a) {
+    var co = S.sv && S.sv.coordinator;
+    var lis = contactLines([['นักศึกษา', { name: a.student_name, email: a.student_email, phone: a.student_phone }],
+      ['อาจารย์นิเทศ', a.advisor && co && a.advisor.email === co.email ? null : a.advisor]]);
+    return h('div', { class: 'svc' }, h('ul', { class: 'clist' }, lis),
+      a.has_cv ? fileButton('เปิด CV ของ ' + a.student_name, 'api_svFile', [S.k, a.placement_id, 'cv']) : h('span', { class: 'small muted' }, 'นักศึกษายังไม่ได้แนบ CV'));
+  }
+  function batchCard(b) {
+    var boxes = [];
+    var cm = h('textarea', { placeholder: 'เหตุผลที่ส่งกลับ (จำเป็นเมื่อยกเลิกการเลือกบางรายการ)', 'aria-label': 'เหตุผลที่ส่งกลับ' });
+    var rows = b.entries.map(function (e) {
+      var cb = h('input', { type: 'checkbox', checked: true, 'aria-label': 'รับรองรายการวันที่ ' + fmtTh(e.date) + ' ' + e.start });
+      cb.dataset.id = e.entry_id; boxes.push(cb);
+      var abs = e.kind === 'absence';
+      return h('tr', abs ? { class: 'absent' } : {}, h('td', {}, cb), h('td', {}, dowTh(e.date) + ' ' + fmtTh(e.date)), h('td', { class: 'mono' }, abs ? '—' : e.start + '–' + e.end),
+        h('td', { class: 'num' }, abs ? '0' : String(e.hours)), h('td', {}, abs ? h('span', { class: 'chip' }, 'รับทราบ') : h('span', { class: 'chip k' + e.course }, e.course === '305' ? '305 งานตามตำแหน่ง' : '304 โครงงาน')),
+        h('td', { style: 'white-space:pre-wrap;min-width:220px' }, abs ? absenceText(e) : e.activity, !abs && e.work_mode === 'remote' ? h('div', { class: 'small muted' }, 'ทางไกล') : null,
+          entryExtras(e, ['api_svLogPhoto', [S.k]])));
+    });
+    var btn = h('button', {
+      class: 'btn', onclick: function () {
+        var ok = boxes.filter(function (x) { return x.checked; }).map(function (x) { return x.dataset.id; });
+        var back = boxes.filter(function (x) { return !x.checked; }).map(function (x) { return x.dataset.id; });
+        btn.disabled = true;
+        call('api_svDecide', S.k, b.batch_id, ok, back, cm.value).then(function (x) {
+          btn.disabled = false;
+          if (!x.ok) { toast(x.error, true); return; }
+          toast(back.length ? 'บันทึกแล้ว และส่งกลับ ' + back.length + ' รายการ' : 'รับรองแล้ว ขอบคุณครับ/ค่ะ'); showSupervisor(S.k);
+        });
+      }
+    }, 'บันทึกผลการรับรอง');
+    return h('div', { class: 'card w' },
+      h('h3', { style: 'margin-top:0' }, b.student_name + ' (' + b.student_id + ')'),
+      h('p', { class: 'small muted' }, 'ส่งเมื่อ ' + fmtTs(b.created_at) + ' · 305: ' + b.hours_305 + ' ชม. · 304: ' + b.hours_304 + ' ชม.'),
+      h('div', { class: 'tblwrap' }, h('table', {},
+        h('thead', {}, h('tr', {}, h('th', {}, 'รับรอง'), h('th', {}, 'วันที่'), h('th', {}, 'เวลา'), h('th', { class: 'num' }, 'ชม.'), h('th', {}, 'นับให้'), h('th', {}, 'งาน'))),
+        h('tbody', {}, rows))),
+      h('p', { class: 'small muted' }, 'ทุกรายการถูกเลือกไว้แล้ว ถ้ารายการใดไม่ถูกต้อง ให้ยกเลิกการเลือกและระบุเหตุผล ระบบจะส่งกลับให้นักศึกษาแก้ไข แถวที่เป็นวันไม่ได้ปฏิบัติงานไม่นับชั่วโมง เลือกไว้ = รับทราบ'),
+      cm, h('div', { class: 'row', style: 'margin-top:8px' }, btn));
+  }
+  function renderSupervisor() {
+    var r = S.sv;
+    setBar('ผู้นิเทศงาน: ' + (r.supervisor.name || r.supervisor.email));
+    var pendA = r.agreements.filter(function (a) { return a.status === 'agreement_sent'; });
+    var signed = r.agreements.filter(function (a) { return a.status === 'signed'; });
+    var t305 = r.semester.target305, t304 = r.semester.target304;
+    mount([
+      h('h1', {}, 'สำหรับผู้นิเทศงานในสถานประกอบการ'),
+      h('p', { class: 'muted' }, 'ภาคการศึกษาที่ ' + r.semester.label + ' ลิงก์นี้เป็นลิงก์เฉพาะท่าน กรุณาอย่าส่งต่อ หน้านี้มีข้อมูลส่วนบุคคลของนักศึกษา ใช้เพื่อการฝึกเท่านั้น',
+        BOOT.privacy ? [' ', h('a', { href: BOOT.privacy, target: '_blank', rel: 'noopener' }, 'อ่านประกาศการคุ้มครองข้อมูลส่วนบุคคล')] : null),
+      BOOT.portal ? h('p', { class: 'small' }, h('a', { href: BOOT.portal + 'company/supervisor.html', target: '_blank', rel: 'noopener' }, 'คู่มือผู้นิเทศงานและที่ปรึกษาร่วม'), ' อธิบายวิธีรับรอง logbook แบบประเมิน และสิ่งที่ควรทำเมื่อพบปัญหา') : null,
+      todoCard(r.todo), guideCard('supervisor'),
+      contactsCard('ติดต่อหลักสูตร', [['ผู้ประสานงาน SE-WIL (ติดต่อหลัก)', r.coordinator], ['หัวหน้าหลักสูตร (กรณีจำเป็น)', r.head]],
+        'สอบถามเรื่องข้อตกลง การรับรองชั่วโมง การประเมิน หรือแจ้งปัญหาของนักศึกษา ติดต่อผู้ประสานงานก่อน หรือตอบกลับอีเมลจากระบบ'),
+      pendA.length ? [h('h2', {}, 'ข้อตกลง SE-WIL01 ที่รอท่านยืนยัน'), pendA.map(agreementCard)] : null,
+      h('h2', {}, 'บันทึกการปฏิบัติงานที่รอรับรอง'),
+      r.pending.length ? r.pending.map(batchCard) : h('p', { class: 'muted' }, 'ไม่มีรายการรอรับรอง ระบบจะส่งอีเมลแจ้งทุกวัน' + r.dayTh),
+      r.totals.length ? [h('h2', {}, 'ชั่วโมงที่รับรองแล้ว'), h('div', { class: 'tblwrap' }, h('table', {},
+        h('thead', {}, h('tr', {}, h('th', {}, 'นักศึกษา'), h('th', { class: 'num' }, 'ENGSE305'), h('th', { class: 'num' }, 'ENGSE304'))),
+        h('tbody', {}, r.totals.map(function (t) {
+          return h('tr', {}, h('td', {}, t.student_name), h('td', { class: 'num' }, t.certified['305'] + ' / ' + t305), h('td', { class: 'num' }, t.certified['304'] + ' / ' + t304));
+        }))))] : null,
+      signed.length ? [h('h2', {}, 'นักศึกษาในความดูแลของท่าน'), signed.map(function (a) {
+        return h('div', { class: 'card' }, h('h3', { style: 'margin-top:0' }, a.student_name + ' (' + a.student_id + ')'),
+          h('p', { class: 'small muted' }, 'ข้อตกลง ' + a.agreement_no + ' ยืนยันโดย ' + (a.accepted_by_name || '—') + ' เมื่อ ' + fmtTs(a.accepted_at)), svContacts(a));
+      })] : null,
+      r.coadvisorOf.length ? [h('h2', {}, 'ท่านเป็นที่ปรึกษาร่วม (ENGSE304) ของ'), r.coadvisorOf.map(function (a) {
+        return h('div', { class: 'card c304' }, h('h3', { style: 'margin-top:0' }, a.student_name + ' (' + a.student_id + ')'),
+          h('p', { class: 'small muted' }, 'โจทย์: ' + (a.problem1_title || '—') + ' หลักสูตรจะส่งแบบประเมินคุณค่าผลงานให้ท่านในสัปดาห์ที่ 14'), svContacts(a));
+      })] : null,
+      r.recent.length ? [h('h2', {}, 'ประวัติการรับรองล่าสุด'), h('div', { class: 'tblwrap' }, h('table', {},
+        h('thead', {}, h('tr', {}, h('th', {}, 'นักศึกษา'), h('th', {}, 'พิจารณาเมื่อ'), h('th', { class: 'num' }, '305'), h('th', { class: 'num' }, '304'), h('th', {}, 'ผล'))),
+        h('tbody', {}, r.recent.map(function (b) {
+          return h('tr', {}, h('td', {}, b.student_name), h('td', {}, fmtTs(b.decided_at)), h('td', { class: 'num' }, String(b.hours_305)), h('td', { class: 'num' }, String(b.hours_304)),
+            h('td', {}, h('span', { class: 'chip s-' + b.status }, ESTATUS[b.status] || b.status)));
+        }))))] : null
+    ]);
+  }
+
+  init();
+})();
+</script>
