@@ -64,6 +64,7 @@ window.SEWIL = {
     { date: '2026-11-14', title: 'อาจารย์นิเทศเลือกนักศึกษาที่จะดูแลในระบบ SE-WIL (แท็บ จับคู่อาจารย์นิเทศ)', roles: ['teacher'], course: 'both' },
     { date: '2026-11-16', title: 'ยืนยันข้อตกลง SE-WIL01 ผ่านลิงก์ในอีเมล หรือลงนามในเอกสาร', roles: ['company'], course: 'both' },
     { date: '2026-11-16', title: 'แนบแบบตอบรับ SE-WIL00 ที่สถานประกอบการลงนามในระบบ SE-WIL', roles: ['student'], course: 'both' },
+    { date: '2026-11-16', title: 'อัปโหลดข้อตกลง SE-WIL01 ฉบับลงนามครบ 3 ฝ่ายในระบบ SE-WIL', roles: ['student', 'teacher'], course: 'both' },
     { date: '2026-11-16', title: 'เปิดภาค รายงานตัว เริ่มบันทึก logbook (ตรงวันเปิดภาคการศึกษา 2/2569)', roles: ['student', 'teacher', 'company'], course: 'both' },
     { date: '2026-11-17', title: 'ตรวจหน่วยกิต ประกันอุบัติเหตุ และขอคำสั่งแต่งตั้งอาจารย์', roles: ['teacher'], course: 'both' },
     { date: '2026-11-20', title: 'รับรอง logbook ครั้งแรก (ต่อจากนั้นทุกวันศุกร์)', roles: ['company'], course: 'both' },
