@@ -4,6 +4,7 @@
   const code = document.body.dataset.course;
   const course = portal.courses[code];
   if (!course) return;
+  const sections = [...document.querySelectorAll(".registered-sections a")];
 
   document.body.dataset.tone = course.tone;
 
@@ -26,23 +27,29 @@
     text("fact-sections", `${course.sections} ${course.sections === 1 ? common.section : common.sections}`);
     text("fact-delivery", content.delivery);
     text("overview-copy", content.overview);
-    const artwork = document.getElementById("course-art");
-    if (artwork) {
-      artwork.src = `../assets/course-art/${code.toLowerCase()}.svg`;
-      artwork.alt = "";
-    }
     const list = document.getElementById("learning-list");
     if (list) list.innerHTML = content.learning.map((item, index) => `<li><b>${String(index + 1).padStart(2, "0")}</b><span>${item}</span></li>`).join("");
     const resource = document.getElementById("primary-resource");
     if (resource) {
-      resource.textContent = content.resource;
-      resource.href = course.resourceUrl;
+      if (course.resourceUrl) {
+        resource.textContent = content.resource;
+        resource.href = course.resourceUrl;
+      } else {
+        resource.remove();
+      }
     }
   }
 
   portal.bindLanguageButtons();
   window.addEventListener("portal:language", (event) => render(event.detail.lang));
-  const lang = portal.getLanguage();
-  render(lang);
-  portal.setLanguage(lang);
+  portal.setLanguage(portal.getLanguage());
+
+  if (sections.length) {
+    const markSection = () => sections.forEach((link) => {
+      if (link.hash === location.hash) link.setAttribute("aria-current", "location");
+      else link.removeAttribute("aria-current");
+    });
+    window.addEventListener("hashchange", markSection);
+    markSection();
+  }
 })();

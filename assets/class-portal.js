@@ -7,7 +7,7 @@
       th: {
         title: "การเตรียมสหกิจศึกษาและฝึกงานด้านวิศวกรรมซอฟต์แวร์",
         short: "เตรียมความพร้อมก่อนเข้าสู่สถานประกอบการ ทั้งทักษะวิชาชีพ การสื่อสาร และแผนการเรียนรู้จากงานจริง",
-        delivery: "เตรียมความพร้อม · C3-404",
+        delivery: "เตรียมความพร้อมก่อนฝึกงาน",
         overview: "รายวิชาสำหรับวางรากฐานก่อนออกปฏิบัติงาน นักศึกษาจะสำรวจบทบาทวิศวกรซอฟต์แวร์ เตรียมเอกสารและการสื่อสารทางวิชาชีพ ตลอดจนวางเป้าหมายการเรียนรู้ที่ติดตามผลได้",
         learning: ["ประเมินความพร้อมและกำหนดเป้าหมายการพัฒนาตนเอง", "เตรียมการสื่อสาร เอกสาร และมารยาทวิชาชีพ", "วางแผนการเรียนรู้และหลักฐานที่จะเก็บจากสถานประกอบการ"],
         resource: "ไปยังพอร์ทัล SE-COOP"
@@ -15,7 +15,7 @@
       en: {
         title: "Co-operative Education Preparation in Software Engineering",
         short: "Prepare professional skills, communication, and a purposeful workplace-learning plan before placement.",
-        delivery: "Preparation course · C3-404",
+        delivery: "Workplace preparation",
         overview: "A foundation course before workplace placement. Students explore software engineering roles, prepare professional communication and documents, and define measurable workplace-learning goals.",
         learning: ["Assess readiness and set personal development goals", "Prepare professional communication, documents, and conduct", "Plan workplace learning and the evidence to be collected"],
         resource: "Open the SE-COOP portal"
@@ -120,14 +120,14 @@
         learning: ["Analyze architectural drivers and quality attributes", "Design and compare architectural styles appropriate to context", "Communicate structure, decisions, and trade-offs with clear models"],
         resource: "Open the ENGSE207 learning library"
       },
-      resourceUrl: "../resources/engse207/"
+      resourceUrl: null
     },
     ENGSE601: {
       code: "ENGSE601", tone: "orange", symbol: "✓", credits: 3, sections: 1,
       th: {
         title: "การตรวจสอบความสมเหตุสมผลและการทวนสอบซอฟต์แวร์",
         short: "วางแผนหลักฐานคุณภาพ ออกแบบการทดสอบ วิเคราะห์ผล และตัดสินความพร้อมของซอฟต์แวร์อย่างมีเหตุผล",
-        delivery: "บรรยายและปฏิบัติ · C3-404",
+        delivery: "บรรยาย · 3(3–0–6)",
         overview: "รายวิชาด้านคุณภาพซอฟต์แวร์ที่เชื่อมข้อกำหนดกับหลักฐานการตรวจสอบ นักศึกษาวางแผนการทดสอบ ออกแบบกรณีทดสอบ ดำเนินการและรายงานผล เพื่อสนับสนุนการตัดสินใจส่งมอบ",
         learning: ["วางแผน V&V ให้สอดคล้องกับความเสี่ยงและข้อกำหนด", "ออกแบบและดำเนินการทดสอบที่ให้หลักฐานเชื่อถือได้", "วิเคราะห์ข้อบกพร่อง รายงานผล และตัดสินความพร้อมในการส่งมอบ"],
         resource: "เปิดคลังบทเรียน ENGSE601"
@@ -135,17 +135,19 @@
       en: {
         title: "Software Validation and Verification",
         short: "Plan quality evidence, design tests, analyze results, and make reasoned software-release decisions.",
-        delivery: "Lecture and lab · C3-404",
+        delivery: "Lecture · 3(3–0–6)",
         overview: "A software quality course connecting specifications with verification evidence. Students plan testing, design cases, execute and report results, and support release-readiness decisions.",
         learning: ["Plan V&V around requirements and risk", "Design and execute tests that produce dependable evidence", "Analyze defects, report results, and judge release readiness"],
         resource: "Open the ENGSE601 learning library"
       },
-      resourceUrl: "../resources/engse601/"
+      resourceUrl: null
     }
   };
 
   const ui = {
     th: {
+      registeredSections: "กลุ่มเรียนตามทะเบียน",
+      sharedOverview: "ทั้งสามกลุ่มใช้ภาพรวมรายวิชาร่วมกัน สื่อและรายละเอียดตามกลุ่มจะแจ้งในหน้านี้เมื่อพร้อม",
       brand: "วิศวกรรมซอฟต์แวร์ · มทร.ล้านนา", brandSub: "Class Portal · ภาค 2/2569",
       navOverview: "ภาพรวม", navCourses: "รายวิชา", navPath: "เส้นทางการเรียนรู้", navContact: "ติดต่อ",
       skip: "ข้ามไปยังเนื้อหาหลัก", back: "กลับหน้ารวมรายวิชา", credits: "หน่วยกิต", section: "กลุ่มเรียน", sections: "กลุ่มเรียน",
@@ -154,6 +156,8 @@
       footer: "Class Portal · ภาคการศึกษาที่ 2/2569", update: "เตรียมสำหรับปีการศึกษา 2569–2570"
     },
     en: {
+      registeredSections: "Registered sections",
+      sharedOverview: "All three sections share this course overview. Section-specific materials and details will be posted here when available.",
       brand: "Software Engineering · RMUTL", brandSub: "Class Portal · Semester 2/2026",
       navOverview: "Overview", navCourses: "Courses", navPath: "Learning paths", navContact: "Contact",
       skip: "Skip to main content", back: "Back to all courses", credits: "credits", section: "section", sections: "sections",
@@ -165,30 +169,42 @@
 
   const rootCopy = {
     th: {
-      heroEyebrow: "ภาคการศึกษาที่ 2 · ปีการศึกษา 2569", heroTitle1: "จากโจทย์จริง", heroTitle2: "สู่ซอฟต์แวร์ที่", heroTitle3: "เชื่อถือได้",
-      heroLead: "Class Portal สำหรับนักศึกษาวิศวกรรมซอฟต์แวร์ รวมรายวิชา เส้นทางการเรียนรู้ และทางเข้าสู่สื่อการสอนของภาคเรียนนี้ไว้ในที่เดียว",
-      explore: "สำรวจรายวิชา", contact: "ติดต่อผู้สอน", academic: "Academic term", term: "2 / 2569", coursesStat: "รายวิชา", sectionsStat: "กลุ่มเรียน", creditsStat: "หน่วยกิตรวม", ready: "พร้อมสำหรับภาคเรียนใหม่",
-      coursesKicker: "Course directory", coursesTitle: "7 รายวิชา · หนึ่งเส้นทางการเรียนรู้", coursesIntro: "ตั้งแต่การค้นหาความต้องการ ออกแบบสถาปัตยกรรม ตรวจสอบคุณภาพ ไปจนถึงการเรียนรู้จากสถานประกอบการ",
-      open: "เข้าสู่รายวิชา", creditUnit: "หน่วยกิต", secUnit: "กลุ่ม",
-      pathKicker: "Learning journeys", pathTitle: "มองเห็นความเชื่อมโยง ก่อนลงมือเรียน", pathIntro: "แต่ละวิชาเสริมกันเป็นสามเส้นทาง เพื่อพัฒนาทั้งความคิดเชิงระบบ คุณภาพงาน และความเป็นมืออาชีพ",
-      path1: "ค้นหา · ออกแบบ · พิสูจน์", path1body: "เปลี่ยนหลักฐานเป็นความต้องการ ออกแบบโครงสร้าง และตรวจสอบว่าสิ่งที่สร้างตอบโจทย์จริง",
-      path2: "เตรียมพร้อม · ปฏิบัติงาน", path2body: "พัฒนาทักษะวิชาชีพก่อนออกฝึก และเรียนรู้จากความรับผิดชอบในสถานประกอบการจริง",
-      path3: "ฝึกเฉพาะทาง · แก้ปัญหาจริง", path3body: "สร้างสมรรถนะตามตำแหน่ง พร้อมทำโครงงานที่สร้างคุณค่าให้ผู้ใช้หรือองค์กร",
-      contactKicker: "Software Engineering @ RMUTL", contactTitle: "เรียนรู้ร่วมกันอย่างเป็นระบบ", program: "หลักสูตรวิศวกรรมศาสตรบัณฑิต สาขาวิชาวิศวกรรมซอฟต์แวร์ คณะวิศวกรรมศาสตร์ มหาวิทยาลัยเทคโนโลยีราชมงคลล้านนา (พื้นที่ดอยสะเก็ด)",
-      address: "ตึก C3 ชั้น 4 มหาวิทยาลัยเทคโนโลยีราชมงคลล้านนา เชียงใหม่ (ดอยสะเก็ด) 98 หมู่ 8 ตำบลป่าป้อง อำเภอดอยสะเก็ด จังหวัดเชียงใหม่ 50220", emailLabel: "อีเมลผู้สอน"
+      heroEyebrow: "ภาคการศึกษาที่ 2 · ปีการศึกษา 2569",
+      heroTitle1: "คิดเป็นระบบ", heroTitle2: "ทำงานเป็นทีม",
+      heroLead: "ฝึกตั้งคำถาม ออกแบบ และตรวจคุณภาพซอฟต์แวร์ แล้วเอาทักษะเหล่านี้ไปใช้กับทีมและโจทย์จริงในสถานประกอบการ",
+      explore: "สำรวจรายวิชา", seePath: "ดูว่าวิชาเชื่อมกันอย่างไร",
+      engineering: "ออกแบบและตรวจคุณภาพซอฟต์แวร์", engineeringCount: "3 วิชา",
+      workplace: "เตรียมตัวและทำงานในสถานประกอบการ", workplaceCount: "4 วิชา",
+      coursesTitle: "รายวิชาประจำเทอม",
+      coursesIntro: "ดูว่าแต่ละวิชาฝึกอะไร แล้วเข้าหน้ารายวิชาหรือเลือกกลุ่มเรียนตามทะเบียน",
+      catalogCount: "7 วิชา · 9 กลุ่มเรียน",
+      open: "เปิดรายวิชา", creditUnit: "หน่วยกิต", oneCredit: "หน่วยกิต", chooseSection: "เลือกกลุ่มเรียน",
+      imageNote: "ภาพบนการ์ดรายวิชาเป็นภาพจำลองสถานการณ์การเรียนและการทำงาน",
+      pathTitle: "ทักษะจากวิชาหนึ่ง ใช้ต่อในอีกวิชาอย่างไร",
+      engineeringPath: "เริ่มจากเขียนข้อกำหนดที่ทดสอบได้ ใช้ข้อกำหนดช่วยเลือกโครงสร้างระบบ แล้ววางแผนเก็บหลักฐานว่าซอฟต์แวร์ตอบโจทย์ได้จริง",
+      workplacePath: "เตรียมสมัครและสัมภาษณ์ก่อนออกสหกิจ ส่วนโครงงานจากสถานประกอบการและการฝึกเฉพาะตำแหน่งช่วยฝึกแก้โจทย์จริงและพัฒนาทักษะตามบทบาท",
+      contactTitle: "ติดต่อหลักสูตร",
+      program: "หลักสูตรวิศวกรรมศาสตรบัณฑิต สาขาวิชาวิศวกรรมซอฟต์แวร์ คณะวิศวกรรมศาสตร์ มหาวิทยาลัยเทคโนโลยีราชมงคลล้านนา (พื้นที่ดอยสะเก็ด)",
+      address: "ตึก C3 ชั้น 4 มหาวิทยาลัยเทคโนโลยีราชมงคลล้านนา เชียงใหม่ (ดอยสะเก็ด) 98 หมู่ 8 ตำบลป่าป้อง อำเภอดอยสะเก็ด จังหวัดเชียงใหม่ 50220"
     },
     en: {
-      heroEyebrow: "Semester 2 · Academic year 2026", heroTitle1: "From real needs", heroTitle2: "to software we", heroTitle3: "can trust",
-      heroLead: "A single Class Portal for Software Engineering students—bringing together this semester’s courses, learning journeys, and teaching resources.",
-      explore: "Explore courses", contact: "Contact instructor", academic: "Academic term", term: "2 / 2026", coursesStat: "courses", sectionsStat: "sections", creditsStat: "total credits", ready: "Ready for the new semester",
-      coursesKicker: "Course directory", coursesTitle: "7 courses · one connected journey", coursesIntro: "Move from discovering requirements and shaping architecture to verifying quality and learning through authentic workplace practice.",
-      open: "Enter course", creditUnit: "credits", secUnit: "sections",
-      pathKicker: "Learning journeys", pathTitle: "See the connections before class begins", pathIntro: "The courses form three complementary journeys that develop systems thinking, product quality, and professional capability.",
-      path1: "Discover · design · verify", path1body: "Turn evidence into requirements, shape system structure, and verify that the delivered software solves the right problem.",
-      path2: "Prepare · practise", path2body: "Build professional readiness before placement, then learn from authentic responsibilities in a real organization.",
-      path3: "Specialize · solve", path3body: "Develop role-specific capability while delivering a project that creates value for users or the organization.",
-      contactKicker: "Software Engineering @ RMUTL", contactTitle: "Learn deeply. Build responsibly.", program: "Bachelor of Engineering Program in Software Engineering, Faculty of Engineering, Rajamangala University of Technology Lanna (Doi Saket Campus)",
-      address: "C3 Building, 4th Floor, RMUTL Chiang Mai (Doi Saket), 98 Moo 8, Pa Pong, Doi Saket, Chiang Mai 50220, Thailand", emailLabel: "Instructor email"
+      heroEyebrow: "Semester 2 · Academic year 2026",
+      heroTitle1: "Think in systems", heroTitle2: "Work as a team",
+      heroLead: "Learn to ask better questions, design software, and gather evidence that it works. Bring those skills to real problems and teams in the workplace.",
+      explore: "Explore the courses", seePath: "See how courses connect",
+      engineering: "Software design and quality", engineeringCount: "3 courses",
+      workplace: "Preparation and workplace practice", workplaceCount: "4 courses",
+      coursesTitle: "This semester’s courses",
+      coursesIntro: "See what you’ll practise, then open your course or choose the section you registered for.",
+      catalogCount: "7 courses · 9 sections",
+      open: "Open course", creditUnit: "credits", oneCredit: "credit", chooseSection: "Choose a section",
+      imageNote: "Course card images illustrate learning and workplace scenarios.",
+      pathTitle: "How skills carry from one course to another",
+      engineeringPath: "Write requirements you can test, use them to guide decisions about system structure, and plan how to gather evidence that the software meets users’ needs.",
+      workplacePath: "Build application and interview skills before co-op. Workplace projects and role-specific practice help you solve real problems and grow in the role you take on.",
+      contactTitle: "Contact the program",
+      program: "Bachelor of Engineering Program in Software Engineering, Faculty of Engineering, Rajamangala University of Technology Lanna (Doi Saket Campus)",
+      address: "C3 Building, 4th Floor, RMUTL Chiang Mai (Doi Saket), 98 Moo 8, Pa Pong, Doi Saket, Chiang Mai 50220, Thailand"
     }
   };
 
