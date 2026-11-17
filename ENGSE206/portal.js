@@ -12,6 +12,9 @@
   }));
   const photo = document.querySelector("[data-alt-en]");
   const photoAlt = { th: photo.alt, en: photo.dataset.altEn };
+  const stageControls = document.querySelector("[data-stage-controls]");
+  const stageButtons = [...stageControls.querySelectorAll("[data-stage]")];
+  const stagePanels = [...document.querySelectorAll("[data-stage-panel]")];
   const filterBar = document.querySelector("[data-filters]");
   const filters = [...filterBar.querySelectorAll("[data-filter]")];
   const weeks = [...document.querySelectorAll(".week")];
@@ -90,6 +93,21 @@
     });
   });
 
+  function selectStage(stage) {
+    stagePanels.forEach((panel) => { panel.hidden = panel.dataset.stagePanel !== stage; });
+    stageButtons.forEach((button) => {
+      button.setAttribute("aria-pressed", String(button.dataset.stage === stage));
+    });
+  }
+
+  function openLinkedStage() {
+    const panel = stagePanels.find(({ id }) => location.hash === "#" + id);
+    if (!panel) return false;
+    selectStage(panel.dataset.stagePanel);
+    stageControls.scrollIntoView({ block: "start" });
+    return true;
+  }
+
   function filterWeeks(phase) {
     weeks.forEach((week) => { week.hidden = phase !== "all" && week.dataset.phase !== phase; });
     filters.forEach((button) => {
@@ -110,6 +128,27 @@
   filters.forEach((button) => {
     button.addEventListener("click", () => filterWeeks(button.dataset.filter));
   });
-  window.addEventListener("hashchange", openLinkedWeek);
-  openLinkedWeek();
+
+  stageControls.hidden = false;
+  stageButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      selectStage(button.dataset.stage);
+      if (location.hash.startsWith("#stage-")) {
+        history.replaceState(null, "", "#" + button.getAttribute("aria-controls"));
+      }
+    });
+  });
+  document.querySelectorAll('.sdlc-flow a[href^="#stage-"]').forEach((link) => {
+    link.addEventListener("click", () => {
+      if (link.hash === location.hash) openLinkedStage();
+    });
+  });
+
+  function openLinkedContent() {
+    if (!openLinkedStage()) openLinkedWeek();
+  }
+
+  window.addEventListener("hashchange", openLinkedContent);
+  selectStage(stageButtons[0].dataset.stage);
+  openLinkedContent();
 })();
