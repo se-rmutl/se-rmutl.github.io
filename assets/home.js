@@ -63,7 +63,7 @@
             <p class="catalog-domain">${domain}</p>
             <div class="catalog-entry">
               ${course.sections > 1 ? groupLinks : ""}
-              <a class="catalog-open" href="./${slug}/" aria-label="${copy.open} ${code}"><span>${copy.open}</span><span aria-hidden="true">↗</span></a>
+              <a class="catalog-open" href="./${course.portalUrl || slug + "/"}" aria-label="${copy.open} ${code}"><span>${copy.open}</span><span aria-hidden="true">↗</span></a>
             </div>
           </div>
         </article>`;
