@@ -21,6 +21,7 @@
  *   ฟอร์มที่สร้างก่อนฉบับ 1.1: สั่ง ENGSE601 > เพิ่มคำถามอีเมลสมาชิกในฟอร์มเดิม ครั้งเดียว
  *   เผยแพร่: กรอกวันที่เรียนครั้งที่ 1 ในแผ่นภาพรวม แล้วสั่ง ENGSE601 > เผยแพร่สถานะทีมตอนนี้
  *
+ * ฉบับ 1.2 (24 พ.ย. 2569): ถอนสิทธิ์อีเมลเดิมเมื่อทีมแก้อีเมล และแจ้งอีเมลที่ไม่ใช่ Gmail เป็นปัญหาที่ต้องแก้
  * ฉบับ 1.1 (24 พ.ย. 2569): คำถามอีเมล Gmail ของสมาชิก และไฟล์สถานะทีม · ฉบับ 1.0: แบบลงทะเบียนทีมและซิงก์
  *
  * ติดตั้งและสั่งจากบัญชี software.rmutl@gmail.com (บัญชีที่เปิด Advanced Protection รันสคริปต์ไม่ได้)
@@ -276,7 +277,9 @@ function syncTeams() {
     var noMail = r.members.filter(function (id) { return !mails[id]; });
     if (noMail.length) tm.notes.push('ยังไม่มีอีเมลของ ' + noMail.join(', '));
     var notGmail = r.members.filter(function (id) { return mails[id] && !/@gmail\.com$/i.test(mails[id]); });
-    if (notGmail.length) tm.info.push('อีเมลไม่ใช่ Gmail (ตรวจว่าเป็นบัญชี Google): ' + notGmail.join(', '));
+    if (notGmail.length) tm.notes.push('อีเมลไม่ใช่ Gmail ให้ทีมแก้คำตอบ: ' + notGmail.map(function (id) {
+      return id + (/@rmutl\.ac\.th$/i.test(mails[id]) ? ' (อีเมลมหาวิทยาลัยเปิดไฟล์ Google ไม่ได้)' : ' (' + mails[id] + ')');
+    }).join(', '));
   });
   Object.keys(where).forEach(function (id) {
     if (where[id].length < 2) return;
@@ -583,20 +586,26 @@ function openOrCreateStatus_(link, folder, t, title) {
   return book;
 }
 
-/** แชร์แบบดูอย่างเดียวให้สมาชิกที่มีอีเมล และถอนสิทธิ์นักศึกษาที่ย้ายออกจากทีม (ไม่แตะบัญชีอื่น) */
+/** แชร์แบบดูอย่างเดียวให้สมาชิกที่มีอีเมล และถอนสิทธิ์อีเมลที่สคริปต์เคยแชร์แต่ไม่ใช่สมาชิกแล้ว
+ *  (ย้ายทีม หรือทีมแก้อีเมลที่กรอกผิด) ผู้ที่อาจารย์เพิ่มเองในไฟล์ไม่ถูกถอน */
 function shareStatus_(fileId, members, mails, knownMails) {
   var file = DriveApp.getFileById(fileId);
-  var want = {}, res = { ok: 0, missing: [], failed: [] };
+  var props = PropertiesService.getDocumentProperties(), pkey = 'engse601.shared.' + fileId, managed = [];
+  try { managed = JSON.parse(props.getProperty(pkey) || '[]'); } catch (e) { managed = []; }
+  var want = {}, res = { ok: 0, missing: [], failed: [] }, kept = [];
   members.forEach(function (s) { if (mails[s.id]) want[mails[s.id]] = s.id; else res.missing.push(s.id); });
   var have = {};
   file.getViewers().forEach(function (u) { have[String(u.getEmail()).toLowerCase()] = true; });
   Object.keys(want).forEach(function (em) {
-    if (have[em]) { res.ok++; return; }
-    try { file.addViewer(em); res.ok++; } catch (e) { res.failed.push(want[em]); }
+    if (have[em]) { res.ok++; kept.push(em); return; }
+    try { file.addViewer(em); res.ok++; kept.push(em); } catch (e) { res.failed.push(want[em]); }
   });
-  Object.keys(have).forEach(function (em) {
-    if (!want[em] && knownMails.indexOf(em) >= 0) { try { file.removeViewer(em); } catch (e) { /* ข้าม */ } }
+  var drop = {};
+  Object.keys(have).concat(managed).forEach(function (em) {
+    if (!want[em] && (managed.indexOf(em) >= 0 || knownMails.indexOf(em) >= 0)) drop[em] = true;
   });
+  Object.keys(drop).forEach(function (em) { try { file.removeViewer(em); } catch (e) { /* ไม่มีสิทธิ์อยู่แล้ว */ } });
+  props.setProperty(pkey, JSON.stringify(kept));
   return res;
 }
 
