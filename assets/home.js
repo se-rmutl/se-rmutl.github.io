@@ -16,8 +16,8 @@
       en: ["Choose a system structure that fits the problem", "Model a system, compare architecture styles, and explain trade-offs such as speed versus maintainability.", "Architecture · Quality attributes"],
     },
     ENGSE601: {
-      th: ["ตัดสินความพร้อมของซอฟต์แวร์จากหลักฐาน", "วางแผนตรวจสอบ ออกแบบกรณีทดสอบจากข้อกำหนด และวิเคราะห์ข้อบกพร่องเพื่อดูว่าซอฟต์แวร์ทำงานได้ตามที่ตกลงและตอบโจทย์ผู้ใช้หรือไม่", "V&V · ออกแบบการทดสอบ"],
-      en: ["Judge software readiness with evidence", "Plan verification, design tests from requirements, and analyse defects to judge whether the software meets its specification and users’ needs.", "V&V · Test design"],
+      th: ["ทวนสอบโครงงานของทีมตัวเองด้วยหลักฐาน", "ทบทวน SRS ออกแบบกรณีทดสอบ และทดสอบโครงงาน ENGSE212 ตั้งแต่ระดับส่วนประกอบจนถึงการยอมรับของผู้ใช้ แล้วสรุปผลลงเล่มได้ทันที", "V&V · ออกแบบการทดสอบ · เรียนคู่ ENGSE212"],
+      en: ["Verify your own team project with evidence", "Review the SRS, design test cases, and test your ENGSE212 project from components to user acceptance, then put the results straight into your report.", "V&V · Test design · Paired with ENGSE212"],
     },
     ENGSE300: {
       th: ["พร้อมคุยกับทีมที่จะไปฝึกงานด้วย", "เลือกสถานประกอบการให้ตรงสาย เตรียมเอกสารสมัคร และซ้อมสัมภาษณ์ให้เล่าทักษะจากผลงานของตัวเองได้", "สมัครงาน · สัมภาษณ์ · เป้าหมายการฝึก"],

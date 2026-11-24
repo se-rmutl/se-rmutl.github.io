@@ -129,18 +129,18 @@
       code: "ENGSE601", tone: "orange", symbol: "✓", credits: 3, sections: 1,
       th: {
         title: "การตรวจสอบความสมเหตุสมผลและการทวนสอบซอฟต์แวร์",
-        short: "วางแผนหลักฐานคุณภาพ ออกแบบการทดสอบ วิเคราะห์ผล และตัดสินความพร้อมของซอฟต์แวร์อย่างมีเหตุผล",
-        delivery: "บรรยาย · 3(3–0–6)",
-        overview: "รายวิชาด้านคุณภาพซอฟต์แวร์ที่เชื่อมข้อกำหนดกับหลักฐานการตรวจสอบ นักศึกษาวางแผนการทดสอบ ออกแบบกรณีทดสอบ ดำเนินการและรายงานผล เพื่อสนับสนุนการตัดสินใจส่งมอบ",
-        learning: ["วางแผน V&V ให้สอดคล้องกับความเสี่ยงและข้อกำหนด", "ออกแบบและดำเนินการทดสอบที่ให้หลักฐานเชื่อถือได้", "วิเคราะห์ข้อบกพร่อง รายงานผล และตัดสินความพร้อมในการส่งมอบ"],
+        short: "ทวนสอบโครงงาน ENGSE212 ของทีมตลอดภาค ตั้งแต่ทบทวน SRS จนถึงการยอมรับของผู้ใช้ แล้วสรุปผลเป็นหลักฐานในเล่ม",
+        delivery: "บรรยาย · 3(3–0–6) · เรียนคู่ ENGSE212",
+        overview: "รายวิชาด้านคุณภาพซอฟต์แวร์ที่ใช้โครงงาน ENGSE212 ของทีมเป็นระบบที่นำมาทวนสอบ นักศึกษาทบทวนเอกสาร วางแผนและออกแบบการทดสอบ ไล่ทดสอบทุกระดับ และรายงานผลเพื่อตัดสินความพร้อมส่งมอบ",
+        learning: ["ทบทวน SRS การออกแบบ และโค้ดด้วยเทคนิคการทบทวน", "วางแผนการทดสอบตามความเสี่ยงและออกแบบกรณีทดสอบที่สอบย้อนกลับได้", "ทดสอบตั้งแต่ระดับส่วนประกอบจนถึงการยอมรับ แล้ววิเคราะห์และรายงานผล"],
         resource: "เปิดคลังบทเรียน ENGSE601"
       },
       en: {
         title: "Software Validation and Verification",
-        short: "Plan quality evidence, design tests, analyze results, and make reasoned software-release decisions.",
-        delivery: "Lecture · 3(3–0–6)",
-        overview: "A software quality course connecting specifications with verification evidence. Students plan testing, design cases, execute and report results, and support release-readiness decisions.",
-        learning: ["Plan V&V around requirements and risk", "Design and execute tests that produce dependable evidence", "Analyze defects, report results, and judge release readiness"],
+        short: "Verify and validate your team's ENGSE212 project all term, from SRS review to user acceptance, and turn the results into report evidence.",
+        delivery: "Lecture · 3(3–0–6) · paired with ENGSE212",
+        overview: "A software quality course that uses each team's ENGSE212 project as the system under test. Students review documents, plan and design tests, test at every level, and report results to judge release readiness.",
+        learning: ["Review the SRS, design, and code with review techniques", "Plan risk-based testing and design traceable test cases", "Test from components to user acceptance, then analyze and report results"],
         resource: "Open the ENGSE601 learning library"
       },
       resourceUrl: null
