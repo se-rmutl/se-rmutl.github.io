@@ -7,11 +7,12 @@
  */
 window.ENGSE601 = {
   meta: {
-    version: "1.0",
+    version: "1.1",
     term: "2/2569",
     updated: "24 พฤศจิกายน 2569",
     scheduleNote: "วันและเวลาเรียนตามตารางสอนของมหาวิทยาลัย สัปดาห์ในแผนนับจากสัปดาห์แรกของภาค",
     history: [
+      { v: "1.1", date: "24 พ.ย. 2569", note: "เพิ่มสไลด์ครั้งที่ 1 (3 ชุด) ใบงาน การ์ดกรณีศึกษา และแม่แบบ V&V Profile" },
       { v: "1.0", date: "24 พ.ย. 2569", note: "หน้ารายวิชาฉบับแรกตามแผนการสอนที่บูรณาการกับ ENGSE212" }
     ]
   },
@@ -74,7 +75,15 @@ window.ENGSE601 = {
   sessions: {
     S1: { no: "ครั้งที่ 1", week: "สัปดาห์ 1", hours: 3, title: "ปฐมนิเทศและพื้นฐานการทดสอบ",
       topics: ["ทำไมต้องทดสอบ และต้นทุนของข้อบกพร่องที่พบช้า", "error · defect · failure ต่างกันอย่างไร", "หลัก 7 ข้อของการทดสอบ", "testing กับ debugging และ QA · QC · testing"],
-      inClass: "วิเคราะห์กรณีซอฟต์แวร์ล้มเหลวจริง", project: "ส่ง V&V Profile ของทีม", clo: ["CLO1"], desc: ["d1"] },
+      inClass: "วิเคราะห์กรณีซอฟต์แวร์ล้มเหลวจริง", project: "ส่ง V&V Profile ของทีม", clo: ["CLO1"], desc: ["d1"],
+      links: [
+        { label: "สไลด์ 1 แนะนำรายวิชา", href: "slides/session-01-intro.html" },
+        { label: "สไลด์ 2 พื้นฐานการทดสอบ", href: "slides/session-01-fundamentals.html" },
+        { label: "สไลด์ 3 กิจกรรม", href: "slides/session-01-activity.html" },
+        { label: "ใบงาน", href: "handouts/session-01-worksheet.html" },
+        { label: "การ์ดกรณีศึกษา (PDF)", href: "handouts/ENGSE601-session-01-cases.pdf" },
+        { label: "แม่แบบ V&V Profile", href: "handouts/vv-profile-template.md" }
+      ] },
     S2: { no: "ครั้งที่ 2", week: "สัปดาห์ 2", hours: 3, title: "V&V และแบบจำลองกระบวนการทดสอบ",
       topics: ["verification กับ validation", "IEEE 1012 และระดับความสำคัญของระบบ (integrity level)", "กระบวนการทดสอบตาม ISO/IEC/IEEE 29119-2", "V-model, Agile testing quadrants และ test pyramid", "ระดับและชนิดของการทดสอบ"],
       inClass: "จับคู่ Sprint ของโครงงานกับระดับการทดสอบ", project: "ร่าง V&V Strategy 1 หน้า", clo: ["CLO1"], desc: ["d2", "d3"] },
