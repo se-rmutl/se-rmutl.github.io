@@ -14,6 +14,8 @@
  *   4. นำ "ลิงก์ฟอร์ม A1 สำหรับนักศึกษา" ในแผ่นภาพรวมไปใส่ quizA1.formUrl ใน data.js
  *   5. ENGSE300 > ตั้งซิงก์อัตโนมัติทุกคืน (หรือกดซิงก์เองเมื่อต้องการ)
  *
+ * ติดตั้งและสั่งจากบัญชี software.rmutl@gmail.com (บัญชีที่เปิด Advanced Protection รันสคริปต์ไม่ได้)
+ * ถ้าเบราว์เซอร์ล็อกอินหลายบัญชี ให้ใช้หน้าต่างไม่ระบุตัวตนที่ล็อกอินบัญชีนี้บัญชีเดียว
  * นักศึกษาต้องแชร์สมุดงานให้บัญชีที่รันสคริปต์นี้ (สิทธิ์ผู้แสดงความคิดเห็นก็พอ)
  * และสมุดงานต้องเป็นไฟล์ Google Sheets ไม่ใช่ .xlsx ที่อัปโหลดไว้เฉยๆ
  * สคริปต์อ่านสมุดงานอย่างเดียว ไม่แก้ไฟล์ของนักศึกษา
@@ -52,9 +54,10 @@ function onOpen() {
 
 function createA1Quiz() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sum = ss.getSheetByName(SHEET.summary);
+  var sum = sheetOrStop_(ss, SHEET.summary);
   if (sum.getRange(CELL.formEdit).getValue()) {
-    var ui = SpreadsheetApp.getUi();
+    var ui = ui_();
+    if (!ui) { Logger.log('มีฟอร์ม A1 อยู่แล้ว ถ้าต้องการสร้างใหม่ให้สั่งจากเมนู ENGSE300 ในชีต'); return; }
     var ok = ui.alert('มีฟอร์ม A1 อยู่แล้ว', 'สร้างฟอร์มใหม่แทนลิงก์เดิมหรือไม่ (ฟอร์มเดิมยังอยู่ใน Drive)', ui.ButtonSet.YES_NO);
     if (ok !== ui.Button.YES) return;
   }
@@ -96,8 +99,8 @@ function createA1Quiz() {
   form.setDestination(FormApp.DestinationType.SPREADSHEET, ss.getId());
   sum.getRange(CELL.formEdit).setValue(form.getEditUrl());
   sum.getRange(CELL.formPublic).setValue(form.getPublishedUrl());
-  SpreadsheetApp.getUi().alert('สร้างฟอร์ม A1 แล้ว',
-    'ลิงก์สำหรับนักศึกษาอยู่ที่แผ่น "ภาพรวม" ช่อง ' + CELL.formPublic + '\nนำไปใส่ quizA1.formUrl ใน data.js', SpreadsheetApp.getUi().ButtonSet.OK);
+  alert_('สร้างฟอร์ม A1 แล้ว',
+    'ลิงก์สำหรับนักศึกษาอยู่ที่แผ่น "ภาพรวม" ช่อง ' + CELL.formPublic + '\nนำไปใส่ quizA1.formUrl ใน data.js');
 }
 
 function loadQuiz_() {
@@ -116,9 +119,9 @@ function loadQuiz_() {
 
 function syncAll() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sum = ss.getSheetByName(SHEET.summary);
-  var acts = ss.getSheetByName(SHEET.acts);
-  var out = ss.getSheetByName(SHEET.sync);
+  var sum = sheetOrStop_(ss, SHEET.summary);
+  var acts = sheetOrStop_(ss, SHEET.acts);
+  var out = sheetOrStop_(ss, SHEET.sync);
   var tz = ss.getSpreadsheetTimeZone();
   var now = new Date();
 
@@ -213,6 +216,20 @@ function readWorkbook_(link, rosterKey) {
   return w;
 }
 
+/** แผ่นที่สคริปต์ต้องใช้ ถ้าไม่มีแปลว่าติดตั้งผิดไฟล์ */
+function sheetOrStop_(ss, name) {
+  var sh = ss.getSheetByName(name);
+  if (!sh) throw new Error('ไม่พบแผ่น "' + name + '" สคริปต์นี้ใช้กับชีตอาจารย์ ENGSE300 เท่านั้น ตรวจว่าเปิดไฟล์ถูก');
+  return sh;
+}
+
+/** กล่องข้อความในชีต (สั่งจากหน้า Apps Script หรือทริกเกอร์จะไม่มีหน้าจอ จึงบันทึกลง log แทน) */
+function ui_() { try { return SpreadsheetApp.getUi(); } catch (e) { return null; } }
+function alert_(title, msg) {
+  var ui = ui_();
+  if (ui) ui.alert(title, msg, ui.ButtonSet.OK); else Logger.log(title + ': ' + msg);
+}
+
 function key_(id) { return String(id).replace(/\D/g, ''); }
 function num_(n) { return n === undefined ? '' : n; }
 
@@ -221,7 +238,7 @@ function num_(n) { return n === undefined ? '' : n; }
 function installNightlySync() {
   removeNightlySync();
   ScriptApp.newTrigger('syncAll').timeBased().everyDays(1).atHour(1).create();
-  SpreadsheetApp.getUi().alert('ตั้งซิงก์อัตโนมัติแล้ว: ทุกคืนประมาณ 01:00–02:00 น.');
+  alert_('ตั้งซิงก์อัตโนมัติแล้ว', 'ทุกคืนประมาณ 01:00–02:00 น.');
 }
 
 function removeNightlySync() {
