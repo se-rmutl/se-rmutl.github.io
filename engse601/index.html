@@ -12,7 +12,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap">
   <link rel="stylesheet" href="../assets/class-portal.css?v=2">
-  <script src="data.js?v=6" defer></script>
+  <script src="data.js?v=7" defer></script>
+  <script src="schedule-data.js?v=1" defer></script>
+  <script src="schedule.js?v=1" defer></script>
   <style>
     .course-page { --course: #d65a2c; --course-ink: #9e3d18; --p1: #d65a2c; --p2: #184d8d; --px: #597087; }
     .fact-strip.four { grid-template-columns: repeat(4, 1fr); }
@@ -30,6 +32,25 @@
     .chip a { text-decoration: none; }
     .chip a { color: inherit; }
     .card { padding: 22px; border: 1px solid var(--line); border-radius: var(--radius-md); background: rgba(255,255,255,.86); }
+    /* ตอนนี้ */
+    .now-strip { display: grid; grid-template-columns: .8fr 1.15fr 1.6fr; gap: 0; margin-top: 22px; overflow: hidden; border: 1px solid var(--line); border-radius: var(--radius-md); background: #fff; }
+    .now-strip > div { padding: 16px 20px; }
+    .now-strip > div + div { border-left: 1px solid var(--line); }
+    .now-strip .lbl { margin: 0 0 3px; color: var(--course-ink); font-size: .74rem; font-weight: 800; letter-spacing: .06em; }
+    .now-strip .big { margin: 0; font-size: 1.15rem; font-weight: 800; line-height: 1.35; }
+    .now-strip .big small { color: #597087; font-size: .85rem; font-weight: 600; }
+    .now-strip p { margin: 2px 0 0; color: #405a72; font-size: .86rem; }
+    .now-strip .warn { margin-top: 6px; color: #7a510a; font-size: .82rem; }
+    .now-strip ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 5px; }
+    .now-strip li { display: grid; grid-template-columns: 92px 1fr; gap: 10px; font-size: .86rem; }
+    .now-strip li b { font-weight: 800; white-space: nowrap; }
+    .now-strip li b.hot { color: #b9463e; } .now-strip li b.soon { color: #a86a00; } .now-strip li b.wait { color: #7a510a; } .now-strip li b.later { color: #405a72; }
+    .now-strip li span { min-width: 0; color: #314a62; }
+    .now-strip a.more { display: inline-block; margin-top: 8px; color: var(--course-ink); font-size: .86rem; font-weight: 800; }
+    .now-strip .bar { height: 6px; margin-top: 8px; overflow: hidden; border-radius: 99px; background: #edf2f4; }
+    .now-strip .bar i { display: block; height: 100%; background: var(--course); }
+    .sess-date { color: var(--ink); font-size: .78rem; font-weight: 700; }
+    .sess-date.wait { color: #7a510a; }
     .note { margin-top: 14px; padding: 12px 14px; border-left: 3px solid var(--course); background: color-mix(in srgb, var(--course), transparent 93%); color: #405a72; font-size: .88rem; }
 
     /* page nav */
@@ -150,6 +171,8 @@
     .history ul { margin: 8px 0 0; padding-left: 18px; }
 
     @media (max-width: 980px) {
+      .now-strip { grid-template-columns: 1fr 1fr; }
+      .now-strip > div:last-child { grid-column: 1 / -1; border-left: 0; border-top: 1px solid var(--line); }
       .phases, .two { grid-template-columns: 1fr; }
       .principles { grid-template-columns: repeat(2, 1fr); }
       .vm-row:nth-child(2), .vm-row:nth-child(3) { padding: 0; }
@@ -159,6 +182,9 @@
       .brand-text strong { white-space: nowrap; }
       .fact-strip.four { grid-template-columns: 1fr 1fr; }
       .fact-strip.four .fact { padding: 14px 10px 14px 0; border-left: 0; }
+      .now-strip { grid-template-columns: 1fr; }
+      .now-strip > div + div { border-left: 0; border-top: 1px solid var(--line); }
+      .now-strip li { grid-template-columns: 84px 1fr; }
       .vm-head { display: none; }
       .vm { gap: 22px; }
       .vm-row { grid-template-columns: 1fr; gap: 6px; }
@@ -188,6 +214,7 @@
         <span class="brand-text"><strong>วิศวกรรมซอฟต์แวร์ · มทร.ล้านนา</strong><span>Class Portal · ภาค 2/2569</span></span>
       </a>
       <nav class="page-nav" aria-label="ในหน้านี้">
+        <a href="deliverables.html">สิ่งที่ต้องส่ง</a>
         <a href="#pair">เรียนคู่ ENGSE212</a>
         <a href="#plan">แผน 17 สัปดาห์</a>
         <a href="#checkpoints">จุดตรวจ</a>
@@ -217,6 +244,7 @@
           <div class="fact"><span>เรียน</span><strong id="f-term">ปี 3 · ภาค 2/2569</strong></div>
           <div class="fact"><span>ผู้สอน</span><strong id="f-teacher">อ.ธนิต เกตุแก้ว</strong></div>
         </div>
+        <div class="now-strip" id="now-strip" aria-live="polite" hidden></div>
       </div>
     </section>
 
@@ -367,14 +395,14 @@
       var sess = p.sessions.map(function (id) {
         var s = D.sessions[id];
         if (s.exam) {
-          return '<div class="sess exam" id="' + id.toLowerCase() + '"><div class="sess-top"><span class="sess-no">' + esc(s.no) + '</span><span class="sess-wk">' + esc(s.week) + "</span></div>" +
+          return '<div class="sess exam" id="' + id.toLowerCase() + '"><div class="sess-top"><span class="sess-no">' + esc(s.no) + '</span><span class="sess-wk">' + esc(s.week) + '</span><span class="sess-date" data-sid="' + id + '"></span></div>' +
             "<h4>" + esc(s.title) + "</h4><ul>" + li(s.topics) + "</ul></div>";
         }
         var dl = "<dt>ในห้อง</dt><dd>" + esc(s.inClass) + "</dd><dt>งานโครงงาน</dt><dd>" + esc(s.project) + "</dd>";
         if (s.tools) dl += "<dt>เครื่องมือสาธิต</dt><dd>" + esc(s.tools) + "</dd>";
         var tags = (s.cp ? '<span class="chip due"><a href="#' + s.cp.toLowerCase() + '">ส่ง ' + esc(s.cp) + "</a></span>" : "") + chips(s.clo, "c");
         var links = (s.links || []).map(function (l) { return '<a href="' + esc(l.href) + '">' + esc(l.label) + " →</a>"; }).join("");
-        return '<div class="sess" id="' + id.toLowerCase() + '"><div class="sess-top"><span class="sess-no">' + esc(s.no) + '</span><span class="sess-wk">' + esc(s.week) + " · " + s.hours + " ชม.</span></div>" +
+        return '<div class="sess" id="' + id.toLowerCase() + '"><div class="sess-top"><span class="sess-no">' + esc(s.no) + '</span><span class="sess-wk">' + esc(s.week) + " · " + s.hours + ' ชม.</span><span class="sess-date" data-sid="' + id + '"></span></div>' +
           "<h4>" + esc(s.title) + "</h4><ul>" + li(s.topics) + '</ul><dl class="sess-dl">' + dl + '</dl><div class="tags">' + tags + "</div>" + (links ? '<div class="sess-links">' + links + "</div>" : "") + "</div>";
       }).join("");
       return '<article class="phase" style="--pc:var(--p' + (i + 1) + ')"><span class="phase-meta">ช่วง ' + (i + 1) + " · " + esc(p.weeks) + "</span>" +
@@ -391,7 +419,7 @@
     }).join("");
     $("cps").innerHTML = D.checkpoints.map(function (c) {
       return '<li class="cp" id="' + c.id.toLowerCase() + '"><div class="cp-top"><span class="cp-id">' + c.id + '</span><span class="cp-w">' + c.weight + '%</span></div>' +
-        '<span class="cp-wk">ส่ง' + esc(c.week) + "</span><h3>" + esc(c.title) + "</h3>" +
+        '<span class="cp-wk" data-cp="' + c.id + '">ส่ง' + esc(c.week) + "</span><h3>" + esc(c.title) + "</h3>" +
         "<p><b>ส่ง</b> " + esc(c.deliver) + "</p><p><b>ตรวจ</b> " + esc(c.check) + '</p><div class="tags">' + chips(c.clo, "c") + "</div></li>";
     }).join("");
     $("rules").innerHTML = li(D.rules);
@@ -432,6 +460,35 @@
       return "<li>" + (r.u ? '<a href="' + esc(r.u) + '" target="_blank" rel="noopener">' + esc(r.t) + "</a>" : esc(r.t)) + "</li>";
     }).join("");
     $("history").innerHTML = D.meta.history.map(function (h) { return "<li><b>ฉบับ " + esc(h.v) + "</b> · " + esc(h.date) + " · " + esc(h.note) + "</li>"; }).join("");
+
+    /* ตอนนี้ และวันที่จริงจากกำหนดการ */
+    var X = window.ENGSE601Schedule;
+    if (X && D.schedule) X.load(D.schedule.url, function (data) {
+      if (!data) return;
+      var M = X.model(data, X.now()), s = M.current || M.next, pct = M.teachTotal ? Math.round(M.done / M.teachTotal * 100) : 0;
+      var warn = M.offSoon.map(function (o) { return X.shortDate(M, o.start) + " " + o.label; })
+        .concat(M.pendingSess.map(function (p) { return p.label + " รอกำหนดวัน"; }));
+      var up = M.upcoming.slice(0, 3).map(function (it) {
+        var c = X.countdown(M, it);
+        return '<li><b class="' + c.level + '">' + esc(c.text) + "</b><span>" + esc(it.id) + " · " + esc(it.title) + (it.pending && it.sess ? " (ก่อน" + esc(it.sess.label) + ")" : "") + "</span></li>";
+      }).join("");
+      $("now-strip").innerHTML =
+        '<div><p class="lbl">ตอนนี้</p><p class="big">' + (M.before ? "ยังไม่เปิดภาค" : M.after ? "จบภาคแล้ว" : "สัปดาห์ที่ " + M.week) + "</p><p>เรียนไปแล้ว " + M.done + " จาก " + M.teachTotal + ' ครั้ง</p><div class="bar"><i style="width:' + pct + '%"></i></div></div>' +
+        '<div><p class="lbl">' + (M.current ? "กำลังเรียน" : "คาบถัดไป") + "</p>" + (s ? '<p class="big">' + esc(s.label) + (s.exam ? "" : " <small>· " + esc(s.topic) + "</small>") + "</p><p>" + esc(X.sessWhen(M, s)) + (s.room && !s.exam ? " · " + esc(s.room) : "") + "</p>" : '<p class="big">ไม่มีคาบเรียนแล้ว</p>') +
+          (warn.length ? '<p class="warn">' + esc(warn.join(" · ")) + "</p>" : "") + "</div>" +
+        '<div><p class="lbl">ใกล้ครบกำหนด</p>' + (up ? "<ul>" + up + "</ul>" : "<p>ไม่มีงานที่ยังไม่ครบกำหนด</p>") + '<a class="more" href="deliverables.html">ดูสิ่งที่ต้องส่งทั้งภาค และ path ใน repo →</a></div>';
+      $("now-strip").hidden = false;
+      Array.prototype.forEach.call(document.querySelectorAll(".sess-date"), function (el) {
+        var x = M.byId[el.dataset.sid];
+        if (!x) return;
+        el.textContent = x.pending ? "· รอกำหนดวัน" : x.start ? "· " + X.date(M, x.start) : "";
+        el.className = "sess-date" + (x.pending ? " wait" : "");
+      });
+      Array.prototype.forEach.call(document.querySelectorAll(".cp-wk[data-cp]"), function (el) {
+        var it = M.items.filter(function (i) { return i.id === el.dataset.cp; })[0];
+        if (it) el.textContent = "ส่ง " + X.due(M, it, true);
+      });
+    });
   });
   </script>
 </body>

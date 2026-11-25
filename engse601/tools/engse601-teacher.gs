@@ -9,6 +9,10 @@
  *   3. เผยแพร่ "ไฟล์สถานะทีม" ทีมละ 1 ไฟล์ แชร์แบบดูอย่างเดียวให้อีเมล Gmail ของสมาชิกทีมนั้น
  *      ไฟล์มีแต่ค่า ไม่มีสูตรหรือลิงก์กลับมาชีตนี้ แสดงคะแนนทีมเฉพาะจุดตรวจที่ติ๊ก "เผยแพร่ผลให้นักศึกษา"
  *      ในแผ่นภาพรวม ไม่แสดงคะแนนรายคน ผลประเมินเพื่อน คะแนนสอบ หรือข้อมูลของทีมอื่น
+ *      วันกำหนดส่ง CP1–CP5 ในไฟล์ใช้แผ่น "กำหนดการ" (ถ้าไม่มีแผ่นนี้ ใช้วันเรียนครั้งที่ 1 + สัปดาห์ในแผ่นภาพรวม)
+ *   4. เป็นเว็บแอปส่ง "กำหนดการและสิ่งที่ต้องส่ง" จากแผ่น "กำหนดการ" ให้หน้าเว็บรายวิชาแบบ JSON
+ *      ส่งเฉพาะแผ่นกำหนดการ (วัน เวลา ห้อง งาน ที่ส่งใน repo) ไม่มีรายชื่อ คะแนน หรือข้อมูลทีม
+ *      แถวที่ไม่ได้ติ๊ก "แสดงบนเว็บ" ไม่ถูกส่ง · แคช 5 นาที และล้างเองเมื่อแก้แผ่นกำหนดการ
  *
  * ทีมของ ENGSE601 คือทีมโครงงาน ENGSE212 ทีมเดียวกัน ตัวแทนทีมกรอก 1 คนต่อทีม แก้คำตอบภายหลังได้
  *
@@ -19,8 +23,17 @@
  *   4. นำ "ลิงก์แบบลงทะเบียนทีมสำหรับนักศึกษา" ในแผ่นภาพรวมไปใส่ register.formUrl ใน data.js
  *   5. ENGSE601 > ตั้งซิงก์อัตโนมัติเมื่อมีคนส่งฟอร์ม (หรือกดซิงก์เองเมื่อต้องการ)
  *   ฟอร์มที่สร้างก่อนฉบับ 1.1: สั่ง ENGSE601 > เพิ่มคำถามอีเมลสมาชิกในฟอร์มเดิม ครั้งเดียว
- *   เผยแพร่: กรอกวันที่เรียนครั้งที่ 1 ในแผ่นภาพรวม แล้วสั่ง ENGSE601 > เผยแพร่สถานะทีมตอนนี้
+ *   เผยแพร่: ตรวจวันที่ในแผ่นกำหนดการ แล้วสั่ง ENGSE601 > เผยแพร่สถานะทีมตอนนี้
  *
+ * เว็บแอปกำหนดการ (ทำครั้งเดียว หลังวางสคริปต์ฉบับ 1.3):
+ *   1. ในหน้า Apps Script กด Deploy > New deployment > เลือกชนิด Web app
+ *   2. Execute as: Me (software.rmutl@gmail.com) · Who has access: Anyone แล้วกด Deploy และอนุญาตสิทธิ์
+ *   3. คัดลอก Web app URL (ลงท้าย /exec) ไปใส่ scheduleUrl ใน engse601/data.js
+ *   4. ENGSE601 > ตรวจข้อมูลหน้าเว็บกำหนดการ เพื่อดูว่าหน้าเว็บจะเห็นกี่รายการ และงานใดยังไม่มีกำหนดส่ง
+ *   แก้สคริปต์ภายหลัง: Deploy > Manage deployments > แก้ deployment เดิม > Version: New version
+ *   (URL เดิมใช้ต่อได้ ถ้าสร้าง deployment ใหม่จะได้ URL ใหม่)
+ *
+ * ฉบับ 1.3 (25 พ.ย. 2569): แผ่นกำหนดการ เว็บแอปกำหนดการ และวันส่ง CP ในไฟล์สถานะทีมตามแผ่นกำหนดการ
  * ฉบับ 1.2 (24 พ.ย. 2569): ถอนสิทธิ์อีเมลเดิมเมื่อทีมแก้อีเมล และแจ้งอีเมลที่ไม่ใช่ Gmail เป็นปัญหาที่ต้องแก้
  * ฉบับ 1.1 (24 พ.ย. 2569): คำถามอีเมล Gmail ของสมาชิก และไฟล์สถานะทีม · ฉบับ 1.0: แบบลงทะเบียนทีมและซิงก์
  *
@@ -38,7 +51,7 @@ var CELL = { formEdit: 'B9', formPublic: 'B10', lastSync: 'B11', syncNote: 'B12'
 var ROSTER = { firstRow: 6, lastRow: 45, idCol: 2, nameCol: 3 };   // แผ่นคะแนน: B รหัส C ชื่อ
 var MAX_TEAMS = 20;                                                 // แผ่นทีมมีแถว T01–T20
 var SYNC_ROWS = 60;
-var PROP = { items: 'engse601.itemIds', maxTeam: 'engse601.maxTeam', folder: 'engse601.statusFolder' };
+var PROP = { items: 'engse601.itemIds', maxTeam: 'engse601.maxTeam', folder: 'engse601.statusFolder', book: 'engse601.bookId' };
 var ID_RE = /([0-9]{11}-[0-9])/;
 var EMAIL_RE = /[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/;
 
@@ -52,6 +65,16 @@ var SCORE = { width: 7, id: 2, name: 3, team: 4, attend: 7 };
 var STATUS_FILE = 'ENGSE601 2/2569 · สถานะทีม ';
 var FOLDER_NAME = 'ENGSE601 2/2569 · ไฟล์สถานะทีม';
 var FOLDER_EDITORS = ['tkeatkaew@gmail.com'];   // ให้บัญชีที่ Claude ใช้ตรวจไฟล์ได้
+var SITE_URL = 'https://se-rmutl.github.io/engse601/';
+
+// แผ่นกำหนดการ: หาตารางจากข้อความหัวตารางในคอลัมน์ A จึงแทรกแถวคาบเรียนหรืองานเพิ่มได้
+var SCHED = { sheet: 'กำหนดการ', settings: 'ค่าเริ่มต้น', sessions: 'คาบเรียน', items: 'สิ่งที่ต้องส่ง',
+  scanRows: 300, width: 12, cacheKey: 'engse601.schedule.v1', cacheSec: 300 };
+var SCHED_SETTINGS = [['วันเรียน', 'day'], ['เวลาเริ่ม', 'start'], ['เวลาเลิก', 'end'], ['ห้อง', 'room'],
+  ['เวลาส่งจุดตรวจ', 'cpTime'], ['ลิงก์แบบประเมินเพื่อน', 'peerUrl']];
+// คอลัมน์ A, B, C, ... ของตารางคาบเรียน และตารางสิ่งที่ต้องส่ง
+var SESS_COLS = ['id', 'label', 'week', 'date', 'start', 'end', 'room', 'status', 'topic', 'note'];
+var ITEM_COLS = ['id', 'title', 'scope', 'kind', 'session', 'override', 'due', 'weight', 'where', 'link', 'note', 'show'];
 
 var FORM_TITLE = 'ENGSE601 ลงทะเบียนทีมโครงงาน · ภาค 2/2569';
 var FORM_DESC = [
@@ -107,6 +130,7 @@ function onOpen() {
     .addItem('ซิงก์ทีมตอนนี้', 'syncTeams')
     .addSeparator()
     .addItem('เผยแพร่สถานะทีมตอนนี้', 'publishTeamStatus')
+    .addItem('ตรวจข้อมูลหน้าเว็บกำหนดการ', 'previewSchedule')
     .addSeparator()
     .addItem('สร้างแบบลงทะเบียนทีม', 'createTeamForm')
     .addItem('เพิ่มคำถามอีเมลสมาชิกในฟอร์มเดิม', 'addEmailQuestion')
@@ -387,8 +411,9 @@ function publishTeamStatus() {
   var tz = ss.getSpreadsheetTimeZone();
   var now = new Date();
   var cps = readCps_(sum);
+  var sched = scheduleCps_(readSchedule_(ss), cps, tz);
   var first = sum.getRange(PUB.firstClass).getValue();
-  first = Object.prototype.toString.call(first) === '[object Date]' && !isNaN(first) ? dayOnly_(first) : null;
+  first = isDate_(first) ? dayOnly_(first) : null;
   var minAttend = Number(sum.getRange(PUB.minAttend).getValue()) || 0.8;
 
   // นักศึกษา: ทีมตามแผ่นคะแนน (รวมที่อาจารย์แก้เอง) ชื่อ และเวลาเรียน
@@ -434,7 +459,8 @@ function publishTeamStatus() {
   sum.getRange(PUB.lastPub).setValue(Utilities.formatDate(now, tz, 'd/M/yyyy HH:mm'));
   sum.getRange(PUB.pubNote).setValue('ไฟล์ทีม ' + made + ' · แชร์ครบ ' + shared + ' ทีม' +
     (missing.length ? ' · ยังไม่มีอีเมล ' + missing.length + ' คน (ดูแผ่นทีม คอลัมน์ X)' : '') +
-    (first ? '' : ' · ยังไม่ได้กรอกวันที่เรียนครั้งที่ 1 จึงไม่แสดงวันกำหนดส่ง'));
+    (sched ? (sched.pending.length ? ' · ' + sched.pending.join(', ') + ' ยังไม่มีกำหนดส่งในแผ่นกำหนดการ' : '') :
+      first ? '' : ' · ยังไม่ได้กรอกวันที่เรียนครั้งที่ 1 จึงไม่แสดงวันกำหนดส่ง'));
 }
 
 /** แถว CP1–CP5 ในตารางสัดส่วนคะแนนของแผ่นภาพรวม: ชื่อ คะแนนเต็ม สัปดาห์ และช่องเผยแพร่ผล (คอลัมน์ E) */
@@ -455,9 +481,10 @@ function teamData_(t, r, members, cps, first, minAttend, accessAnswer, now) {
   var done = 0, got = 0, full = 0, next = null;
   var cpRows = cps.map(function (cp, k) {
     var score = r[TEAM.c.cp - 1 + k], has = score !== '' && score !== null && !isNaN(Number(score));
-    var due = first ? new Date(first.getTime() + (cp.week - 1) * 7 * 864e5) : null;
-    var days = due ? Math.round((due - today) / 864e5) : null;
-    var row = { cp: cp.id + ' ' + cp.title, due: due ? thaiDate_(due) + ' (สัปดาห์ ' + cp.week + ')' : 'สัปดาห์ ' + cp.week,
+    // วันส่งจากแผ่นกำหนดการ (cp.due เป็น null ได้ถ้ายังรอกำหนด) ถ้าไม่มีแผ่นนั้น คิดจากวันเรียนครั้งที่ 1 + สัปดาห์
+    var due = cp.due !== undefined ? cp.due : first ? new Date(first.getTime() + (cp.week - 1) * 7 * 864e5) : null;
+    var days = due ? Math.round((dayOnly_(due) - today) / 864e5) : null;
+    var row = { cp: cp.id + ' ' + cp.title, due: cp.when || (due ? thaiDate_(due) + ' (สัปดาห์ ' + cp.week + ')' : 'สัปดาห์ ' + cp.week),
       status: '', tone: 'na', score: '–', fb: '' };
     if (cp.pub && has) {
       row.status = 'ตรวจแล้ว'; row.tone = 'ok'; row.score = fmtNum_(score) + ' / ' + cp.max;
@@ -476,7 +503,7 @@ function teamData_(t, r, members, cps, first, minAttend, accessAnswer, now) {
     } else {
       row.status = 'ยังไม่ถึงกำหนด';
     }
-    if (!next && !cp.pub && (days === null || days >= 0)) next = cp.id + ' · ' + (due ? thaiDate_(due) : 'สัปดาห์ ' + cp.week);
+    if (!next && !cp.pub && (days === null || days >= 0)) next = cp.id + ' · ' + (cp.short || (due ? thaiDate_(due) : 'สัปดาห์ ' + cp.week));
     return row;
   });
   var prof = String(r[TEAM.c.profile - 1] || '').trim();
@@ -525,6 +552,7 @@ function writeStatus_(sh, d, stamp) {
   line(d.team + (d.title ? ' · ' + d.title : ''), 16, true);
   line('สมาชิก: ' + d.members.join(' · '), 10, false, '#3f5972');
   line('เผยแพร่ล่าสุด ' + stamp + ' · ไฟล์นี้ดูได้อย่างเดียว อาจารย์อัปเดตหลังตรวจงาน', 9, false, '#597087');
+  line('งานที่ต้องส่งทั้งภาคและกำหนดส่ง: ' + SITE_URL + 'deliverables.html', 9, false, '#597087');
   row++;
   sh.getRange(row, 1, 1, 3).setValues([['จุดตรวจที่ได้ผลแล้ว', 'คะแนนทีมจากที่ตรวจแล้ว', 'งานถัดไป']]).setFontColor('#597087').setFontSize(9);
   row++;
@@ -610,9 +638,142 @@ function shareStatus_(fileId, members, mails, knownMails) {
 }
 
 var TH_MONTHS = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+var TH_DAYS = ['อา.', 'จ.', 'อ.', 'พ.', 'พฤ.', 'ศ.', 'ส.'];
 function thaiDate_(d) { return d.getDate() + ' ' + TH_MONTHS[d.getMonth()] + ' ' + (d.getFullYear() + 543); }
+/** วันที่ภาษาไทยตามเขตเวลาของชีต เช่น อา. 13 ธ.ค. 2569 */
+function thaiDateTz_(d, tz) {
+  var p = Utilities.formatDate(d, tz, 'u d M yyyy').split(' ').map(Number);
+  return TH_DAYS[p[0] % 7] + ' ' + p[1] + ' ' + TH_MONTHS[p[2] - 1] + ' ' + (p[3] + 543);
+}
+function isDate_(x) { return Object.prototype.toString.call(x) === '[object Date]' && !isNaN(x); }
+function str_(x) { return x === null || x === undefined ? '' : String(x).trim(); }
 function dayOnly_(d) { return new Date(d.getFullYear(), d.getMonth(), d.getDate()); }
 function fmtNum_(n) { n = Number(n); return Math.round(n * 100) / 100 + ''; }
+
+/* ------------------------------------------------------------------ schedule */
+
+/** อ่านแผ่นกำหนดการ คืน null ถ้าไม่มีแผ่นนี้
+ *  เวลา (เริ่ม เลิก เวลาส่ง) อ่านจากค่าที่แสดง เพราะค่าเวลาล้วนในชีตเป็นวันที่ปี 1899 ซึ่งเขตเวลาเก่าคลาดหลายนาที */
+function readSchedule_(ss) {
+  var sh = ss.getSheetByName(SCHED.sheet);
+  if (!sh) return null;
+  var n = Math.min(sh.getMaxRows(), SCHED.scanRows);
+  var rng = sh.getRange(1, 1, n, SCHED.width), v = rng.getValues(), dv = rng.getDisplayValues();
+  var find = function (label) { for (var i = 0; i < n; i++) if (str_(v[i][0]) === label) return i; return -1; };
+  var iSet = find(SCHED.settings), iSess = find(SCHED.sessions), iItem = find(SCHED.items);
+  if (iSess < 0 || iItem < 0 || iItem < iSess)
+    throw new Error('แผ่น "' + SCHED.sheet + '" ต้องมีหัวตาราง "' + SCHED.sessions + '" แล้วตามด้วย "' + SCHED.items + '" ในคอลัมน์ A');
+  var settings = {}, sessions = [], items = [], i;
+  for (i = iSet + 1; iSet >= 0 && i < iSess; i++) {
+    var label = str_(v[i][0]);
+    SCHED_SETTINGS.forEach(function (s) { if (label && label.indexOf(s[0]) === 0) settings[s[1]] = { v: v[i][1], d: str_(dv[i][1]) }; });
+  }
+  var rowObj = function (cols, i) {
+    var o = {};
+    cols.forEach(function (k, j) { o[k] = v[i][j]; o['_' + k] = str_(dv[i][j]); });
+    o.id = str_(v[i][0]);
+    return o;
+  };
+  for (i = iSess + 2; i < iItem; i++) if (str_(v[i][0])) sessions.push(rowObj(SESS_COLS, i));
+  for (i = iItem + 2; i < n; i++) if (str_(v[i][0])) items.push(rowObj(ITEM_COLS, i));
+  return { tz: ss.getSpreadsheetTimeZone(), settings: settings, sessions: sessions, items: items };
+}
+
+/** ใส่วันส่ง CP1–CP5 จากแผ่นกำหนดการให้ cps (ใช้ในไฟล์สถานะทีม) คืน null ถ้าไม่มีแผ่นกำหนดการ */
+function scheduleCps_(sc, cps, tz) {
+  if (!sc) return null;
+  var label = {}, pending = [];
+  sc.sessions.forEach(function (s) { label[s.id] = str_(s.label); });
+  cps.forEach(function (cp) {
+    var it = sc.items.filter(function (x) { return x.id === cp.id; })[0];
+    if (!it) return;
+    cp.due = isDate_(it.due) ? it.due : null;
+    if (!cp.due) { pending.push(cp.id); cp.when = 'รอกำหนดวัน'; cp.short = 'รอกำหนดวัน'; return; }
+    cp.short = thaiDateTz_(cp.due, tz);
+    cp.when = cp.short + ' ' + Utilities.formatDate(cp.due, tz, 'HH:mm') + ' น.' + (label[it.session] ? ' (หลัง' + label[it.session] + ')' : '');
+  });
+  return { pending: pending };
+}
+
+/** ข้อมูลที่หน้าเว็บได้รับ: ค่าเริ่มต้น คาบเรียน และงานที่ติ๊ก "แสดงบนเว็บ" เท่านั้น */
+function scheduleJson_(sc, now) {
+  var tz = sc.tz, off = Utilities.formatDate(now, tz, 'Z');
+  off = off.slice(0, 3) + ':' + off.slice(3);
+  var day = function (x) { return isDate_(x) ? Utilities.formatDate(x, tz, 'yyyy-MM-dd') : ''; };
+  var iso = function (x) { return isDate_(x) ? Utilities.formatDate(x, tz, "yyyy-MM-dd'T'HH:mm:ss") + off : ''; };
+  var hm = function (s) { var m = String(s || '').match(/^(\d{1,2}):(\d{2})/); return m ? ('0' + m[1]).slice(-2) + ':' + m[2] : ''; };
+  var set = function (k) { return sc.settings[k] || { v: '', d: '' }; };
+  return {
+    ok: true, version: 1, updated: iso(now), offset: off,
+    settings: { day: set('day').d, start: hm(set('start').d), end: hm(set('end').d), room: set('room').d,
+      cpTime: hm(set('cpTime').d), peerUrl: /^https:\/\//.test(set('peerUrl').d) ? set('peerUrl').d : '' },
+    sessions: sc.sessions.map(function (r) {
+      return { id: r.id, label: r._label, week: Number(r.week) || null, date: day(r.date), start: hm(r._start), end: hm(r._end),
+        room: r._room, status: r._status, topic: r._topic, note: r._note };
+    }),
+    items: sc.items.filter(function (r) { return r.show === true; }).map(function (r) {
+      return { id: r.id, title: r._title, scope: r._scope, kind: r._kind, session: r._session, due: iso(r.due),
+        weight: Number(r.weight) || null, where: r._where, link: r._link, note: r._note };
+    })
+  };
+}
+
+/** เว็บแอป: GET คืน JSON ของแผ่นกำหนดการ (ใส่ ?callback=ชื่อฟังก์ชัน เพื่อรับแบบ JSONP ได้) */
+function doGet(e) {
+  var p = (e && e.parameter) || {}, cache = null, body = null;
+  try { cache = CacheService.getScriptCache(); body = cache.get(SCHED.cacheKey); } catch (err) { cache = null; }
+  if (!body) {
+    var out;
+    try {
+      var sc = readSchedule_(scheduleBook_());
+      out = sc ? scheduleJson_(sc, new Date()) : { ok: false, error: 'ไม่พบแผ่น ' + SCHED.sheet };
+    } catch (err) { out = { ok: false, error: String(err && err.message || err) }; }
+    body = JSON.stringify(out);
+    if (out.ok && cache) { try { cache.put(SCHED.cacheKey, body, SCHED.cacheSec); } catch (err) { /* ข้อมูลใหญ่เกินแคช */ } }
+  }
+  var cb = String(p.callback || '');
+  if (/^[A-Za-z_$][\w$.]{0,60}$/.test(cb))
+    return ContentService.createTextOutput(cb + '(' + body + ');').setMimeType(ContentService.MimeType.JAVASCRIPT);
+  return ContentService.createTextOutput(body).setMimeType(ContentService.MimeType.JSON);
+}
+
+/** ชีตที่ผูกกับสคริปต์ (เว็บแอปของสคริปต์ที่ผูกกับชีตใช้ getActiveSpreadsheet ได้ ถ้าไม่ได้ ใช้รหัสที่บันทึกไว้) */
+function scheduleBook_() {
+  var ss = null;
+  try { ss = SpreadsheetApp.getActiveSpreadsheet(); } catch (e) { ss = null; }
+  if (ss) return ss;
+  var id = PropertiesService.getScriptProperties().getProperty(PROP.book);
+  if (!id) throw new Error('ยังไม่ได้บันทึกรหัสชีต เปิดชีตแล้วสั่ง ENGSE601 > ตรวจข้อมูลหน้าเว็บกำหนดการ ครั้งหนึ่ง');
+  return SpreadsheetApp.openById(id);
+}
+
+/** ทริกเกอร์อย่างง่าย: แก้แผ่นกำหนดการแล้วล้างแคช หน้าเว็บเห็นค่าใหม่ทันที */
+function onEdit(e) {
+  try {
+    if (e && e.range && e.range.getSheet().getName() === SCHED.sheet) CacheService.getScriptCache().remove(SCHED.cacheKey);
+  } catch (err) { /* ไม่มีสิทธิ์ใช้แคช */ }
+}
+
+/** เมนู: สรุปสิ่งที่หน้าเว็บจะได้รับ บันทึกรหัสชีตให้เว็บแอป และล้างแคช */
+function previewSchedule() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  PropertiesService.getScriptProperties().setProperty(PROP.book, ss.getId());
+  try { CacheService.getScriptCache().remove(SCHED.cacheKey); } catch (e) { /* ไม่มีแคช */ }
+  var sc = readSchedule_(ss);
+  if (!sc) { alert_('ไม่พบแผ่นกำหนดการ', 'สร้างแผ่นชื่อ "' + SCHED.sheet + '" ก่อน'); return; }
+  var j = scheduleJson_(sc, new Date());
+  var waiting = j.sessions.filter(function (s) { return !s.date && s.status !== 'งด'; }).map(function (s) { return s.id; });
+  var pending = j.items.filter(function (x) { return !x.due && x.kind !== 'ทุกคาบ'; }).map(function (x) { return x.id; });
+  var hidden = sc.items.length - j.items.length, url = '';
+  try { url = ScriptApp.getService().getUrl() || ''; } catch (e) { url = ''; }
+  alert_('ข้อมูลหน้าเว็บกำหนดการ', 'คาบเรียน ' + j.sessions.length + ' แถว · งานที่แสดงบนเว็บ ' + j.items.length + ' รายการ' +
+    (hidden ? ' (ซ่อน ' + hidden + ')' : '') +
+    (waiting.length ? '\nคาบที่ยังไม่มีวันที่: ' + waiting.join(', ') : '') +
+    (pending.length ? '\nงานที่ยังไม่มีกำหนดส่ง: ' + pending.join(', ') : '') +
+    '\n\n' + (url ? 'URL เว็บแอป: ' + url + '\nใส่ URL ที่ลงท้าย /exec ใน scheduleUrl ของ engse601/data.js' :
+      'ยังไม่ได้ deploy เป็นเว็บแอป ดูขั้นตอนที่หัวไฟล์สคริปต์') +
+    '\nล้างแคชแล้ว หน้าเว็บจะเห็นข้อมูลใหม่เมื่อเปิดหน้าอีกครั้ง');
+}
 
 /* ------------------------------------------------------------------ helpers */
 
