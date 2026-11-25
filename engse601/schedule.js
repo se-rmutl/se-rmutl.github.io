@@ -6,6 +6,7 @@
  *   2. ข้อมูลที่โหลดได้ครั้งล่าสุดในเครื่องนี้ (localStorage)
  *   3. ข้อมูลสำรองใน schedule-data.js (สำเนาจากชีต ณ วันที่ในไฟล์)
  * แสดงข้อมูลที่มีในเครื่องก่อน แล้วอัปเดตเมื่อเว็บแอปตอบกลับ
+ * รายละเอียดของงาน (สั่งเมื่อ ทำเพื่ออะไร ขั้นตอน) อยู่ใน tasks.js
  *
  * ทดสอบวันอื่น: เติม ?now=2026-12-09T10:00 ท้าย URL (เวลาไทย)
  */
@@ -66,8 +67,15 @@
       var timed = !!(s.date && s.start);
       var start = s.date ? at(s.date, timed ? s.start : "00:00") : null;
       var end = s.date ? (timed && s.end ? at(s.date, s.end) : new Date(+at(s.date, "00:00") + DAY)) : null;
-      return copy(s, { idx: i, start: start, end: end, timed: timed, teach: /^S\d+$/.test(s.id),
+      var link = /^https:\/\/[^\s"'<>]+$/.test(s.link || "") ? s.link : "";
+      return copy(s, { idx: i, start: start, end: end, timed: timed, teach: /^S\d+$/.test(s.id), link: link,
+        online: !!link || /ออนไลน์|online|teams|zoom|meet/i.test(s.room || ""),
         off: s.status === "งด", exam: s.status === "สอบ", pending: !s.date && s.status !== "งด" });
+    });
+    // วันงดเรียนที่มีคาบอื่น (เช่น คาบชดเชยออนไลน์) วันเดียวกัน ไม่ถือเป็นประกาศงดเรียน
+    sessions.forEach(function (o) {
+      if (!o.off || !o.date) return;
+      o.replacedBy = sessions.filter(function (x) { return !x.off && x.date === o.date; })[0] || null;
     });
     var byId = {};
     sessions.forEach(function (s) { byId[s.id] = s; });
@@ -75,13 +83,16 @@
       for (var i = s.idx + 1; i < sessions.length; i++) if (sessions[i].start && !sessions[i].off) return sessions[i];
       return null;
     };
+    var T = (window.ENGSE601_TASKS && window.ENGSE601_TASKS.items) || {};
     var items = data.items.map(function (it, i) {
       var due = it.due ? new Date(it.due) : null, s = byId[it.session] || null;
+      var brief = T[it.id] || null, asg = brief && brief.assigned ? byId[brief.assigned] || null : null;
       var dateOnly = it.kind === "สอบ" || (s && s.exam && due && !s.timed);
       var deadline = due ? (dateOnly ? new Date(+due + DAY) : due) : null;
       var pending = !due && !!s && s.pending && it.kind !== "ทุกคาบ";
       var after = pending ? nextDatedAfter(s) : null;
-      return copy(it, { idx: i, sess: s, dueDate: due, deadline: deadline, dateOnly: dateOnly, pending: pending,
+      return copy(it, { idx: i, sess: s, dueDate: due, deadline: deadline, dateOnly: dateOnly, pending: pending, brief: brief, assignedSess: asg,
+        homework: !!asg && !(it.session === asg.id && it.kind === "ในคาบ"),
         past: deadline ? deadline <= t : false, key: due ? +due : after ? +after.start - 1 : Infinity,
         kindInfo: KIND[it.kind] || { label: it.kind || "งาน", cls: "k-in" } });
     });
@@ -93,7 +104,7 @@
     var firstDay = dated.length ? dated[0].start : null, lastEnd = dated.length ? dated[dated.length - 1].end : null;
     var dayNo = function (d) { return Math.floor((+d + offMs) / DAY); };
     var week = firstDay ? Math.floor((dayNo(t) - dayNo(firstDay)) / 7) + 1 : null;
-    var offSoon = sessions.filter(function (s) { return s.off && s.end && s.end > t && (!next || s.start < next.start); });
+    var offSoon = sessions.filter(function (s) { return s.off && !s.replacedBy && s.end && s.end > t && (!next || s.start < next.start); });
     var pendingSess = sessions.filter(function (s) { return s.pending && s.teach; });
     var upcoming = items.filter(function (x) { return x.kind !== "ทุกคาบ" && !x.past && (x.dueDate || x.pending); })
       .sort(function (a, b) { return a.key - b.key || a.idx - b.idx; });
@@ -135,6 +146,52 @@
     if (n <= 0) return { text: it.dateOnly ? "วันนี้" : "วันนี้ " + time(M, it.dueDate) + " น.", level: "hot" };
     if (n === 1) return { text: "พรุ่งนี้", level: "hot" };
     return { text: "อีก " + n + " วัน", level: n <= 7 ? "soon" : "later" };
+  }
+  /** ที่เรียน: ห้อง หรือออนไลน์ พร้อมลิงก์ (ถ้ามี) */
+  function place(s) {
+    if (!s || s.off || s.exam) return { text: "", link: "", online: false };
+    return { text: s.room || "", link: s.link, online: s.online };
+  }
+  /** คาบถัดไปหลังคาบ s ตามวันที่ (หรือคาบที่รอกำหนดวันที่อยู่ถัดไปในแผน) */
+  function nextAfter(M, s) {
+    var later = M.sessions.filter(function (x) { return !x.off && x.idx > s.idx; });
+    var dated = later.filter(function (x) { return x.start && (!s.start || x.start > s.start); }).sort(function (a, b) { return a.start - b.start; });
+    var pend = later.filter(function (x) { return x.pending; })[0];
+    return pend && (!dated[0] || pend.idx < dated[0].idx) ? pend : dated[0] || null;
+  }
+  /** ข้อความงานหลังเรียนของคาบ s สำหรับวางในกลุ่ม LINE */
+  function lineText(M, s, site) {
+    var hw = M.items.filter(function (it) { return it.homework && it.assignedSess === s; });
+    var whenOf = function (it) {
+      if (it.pending && it.sess) return (it.kind === "ก่อนคาบ" ? "ก่อนเริ่ม" : "") + it.sess.label + " (วันแจ้งภายหลัง)";
+      return (it.kind === "ก่อนคาบ" && it.sess ? "ก่อนเริ่ม" + it.sess.label + " · " : "") + due(M, it, true);
+    };
+    var groups = [], seen = {};
+    hw.forEach(function (it) { var k = whenOf(it); if (!seen[k]) { seen[k] = []; groups.push(k); } seen[k].push(it); });
+    var L = ["ENGSE601 · งานหลังเรียน" + s.label + (s.start ? " (" + date(M, s.start) + ")" : "")];
+    groups.forEach(function (k) {
+      L.push("", "ส่ง " + k);
+      seen[k].forEach(function (it) { L.push("• " + it.id + " " + it.title + " [งาน" + it.scope + "]"); });
+    });
+    var n = nextAfter(M, s);
+    if (n) {
+      var p = place(n);
+      L.push("", "ครั้งถัดไป: " + n.label + " · " + sessWhen(M, n) + (p.text ? " · " + p.text : ""));
+      if (p.link) L.push("เข้าเรียนออนไลน์: " + p.link);
+      else if (p.online) L.push("ลิงก์เข้าเรียนแจ้งในกลุ่มนี้");
+    }
+    L.push("", "วิธีทำและเหตุผลของแต่ละงาน: " + site + "#after-" + s.id.toLowerCase());
+    return L.join("\n");
+  }
+  function copyText(text) {
+    if (navigator.clipboard && window.isSecureContext) return navigator.clipboard.writeText(text);
+    return new Promise(function (ok, fail) {
+      var ta = document.createElement("textarea");
+      ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0";
+      document.body.appendChild(ta); ta.select();
+      try { document.execCommand("copy") ? ok() : fail(new Error("copy")); } catch (e) { fail(e); }
+      ta.remove();
+    });
   }
   /** ลิงก์จากชีต: รับเฉพาะ https หรือ path ในเว็บนี้ */
   function safeLink(u) {
@@ -178,7 +235,8 @@
       if (!s.start || s.off) return;
       var when = s.timed ? ["DTSTART:" + icsUtc(s.start), "DTEND:" + icsUtc(s.end)]
         : ["DTSTART;VALUE=DATE:" + icsDate(M, s.start), "DTEND;VALUE=DATE:" + icsDate(M, s.end)];
-      ev("class-" + s.id.toLowerCase(), "ENGSE601 " + (s.exam ? s.label : s.label + " · " + s.topic), when, s.note || s.topic, s.exam ? "" : s.room, false);
+      ev("class-" + s.id.toLowerCase(), "ENGSE601 " + (s.exam ? s.label : s.label + " · " + s.topic), when,
+        [s.note || s.topic, s.link ? "เข้าเรียนออนไลน์: " + s.link : ""].filter(Boolean).join("\n"), s.exam ? "" : s.room, false);
     });
     M.items.forEach(function (it) {
       if (!it.dueDate || it.kind === "สอบ") return;
@@ -205,5 +263,6 @@
   }
 
   window.ENGSE601Schedule = { load: load, model: model, now: now, date: date, shortDate: shortDate, time: time, due: due,
-    sessWhen: sessWhen, countdown: countdown, safeLink: safeLink, ics: ics, download: download, sourceText: sourceText, KIND: KIND };
+    sessWhen: sessWhen, countdown: countdown, safeLink: safeLink, ics: ics, download: download, sourceText: sourceText, KIND: KIND,
+    place: place, nextAfter: nextAfter, lineText: lineText, copyText: copyText };
 })();

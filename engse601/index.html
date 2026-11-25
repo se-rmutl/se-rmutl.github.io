@@ -12,9 +12,10 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap">
   <link rel="stylesheet" href="../assets/class-portal.css?v=2">
-  <script src="data.js?v=8" defer></script>
-  <script src="schedule-data.js?v=1" defer></script>
-  <script src="schedule.js?v=1" defer></script>
+  <script src="data.js?v=9" defer></script>
+  <script src="schedule-data.js?v=2" defer></script>
+  <script src="tasks.js?v=1" defer></script>
+  <script src="schedule.js?v=2" defer></script>
   <style>
     .course-page { --course: #d65a2c; --course-ink: #9e3d18; --p1: #d65a2c; --p2: #184d8d; --px: #597087; }
     .fact-strip.four { grid-template-columns: repeat(4, 1fr); }
@@ -50,6 +51,9 @@
     .now-strip .bar { height: 6px; margin-top: 8px; overflow: hidden; border-radius: 99px; background: #edf2f4; }
     .now-strip .bar i { display: block; height: 100%; background: var(--course); }
     .sess-date { color: var(--ink); font-size: .78rem; font-weight: 700; }
+    .now-strip a.join { display: inline-block; margin-top: 6px; padding: 4px 10px; border-radius: 9px; background: #4b53bc; color: #fff; font-size: .82rem; font-weight: 700; text-decoration: none; }
+    .now-strip .join-note { margin-top: 6px; color: #4b53bc; font-size: .82rem; font-weight: 600; }
+    .sess-links a.hw { border-color: var(--course); background: var(--course); color: #fff; }
     .sess-date.wait { color: #7a510a; }
     .note { margin-top: 14px; padding: 12px 14px; border-left: 3px solid var(--course); background: color-mix(in srgb, var(--course), transparent 93%); color: #405a72; font-size: .88rem; }
 
@@ -386,6 +390,7 @@
       D.artifacts.map(function (a) { return "<tr><td>" + esc(a.a) + "</td><td>" + esc(a.std) + "</td><td>" + esc(a.dest) + "</td></tr>"; }).join("") + "</tbody>";
 
     /* plan */
+    var TK = (window.ENGSE601_TASKS && window.ENGSE601_TASKS.items) || {};
     if (D.meta.scheduleNote) { $("schedule-note").textContent = D.meta.scheduleNote; $("schedule-note").hidden = false; }
     $("weekbar").style.gridTemplateColumns = D.weekbar.map(function (w) { return w.fr + "fr"; }).join(" ");
     $("weekbar").innerHTML = D.weekbar.map(function (w) {
@@ -401,7 +406,9 @@
         var dl = "<dt>ในห้อง</dt><dd>" + esc(s.inClass) + "</dd><dt>งานโครงงาน</dt><dd>" + esc(s.project) + "</dd>";
         if (s.tools) dl += "<dt>เครื่องมือสาธิต</dt><dd>" + esc(s.tools) + "</dd>";
         var tags = (s.cp ? '<span class="chip due"><a href="#' + s.cp.toLowerCase() + '">ส่ง ' + esc(s.cp) + "</a></span>" : "") + chips(s.clo, "c");
-        var links = (s.links || []).map(function (l) { return '<a href="' + esc(l.href) + '">' + esc(l.label) + " →</a>"; }).join("");
+        var nHw = Object.keys(TK).filter(function (k) { return TK[k].assigned === id; }).length;
+        var links = (nHw ? '<a class="hw" href="deliverables.html#after-' + id.toLowerCase() + '">งานหลังเรียน ' + nHw + " ชิ้น →</a>" : "") +
+          (s.links || []).map(function (l) { return '<a href="' + esc(l.href) + '">' + esc(l.label) + " →</a>"; }).join("");
         return '<div class="sess" id="' + id.toLowerCase() + '"><div class="sess-top"><span class="sess-no">' + esc(s.no) + '</span><span class="sess-wk">' + esc(s.week) + " · " + s.hours + ' ชม.</span><span class="sess-date" data-sid="' + id + '"></span></div>' +
           "<h4>" + esc(s.title) + "</h4><ul>" + li(s.topics) + '</ul><dl class="sess-dl">' + dl + '</dl><div class="tags">' + tags + "</div>" + (links ? '<div class="sess-links">' + links + "</div>" : "") + "</div>";
       }).join("");
@@ -474,7 +481,8 @@
       }).join("");
       $("now-strip").innerHTML =
         '<div><p class="lbl">ตอนนี้</p><p class="big">' + (M.before ? "ยังไม่เปิดภาค" : M.after ? "จบภาคแล้ว" : "สัปดาห์ที่ " + M.week) + "</p><p>เรียนไปแล้ว " + M.done + " จาก " + M.teachTotal + ' ครั้ง</p><div class="bar"><i style="width:' + pct + '%"></i></div></div>' +
-        '<div><p class="lbl">' + (M.current ? "กำลังเรียน" : "คาบถัดไป") + "</p>" + (s ? '<p class="big">' + esc(s.label) + (s.exam ? "" : " <small>· " + esc(s.topic) + "</small>") + "</p><p>" + esc(X.sessWhen(M, s)) + (s.room && !s.exam ? " · " + esc(s.room) : "") + "</p>" : '<p class="big">ไม่มีคาบเรียนแล้ว</p>') +
+        '<div><p class="lbl">' + (M.current ? "กำลังเรียน" : "คาบถัดไป") + "</p>" + (s ? '<p class="big">' + esc(s.label) + (s.exam ? "" : " <small>· " + esc(s.topic) + "</small>") + "</p><p>" + esc(X.sessWhen(M, s)) + (s.room && !s.exam ? " · " + esc(s.room) : "") + "</p>" +
+          (X.place(s).link ? '<a class="join" href="' + esc(X.place(s).link) + '" target="_blank" rel="noopener">เข้าห้องเรียนออนไลน์ →</a>' : X.place(s).online ? '<p class="join-note">ลิงก์เข้าเรียนแจ้งในกลุ่ม LINE ของรายวิชา</p>' : "") : '<p class="big">ไม่มีคาบเรียนแล้ว</p>') +
           (warn.length ? '<p class="warn">' + esc(warn.join(" · ")) + "</p>" : "") + "</div>" +
         '<div><p class="lbl">ใกล้ครบกำหนด</p>' + (up ? "<ul>" + up + "</ul>" : "<p>ไม่มีงานที่ยังไม่ครบกำหนด</p>") + '<a class="more" href="deliverables.html">ดูสิ่งที่ต้องส่งทั้งภาค และ path ใน repo →</a></div>';
       $("now-strip").hidden = false;

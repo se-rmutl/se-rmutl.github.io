@@ -12,9 +12,10 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap">
   <link rel="stylesheet" href="../assets/class-portal.css?v=2">
-  <script src="data.js?v=8" defer></script>
-  <script src="schedule-data.js?v=1" defer></script>
-  <script src="schedule.js?v=1" defer></script>
+  <script src="data.js?v=9" defer></script>
+  <script src="schedule-data.js?v=2" defer></script>
+  <script src="tasks.js?v=1" defer></script>
+  <script src="schedule.js?v=2" defer></script>
   <style>
     .course-page { --course: #d65a2c; --course-ink: #9e3d18; --hot: #b9463e; --soon: #a86a00; --ok: #2f7a52; }
     .page-nav { display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; }
@@ -60,16 +61,16 @@
     .src.fallback::before, .src.cache::before { background: #d3a321; }
 
     /* ใกล้ครบกำหนด */
-    .soon { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; margin: 0; padding: 0; list-style: none; }
-    .soon li { display: flex; flex-direction: column; gap: 6px; padding: 16px 18px; border: 1px solid var(--line); border-top: 4px solid #c2ccd6; border-radius: 0 0 16px 16px; background: #fff; }
-    .soon li.hot { border-top-color: var(--hot); } .soon li.soon { border-top-color: #d3a321; } .soon li.wait { border-top-color: #d3a321; }
-    .soon .top { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
-    .soon .when { color: #314a62; font-size: .86rem; font-weight: 600; }
-    .soon h3 { margin: 0; font-size: 1rem; line-height: 1.4; }
-    .soon h3 a { color: inherit; text-decoration: none; }
-    .soon h3 a:hover { text-decoration: underline; }
-    .soon .tags { display: flex; flex-wrap: wrap; gap: 5px; }
-    .soon .where { margin: auto 0 0; padding-top: 4px; color: #405a72; font-size: .84rem; }
+    .soonlist { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; margin: 0; padding: 0; list-style: none; }
+    .soonlist > li { display: flex; flex-direction: column; gap: 6px; padding: 16px 18px; border: 1px solid var(--line); border-top: 4px solid #c2ccd6; border-radius: 0 0 16px 16px; background: #fff; }
+    .soonlist > li.lv-hot { border-top-color: var(--hot); } .soonlist > li.lv-soon, .soonlist > li.lv-wait { border-top-color: #d3a321; }
+    .soonlist .top { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 2px 10px; align-items: baseline; }
+    .soonlist .when { color: #314a62; font-size: .86rem; font-weight: 600; text-align: right; }
+    .soonlist h3 { margin: 0; font-size: 1rem; line-height: 1.4; }
+    .soonlist h3 a { color: inherit; text-decoration: none; }
+    .soonlist h3 a:hover { text-decoration: underline; }
+    .soonlist .tags { display: flex; flex-wrap: wrap; gap: 5px; }
+    .soonlist .where { margin: auto 0 0; padding-top: 4px; color: #405a72; font-size: .84rem; }
 
     /* ทั้งภาค */
     .toolbar { position: sticky; top: 72px; z-index: 5; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin: 0 0 16px; padding: 10px 0; background: color-mix(in srgb, var(--paper), transparent 6%); backdrop-filter: blur(6px); }
@@ -102,6 +103,34 @@
     .it-note { margin: 4px 0 0; color: #597087; font-size: .84rem; }
     .it-link { display: inline-block; margin-top: 6px; color: var(--course-ink); font-size: .84rem; font-weight: 700; }
     .none { margin: 0; color: #8696a6; font-size: .86rem; }
+    .it-asg { margin: 4px 0 0; color: #597087; font-size: .8rem; }
+    .brief { margin-top: 8px; border-top: 1px dashed var(--line); }
+    .brief summary { padding: 8px 0 2px; color: var(--course-ink); font-size: .86rem; font-weight: 700; cursor: pointer; }
+    .brief .why { margin: 6px 0 0; color: #314a62; font-size: .9rem; }
+    .brief h5 { margin: 10px 0 4px; color: #597087; font-size: .76rem; letter-spacing: .04em; }
+    .brief ol { margin: 0; padding-left: 20px; color: #314a62; font-size: .9rem; }
+    .brief ol li + li { margin-top: 3px; }
+    .brief table { margin-top: 4px; border-collapse: collapse; font-size: .86rem; }
+    .brief td { padding: 5px 10px 5px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+    .brief td:first-child { white-space: nowrap; }
+    .brief .meta { margin: 8px 0 0; color: #405a72; font-size: .86rem; }
+    .brief .links { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+    .brief .links a { padding: 3px 10px; border: 1px solid color-mix(in srgb, var(--course), transparent 55%); border-radius: 999px; background: #fff; color: var(--course-ink); font-size: .8rem; font-weight: 700; text-decoration: none; }
+    .after { margin-top: 12px; padding: 14px 16px; border: 1px dashed color-mix(in srgb, var(--course), transparent 40%); border-radius: 14px; background: color-mix(in srgb, var(--course), transparent 95%); scroll-margin-top: 150px; }
+    .after:target { outline: 3px solid color-mix(in srgb, var(--course), transparent 40%); }
+    .after-h { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+    .after-h b { color: var(--course-ink); }
+    .after-h button { padding: 5px 11px; border: 1px solid var(--course); border-radius: 9px; background: #fff; color: var(--course-ink); font: inherit; font-size: .8rem; font-weight: 700; cursor: pointer; }
+    .after ul { margin: 8px 0 0; padding: 0; list-style: none; display: grid; gap: 4px; }
+    .after li { display: grid; grid-template-columns: 52px 1fr auto; gap: 8px; align-items: baseline; font-size: .88rem; }
+    .after li a { color: var(--ink); font-weight: 600; text-decoration: none; }
+    .after li a:hover { text-decoration: underline; }
+    .after li .w { color: #597087; font-size: .8rem; white-space: nowrap; }
+    .after p { margin: 8px 0 0; color: #597087; font-size: .8rem; }
+    .join { display: inline-block; margin-top: 8px; padding: 6px 12px; border-radius: 10px; background: #4b53bc; color: #fff; font-size: .84rem; font-weight: 700; text-decoration: none; }
+    .join:hover { background: #3c43a3; }
+    .join-note { display: block; margin-top: 6px; color: #4b53bc; font-size: .84rem; font-weight: 600; }
+    .chip.on { border-color: #b9bde8; background: #eef0fb; color: #3c43a3; }
     .grp[hidden], .it[hidden] { display: none; }
 
     /* repo */
@@ -127,6 +156,7 @@
       .grp.is-next { margin: 0 -10px; padding: 16px 10px; }
       .toolbar { position: static; }
       .actions { width: 100%; } .actions button { flex: 1; }
+      .after li { grid-template-columns: 46px 1fr; } .after li .w { grid-column: 2; }
     }
     @media print {
       .site-header, .toolbar, #soon, .page-nav, .dl-hero .src, .skip-link { display: none !important; }
@@ -138,6 +168,7 @@
       .it { break-inside: avoid; }
       .grp[hidden], .it[hidden] { display: grid !important; }
       .it[hidden] { display: block !important; }
+      .after-h button, .join { display: none; }
     }
   </style>
 </head>
@@ -174,7 +205,7 @@
       <div class="wrap">
         <h2 id="soon-title">ใกล้ครบกำหนด</h2>
         <p class="sec-lead">งานถัดไปเรียงตามวันครบกำหนด งานของคาบที่ยังรอกำหนดวันอยู่ในลำดับเดิมของแผน</p>
-        <ol class="soon" id="soon-list"></ol>
+        <ol class="soonlist" id="soon-list"></ol>
       </div>
     </section>
 
@@ -230,7 +261,8 @@
     var $ = function (id) { return document.getElementById(id); };
     var esc = function (s) { return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); };
     var LINK_LABEL = { "register.html": "หน้าลงทะเบียนทีม", "srs-guide.html": "คู่มือเขียน SRS", "srs-guide.html#checklist": "รายการตรวจ SRS",
-      "srs-guide.html#design": "แผนภาพไหนอยู่เอกสารไหน", "handouts/vv-profile-template.md": "แม่แบบ V&V Profile", "handouts/session-01-worksheet.html": "ใบงาน" };
+      "srs-guide.html#design": "แผนภาพไหนอยู่เอกสารไหน", "handouts/vv-profile-template.md": "แม่แบบ V&V Profile", "handouts/session-01-worksheet.html": "ใบงาน",
+      "https://www.istqb.org/wp-content/uploads/2024/11/ISTQB_CTFL_Syllabus_v4.0.1.pdf": "ISTQB CTFL v4.0.1 (PDF)" };
     var M = null, filter = "all", scrolled = false;
     $("updated").textContent = "ฉบับ " + D.meta.version + " · ปรับปรุงล่าสุด " + D.meta.updated;
 
@@ -240,7 +272,7 @@
     /** "docs/vv/cp1/ · SRS ฉบับ 1.1 ใน docs/srs/" → ส่วนที่เป็น path แสดงเป็น code */
     function where(s) {
       return String(s || "").split(" · ").map(function (p) {
-        return esc(p).replace(/((?:\.github|docs|tests|handouts)\/[\w\-./…]*|[\w\-]+\.(?:md|pdf|docx|yaml)\b|tag [\w.\-]+)/g, "<code>$1</code>");
+        return esc(p).replace(/((?:\.github|docs|tests|handouts)\/[\w\-./…]*|[\w\-]+\.(?:md|pdf|docx|yaml)\b|tag [\w.\-]+|(?:type|severity):[a-z]+)/g, "<code>$1</code>");
       }).join(" · ");
     }
     function linkHtml(it) {
@@ -255,6 +287,38 @@
     function whenText(it, long) {
       if (it.pending && it.sess) return (it.kind === "ก่อนคาบ" ? "ก่อนเริ่ม" : "") + it.sess.label;
       return X.due(M, it, long);
+    }
+    /** ห้องหรือออนไลน์ของคาบ พร้อมปุ่มเข้าเรียน */
+    function joinHtml(s) {
+      var p = X.place(s);
+      if (p.link) return '<a class="join" href="' + esc(p.link) + '" target="_blank" rel="noopener">เข้าห้องเรียนออนไลน์ →</a>';
+      if (p.online) return '<span class="join-note">ลิงก์เข้าเรียนแจ้งในกลุ่ม LINE ของรายวิชา</span>';
+      return "";
+    }
+    function briefHtml(it) {
+      var b = it.brief;
+      if (!b || !(b.why || (b.steps && b.steps.length))) return "";
+      var html = '<details class="brief"><summary>ทำอะไร ทำไม ทำอย่างไร</summary>';
+      if (b.why) html += '<p class="why"><b>ทำเพื่อ</b> ' + esc(b.why) + "</p>";
+      if (b.steps && b.steps.length) html += "<h5>ขั้นตอน</h5><ol>" + b.steps.map(function (x) { return "<li>" + where(x) + "</li>"; }).join("") + "</ol>";
+      if (b.table) html += "<h5>" + esc(b.table.title) + "</h5><table>" + b.table.rows.map(function (r) { return "<tr><td><code>" + esc(r[0]) + "</code></td><td>" + esc(r[1]) + "</td></tr>"; }).join("") + "</table>";
+      var meta = [b.done ? "<b>ถือว่าเสร็จเมื่อ</b> " + esc(b.done) : "", b.time ? "<b>เวลาโดยประมาณ</b> " + esc(b.time) : ""].filter(Boolean);
+      if (meta.length) html += '<p class="meta">' + meta.join("<br>") + "</p>";
+      var links = (b.links || []).map(function (l) {
+        var u = X.safeLink(l.href); if (!u) return "";
+        return '<a href="' + esc(u) + '"' + (/^https:/.test(u) ? ' target="_blank" rel="noopener"' : "") + ">" + esc(l.label) + " →</a>";
+      }).join("");
+      if (links) html += '<div class="links">' + links + "</div>";
+      return html + "</details>";
+    }
+    function afterHtml(s) {
+      var hw = M.items.filter(function (it) { return it.homework && it.assignedSess === s; });
+      if (!hw.length) return "";
+      return '<div class="after" id="after-' + s.id.toLowerCase() + '"><div class="after-h"><b>งานหลังเรียน' + esc(s.label) + " · " + hw.length + ' ชิ้น</b>' +
+        '<button type="button" data-line="' + esc(s.id) + '">คัดลอกข้อความสำหรับ LINE</button></div><ul>' +
+        hw.map(function (it) {
+          return '<li><span class="it-id">' + esc(it.id) + '</span><a href="#item-' + esc(it.id) + '">' + esc(it.title) + '</a><span class="w">' + esc(whenText(it)) + "</span></li>";
+        }).join("") + "</ul><p>อาจารย์สั่งงานเหล่านี้ท้ายคาบนี้ กดชื่องานเพื่อดูวิธีทำ</p></div>";
     }
     function dueLine(it) {
       var c = X.countdown(M, it);
@@ -271,8 +335,8 @@
       var s = M.current || M.next;
       if (s) {
         html += '<div class="now-card"><p class="lbl">' + (M.current ? "กำลังเรียน" : "คาบถัดไป") + '</p><p class="big">' + esc(s.label) +
-          (s.exam ? "" : " <small>· " + esc(s.topic) + "</small>") + "</p><p>" + esc(X.sessWhen(M, s)) + (s.room && !s.exam ? " · ห้อง " + esc(s.room) : "") +
-          (s.note ? " · " + esc(s.note) : "") + '</p><a class="jump" href="#g-' + s.id.toLowerCase() + '">ดูงานของครั้งนี้ ↓</a></div>';
+          (s.exam ? "" : " <small>· " + esc(s.topic) + "</small>") + "</p><p>" + esc(X.sessWhen(M, s)) + (s.room && !s.exam ? (s.online ? " · " : " · ห้อง ") + esc(s.room) : "") +
+          (s.note ? " · " + esc(s.note) : "") + "</p>" + joinHtml(s) + '<br><a class="jump" href="#g-' + s.id.toLowerCase() + '">ดูงานของครั้งนี้ ↓</a></div>';
       } else {
         html += '<div class="now-card"><p class="lbl">คาบถัดไป</p><p class="big">ไม่มีคาบเรียนแล้ว</p></div>';
       }
@@ -289,10 +353,10 @@
       list = list.slice(0, 8);
       $("soon-list").innerHTML = list.length ? list.map(function (it) {
         var c = X.countdown(M, it);
-        return '<li class="' + c.level + '"><div class="top"><span class="cd ' + c.level + '">' + esc(c.text) + '</span><span class="when">' + esc(whenText(it)) + "</span></div>" +
+        return '<li class="lv-' + c.level + '"><div class="top"><span class="cd ' + c.level + '">' + esc(c.text) + '</span><span class="when">' + esc(whenText(it)) + "</span></div>" +
           '<h3><a href="#item-' + esc(it.id) + '">' + esc(it.title) + '</a></h3><div class="tags"><span class="it-id">' + esc(it.id) + "</span>" + kindChip(it) + scopeChip(it.scope) + weightChip(it) + "</div>" +
           (it.where ? '<p class="where">' + where(it.where) + "</p>" : "") + "</li>";
-      }).join("") : '<li class="later"><h3>ไม่มีงานที่ยังไม่ครบกำหนด</h3></li>';
+      }).join("") : '<li class="lv-later"><h3>ไม่มีงานที่ยังไม่ครบกำหนด</h3></li>';
     }
 
     function renderTimeline() {
@@ -311,15 +375,20 @@
           else if (s.end && s.end <= M.t) { st = '<span class="st done">ผ่านแล้ว</span>'; cls = "is-done"; }
           else if (s.exam) { st = '<span class="st exam">สอบ</span>'; }
         }
-        var head = s ? '<div class="no">' + esc(s.label) + st + "</div>" + (s.topic && s.topic !== s.label ? '<p class="topic">' + esc(s.topic) + "</p>" : "") +
-          '<p class="when">' + esc(X.sessWhen(M, s)) + (s.room && !s.exam && !s.off ? " · " + esc(s.room) : "") + (s.note ? "<br>" + esc(s.note) : "") + "</p>"
+        var head = s ? '<div class="no">' + esc(s.label) + st + (s.online && !s.off ? '<span class="chip on">ออนไลน์</span>' : "") + "</div>" +
+          (s.topic && s.topic !== s.label ? '<p class="topic">' + esc(s.topic) + "</p>" : "") +
+          '<p class="when">' + esc(X.sessWhen(M, s)) + (s.room && !s.exam && !s.off ? " · " + esc(s.room) : "") + (s.note ? "<br>" + esc(s.note) : "") +
+          (s.replacedBy ? "<br>มี" + esc(s.replacedBy.label) + " แทนในวันเดียวกัน" : "") + "</p>" + joinHtml(s)
           : '<div class="no">ตลอดภาค</div><p class="topic">ทำทุกคาบ ไม่มีวันส่งแยก</p>';
         var body = g.items.length ? '<ol class="items">' + g.items.map(function (it) {
           return '<li class="it' + (it.past ? " is-past" : "") + '" id="item-' + esc(it.id) + '" data-scope="' + esc(it.scope) + '" data-score="' + (it.weight ? 1 : 0) + '" data-past="' + (it.past ? 1 : 0) + '">' +
             '<div class="it-top"><span class="it-id">' + esc(it.id) + "</span>" + kindChip(it) + scopeChip(it.scope) + weightChip(it) + "</div>" +
             '<p class="it-t">' + esc(it.title) + '</p><div class="it-due">' + dueLine(it) + "</div>" +
-            (it.where ? '<p class="it-where">ส่งที่ ' + where(it.where) + "</p>" : "") + (it.note ? '<p class="it-note">' + esc(it.note) + "</p>" : "") + linkHtml(it) + "</li>";
+            (it.where ? '<p class="it-where">' + (/^ไม่/.test(it.where) ? "" : "ส่งที่ ") + where(it.where) + "</p>" : "") + (it.note ? '<p class="it-note">' + esc(it.note) + "</p>" : "") +
+            (it.homework ? '<p class="it-asg">สั่งใน' + esc(it.assignedSess.label) + (it.assignedSess.start ? " · " + esc(X.shortDate(M, it.assignedSess.start)) : "") + "</p>" : "") +
+            linkHtml(it) + briefHtml(it) + "</li>";
         }).join("") + "</ol>" : '<p class="none">' + (s && s.off ? "ไม่มีงาน" : "ไม่มีงานส่งในครั้งนี้") + "</p>";
+        if (s) body += afterHtml(s);
         return '<section class="grp ' + cls + '" id="g-' + (s ? s.id.toLowerCase() : "all") + '" data-n="' + g.items.length + '"><div class="grp-h">' + head + "</div><div>" + body + "</div></section>";
       }).join("");
       applyFilter();
@@ -344,6 +413,24 @@
       });
     });
     $("hide-past").addEventListener("change", applyFilter);
+    $("timeline").addEventListener("click", function (e) {
+      var b = e.target.closest("button[data-line]");
+      if (!b || !M) return;
+      var site = location.href.split("#")[0].split("?")[0];
+      X.copyText(X.lineText(M, M.byId[b.dataset.line], site)).then(function () {
+        b.textContent = "คัดลอกแล้ว วางในกลุ่ม LINE ได้เลย";
+      }, function () { b.textContent = "คัดลอกไม่ได้ ลองอีกครั้ง"; });
+      setTimeout(function () { b.textContent = "คัดลอกข้อความสำหรับ LINE"; }, 2500);
+    });
+    /** เปิดรายละเอียดของงานที่ลิงก์มา (#item-D04) เลื่อนไปที่นั้นเฉพาะเมื่อ scroll เป็นจริง */
+    function openHash(scroll) {
+      var el = location.hash && document.getElementById(location.hash.slice(1));
+      if (!el) return;
+      var d = el.querySelector && el.querySelector("details.brief");
+      if (d) d.open = true;
+      if (scroll) el.scrollIntoView();
+    }
+    window.addEventListener("hashchange", function () { openHash(true); });
     $("print").addEventListener("click", function () { window.print(); });
     $("ics").addEventListener("click", function () { if (M) X.download("ENGSE601-2-2569.ics", X.ics(M)); });
 
@@ -369,7 +456,7 @@
       renderNow(); renderSoon(); renderTimeline(); renderRepo();
       var t = X.sourceText(M, source);
       $("src").textContent = t.text; $("src").className = "src " + t.cls;
-      if (location.hash && !scrolled) { scrolled = true; var el = document.getElementById(location.hash.slice(1)); if (el) el.scrollIntoView(); }
+      openHash(!scrolled); scrolled = true;
     });
   });
   </script>
