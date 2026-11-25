@@ -8,11 +8,12 @@
  */
 window.ENGSE601 = {
   meta: {
-    version: "1.7",
+    version: "1.8",
     term: "2/2569",
     updated: "25 พฤศจิกายน 2569",
     scheduleNote: "เรียนวันอังคาร 13:00–16:00 น. ห้อง C3-404 สัปดาห์ในแผนนับจากสัปดาห์แรกของภาค วันที่จริงของแต่ละครั้งและวันหยุดดูที่หน้าสิ่งที่ต้องส่ง",
     history: [
+      { v: "1.8", date: "25 พ.ย. 2569", note: "สื่อครั้งที่ 2 (เรียนออนไลน์ 1 ธ.ค.): สไลด์ 3 ชุดพร้อม PDF ทุกชุดมี Road Map ว่าอยู่ตรงไหนของภาค แม่แบบและตัวอย่าง V&V Strategy กิจกรรมกลุ่มย้ายเป็นการบ้าน D06" },
       { v: "1.7", date: "25 พ.ย. 2569", note: "งานแต่ละชิ้นบอกว่าสั่งในครั้งใด ทำเพื่ออะไร และขั้นตอน (tasks.js) กล่องงานหลังเรียนของแต่ละครั้งพร้อมข้อความสำหรับกลุ่ม LINE และลิงก์เรียนออนไลน์ของคาบชดเชย" },
       { v: "1.6", date: "25 พ.ย. 2569", note: "เพิ่มหน้าสิ่งที่ต้องส่ง (กำหนดส่งทุกงาน คาบถัดไป path มาตรฐานใน repo และไฟล์ปฏิทิน) ข้อมูลจากกำหนดการในชีตอาจารย์ และแถบตอนนี้ในหน้ารายวิชา" },
       { v: "1.5", date: "24 พ.ย. 2569", note: "เพิ่มแม่แบบและตัวอย่างเอกสารออกแบบ แผนภาพสถานะใน SRS และลิงก์ในครั้งที่ 4 คู่มือรองรับแบบเสนอ ENGSE211" },
@@ -94,8 +95,14 @@ window.ENGSE601 = {
       ] },
     S2: { no: "ครั้งที่ 2", week: "สัปดาห์ 2", hours: 3, title: "V&V และแบบจำลองกระบวนการทดสอบ",
       topics: ["verification กับ validation", "IEEE 1012 และระดับความสำคัญของระบบ (integrity level)", "กระบวนการทดสอบตาม ISO/IEC/IEEE 29119-2", "V-model, Agile testing quadrants และ test pyramid", "ระดับและชนิดของการทดสอบ"],
-      inClass: "จับคู่ Sprint ของโครงงานกับระดับการทดสอบ", project: "ร่าง V&V Strategy 1 หน้า และแปลง SE02 เป็น SRS ฉบับ 1.0", clo: ["CLO1"], desc: ["d2", "d3"],
+      inClass: "เรียนออนไลน์ MS Teams: สาธิตกับระบบตัวอย่าง SE LabBook และตอบคำถามในแชต กิจกรรมจับคู่ Sprint กับระดับการทดสอบทำเป็นการบ้าน D06", project: "ร่าง V&V Strategy 1 หน้า และแปลง SE02 เป็น SRS ฉบับ 1.0", clo: ["CLO1"], desc: ["d2", "d3"],
       links: [
+        { label: "สไลด์ 1 V&V และระดับความสำคัญ", href: "slides/session-02-vv.html" },
+        { label: "สไลด์ 2 กระบวนการและระดับการทดสอบ", href: "slides/session-02-process.html" },
+        { label: "สไลด์ 3 จากแบบเสนอสู่ SRS", href: "slides/session-02-srs.html" },
+        { label: "สไลด์ทั้ง 3 ชุด (PDF)", href: "slides/pdf/ENGSE601-session-02-slides.pdf" },
+        { label: "แม่แบบ V&V Strategy", href: "handouts/vv-strategy-template.md" },
+        { label: "ตัวอย่าง V&V Strategy SE LabBook", href: "handouts/vv-strategy-example.md" },
         { label: "คู่มือเขียน SRS", href: "srs-guide.html" },
         { label: "แม่แบบ SRS (Word)", href: "handouts/srs/ENGSE601-SRS-template.docx" },
         { label: "ตัวอย่าง SRS SE LabBook (PDF)", href: "handouts/srs/ENGSE601-SRS-example-SE-LabBook.pdf" }
