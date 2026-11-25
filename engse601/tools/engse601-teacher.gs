@@ -13,6 +13,8 @@
  *   4. เป็นเว็บแอปส่ง "กำหนดการและสิ่งที่ต้องส่ง" จากแผ่น "กำหนดการ" ให้หน้าเว็บรายวิชาแบบ JSON
  *      ส่งเฉพาะแผ่นกำหนดการ (วัน เวลา ห้อง งาน ที่ส่งใน repo) ไม่มีรายชื่อ คะแนน หรือข้อมูลทีม
  *      แถวที่ไม่ได้ติ๊ก "แสดงบนเว็บ" ไม่ถูกส่ง · แคช 5 นาที และล้างเองเมื่อแก้แผ่นกำหนดการ
+ *   5. ตรวจว่าแต่ละทีมส่งงานตาม path ใน repo แล้วหรือยัง (อ่านอย่างเดียวผ่าน GitHub API ด้วย token แบบ public read-only)
+ *      ผลลงแผ่น "การส่งงาน" และส่งให้หน้าเว็บสถานะการส่ง (รหัสทีมกับสถานะเท่านั้น)
  *
  * ทีมของ ENGSE601 คือทีมโครงงาน ENGSE212 ทีมเดียวกัน ตัวแทนทีมกรอก 1 คนต่อทีม แก้คำตอบภายหลังได้
  *
@@ -33,6 +35,10 @@
  *   แก้สคริปต์ภายหลัง: Deploy > Manage deployments > แก้ deployment เดิม > Version: New version
  *   (URL เดิมใช้ต่อได้ ถ้าสร้าง deployment ใหม่จะได้ URL ใหม่)
  *
+ * ฉบับ 1.5 (26 พ.ย. 2569): ตรวจการส่งงานใน repo ของทุกทีมผ่าน GitHub API ผลอยู่ในแผ่น "การส่งงาน"
+ *   และหน้าเว็บ submissions.html (doGet?what=submissions) กติกาการตรวจอยู่ในแผ่นกำหนดการ คอลัมน์ M
+ *   ตั้งครั้งเดียว: ENGSE601 > ตั้ง GitHub token แล้ว ENGSE601 > ตั้งตรวจการส่งงานอัตโนมัติทุกชั่วโมง
+ *   ต้อง deploy ใหม่ (New version) และอนุญาตสิทธิ์เพิ่ม "เชื่อมต่อบริการภายนอก" ครั้งแรกที่สั่ง
  * ฉบับ 1.4 (25 พ.ย. 2569): คอลัมน์ K "ลิงก์เรียนออนไลน์" ของตารางคาบเรียน (รับเฉพาะ https) ส่งให้หน้าเว็บ
  *   ต้อง deploy ใหม่: Deploy > Manage deployments > ไอคอนดินสอ > Version: New version > Deploy (URL เดิมใช้ต่อได้)
  * ฉบับ 1.3.1 (25 พ.ย. 2569): เมนูตรวจข้อมูลหน้าเว็บไม่แสดง URL จาก ScriptApp.getService() เพราะไม่ใช่ URL ของ deployment
@@ -73,12 +79,12 @@ var SITE_URL = 'https://se-rmutl.github.io/engse601/';
 
 // แผ่นกำหนดการ: หาตารางจากข้อความหัวตารางในคอลัมน์ A จึงแทรกแถวคาบเรียนหรืองานเพิ่มได้
 var SCHED = { sheet: 'กำหนดการ', settings: 'ค่าเริ่มต้น', sessions: 'คาบเรียน', items: 'สิ่งที่ต้องส่ง',
-  scanRows: 300, width: 12, cacheKey: 'engse601.schedule.v1', cacheSec: 300 };
+  scanRows: 300, width: 13, cacheKey: 'engse601.schedule.v1', cacheSec: 300 };
 var SCHED_SETTINGS = [['วันเรียน', 'day'], ['เวลาเริ่ม', 'start'], ['เวลาเลิก', 'end'], ['ห้อง', 'room'],
   ['เวลาส่งจุดตรวจ', 'cpTime'], ['ลิงก์แบบประเมินเพื่อน', 'peerUrl']];
 // คอลัมน์ A, B, C, ... ของตารางคาบเรียน และตารางสิ่งที่ต้องส่ง
 var SESS_COLS = ['id', 'label', 'week', 'date', 'start', 'end', 'room', 'status', 'topic', 'note', 'link'];
-var ITEM_COLS = ['id', 'title', 'scope', 'kind', 'session', 'override', 'due', 'weight', 'where', 'link', 'note', 'show'];
+var ITEM_COLS = ['id', 'title', 'scope', 'kind', 'session', 'override', 'due', 'weight', 'where', 'link', 'note', 'show', 'check'];
 
 var FORM_TITLE = 'ENGSE601 ลงทะเบียนทีมโครงงาน · ภาค 2/2569';
 var FORM_DESC = [
@@ -135,6 +141,7 @@ function onOpen() {
     .addSeparator()
     .addItem('เผยแพร่สถานะทีมตอนนี้', 'publishTeamStatus')
     .addItem('ตรวจข้อมูลหน้าเว็บกำหนดการ', 'previewSchedule')
+    .addItem('ตรวจการส่งงานใน repo ตอนนี้', 'checkSubmissions')
     .addSeparator()
     .addItem('สร้างแบบลงทะเบียนทีม', 'createTeamForm')
     .addItem('เพิ่มคำถามอีเมลสมาชิกในฟอร์มเดิม', 'addEmailQuestion')
@@ -144,6 +151,10 @@ function onOpen() {
     .addItem('ยกเลิกซิงก์อัตโนมัติ', 'removeSubmitTrigger')
     .addItem('ตั้งเผยแพร่สถานะทีมอัตโนมัติทุกคืน', 'installNightlyPublish')
     .addItem('ยกเลิกเผยแพร่อัตโนมัติ', 'removeNightlyPublish')
+    .addItem('ตั้งตรวจการส่งงานอัตโนมัติทุกชั่วโมง', 'installSubmissionTrigger')
+    .addItem('ยกเลิกตรวจการส่งงานอัตโนมัติ', 'removeSubmissionTrigger')
+    .addSeparator()
+    .addItem('ตั้ง GitHub token', 'setGithubToken')
     .addToUi();
 }
 
@@ -725,6 +736,7 @@ function scheduleJson_(sc, now) {
 /** เว็บแอป: GET คืน JSON ของแผ่นกำหนดการ (ใส่ ?callback=ชื่อฟังก์ชัน เพื่อรับแบบ JSONP ได้) */
 function doGet(e) {
   var p = (e && e.parameter) || {}, cache = null, body = null;
+  if (p.what === 'submissions') return jsonOut_(submissionsGet_(p), p.callback);
   try { cache = CacheService.getScriptCache(); body = cache.get(SCHED.cacheKey); } catch (err) { cache = null; }
   if (!body) {
     var out;
@@ -735,7 +747,12 @@ function doGet(e) {
     body = JSON.stringify(out);
     if (out.ok && cache) { try { cache.put(SCHED.cacheKey, body, SCHED.cacheSec); } catch (err) { /* ข้อมูลใหญ่เกินแคช */ } }
   }
-  var cb = String(p.callback || '');
+  return jsonOut_(body, p.callback);
+}
+
+/** ส่ง JSON หรือ JSONP (ชื่อ callback ต้องเป็นชื่อฟังก์ชันธรรมดา) */
+function jsonOut_(body, callback) {
+  var cb = String(callback || '');
   if (/^[A-Za-z_$][\w$.]{0,60}$/.test(cb))
     return ContentService.createTextOutput(cb + '(' + body + ');').setMimeType(ContentService.MimeType.JAVASCRIPT);
   return ContentService.createTextOutput(body).setMimeType(ContentService.MimeType.JSON);
@@ -754,7 +771,7 @@ function scheduleBook_() {
 /** ทริกเกอร์อย่างง่าย: แก้แผ่นกำหนดการแล้วล้างแคช หน้าเว็บเห็นค่าใหม่ทันที */
 function onEdit(e) {
   try {
-    if (e && e.range && e.range.getSheet().getName() === SCHED.sheet) CacheService.getScriptCache().remove(SCHED.cacheKey);
+    if (e && e.range && e.range.getSheet().getName() === SCHED.sheet) { var c = CacheService.getScriptCache(); c.remove(SCHED.cacheKey); c.remove(SUB.cacheKey); }
   } catch (err) { /* ไม่มีสิทธิ์ใช้แคช */ }
 }
 
@@ -775,6 +792,461 @@ function previewSchedule() {
     (pending.length ? '\nงานที่ยังไม่มีกำหนดส่ง: ' + pending.join(', ') : '') +
     '\n\nURL ของเว็บแอปดูที่ Deploy > Manage deployments (ลงท้าย /exec) แล้วใส่ใน schedule.url ของ engse601/data.js' +
     '\nล้างแคชแล้ว หน้าเว็บจะเห็นข้อมูลใหม่เมื่อเปิดหน้าอีกครั้ง');
+}
+
+/* ------------------------------------------------------------------ submissions (ฉบับ 1.5)
+ * ตรวจการส่งงานจาก repo ของแต่ละทีมผ่าน GitHub API (อ่านอย่างเดียว ไม่แก้อะไรใน repo)
+ * กติกาการตรวจอยู่ในแผ่นกำหนดการ คอลัมน์ M "ตรวจใน repo" ของตารางสิ่งที่ต้องส่ง คั่นหลายส่วนด้วย ;
+ *   access                 อาจารย์เปิด repo ได้ (repo เป็น public)
+ *   file:PATH~คำ1,คำ2      มีไฟล์ตาม path ({T} = รหัสทีม) คำหลัง ~ ใช้หาไฟล์ที่วางผิดที่เพื่อบอกทีม
+ *   dir:PATH/              มีไฟล์อย่างน้อย 1 ไฟล์ในโฟลเดอร์
+ *   tag:NAME               มี tag ชื่อนี้
+ *   labels:a,b,c           มีป้าย issue ครบทุกชื่อ
+ * ผลเก็บในแผ่นซ่อน "ข้อมูลการส่ง" (ทีมละแถว) แล้วเขียนแผ่น "การส่งงาน" ใหม่ทุกครั้ง
+ * หน้าเว็บอ่านผลจาก doGet?what=submissions (มีแต่รหัสทีมและสถานะ ไม่มีชื่อ อีเมล หรือคะแนน)
+ */
+var SUB = { sheet: 'การส่งงาน', store: 'ข้อมูลการส่ง', tokenProp: 'engse601.githubToken',
+  cacheKey: 'engse601.submissions.v1', cacheSec: 300, recheckSec: 300, aheadDays: 14, maxBranches: 6,
+  api: 'https://api.github.com' };
+
+/** เมนู: ตรวจทุกทีมตอนนี้ */
+function checkSubmissions() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var r = runSubmissionCheck_(ss, null);
+  alert_('ตรวจการส่งงานแล้ว', r.summary + '\nดูผลในแผ่น "' + SUB.sheet + '"' + (r.warn ? '\n\n' + r.warn : ''));
+}
+
+/** ทริกเกอร์รายชั่วโมง (ไม่มีหน้าจอ) */
+function checkSubmissionsAuto() {
+  runSubmissionCheck_(scheduleBook_(), null);
+}
+
+/** ตรวจทีมที่ระบุ (null = ทุกทีม) บันทึกผล และเขียนแผ่นการส่งงานใหม่ */
+function runSubmissionCheck_(ss, onlyTeams) {
+  var now = new Date();
+  var sc = readSchedule_(ss);
+  if (!sc) throw new Error('ไม่พบแผ่น ' + SCHED.sheet);
+  var items = subItems_(sc);
+  var teams = subTeams_(ss).filter(function (t) { return !onlyTeams || onlyTeams.indexOf(t.id) >= 0; });
+  var store = subStoreRead_(ss);
+  var gh = ghClient_();
+  var res = subCheckTeams_(gh, teams, items, store, now);
+  subStoreWrite_(ss, store);
+  subRender_(ss, sc, items, store, now, gh);
+  try { CacheService.getScriptCache().remove(SUB.cacheKey); } catch (e) { /* ไม่มีแคช */ }
+  var warn = gh.token ? '' : 'ยังไม่ได้ตั้ง GitHub token: GitHub จำกัดการเรียกเมื่อไม่มี token ผลอาจไม่ครบ (เมนู ENGSE601 > ตั้ง GitHub token)';
+  if (gh.limited) warn = (warn ? warn + '\n' : '') + 'GitHub จำกัดการเรียกระหว่างตรวจ บางทีมยังไม่ได้ตรวจรอบนี้ ลองใหม่ภายหลัง';
+  return { summary: 'ตรวจ ' + res.checked + ' ทีม · เรียก GitHub ' + gh.calls + ' ครั้ง', warn: warn };
+}
+
+/** งานที่มีกติกาตรวจและมีกำหนดส่ง เรียงตามกำหนดส่ง */
+function subItems_(sc) {
+  return sc.items.filter(function (r) { return str_(r.check) && isDate_(r.due); }).map(function (r) {
+    return { id: r.id, title: r._title, due: r.due, where: r._where, rules: parseRules_(str_(r.check)) };
+  }).sort(function (a, b) { return a.due - b.due; });
+}
+
+function parseRules_(s) {
+  return s.split(';').map(function (p) { return p.trim(); }).filter(String).map(function (p) {
+    if (p === 'access') return { k: 'access' };
+    var m = p.match(/^(file|dir|tag|labels):(.+)$/);
+    if (!m) return { k: 'bad', v: p };
+    var v = m[2].trim(), hints = [];
+    var t = v.indexOf('~');
+    if (t >= 0) { hints = v.slice(t + 1).split(',').map(function (h) { return h.trim().toLowerCase(); }).filter(String); v = v.slice(0, t).trim(); }
+    if (m[1] === 'labels') return { k: 'labels', v: v.split(',').map(function (x) { return x.trim(); }).filter(String) };
+    if (m[1] === 'dir' && !/\/$/.test(v)) v += '/';
+    return { k: m[1], v: v, hints: hints };
+  });
+}
+
+/** ทีมและ repo จากแผ่นทีม */
+function subTeams_(ss) {
+  var sh = sheetOrStop_(ss, 'ทีม');
+  return sh.getRange(TEAM.firstRow, 1, TEAM.rows, TEAM.width).getValues().map(function (r) {
+    var id = str_(r[TEAM.c.id - 1]), url = str_(r[TEAM.c.repo - 1]);
+    var m = url.match(/github\.com[\/:]([A-Za-z0-9-]+)\/([A-Za-z0-9._-]+?)(?:\.git)?(?:[\/#?].*)?$/);
+    return { id: id, owner: m ? m[1] : '', repo: m ? m[2] : '' };
+  }).filter(function (t) { return /^T\d+$/.test(t.id); });
+}
+
+/* ---------- GitHub client */
+
+function ghClient_() {
+  var token = PropertiesService.getScriptProperties().getProperty(SUB.tokenProp) || '';
+  return { token: token, calls: 0, limited: false };
+}
+
+/** เรียกหลาย URL พร้อมกัน คืน [{code, json}] */
+function ghFetchAll_(gh, paths) {
+  if (!paths.length) return [];
+  if (gh.limited) return paths.map(function () { return { code: 0, json: null }; });
+  var headers = { Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28' };
+  if (gh.token) headers.Authorization = 'Bearer ' + gh.token;
+  var reqs = paths.map(function (p) { return { url: SUB.api + p, method: 'get', headers: headers, muteHttpExceptions: true }; });
+  var out = [];
+  for (var i = 0; i < reqs.length; i += 40) {
+    var chunk = UrlFetchApp.fetchAll(reqs.slice(i, i + 40));
+    gh.calls += chunk.length;
+    chunk.forEach(function (resp) {
+      var code = resp.getResponseCode(), json = null;
+      try { json = JSON.parse(resp.getContentText()); } catch (e) { json = null; }
+      if ((code === 403 || code === 429) && /rate limit/i.test(String(json && json.message))) { gh.limited = true; code = 0; }
+      out.push({ code: code, json: json });
+    });
+  }
+  return out;
+}
+
+function enc_(s) { return String(s).split('/').map(encodeURIComponent).join('/'); }
+
+/* ---------- ตรวจ */
+
+/** ตรวจทีมทั้งหมดในรายการ ทีละขั้นแบบขนานข้ามทีม แล้วเขียนผลลง store */
+function subCheckTeams_(gh, teams, items, store, now) {
+  var nowS = Math.floor(now.getTime() / 1000);
+  var ctx = teams.map(function (t) {
+    var old = store[t.id] || {};
+    return { t: t, st: { checked: nowS, access: 'norepo', def: '', cells: {}, old: old.cells || {} } };
+  });
+  var live = ctx.filter(function (c) { return c.t.owner; });
+  // 1) repo
+  var r1 = ghFetchAll_(gh, live.map(function (c) { return '/repos/' + c.t.owner + '/' + c.t.repo; }));
+  live.forEach(function (c, i) {
+    var r = r1[i];
+    if (r.code === 200 && r.json) { c.st.access = 'ok'; c.st.def = r.json.default_branch || ''; c.st.priv = !!r.json.private; }
+    else if (r.code === 0) { c.st.access = 'skip'; c.failed = true; }
+    else c.st.access = 'noaccess';
+  });
+  live = live.filter(function (c) { return c.st.access === 'ok'; });
+  // 2) branches
+  var r2 = ghFetchAll_(gh, live.map(function (c) { return '/repos/' + c.t.owner + '/' + c.t.repo + '/branches?per_page=100'; }));
+  live.forEach(function (c, i) {
+    if (r2[i].code === 0) c.failed = true;
+    var list = (r2[i].code === 200 && Array.isArray(r2[i].json)) ? r2[i].json : [];
+    list.sort(function (a, b) { return (a.name === c.st.def ? -1 : 0) - (b.name === c.st.def ? -1 : 0); });
+    c.branches = list.slice(0, SUB.maxBranches).map(function (b) { return { name: b.name, sha: b.commit && b.commit.sha }; });
+    if (!c.branches.length) c.st.access = 'empty';
+  });
+  live = live.filter(function (c) { return c.st.access === 'ok'; });
+  // 3) tree ของแต่ละ branch (+ labels ถ้ามีกติกา labels)
+  var needLabels = items.some(function (it) { return it.rules.some(function (r) { return r.k === 'labels'; }); });
+  var q3 = [], map3 = [];
+  live.forEach(function (c, ci) {
+    c.trees = {};
+    c.branches.forEach(function (b) { q3.push('/repos/' + c.t.owner + '/' + c.t.repo + '/git/trees/' + b.sha + '?recursive=1'); map3.push([ci, 'tree', b.name]); });
+    if (needLabels) { q3.push('/repos/' + c.t.owner + '/' + c.t.repo + '/labels?per_page=100'); map3.push([ci, 'labels']); }
+  });
+  ghFetchAll_(gh, q3).forEach(function (r, k) {
+    var c = live[map3[k][0]];
+    if (r.code === 0) c.failed = true;
+    if (map3[k][1] === 'tree') c.trees[map3[k][2]] = (r.code === 200 && r.json && r.json.tree) ? r.json.tree.filter(function (x) { return x.type === 'blob'; }).map(function (x) { return x.path; }) : [];
+    else c.labels = (r.code === 200 && Array.isArray(r.json)) ? r.json.map(function (l) { return String(l.name).toLowerCase(); }) : [];
+  });
+  // 4) ประเมินแต่ละงาน หาวันที่ commit แรกเฉพาะที่ยังไม่เคยบันทึก
+  var q4 = [], map4 = [];
+  live.forEach(function (c, ci) {
+    if (c.failed) return;
+    items.forEach(function (it) {
+      var cell = subEval_(c, it);
+      c.st.cells[it.id] = cell;
+      cell.parts.forEach(function (p, pi) {
+        if (!p.found || p.kind === 'labels' || p.kind === 'access') return;
+        var prev = c.st.old[it.id] && c.st.old[it.id].pf && c.st.old[it.id].pf[pi];
+        if (p.kind !== 'tag' && prev && prev.p === p.key && prev.f) { p.f = prev.f; return; }
+        var base = '/repos/' + c.t.owner + '/' + c.t.repo;
+        if (p.kind === 'tag') q4.push(base + '/commits/' + enc_(p.ref));
+        else q4.push(base + '/commits?sha=' + encodeURIComponent(p.branch) + '&path=' + encodeURIComponent(p.path.replace(/\/$/, '')) + '&per_page=100');
+        map4.push(p); p.owner = c;
+      });
+    });
+  });
+  ghFetchAll_(gh, q4).forEach(function (r, k) {
+    var p = map4[k], d = null;
+    if (r.code === 0) { p.owner.failed = true; return; }
+    if (p.kind === 'tag' && r.code !== 200) { p.found = false; p.f = 0; return; }
+    if (r.code === 200 && r.json) {
+      var cm = Array.isArray(r.json) ? r.json[r.json.length - 1] : r.json;   // รายการเรียงใหม่ไปเก่า ตัวท้ายคือครั้งแรก
+      d = cm && cm.commit && (cm.commit.committer || cm.commit.author) && (cm.commit.committer || cm.commit.author).date;
+    }
+    p.f = d ? Math.floor(new Date(d).getTime() / 1000) : 0;
+  });
+  // 5) สรุปลง store
+  ctx.forEach(function (c) {
+    var out = { checked: c.st.checked, access: c.st.access, def: c.st.def, cells: {} };
+    if (c.failed) { if (store[c.t.id]) store[c.t.id].stale = true; return; }
+    Object.keys(c.st.cells).forEach(function (id) {
+      var cell = c.st.cells[id];
+      var all = cell.parts.every(function (p) { return p.found; });
+      var main = cell.parts.every(function (p) { return p.found && !p.other; });
+      var fs = cell.parts.map(function (p) { return p.f || 0; }).filter(Boolean);
+      out.cells[id] = {
+        ok: all ? (main ? 1 : 2) : 0,                       // 1 ครบใน branch หลัก · 2 มีแต่อยู่ branch อื่น · 0 ยังไม่ครบ
+        f: all && fs.length ? Math.max.apply(null, fs) : 0,  // ครบเมื่อส่วนสุดท้ายเข้ามา
+        miss: cell.parts.filter(function (p) { return !p.found; }).map(function (p) { return p.label; }),
+        br: cell.parts.filter(function (p) { return p.other; }).map(function (p) { return p.branch; })[0] || '',
+        hint: cell.hints.slice(0, 2),
+        pf: cell.parts.map(function (p) { return { p: p.key, f: p.f || 0 }; })
+      };
+    });
+    store[c.t.id] = out;
+  });
+  return { checked: ctx.length };
+}
+
+/** ประเมินงาน 1 ชิ้นของทีม 1 ทีม จาก tree ที่ดึงมาแล้ว */
+function subEval_(c, it) {
+  var tid = c.t.id, hints = [];
+  var parts = it.rules.map(function (r) {
+    if (r.k === 'access') return { kind: 'access', key: 'access', found: true, label: 'เปิด repo ได้' };
+    if (r.k === 'labels') {
+      var have = c.labels || [];
+      var miss = r.v.filter(function (x) { return have.indexOf(x.toLowerCase()) < 0; });
+      return { kind: 'labels', key: 'labels', found: !miss.length, label: 'ป้าย ' + miss.join(', ') };
+    }
+    if (r.k === 'tag') {
+      var tg = r.v.replace(/\{T\}/g, tid);
+      // ดูจาก tree ไม่ได้ ใช้การเรียก commits/{tag} ในขั้นถัดไป ถือว่าพบก่อน ถ้าไม่พบจะได้ f = 0 แล้วแก้เป็นไม่พบ
+      return { kind: 'tag', key: 'tag:' + tg, ref: tg, found: true, label: 'tag ' + tg };
+    }
+    if (r.k === 'bad') return { kind: 'bad', key: 'bad', found: false, label: 'กติกาผิด: ' + r.v };
+    var path = r.v.replace(/\{T\}/g, tid);
+    var test = r.k === 'dir'
+      ? function (f) { return f.indexOf(path) === 0; }
+      : function (f) { return f === path || f.toLowerCase() === path.toLowerCase(); };
+    var hitB = null;
+    c.branches.forEach(function (b) { if (!hitB && (c.trees[b.name] || []).some(test)) hitB = b.name; });
+    var p = { kind: r.k, key: r.k + ':' + path, path: path, label: path, found: !!hitB, branch: hitB || '', other: !!hitB && hitB !== c.st.def };
+    if (!hitB && r.k === 'file') {
+      var words = r.hints.length ? r.hints : [path.split('/').pop().replace(/^\d+-/, '').replace(/\.[^.]+$/, '').toLowerCase()]
+        .filter(function (w) { return w.length >= 4 && ['readme', 'index', 'main'].indexOf(w) < 0; });
+      var tree = c.trees[c.st.def] || [];
+      tree.forEach(function (f) {
+        var base = f.split('/').pop().toLowerCase(), ext = path.split('.').pop().toLowerCase();
+        if (base.split('.').pop() !== ext) return;
+        if (words.some(function (w) { return base.indexOf(w) >= 0; }) && hints.indexOf(f) < 0) hints.push(f);
+      });
+    }
+    return p;
+  });
+  return { parts: parts, hints: hints };
+}
+
+/* ---------- store */
+
+function subStoreSheet_(ss) {
+  var sh = ss.getSheetByName(SUB.store);
+  if (!sh) { sh = ss.insertSheet(SUB.store); sh.getRange(1, 1, 1, 2).setValues([['ทีม', 'ผลตรวจล่าสุด (JSON) สคริปต์เขียน อย่าแก้']]); sh.hideSheet(); }
+  return sh;
+}
+
+function subStoreRead_(ss) {
+  var sh = subStoreSheet_(ss), n = Math.max(sh.getLastRow() - 1, 0), st = {};
+  if (!n) return st;
+  sh.getRange(2, 1, n, 2).getValues().forEach(function (r) {
+    var id = str_(r[0]);
+    if (!id) return;
+    try { st[id] = JSON.parse(r[1]); } catch (e) { /* ข้าม */ }
+  });
+  return st;
+}
+
+function subStoreWrite_(ss, st) {
+  var sh = subStoreSheet_(ss);
+  var ids = Object.keys(st).sort(function (a, b) { return teamNo_(a) - teamNo_(b); });
+  if (sh.getLastRow() > 1) sh.getRange(2, 1, sh.getLastRow() - 1, 2).clearContent();
+  if (ids.length) sh.getRange(2, 1, ids.length, 2).setValues(ids.map(function (id) { return [id, JSON.stringify(st[id])]; }));
+}
+
+/* ---------- สถานะสำหรับแสดงผล */
+
+/** สถานะของช่อง: ok ตรงเวลา · late ส่งช้า · branch อยู่ branch อื่น · due ยังไม่ส่งแต่ยังไม่ถึงกำหนด · miss เลยกำหนดแล้วยังไม่ส่ง · na เปิด repo ไม่ได้ */
+function subState_(team, it, nowS) {
+  var dueS = Math.floor(it.due.getTime() / 1000);
+  if (!team || team.access === 'noaccess' || team.access === 'norepo') return { s: 'na' };
+  if (it.rules.every(function (r) { return r.k === 'access'; })) return { s: 'ok' };   // D01: repo เปิดได้ (รวม repo ที่ยังว่าง)
+  var c = (team.cells || {})[it.id];
+  if (!c || !c.ok) {
+    var miss = c ? c.miss : [];
+    return { s: nowS > dueS ? 'miss' : 'due', miss: miss, hint: c ? c.hint : [] };
+  }
+  if (c.ok === 2) return { s: 'branch', at: c.f, br: c.br };
+  return { s: c.f && c.f > dueS ? 'late' : 'ok', at: c.f };
+}
+
+/** งานที่แสดง: กำหนดส่งไม่เกิน aheadDays วันข้างหน้า หรือมีทีมส่งแล้ว */
+function subVisibleItems_(items, store, nowS) {
+  return items.filter(function (it) {
+    if (it.due.getTime() / 1000 <= nowS + SUB.aheadDays * 86400) return true;
+    return Object.keys(store).some(function (t) { var c = (store[t].cells || {})[it.id]; return c && c.ok; });
+  });
+}
+
+var SUB_MARK = { ok: '✓', late: '✓ ช้า', branch: '⚠ branch', due: '–', miss: '✗', na: '?' };
+
+function subFmt_(s, tz) { return s ? Utilities.formatDate(new Date(s * 1000), tz, 'd/M HH:mm') : ''; }
+
+/** เขียนแผ่นการส่งงานใหม่ทั้งแผ่น */
+function subRender_(ss, sc, items, store, now, gh) {
+  var tz = sc.tz, nowS = Math.floor(now.getTime() / 1000);
+  var vis = subVisibleItems_(items, store, nowS);
+  var teams = subTeams_(ss);
+  var sh = ss.getSheetByName(SUB.sheet) || ss.insertSheet(SUB.sheet);
+  var W = 2 + vis.length + 3;
+  sh.clear();
+  sh.setConditionalFormatRules([]);
+  sh.getRange(1, 1, sh.getMaxRows(), sh.getMaxColumns()).clearDataValidations();
+  if (sh.getMaxColumns() < W) sh.insertColumnsAfter(sh.getMaxColumns(), W - sh.getMaxColumns());
+  var head = ['ทีม', 'repo'].concat(vis.map(function (it) {
+    return it.id + '\n' + it.title + '\nส่ง ' + Utilities.formatDate(it.due, tz, 'd/M HH:mm');
+  })).concat(['ยังขาด', 'ข้อสังเกต', 'ข้อความเตือน (คัดลอกไป LINE)']);
+  var rows = [], tones = [];
+  teams.forEach(function (t) {
+    var st = store[t.id];
+    var repo = !t.owner ? 'ไม่มีลิงก์ repo' : !st ? 'ยังไม่ได้ตรวจ' : st.access === 'ok' ? 'public · ' + st.def :
+      st.access === 'empty' ? 'public · ยังว่าง' : 'เปิดไม่ได้ (private หรือลิงก์ผิด)';
+    var lack = [], notes = [], row = [t.id, repo], tone = ['', st && st.access === 'ok' ? '' : st && st.access === 'empty' ? 'wa' : 'na'];
+    vis.forEach(function (it) {
+      var x = subState_(st, it, nowS), v = SUB_MARK[x.s];
+      if (x.at) v += ' ' + subFmt_(x.at, tz);
+      if (x.s === 'branch') { v = '⚠ ' + x.br + (x.at ? ' ' + subFmt_(x.at, tz) : ''); notes.push(it.id + ' อยู่ใน branch ' + x.br + ' ยังไม่ merge เข้า ' + st.def); }
+      if (x.s === 'due' || x.s === 'miss') {
+        if (it.due.getTime() / 1000 <= nowS + SUB.aheadDays * 86400) lack.push(it.id);
+        if (x.miss && x.miss.length && x.miss.length < it.rules.length) notes.push(it.id + ' ยังขาด ' + x.miss.join(', '));
+        if (x.hint && x.hint.length) notes.push(it.id + ' พบ ' + x.hint.join(', ') + ' ให้ย้ายหรือเปลี่ยนชื่อเป็น ' + (it.rules[0].v || '').replace(/\{T\}/g, t.id));
+      }
+      row.push(v);
+      tone.push({ ok: 'ok', late: 'wa', branch: 'wa', due: '', miss: 'no', na: 'na' }[x.s]);
+    });
+    var msg = '';
+    if (!st || st.access === 'noaccess' || st.access === 'norepo')
+      msg = t.id + ': อาจารย์ยังเปิด repo ไม่ได้ ตรวจว่าเป็น public และลิงก์ในแบบลงทะเบียนถูกต้อง';
+    else if (lack.length || notes.length)
+      msg = t.id + (lack.length ? ': ยังขาด ' + lack.map(function (id) {
+        var it = vis.filter(function (x) { return x.id === id; })[0];
+        return id + ' (ส่ง ' + Utilities.formatDate(it.due, tz, 'd/M HH:mm') + ')';
+      }).join(', ') : ':') + (notes.length ? ' · ' + notes.join(' · ') : '') + ' · ดูสถานะที่ ' + SITE_URL + 'submissions.html';
+    rows.push(row.concat([lack.join(' ') || (st && st.access === 'ok' ? 'ครบ' : ''), notes.join(' · '), msg]));
+    tones.push(tone.concat(['', '', '']));
+  });
+  var stamp = Utilities.formatDate(now, tz, 'd/M/yyyy HH:mm');
+  sh.getRange(1, 1).setValue('การส่งงานใน repo ของแต่ละทีม').setFontWeight('bold').setFontSize(14);
+  sh.getRange(2, 1).setValue('ตรวจล่าสุด ' + stamp + ' น. · ✓ มีไฟล์ตาม path (เวลา commit) · ✓ ช้า ส่งหลังกำหนด · ⚠ อยู่ใน branch อื่น · – ยังไม่ส่ง ยังไม่ถึงกำหนด · ✗ เลยกำหนดแล้วยังไม่ส่ง · ? เปิด repo ไม่ได้' +
+    (gh.token ? '' : ' · ยังไม่ได้ตั้ง GitHub token') + ' · กติกาการตรวจอยู่ในแผ่นกำหนดการ คอลัมน์ M · แผ่นนี้สคริปต์เขียนใหม่ทุกครั้ง อย่าพิมพ์ในแผ่นนี้')
+    .setFontSize(9).setFontColor('#5d6878');
+  if (!rows.length) return;
+  sh.getRange(4, 1, 1, W).setValues([head]).setFontWeight('bold').setFontColor('#ffffff').setBackground('#13294b')
+    .setWrap(true).setVerticalAlignment('middle');
+  var body = sh.getRange(5, 1, rows.length, W);
+  body.setValues(rows).setVerticalAlignment('top').setWrap(true).setFontSize(10);
+  var bg = tones.map(function (r) { return r.map(function (k) { return k ? TONE[k][0] : null; }); });
+  var fg = tones.map(function (r) { return r.map(function (k) { return k ? TONE[k][1] : '#1a2330'; }); });
+  body.setBackgrounds(bg).setFontColors(fg);
+  sh.getRange(5, 3, rows.length, vis.length || 1).setHorizontalAlignment('center');
+  sh.setFrozenRows(4); sh.setFrozenColumns(1);
+  sh.setColumnWidth(1, 56); sh.setColumnWidth(2, 140);
+  for (var k = 0; k < vis.length; k++) sh.setColumnWidth(3 + k, 104);
+  sh.setColumnWidth(3 + vis.length, 90); sh.setColumnWidth(4 + vis.length, 280); sh.setColumnWidth(5 + vis.length, 380);
+  sh.setRowHeight(4, 66);
+}
+
+/* ---------- เว็บแอป */
+
+/** JSON สำหรับหน้าเว็บ: รหัสทีม สถานะ และคำแนะนำ ไม่มีชื่อ อีเมล ลิงก์ repo หรือคะแนน */
+function submissionsJson_(ss, now) {
+  var sc = readSchedule_(ss), tz = sc.tz, nowS = Math.floor(now.getTime() / 1000);
+  var off = Utilities.formatDate(now, tz, 'Z'); off = off.slice(0, 3) + ':' + off.slice(3);
+  var iso = function (d) { return Utilities.formatDate(d, tz, "yyyy-MM-dd'T'HH:mm:ss") + off; };
+  var items = subItems_(sc), store = subStoreRead_(ss);
+  var last = 0;
+  var teams = subTeams_(ss).map(function (t) {
+    var st = store[t.id];
+    if (st && st.checked > last) last = st.checked;
+    var cells = {};
+    items.forEach(function (it) {
+      var x = subState_(st, it, nowS), o = { s: x.s };
+      if (x.at) o.at = iso(new Date(x.at * 1000));
+      if (x.br) o.br = x.br;
+      if (x.miss && x.miss.length && x.miss.length < it.rules.length) o.miss = x.miss;
+      if (x.hint && x.hint.length) o.hint = x.hint;
+      cells[it.id] = o;
+    });
+    return { id: t.id, access: st ? st.access : 'unchecked', def: st && st.access === 'ok' ? st.def : '',
+      checked: st ? iso(new Date(st.checked * 1000)) : '', cells: cells };
+  });
+  return {
+    ok: true, version: 1, now: iso(now), checked: last ? iso(new Date(last * 1000)) : '', recheckSec: SUB.recheckSec,
+    aheadDays: SUB.aheadDays, site: SITE_URL,
+    items: items.map(function (it) {
+      return { id: it.id, title: it.title, due: iso(it.due), where: it.where,
+        paths: it.rules.filter(function (r) { return r.k === 'file' || r.k === 'dir' || r.k === 'tag'; }).map(function (r) { return (r.k === 'tag' ? 'tag ' : '') + r.v; }),
+        labels: (it.rules.filter(function (r) { return r.k === 'labels'; })[0] || {}).v || [] };
+    }),
+    teams: teams
+  };
+}
+
+/** doGet?what=submissions[&recheck=T04] */
+function submissionsGet_(p) {
+  var ss = scheduleBook_(), cache = null, info = null;
+  try { cache = CacheService.getScriptCache(); } catch (e) { cache = null; }
+  var team = String(p.recheck || '').toUpperCase();
+  if (/^T\d{1,2}$/.test(team)) {
+    var key = 'engse601.recheck.' + team, waitTo = cache ? Number(cache.get(key) || 0) : 0, nowMs = Date.now();
+    if (waitTo > nowMs) info = { team: team, done: false, wait: Math.ceil((waitTo - nowMs) / 1000) };
+    else {
+      var lock = LockService.getScriptLock();
+      if (lock.tryLock(20000)) {
+        try {
+          if (cache) cache.put(key, String(nowMs + SUB.recheckSec * 1000), SUB.recheckSec);
+          runSubmissionCheck_(ss, [team]);
+          info = { team: team, done: true };
+        } catch (err) { info = { team: team, done: false, error: String(err && err.message || err) }; }
+        finally { lock.releaseLock(); }
+      } else info = { team: team, done: false, wait: 30 };
+    }
+  }
+  var body = cache && !info ? cache.get(SUB.cacheKey) : null, out;
+  if (!body) {
+    try { out = submissionsJson_(ss, new Date()); } catch (err) { out = { ok: false, error: String(err && err.message || err) }; }
+    body = JSON.stringify(out);
+    if (out.ok && cache) { try { cache.put(SUB.cacheKey, body, SUB.cacheSec); } catch (err) { /* ใหญ่เกินแคช */ } }
+  }
+  if (info) { out = JSON.parse(body); out.recheck = info; body = JSON.stringify(out); }
+  return body;
+}
+
+/* ---------- ตั้งค่า */
+
+function setGithubToken() {
+  var ui = ui_();
+  if (!ui) throw new Error('สั่งจากเมนูในชีต');
+  var r = ui.prompt('ตั้ง GitHub token',
+    'วาง fine-grained token ที่เลือก Repository access: Public repositories (read-only)\n' +
+    'token เก็บใน Script Properties ของสคริปต์นี้ ไม่อยู่ในชีต · เว้นว่างแล้วกด OK เพื่อลบ token', ui.ButtonSet.OK_CANCEL);
+  if (r.getSelectedButton() !== ui.Button.OK) return;
+  var t = r.getResponseText().trim(), props = PropertiesService.getScriptProperties();
+  if (!t) { props.deleteProperty(SUB.tokenProp); alert_('ลบ token แล้ว', 'การตรวจจะเรียก GitHub แบบไม่มี token'); return; }
+  if (!/^(github_pat_|ghp_)[A-Za-z0-9_]{20,}$/.test(t)) { alert_('รูปแบบ token ไม่ถูก', 'token ของ GitHub ขึ้นต้นด้วย github_pat_ หรือ ghp_'); return; }
+  props.setProperty(SUB.tokenProp, t);
+  var gh = ghClient_(), r1 = ghFetchAll_(gh, ['/rate_limit'])[0];
+  var lim = r1.json && r1.json.resources && r1.json.resources.core;
+  alert_(r1.code === 200 ? 'บันทึก token แล้ว' : 'บันทึกแล้ว แต่ GitHub ตอบ ' + r1.code,
+    r1.code === 200 ? 'เรียกได้ ' + (lim ? lim.limit : '?') + ' ครั้งต่อชั่วโมง · ต่อไปสั่ง ENGSE601 > ตรวจการส่งงานใน repo ตอนนี้' :
+      'ตรวจว่าคัดลอก token ครบ และยังไม่หมดอายุ');
+}
+
+function installSubmissionTrigger() {
+  removeSubmissionTrigger();
+  ScriptApp.newTrigger('checkSubmissionsAuto').timeBased().everyHours(1).create();
+  checkSubmissions();
+  alert_('ตั้งตรวจอัตโนมัติแล้ว', 'ตรวจการส่งงานทุกชั่วโมง แผ่นการส่งงานและหน้าเว็บสถานะการส่งอัปเดตเอง');
+}
+
+function removeSubmissionTrigger() {
+  ScriptApp.getProjectTriggers().forEach(function (t) {
+    if (t.getHandlerFunction() === 'checkSubmissionsAuto') ScriptApp.deleteTrigger(t);
+  });
 }
 
 /* ------------------------------------------------------------------ helpers */
