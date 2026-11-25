@@ -33,6 +33,8 @@
  *   แก้สคริปต์ภายหลัง: Deploy > Manage deployments > แก้ deployment เดิม > Version: New version
  *   (URL เดิมใช้ต่อได้ ถ้าสร้าง deployment ใหม่จะได้ URL ใหม่)
  *
+ * ฉบับ 1.4 (25 พ.ย. 2569): คอลัมน์ K "ลิงก์เรียนออนไลน์" ของตารางคาบเรียน (รับเฉพาะ https) ส่งให้หน้าเว็บ
+ *   ต้อง deploy ใหม่: Deploy > Manage deployments > ไอคอนดินสอ > Version: New version > Deploy (URL เดิมใช้ต่อได้)
  * ฉบับ 1.3.1 (25 พ.ย. 2569): เมนูตรวจข้อมูลหน้าเว็บไม่แสดง URL จาก ScriptApp.getService() เพราะไม่ใช่ URL ของ deployment
  *   (แก้เฉพาะข้อความเมนู วางทับแล้วบันทึกก็พอ ไม่ต้อง deploy ใหม่)
  * ฉบับ 1.3 (25 พ.ย. 2569): แผ่นกำหนดการ เว็บแอปกำหนดการ และวันส่ง CP ในไฟล์สถานะทีมตามแผ่นกำหนดการ
@@ -75,7 +77,7 @@ var SCHED = { sheet: 'กำหนดการ', settings: 'ค่าเริ�
 var SCHED_SETTINGS = [['วันเรียน', 'day'], ['เวลาเริ่ม', 'start'], ['เวลาเลิก', 'end'], ['ห้อง', 'room'],
   ['เวลาส่งจุดตรวจ', 'cpTime'], ['ลิงก์แบบประเมินเพื่อน', 'peerUrl']];
 // คอลัมน์ A, B, C, ... ของตารางคาบเรียน และตารางสิ่งที่ต้องส่ง
-var SESS_COLS = ['id', 'label', 'week', 'date', 'start', 'end', 'room', 'status', 'topic', 'note'];
+var SESS_COLS = ['id', 'label', 'week', 'date', 'start', 'end', 'room', 'status', 'topic', 'note', 'link'];
 var ITEM_COLS = ['id', 'title', 'scope', 'kind', 'session', 'override', 'due', 'weight', 'where', 'link', 'note', 'show'];
 
 var FORM_TITLE = 'ENGSE601 ลงทะเบียนทีมโครงงาน · ภาค 2/2569';
@@ -711,7 +713,7 @@ function scheduleJson_(sc, now) {
       cpTime: hm(set('cpTime').d), peerUrl: /^https:\/\//.test(set('peerUrl').d) ? set('peerUrl').d : '' },
     sessions: sc.sessions.map(function (r) {
       return { id: r.id, label: r._label, week: Number(r.week) || null, date: day(r.date), start: hm(r._start), end: hm(r._end),
-        room: r._room, status: r._status, topic: r._topic, note: r._note };
+        room: r._room, status: r._status, topic: r._topic, note: r._note, link: /^https:\/\/\S+$/.test(r._link) ? r._link : '' };
     }),
     items: sc.items.filter(function (r) { return r.show === true; }).map(function (r) {
       return { id: r.id, title: r._title, scope: r._scope, kind: r._kind, session: r._session, due: iso(r.due),
