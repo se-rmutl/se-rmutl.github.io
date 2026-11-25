@@ -188,8 +188,8 @@ window.ENGSE601 = {
 
   /* ---------- กำหนดการและสิ่งที่ต้องส่ง (deliverables.html) ---------- */
   schedule: {
-    // URL เว็บแอปของชีตอาจารย์ (ลงท้าย /exec) ว่างไว้ = ใช้ข้อมูลสำรองใน schedule-data.js
-    url: "",
+    // URL เว็บแอปของชีตอาจารย์ (Deploy > Manage deployments ลงท้าย /exec) ว่างไว้ = ใช้ข้อมูลสำรองใน schedule-data.js
+    url: "https://script.google.com/macros/s/AKfycbw9DH_bmqe_zbCjEriwYF9eGk0v4vsOTjQTKHMxd4l_9iEdDLTWvtRDA0OgdgiydRN-Bw/exec",
     rules: [
       "ส่ง = commit แล้ว push ขึ้น branch หลักของ repo ทีม ตาม path มาตรฐานในหน้านี้ อาจารย์ตรวจจากสิ่งที่อยู่ใน repo ณ เวลาครบกำหนด",
       "งานส่งก่อนคาบ ครบกำหนดเวลาเริ่มคาบ ({start} น.) ของครั้งนั้น เพราะใช้ทำกิจกรรมในห้อง",

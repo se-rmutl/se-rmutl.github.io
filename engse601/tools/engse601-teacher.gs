@@ -28,11 +28,13 @@
  * เว็บแอปกำหนดการ (ทำครั้งเดียว หลังวางสคริปต์ฉบับ 1.3):
  *   1. ในหน้า Apps Script กด Deploy > New deployment > เลือกชนิด Web app
  *   2. Execute as: Me (software.rmutl@gmail.com) · Who has access: Anyone แล้วกด Deploy และอนุญาตสิทธิ์
- *   3. คัดลอก Web app URL (ลงท้าย /exec) ไปใส่ scheduleUrl ใน engse601/data.js
+ *   3. คัดลอก Web app URL (ลงท้าย /exec) ไปใส่ schedule.url ใน engse601/data.js
  *   4. ENGSE601 > ตรวจข้อมูลหน้าเว็บกำหนดการ เพื่อดูว่าหน้าเว็บจะเห็นกี่รายการ และงานใดยังไม่มีกำหนดส่ง
  *   แก้สคริปต์ภายหลัง: Deploy > Manage deployments > แก้ deployment เดิม > Version: New version
  *   (URL เดิมใช้ต่อได้ ถ้าสร้าง deployment ใหม่จะได้ URL ใหม่)
  *
+ * ฉบับ 1.3.1 (25 พ.ย. 2569): เมนูตรวจข้อมูลหน้าเว็บไม่แสดง URL จาก ScriptApp.getService() เพราะไม่ใช่ URL ของ deployment
+ *   (แก้เฉพาะข้อความเมนู วางทับแล้วบันทึกก็พอ ไม่ต้อง deploy ใหม่)
  * ฉบับ 1.3 (25 พ.ย. 2569): แผ่นกำหนดการ เว็บแอปกำหนดการ และวันส่ง CP ในไฟล์สถานะทีมตามแผ่นกำหนดการ
  * ฉบับ 1.2 (24 พ.ย. 2569): ถอนสิทธิ์อีเมลเดิมเมื่อทีมแก้อีเมล และแจ้งอีเมลที่ไม่ใช่ Gmail เป็นปัญหาที่ต้องแก้
  * ฉบับ 1.1 (24 พ.ย. 2569): คำถามอีเมล Gmail ของสมาชิก และไฟล์สถานะทีม · ฉบับ 1.0: แบบลงทะเบียนทีมและซิงก์
@@ -764,14 +766,12 @@ function previewSchedule() {
   var j = scheduleJson_(sc, new Date());
   var waiting = j.sessions.filter(function (s) { return !s.date && s.status !== 'งด'; }).map(function (s) { return s.id; });
   var pending = j.items.filter(function (x) { return !x.due && x.kind !== 'ทุกคาบ'; }).map(function (x) { return x.id; });
-  var hidden = sc.items.length - j.items.length, url = '';
-  try { url = ScriptApp.getService().getUrl() || ''; } catch (e) { url = ''; }
+  var hidden = sc.items.length - j.items.length;
   alert_('ข้อมูลหน้าเว็บกำหนดการ', 'คาบเรียน ' + j.sessions.length + ' แถว · งานที่แสดงบนเว็บ ' + j.items.length + ' รายการ' +
     (hidden ? ' (ซ่อน ' + hidden + ')' : '') +
     (waiting.length ? '\nคาบที่ยังไม่มีวันที่: ' + waiting.join(', ') : '') +
     (pending.length ? '\nงานที่ยังไม่มีกำหนดส่ง: ' + pending.join(', ') : '') +
-    '\n\n' + (url ? 'URL เว็บแอป: ' + url + '\nใส่ URL ที่ลงท้าย /exec ใน scheduleUrl ของ engse601/data.js' :
-      'ยังไม่ได้ deploy เป็นเว็บแอป ดูขั้นตอนที่หัวไฟล์สคริปต์') +
+    '\n\nURL ของเว็บแอปดูที่ Deploy > Manage deployments (ลงท้าย /exec) แล้วใส่ใน schedule.url ของ engse601/data.js' +
     '\nล้างแคชแล้ว หน้าเว็บจะเห็นข้อมูลใหม่เมื่อเปิดหน้าอีกครั้ง');
 }
 
