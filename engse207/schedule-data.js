@@ -13,7 +13,7 @@ window.ENGSE207_SCHEDULE = {
     "offset": "+07:00",
     "settings": {"day":"จันทร์","start":"08:00","end":"13:00","room":"C3-405","cpTime":"23:59","peerUrl":"","regOpen":false},
     "sessions": [
-      {"id":"T01","label":"T01","week":1,"date":"2026-11-23","start":"08:00","end":"13:00","room":"C3-405","status":"ปกติ","topic":"ภาพรวมรายวิชา · รู้จัก Docker ก่อนรันระบบ","note":"","link":""},
+      {"id":"T01","label":"T01","week":1,"date":"2026-11-23","start":"08:00","end":"13:00","room":"C3-405","status":"ปกติ","topic":"ภาพรวมรายวิชาและการมองระบบในเชิงสถาปัตยกรรม","note":"","link":""},
       {"id":"T02","label":"T02","week":2,"date":"2026-11-30","start":"08:00","end":"13:00","room":"C3-405","status":"ปกติ","topic":"ความรับผิดชอบขององค์ประกอบและเส้นทางข้อมูล","note":"","link":""},
       {"id":"H03","label":"งดเรียน","week":3,"date":"2026-12-07","start":"","end":"","room":"","status":"งด","topic":"วันหยุดชดเชยวันคล้ายวันพระบรมราชสมภพ ร.9 วันชาติ และวันพ่อแห่งชาติ (5 ธ.ค.)","note":"","link":""},
       {"id":"T03","label":"T03","week":3,"date":"","start":"08:00","end":"13:00","room":"C3-405","status":"เลื่อน","topic":"คุณลักษณะคุณภาพและการวิเคราะห์ข้อขัดข้อง","note":"เลื่อนจากวันหยุด วันเรียนชดเชยแจ้งภายหลัง","link":""},
@@ -33,10 +33,10 @@ window.ENGSE207_SCHEDULE = {
       {"id":"FIN","label":"สอบปลายภาค","week":17,"date":"2027-03-15","start":"","end":"","room":"","status":"สอบ","topic":"สอบปลายภาค","note":"วันเวลาตามตารางสอบของมหาวิทยาลัย","link":""}
     ],
     "items": [
-      {"id":"REG","title":"ลงทะเบียนทีมและรับรหัสทีม","scope":"กลุ่ม","kind":"ก่อนคาบ","session":"T02","due":"2026-11-30T08:00:00+07:00","weight":null,"where":"แบบลงทะเบียนทีม (Google Form) ตัวแทนทีมกรอกคนเดียว","link":"register.html","note":""},
-      {"id":"D01","title":"สร้าง repo ทีมจากแม่แบบ และเพิ่ม tkeatkaew","scope":"กลุ่ม","kind":"ก่อนคาบ","session":"T02","due":"2026-11-30T08:00:00+07:00","weight":null,"where":"GitHub > Use this template · Settings > Collaborators","link":"register.html#repo","note":"repo เป็น private ชื่อตามที่หน้าลงทะเบียนกำหนด"},
-      {"id":"D02","title":"Team charter","scope":"กลุ่ม","kind":"ก่อนคาบ","session":"T02","due":"2026-11-30T08:00:00+07:00","weight":null,"where":"docs/team-charter.md","link":"","note":"คัดลอกจาก templates/team-charter.md ใน repo ทีม"},
-      {"id":"I01","title":"ผลแล็บ Docker T01","scope":"เดี่ยว","kind":"ก่อนคาบ","session":"T02","due":"2026-11-30T08:00:00+07:00","weight":null,"where":"individual/T01-<รหัสนักศึกษา>.md","link":"https://github.com/se-rmutl/engse207/blob/main/weeks/week01/README.md#checklist-ส่งงาน","note":"ไม่คิดคะแนน ใช้ดูความพร้อมของเครื่อง"},
+      {"id":"REG","title":"ลงทะเบียนทีมและรับรหัสทีม","scope":"กลุ่ม","kind":"ก่อนคาบ","session":"T02","due":"2026-11-30T08:00:00+07:00","weight":null,"where":"แบบลงทะเบียนทีม (Google Form) ตัวแทนทีมกรอกคนเดียว","link":"register.html","note":"ทำที่บ้านเมื่อทุกคนมีผล check-docker.sh แล้ว"},
+      {"id":"D01","title":"สร้าง repo ทีมจากแม่แบบ และเพิ่ม tkeatkaew","scope":"กลุ่ม","kind":"ก่อนคาบ","session":"T02","due":"2026-11-30T08:00:00+07:00","weight":null,"where":"GitHub > Use this template · Settings > Collaborators","link":"register.html#repo","note":"ทำในคาบ T01 ส่วน E · repo เป็น private ชื่อตามที่หน้าลงทะเบียนกำหนด"},
+      {"id":"D02","title":"Team charter","scope":"กลุ่ม","kind":"ก่อนคาบ","session":"T02","due":"2026-11-30T08:00:00+07:00","weight":null,"where":"docs/team-charter.md","link":"handouts/t01-worksheet.html","note":"เริ่มในคาบ T01 ส่วน E คัดลอกจาก templates/team-charter.md · ทุกคนลงชื่อท้ายไฟล์"},
+      {"id":"I01","title":"แบบสำรวจเครื่อง แบบวัดพื้นฐาน และผล check-docker","scope":"เดี่ยว","kind":"ก่อนคาบ","session":"T02","due":"2026-11-30T08:00:00+07:00","weight":null,"where":"individual/T01-<รหัสนักศึกษา>.md","link":"handouts/t01-worksheet.html","note":"ไม่คิดคะแนน · ส่วน B–C ทำในคาบ ผล check-docker เติมที่บ้าน"},
       {"id":"L02","title":"บันทึกแล็บ T02 · รันระบบและตาม flow","scope":"กลุ่ม","kind":"ก่อนคาบ","session":"T03","due":"","weight":null,"where":"docs/labs/t02.md","link":"","note":"ใครอ่านโค้ด ใครลงมือ ใครตรวจ หลักฐาน และสิ่งที่ยังค้าง"},
       {"id":"L03","title":"บันทึกแล็บ T03 · quality scenario และหาจุดขัดข้อง","scope":"กลุ่ม","kind":"ก่อนคาบ","session":"T04","due":"2026-12-14T08:00:00+07:00","weight":null,"where":"docs/labs/t03.md","link":"","note":"ใครอ่านโค้ด ใครลงมือ ใครตรวจ หลักฐาน และสิ่งที่ยังค้าง"},
       {"id":"D03","title":"ARCH-01 รุ่นแรก: บริบท ขอบเขต และ quality scenario 2 เรื่อง","scope":"กลุ่ม","kind":"ต่อเนื่อง","session":"T04","due":"2026-12-14T08:00:00+07:00","weight":null,"where":"docs/arch-01-context.md","link":"","note":"ตรวจรวมใน A5a"},
@@ -82,7 +82,7 @@ window.ENGSE207_SCHEDULE = {
     "offset": "+07:00",
     "settings": {"day":"ศุกร์","start":"08:00","end":"13:00","room":"C3-405","cpTime":"23:59","peerUrl":"","regOpen":false},
     "sessions": [
-      {"id":"T01","label":"T01","week":1,"date":"2026-11-27","start":"08:00","end":"13:00","room":"C3-405","status":"ปกติ","topic":"ภาพรวมรายวิชา · รู้จัก Docker ก่อนรันระบบ","note":"","link":""},
+      {"id":"T01","label":"T01","week":1,"date":"2026-11-27","start":"08:00","end":"13:00","room":"C3-405","status":"ปกติ","topic":"ภาพรวมรายวิชาและการมองระบบในเชิงสถาปัตยกรรม","note":"","link":""},
       {"id":"T02","label":"T02","week":2,"date":"2026-12-04","start":"08:00","end":"13:00","room":"C3-405","status":"ปกติ","topic":"ความรับผิดชอบขององค์ประกอบและเส้นทางข้อมูล","note":"","link":""},
       {"id":"T03","label":"T03","week":3,"date":"2026-12-11","start":"08:00","end":"13:00","room":"C3-405","status":"ปกติ","topic":"คุณลักษณะคุณภาพและการวิเคราะห์ข้อขัดข้อง","note":"","link":""},
       {"id":"T04","label":"T04","week":4,"date":"2026-12-18","start":"08:00","end":"13:00","room":"C3-405","status":"ปกติ","topic":"Layered และ Modular Monolith","note":"","link":""},
@@ -102,10 +102,10 @@ window.ENGSE207_SCHEDULE = {
       {"id":"FIN","label":"สอบปลายภาค","week":17,"date":"2027-03-19","start":"","end":"","room":"","status":"สอบ","topic":"สอบปลายภาค","note":"วันเวลาตามตารางสอบของมหาวิทยาลัย","link":""}
     ],
     "items": [
-      {"id":"REG","title":"ลงทะเบียนทีมและรับรหัสทีม","scope":"กลุ่ม","kind":"ก่อนคาบ","session":"T02","due":"2026-12-04T08:00:00+07:00","weight":null,"where":"แบบลงทะเบียนทีม (Google Form) ตัวแทนทีมกรอกคนเดียว","link":"register.html","note":""},
-      {"id":"D01","title":"สร้าง repo ทีมจากแม่แบบ และเพิ่ม tkeatkaew","scope":"กลุ่ม","kind":"ก่อนคาบ","session":"T02","due":"2026-12-04T08:00:00+07:00","weight":null,"where":"GitHub > Use this template · Settings > Collaborators","link":"register.html#repo","note":"repo เป็น private ชื่อตามที่หน้าลงทะเบียนกำหนด"},
-      {"id":"D02","title":"Team charter","scope":"กลุ่ม","kind":"ก่อนคาบ","session":"T02","due":"2026-12-04T08:00:00+07:00","weight":null,"where":"docs/team-charter.md","link":"","note":"คัดลอกจาก templates/team-charter.md ใน repo ทีม"},
-      {"id":"I01","title":"ผลแล็บ Docker T01","scope":"เดี่ยว","kind":"ก่อนคาบ","session":"T02","due":"2026-12-04T08:00:00+07:00","weight":null,"where":"individual/T01-<รหัสนักศึกษา>.md","link":"https://github.com/se-rmutl/engse207/blob/main/weeks/week01/README.md#checklist-ส่งงาน","note":"ไม่คิดคะแนน ใช้ดูความพร้อมของเครื่อง"},
+      {"id":"REG","title":"ลงทะเบียนทีมและรับรหัสทีม","scope":"กลุ่ม","kind":"ก่อนคาบ","session":"T02","due":"2026-12-04T08:00:00+07:00","weight":null,"where":"แบบลงทะเบียนทีม (Google Form) ตัวแทนทีมกรอกคนเดียว","link":"register.html","note":"ทำที่บ้านเมื่อทุกคนมีผล check-docker.sh แล้ว"},
+      {"id":"D01","title":"สร้าง repo ทีมจากแม่แบบ และเพิ่ม tkeatkaew","scope":"กลุ่ม","kind":"ก่อนคาบ","session":"T02","due":"2026-12-04T08:00:00+07:00","weight":null,"where":"GitHub > Use this template · Settings > Collaborators","link":"register.html#repo","note":"ทำในคาบ T01 ส่วน E · repo เป็น private ชื่อตามที่หน้าลงทะเบียนกำหนด"},
+      {"id":"D02","title":"Team charter","scope":"กลุ่ม","kind":"ก่อนคาบ","session":"T02","due":"2026-12-04T08:00:00+07:00","weight":null,"where":"docs/team-charter.md","link":"handouts/t01-worksheet.html","note":"เริ่มในคาบ T01 ส่วน E คัดลอกจาก templates/team-charter.md · ทุกคนลงชื่อท้ายไฟล์"},
+      {"id":"I01","title":"แบบสำรวจเครื่อง แบบวัดพื้นฐาน และผล check-docker","scope":"เดี่ยว","kind":"ก่อนคาบ","session":"T02","due":"2026-12-04T08:00:00+07:00","weight":null,"where":"individual/T01-<รหัสนักศึกษา>.md","link":"handouts/t01-worksheet.html","note":"ไม่คิดคะแนน · ส่วน B–C ทำในคาบ ผล check-docker เติมที่บ้าน"},
       {"id":"L02","title":"บันทึกแล็บ T02 · รันระบบและตาม flow","scope":"กลุ่ม","kind":"ก่อนคาบ","session":"T03","due":"2026-12-11T08:00:00+07:00","weight":null,"where":"docs/labs/t02.md","link":"","note":"ใครอ่านโค้ด ใครลงมือ ใครตรวจ หลักฐาน และสิ่งที่ยังค้าง"},
       {"id":"L03","title":"บันทึกแล็บ T03 · quality scenario และหาจุดขัดข้อง","scope":"กลุ่ม","kind":"ก่อนคาบ","session":"T04","due":"2026-12-18T08:00:00+07:00","weight":null,"where":"docs/labs/t03.md","link":"","note":"ใครอ่านโค้ด ใครลงมือ ใครตรวจ หลักฐาน และสิ่งที่ยังค้าง"},
       {"id":"D03","title":"ARCH-01 รุ่นแรก: บริบท ขอบเขต และ quality scenario 2 เรื่อง","scope":"กลุ่ม","kind":"ต่อเนื่อง","session":"T04","due":"2026-12-18T08:00:00+07:00","weight":null,"where":"docs/arch-01-context.md","link":"","note":"ตรวจรวมใน A5a"},
