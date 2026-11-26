@@ -35,6 +35,9 @@
  *   แก้สคริปต์ภายหลัง: Deploy > Manage deployments > แก้ deployment เดิม > Version: New version
  *   (URL เดิมใช้ต่อได้ ถ้าสร้าง deployment ใหม่จะได้ URL ใหม่)
  *
+ * ฉบับ 1.5.2 (26 พ.ย. 2569): แผ่นการส่งงานและแผ่นข้อมูลการส่งเขียนใหม่เฉพาะเมื่อผลตรวจเปลี่ยน (ประวัติเวอร์ชันไม่รก)
+ *   เวลาตรวจล่าสุดเก็บใน Script Properties · แผ่นทีม: ติ๊ก V&V Profile (G) = ส่งแล้ว และใบงานครั้งที่ 1 (Q) เมื่อพบไฟล์ใน repo
+ *   ไม่แตะช่องที่อาจารย์ใส่ค่าอื่นไว้ เช่น "ต้องแก้" และไม่ลบค่าที่ติ๊กแล้ว · ต้อง deploy ใหม่ (New version)
  * ฉบับ 1.5.1 (26 พ.ย. 2569): เมนู "ลิงก์แก้ไขคำตอบของทีม" สำหรับทีมที่ทำลิงก์แก้ไขหาย
  *   และช่องติ๊ก "รับลงทะเบียนทีมใหม่" ในแผ่นกำหนดการ (ค่าเริ่มต้น) หน้าลงทะเบียนเปิดหรือปิดตามช่องนี้
  *   ฟอร์มยังเปิดรับคำตอบไว้เสมอ เพราะถ้าปิดฟอร์ม ลิงก์แก้ไขคำตอบจะใช้ไม่ได้
@@ -837,6 +840,7 @@ function teamEditLink() {
  * หน้าเว็บอ่านผลจาก doGet?what=submissions (มีแต่รหัสทีมและสถานะ ไม่มีชื่อ อีเมล หรือคะแนน)
  */
 var SUB = { sheet: 'การส่งงาน', store: 'ข้อมูลการส่ง', tokenProp: 'engse601.githubToken',
+  sigProp: 'engse601.submissions.sig', checkedProp: 'engse601.submissions.checked',
   cacheKey: 'engse601.submissions.v1', cacheSec: 300, recheckSec: 300, aheadDays: 14, maxBranches: 6,
   api: 'https://api.github.com' };
 
@@ -861,13 +865,16 @@ function runSubmissionCheck_(ss, onlyTeams) {
   var teams = subTeams_(ss).filter(function (t) { return !onlyTeams || onlyTeams.indexOf(t.id) >= 0; });
   var store = subStoreRead_(ss);
   var gh = ghClient_();
+  var before = subStoreSig_(store);
   var res = subCheckTeams_(gh, teams, items, store, now);
-  subStoreWrite_(ss, store);
+  subCheckedSave_(teams, store, now);
+  if (subStoreSig_(store) !== before) subStoreWrite_(ss, store);   // ไม่เขียนถ้าผลไม่เปลี่ยน ประวัติเวอร์ชันจะไม่รก
   subRender_(ss, sc, items, store, now, gh);
+  var filled = subFillTeamSheet_(ss, items, store, now);
   try { CacheService.getScriptCache().remove(SUB.cacheKey); } catch (e) { /* ไม่มีแคช */ }
   var warn = gh.token ? '' : 'ยังไม่ได้ตั้ง GitHub token: GitHub จำกัดการเรียกเมื่อไม่มี token ผลอาจไม่ครบ (เมนู ENGSE601 > ตั้ง GitHub token)';
   if (gh.limited) warn = (warn ? warn + '\n' : '') + 'GitHub จำกัดการเรียกระหว่างตรวจ บางทีมยังไม่ได้ตรวจรอบนี้ ลองใหม่ภายหลัง';
-  return { summary: 'ตรวจ ' + res.checked + ' ทีม · เรียก GitHub ' + gh.calls + ' ครั้ง', warn: warn };
+  return { summary: 'ตรวจ ' + res.checked + ' ทีม · เรียก GitHub ' + gh.calls + ' ครั้ง' + (filled ? ' · ติ๊กส่งแล้วในแผ่นทีม ' + filled + ' ช่อง' : ''), warn: warn };
 }
 
 /** งานที่มีกติกาตรวจและมีกำหนดส่ง เรียงตามกำหนดส่ง */
@@ -1004,7 +1011,7 @@ function subCheckTeams_(gh, teams, items, store, now) {
   });
   // 5) สรุปลง store
   ctx.forEach(function (c) {
-    var out = { checked: c.st.checked, access: c.st.access, def: c.st.def, cells: {} };
+    var out = { access: c.st.access, def: c.st.def, cells: {} };
     if (c.failed) { if (store[c.t.id]) store[c.t.id].stale = true; return; }
     Object.keys(c.st.cells).forEach(function (id) {
       var cell = c.st.cells[id];
@@ -1065,6 +1072,45 @@ function subEval_(c, it) {
 
 /* ---------- store */
 
+/** ลายเซ็นของผลตรวจ (ไม่รวมเวลาตรวจ) ใช้ตัดสินว่าต้องเขียนแผ่นใหม่ไหม */
+function subStoreSig_(st) {
+  return JSON.stringify(Object.keys(st).sort().map(function (k) { var o = st[k]; return [k, o.access, o.def, o.cells, !!o.stale]; }));
+}
+
+/** เวลาตรวจล่าสุดรายทีม เก็บใน Script Properties (ไม่เขียนลงชีตทุกชั่วโมง) */
+function subCheckedRead_() {
+  try { return JSON.parse(PropertiesService.getScriptProperties().getProperty(SUB.checkedProp) || '{}'); } catch (e) { return {}; }
+}
+function subCheckedSave_(teams, store, now) {
+  var m = subCheckedRead_(), t = Math.floor(now.getTime() / 1000);
+  teams.forEach(function (x) { if (store[x.id] && !store[x.id].stale) m[x.id] = t; });
+  PropertiesService.getScriptProperties().setProperty(SUB.checkedProp, JSON.stringify(m));
+}
+
+/** แผ่นทีม: ติ๊กว่าส่งแล้วเมื่อพบไฟล์ใน branch หลัก ไม่แตะช่องที่อาจารย์ใส่ค่าอื่นไว้ (เช่น "ต้องแก้") และไม่ลบค่าที่ติ๊กแล้ว */
+var SUB_TEAMCOLS = [
+  { item: 'D02', col: function () { return TEAM.c.profile; }, empty: ['', 'ยังไม่ส่ง'], val: 'ส่งแล้ว' },
+  { item: 'D03', col: function () { return TEAM.c.worksheet; }, empty: ['', false, 'FALSE'], val: true }
+];
+function subFillTeamSheet_(ss, items, store, now) {
+  var sh = ss.getSheetByName('ทีม');
+  if (!sh) return 0;
+  var nowS = Math.floor(now.getTime() / 1000), n = 0;
+  var byId = {}; items.forEach(function (it) { byId[it.id] = it; });
+  var rows = sh.getRange(TEAM.firstRow, 1, TEAM.rows, TEAM.width).getValues();
+  rows.forEach(function (r, i) {
+    var t = str_(r[TEAM.c.id - 1]), st = store[t];
+    if (!st) return;
+    SUB_TEAMCOLS.forEach(function (m) {
+      var it = byId[m.item];
+      if (!it) return;
+      var x = subState_(st, it, nowS), cur = r[m.col() - 1];
+      if ((x.s === 'ok' || x.s === 'late') && m.empty.indexOf(cur) >= 0) { sh.getRange(TEAM.firstRow + i, m.col()).setValue(m.val); n++; }
+    });
+  });
+  return n;
+}
+
 function subStoreSheet_(ss) {
   var sh = ss.getSheetByName(SUB.store);
   if (!sh) { sh = ss.insertSheet(SUB.store); sh.getRange(1, 1, 1, 2).setValues([['ทีม', 'ผลตรวจล่าสุด (JSON) สคริปต์เขียน อย่าแก้']]); sh.hideSheet(); }
@@ -1124,10 +1170,6 @@ function subRender_(ss, sc, items, store, now, gh) {
   var teams = subTeams_(ss);
   var sh = ss.getSheetByName(SUB.sheet) || ss.insertSheet(SUB.sheet);
   var W = 2 + vis.length + 3;
-  sh.clear();
-  sh.setConditionalFormatRules([]);
-  sh.getRange(1, 1, sh.getMaxRows(), sh.getMaxColumns()).clearDataValidations();
-  if (sh.getMaxColumns() < W) sh.insertColumnsAfter(sh.getMaxColumns(), W - sh.getMaxColumns());
   var head = ['ทีม', 'repo'].concat(vis.map(function (it) {
     return it.id + '\n' + it.title + '\nส่ง ' + Utilities.formatDate(it.due, tz, 'd/M HH:mm');
   })).concat(['ยังขาด', 'ข้อสังเกต', 'ข้อความเตือน (คัดลอกไป LINE)']);
@@ -1160,9 +1202,16 @@ function subRender_(ss, sc, items, store, now, gh) {
     rows.push(row.concat([lack.join(' ') || (st && st.access === 'ok' ? 'ครบ' : ''), notes.join(' · '), msg]));
     tones.push(tone.concat(['', '', '']));
   });
+  var sig = JSON.stringify([head, rows, tones, !!gh.token]), props = PropertiesService.getScriptProperties();
+  if (props.getProperty(SUB.sigProp) === sig && sh.getRange(4, 1).getValue() === 'ทีม') return;   // ผลเหมือนเดิม ไม่เขียนแผ่น
+  props.setProperty(SUB.sigProp, sig.length > 8000 ? Utilities.base64Encode(Utilities.computeDigest(Utilities.DigestAlgorithm.MD5, sig, Utilities.Charset.UTF_8)) : sig);
+  sh.clear();
+  sh.setConditionalFormatRules([]);
+  sh.getRange(1, 1, sh.getMaxRows(), sh.getMaxColumns()).clearDataValidations();
+  if (sh.getMaxColumns() < W) sh.insertColumnsAfter(sh.getMaxColumns(), W - sh.getMaxColumns());
   var stamp = Utilities.formatDate(now, tz, 'd/M/yyyy HH:mm');
   sh.getRange(1, 1).setValue('การส่งงานใน repo ของแต่ละทีม').setFontWeight('bold').setFontSize(14);
-  sh.getRange(2, 1).setValue('ตรวจล่าสุด ' + stamp + ' น. · ✓ มีไฟล์ตาม path (เวลา commit) · ✓ ช้า ส่งหลังกำหนด · ⚠ อยู่ใน branch อื่น · – ยังไม่ส่ง ยังไม่ถึงกำหนด · ✗ เลยกำหนดแล้วยังไม่ส่ง · ? เปิด repo ไม่ได้' +
+  sh.getRange(2, 1).setValue('ผลเปลี่ยนล่าสุด ' + stamp + ' น. (ระบบตรวจทุกชั่วโมง แผ่นนี้เขียนใหม่เฉพาะเมื่อผลเปลี่ยน · เวลาตรวจล่าสุดดูที่หน้าสถานะการส่ง) · ✓ มีไฟล์ตาม path (เวลา commit) · ✓ ช้า ส่งหลังกำหนด · ⚠ อยู่ใน branch อื่น · – ยังไม่ส่ง ยังไม่ถึงกำหนด · ✗ เลยกำหนดแล้วยังไม่ส่ง · ? เปิด repo ไม่ได้' +
     (gh.token ? '' : ' · ยังไม่ได้ตั้ง GitHub token') + ' · กติกาการตรวจอยู่ในแผ่นกำหนดการ คอลัมน์ M · แผ่นนี้สคริปต์เขียนใหม่ทุกครั้ง อย่าพิมพ์ในแผ่นนี้')
     .setFontSize(9).setFontColor('#5d6878');
   if (!rows.length) return;
@@ -1189,10 +1238,10 @@ function submissionsJson_(ss, now) {
   var off = Utilities.formatDate(now, tz, 'Z'); off = off.slice(0, 3) + ':' + off.slice(3);
   var iso = function (d) { return Utilities.formatDate(d, tz, "yyyy-MM-dd'T'HH:mm:ss") + off; };
   var items = subItems_(sc), store = subStoreRead_(ss);
-  var last = 0;
+  var last = 0, chk = subCheckedRead_();
   var teams = subTeams_(ss).map(function (t) {
-    var st = store[t.id];
-    if (st && st.checked > last) last = st.checked;
+    var st = store[t.id], ck = chk[t.id] || (st && st.checked) || 0;
+    if (ck > last) last = ck;
     var cells = {};
     items.forEach(function (it) {
       var x = subState_(st, it, nowS), o = { s: x.s };
@@ -1203,7 +1252,7 @@ function submissionsJson_(ss, now) {
       cells[it.id] = o;
     });
     return { id: t.id, access: st ? st.access : 'unchecked', def: st && st.access === 'ok' ? st.def : '',
-      checked: st ? iso(new Date(st.checked * 1000)) : '', cells: cells };
+      checked: ck ? iso(new Date(ck * 1000)) : '', cells: cells };
   });
   return {
     ok: true, version: 1, now: iso(now), checked: last ? iso(new Date(last * 1000)) : '', recheckSec: SUB.recheckSec,
