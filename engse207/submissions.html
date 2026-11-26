@@ -11,9 +11,10 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700&display=swap">
-  <link rel="stylesheet" href="portal.css?v=1">
-  <script src="data.js?v=1" defer></script>
-  <script src="schedule.js?v=1" defer></script>
+  <link rel="stylesheet" href="portal.css?v=2">
+  <link rel="stylesheet" href="secui.css?v=1">
+  <script src="data.js?v=2" defer></script>
+  <script src="schedule.js?v=2" defer></script>
 </head>
 <body>
   <a class="skip" href="#main">ข้ามไปยังเนื้อหาหลัก</a>
@@ -23,13 +24,16 @@
         <img src="../assets/se-logo.png" alt="" width="36" height="36">
         <span><b>ENGSE207</b><small>SOFTWARE ARCHITECTURE</small></span>
       </a>
+      <div class="menu-panel" id="site-menu">
       <nav class="nav" aria-label="หน้าของรายวิชา">
         <a href="./" data-keep-sec>หน้ารายวิชา</a>
         <a href="deliverables.html" data-keep-sec>สิ่งที่ต้องส่ง</a>
         <a href="register.html" data-keep-sec>ลงทะเบียนทีม</a>
         <a href="submissions.html" aria-current="page" data-keep-sec>สถานะการส่ง</a>
       </nav>
-      <div class="secs" id="secs" role="group" aria-label="กลุ่มเรียน"></div>
+      </div>
+      <a class="sec-chip" id="sec-chip" href="#secbox">เลือก SEC</a>
+      <button type="button" class="menu-btn" aria-expanded="false" aria-controls="site-menu" aria-label="เมนู"><svg class="bars" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg><svg class="x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg><span>เมนู</span></button>
     </div>
   </header>
 
@@ -39,10 +43,7 @@
         <p class="eyebrow" id="eyebrow">ENGSE207 · ภาค 2/2569 · สถานะการส่ง</p>
         <h1>สถานะการส่งงานใน repo</h1>
         <p class="lead" id="lead"></p>
-        <div id="pick" class="pick" hidden>
-          <p>เลือกกลุ่มเรียนก่อน แต่ละ SEC ตรวจจากชีตผู้สอนของตัวเอง</p>
-          <div class="opts" id="pick-opts"></div>
-        </div>
+        <div id="secbox"></div>
         <div class="mine" id="mine-bar" hidden>
           <label for="team">ทีมของคุณ <select id="team"><option value="">เลือกรหัสทีม</option></select></label>
           <button class="btn main" id="recheck" type="button" disabled>ตรวจทีมนี้ใหม่</button>
@@ -231,9 +232,9 @@
     function showSec(n) {
       sec = n; token++; data = null; var info = X.secInfo(n);
       X.keepSec(sec);
-      $("eyebrow").textContent = "ENGSE207 · ภาค 2/2569 · สถานะการส่ง" + (info ? " · " + info.label : "");
+      $("eyebrow").textContent = "ENGSE207 · ภาค 2/2569 · สถานะการส่ง";
       ["mine-bar", "mine-sec", "all", "none"].forEach(function (id) { show(id, false); });
-      $("pick").hidden = !!n; $("src").textContent = ""; $("msg").textContent = "";
+      $("src").textContent = ""; $("msg").textContent = "";
       if (!n) return;
       base = info.scheduleUrl || "";
       if (info.block || !base) {
@@ -245,16 +246,8 @@
       load().catch(function () { /* แสดงข้อความแล้ว */ });
     }
 
-    $("pick-opts").innerHTML = Object.keys(D.secs).map(function (k) {
-      var s = D.secs[k];
-      return '<button type="button" data-sec="' + k + '"><b>' + esc(s.label) + "</b><span>" + esc(s.block ? "block course · ประกาศแยก" : s.day + " " + s.time + " · " + s.room) + "</span></button>";
-    }).join("");
-    var top = $("secs");
-    $("pick-opts").addEventListener("click", function (e) {
-      var b = e.target.closest("[data-sec]"); if (!b) return;
-      var btn = top.querySelector('[data-sec="' + b.dataset.sec + '"]'); if (btn) btn.click();
-    });
-    showSec(X.secSwitch(top, showSec));
+    showSec(X.secUI({ box: $("secbox"), chip: $("sec-chip"), onChange: showSec,
+      hint: "แต่ละ SEC ตรวจจากชีตผู้สอนของตัวเอง เลือกให้ตรงกับกลุ่มที่เรียน" }).sec);
     timer = setInterval(function () { if (!document.hidden && data) load().catch(function () { }); }, 5 * 60 * 1000);
   });
   </script>
