@@ -12,7 +12,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap">
   <link rel="stylesheet" href="../assets/class-portal.css?v=2">
-  <script src="data.js?v=12" defer></script>
+  <script src="data.js?v=13" defer></script>
+  <script src="schedule-data.js?v=4" defer></script>
+  <script src="schedule.js?v=2" defer></script>
   <style>
     .course-page { --course: #d65a2c; --course-ink: #9e3d18; }
     .reg-hero { padding: 40px 0 8px; }
@@ -20,6 +22,11 @@
     .reg-hero .lead { max-width: 760px; margin: 14px 0 0; color: #405a72; font-size: 1.05rem; }
     .reg-cta { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; margin-top: 24px; }
     .reg-cta .btn[aria-disabled="true"] { opacity: .55; pointer-events: none; }
+    .closed { max-width: 760px; margin: 18px 0 0; padding: 18px 20px; border: 1px solid #b6dbbf; border-left: 5px solid #2f7a52; border-radius: 0 16px 16px 0; background: #f1f8f3; }
+    .closed h2 { margin: 0; font-size: 1.15rem; color: #1e5b35; }
+    .closed ol { margin: 10px 0 0; padding-left: 20px; color: #314a62; }
+    .closed li + li { margin-top: 8px; }
+    .closed li b { color: #10253f; }
     .reg-cta small { color: #597087; }
     .sec { padding: 44px 0 0; }
     .sec:last-of-type { padding-bottom: 64px; }
@@ -64,6 +71,7 @@
         <a class="back-link" href="./">กลับหน้ารายวิชา ENGSE601</a>
         <h1>ลงทะเบียนทีมโครงงาน</h1>
         <p class="lead" id="lead"></p>
+        <div class="closed" id="closed" hidden></div>
         <div class="reg-cta">
           <a class="btn btn-primary btn-arrow" id="go" href="#" aria-disabled="true">เปิดแบบลงทะเบียนทีม</a>
           <small id="go-note"></small>
@@ -117,16 +125,34 @@
     function $(id) { return document.getElementById(id); }
 
     $("lead").textContent = R.lead;
-    var go = $("go");
-    if (R.formUrl) {
-      go.href = R.formUrl;
-      go.removeAttribute("aria-disabled");
-      go.target = "_blank";
-      go.rel = "noopener";
-      $("go-note").textContent = "เข้าสู่ระบบด้วยบัญชี Google ก่อนกรอก";
-    } else {
-      $("go-note").textContent = R.notOpen;
+    var go = $("go"), cta = go.parentNode;
+    /** เปิดหรือปิดรับตามช่องติ๊ก "รับลงทะเบียนทีมใหม่" ในแผ่นกำหนดการ (null = ใช้ค่าใน data.js) */
+    function apply(open) {
+      if (open === null || open === undefined) open = !R.closed;
+      if (!open && R.closed) {
+        var C = R.closed;
+        $("closed").innerHTML = "<h2>" + esc(C.title) + "</h2><ol>" + C.steps.map(function (x) { return "<li><b>" + esc(x.t) + "</b> " + rich(x.d) + "</li>"; }).join("") + "</ol>";
+        $("closed").hidden = false;
+        cta.style.display = "none";
+        return;
+      }
+      $("closed").hidden = true;
+      cta.style.display = "";
+      if (R.formUrl) {
+        go.href = R.formUrl;
+        go.removeAttribute("aria-disabled");
+        go.target = "_blank";
+        go.rel = "noopener";
+        $("go-note").textContent = "เข้าสู่ระบบด้วยบัญชี Google ก่อนกรอก";
+      } else {
+        $("go-note").textContent = R.notOpen;
+      }
     }
+    apply(null);
+    var X = window.ENGSE601Schedule;
+    if (X && D.schedule) X.load(D.schedule.url, function (data) {
+      if (data && data.settings && typeof data.settings.regOpen === "boolean") apply(data.settings.regOpen);
+    });
     $("prepare").innerHTML = R.prepare.map(function (p) { return '<div class="card"><b>' + esc(p.t) + "</b><span>" + rich(p.d) + "</span></div>"; }).join("");
     $("uses").innerHTML = R.uses.map(function (u) { return "<li><b>" + esc(u.when) + "</b><span>" + rich(u.what) + "</span></li>"; }).join("");
     $("before2").innerHTML = R.before2.map(function (s) { return "<li><b>" + rich(s.t) + "</b><span>" + rich(s.d) + "</span></li>"; }).join("");
