@@ -16,6 +16,7 @@
  *   1. เปิดชีตผู้สอนของ SEC นั้น > ส่วนขยาย > Apps Script วางไฟล์นี้ทั้งไฟล์ บันทึก แล้วรีเฟรชชีต จะมีเมนู ENGSE207
  *   2. ENGSE207 > สร้างแบบลงทะเบียนทีม (ครั้งแรกขอสิทธิ์ Forms, Sheets, Drive)
  *      ลิงก์สำหรับนักศึกษาอยู่แท็บ ภาพรวม ช่อง B24 นำไปใส่ secs["<SEC>"].formUrl ใน engse207/data.js
+ *      แก้ข้อความฟอร์มภายหลัง: วางสคริปต์ฉบับใหม่ แล้วสั่ง ENGSE207 > ปรับข้อความในฟอร์มตามสคริปต์ (ลิงก์และคำตอบเดิมอยู่ครบ)
  *   3. ENGSE207 > ตั้งซิงก์อัตโนมัติเมื่อมีคนส่งฟอร์ม (ซิงก์แล้วเผยแพร่ไฟล์สถานะทีมให้ทันที ทีมรู้รหัสจากชื่อไฟล์ที่แชร์เข้า Gmail)
  *      แนะนำ: เปิดฟอร์ม > Settings > Responses > Send responders a copy of their response: Always (อีเมลสำเนามีลิงก์แก้ไขคำตอบ)
  *   4. Deploy > New deployment > Web app · Execute as: Me · Who has access: Anyone
@@ -30,7 +31,7 @@
  * รหัสทีมที่ออกแล้วไม่นำกลับมาใช้ซ้ำ คำตอบที่เลือกสมาชิกชุดเดียวกันถือเป็นทีมเดิม (ใช้คำตอบล่าสุด)
  * แท็บ ทีม มี 9 ช่อง (S?-T01 ถึง T09) ทีมละ 4 แถว ถ้าเกิน 9 ทีมให้เพิ่มแถวในแท็บ ทีม แล้วแก้ TEAM.blocks
  *
- * ฉบับ 1.0 (26 พ.ย. 2569)
+ * ฉบับ 1.1 (26 พ.ย. 2569): ชื่อทีมภาษาอังกฤษ ชื่อ repo ตามชื่อทีม ลิงก์ repo เป็นช่องบังคับ เมนูปรับข้อความในฟอร์มเดิม
  */
 
 var COURSE = 'ENGSE207', TERM = '2/2569';
@@ -73,10 +74,11 @@ var ITEM_COLS = ['id', 'title', 'scope', 'kind', 'session', 'override', 'due', '
 
 // คำถามในฟอร์ม (หัวคอลัมน์แท็บข้อมูลซิงก์ใช้ชื่อเดียวกัน)
 var FIELDS = [
-  { key: 'p_team', type: 'page', title: 'ทีม', help: 'ตัวแทนทีมกรอกคนเดียว ทีมละ 3–4 คนจากกลุ่มเรียนเดียวกัน ส่งแล้วแก้ได้จากลิงก์ "แก้ไขคำตอบ"' },
+  { key: 'p_team', type: 'page', title: 'ทีม', help: 'ตัวแทนทีมกรอกคนเดียว ทีมละ 3–4 คนจากกลุ่มเรียนเดียวกัน สร้าง repo ของทีมให้เสร็จก่อน (ขั้นที่ 3 ในหน้าลงทะเบียนทีม) ส่งแล้วแก้ได้จากลิงก์ "แก้ไขคำตอบ"' },
   { key: 'leader', type: 'text', title: 'รหัสนักศึกษาของผู้กรอก', required: true, help: 'เช่น 68543210000-0' },
   { key: 'members', type: 'checkbox', title: 'สมาชิกทีม', required: true, help: 'เลือกให้ครบทุกคน รวมตัวเองด้วย ทีมละ 3–4 คน', choices: 'ROSTER' },
-  { key: 'teamName', type: 'text', title: 'ชื่อทีม', required: true, help: 'ชื่อสั้น ๆ ที่ใช้เรียกกันในห้อง รหัสทีมระบบตั้งให้เอง' },
+  { key: 'teamName', type: 'text', title: 'ชื่อทีม (ภาษาอังกฤษ)', required: true,
+    help: 'ชื่อเดียวกับที่ใช้ในชื่อ repo ตัวอักษรอังกฤษ ตัวเลข หรือขีด ไม่มีเว้นวรรค 2–30 ตัว เช่น cloudcats รหัสทีมระบบตั้งให้เอง' },
   { key: 'github', type: 'paragraph', title: 'GitHub username ของสมาชิกแต่ละคน', required: true,
     help: 'บรรทัดละคน: รหัสนักศึกษา · GitHub username เช่น 68543210000-0 · somchai-dev' },
   { key: 'emails', type: 'paragraph', title: 'Gmail ของสมาชิกแต่ละคน', required: true,
@@ -84,8 +86,9 @@ var FIELDS = [
   { key: 'machines', type: 'paragraph', title: 'เครื่องของสมาชิกแต่ละคนและผล check-docker.sh จาก T01', required: true,
     help: 'บรรทัดละคน: รหัสนักศึกษา · Windows หรือ Mac ชิป M หรือ Mac Intel · ผ่าน หรือ ยังไม่ผ่าน เช่น 68543210000-0 · Windows · ผ่าน ' +
       'ถ้าไม่มีเครื่องส่วนตัว พิมพ์ ไม่มีเครื่อง' },
-  { key: 'p_repo', type: 'page', title: 'Repository ของทีม', help: 'สร้างจาก ' + TEMPLATE_REPO + ' ชื่อ engse207-2569-s<SEC>-t<เลขทีม> แบบ Private ยังไม่ได้สร้างก็ส่งได้ แล้วกลับมาแก้คำตอบ' },
-  { key: 'repo', type: 'url', title: 'ลิงก์ repo ของทีม', help: 'เช่น https://github.com/somchai-dev/engse207-2569-s1-t03 ยังไม่มีให้เว้นไว้' },
+  { key: 'p_repo', type: 'page', title: 'Repository ของทีม', help: 'สร้างจาก ' + TEMPLATE_REPO + ' ชื่อ engse207-2569-s{SEC}-<ชื่อทีม> แบบ Private และเพิ่ม ' + TEACHER_GITHUB + ' เป็น collaborator ก่อนกรอกส่วนนี้' },
+  { key: 'repo', type: 'url', title: 'ลิงก์ repo ของทีม', required: true,
+    help: 'คัดลอกจากแถบที่อยู่ของเบราว์เซอร์ที่หน้าแรกของ repo เช่น https://github.com/somchai-dev/engse207-2569-s{SEC}-cloudcats' },
   { key: 'access', type: 'mc', title: 'เพิ่ม ' + TEACHER_GITHUB + ' เป็น collaborator ของ repo แล้วหรือยัง', required: true,
     help: 'GitHub > Settings > Collaborators > Add people > ' + TEACHER_GITHUB, choices: ['เพิ่มแล้ว', 'ยัง จะเพิ่มก่อนเริ่ม T02'] },
   { key: 'concern', type: 'paragraph', title: 'เรื่องที่อยากให้อาจารย์รู้ (ถ้ามี)', help: 'เช่น เครื่องของใครยังรัน Docker ไม่ได้ หรือยังขาดสมาชิก' }
@@ -104,6 +107,7 @@ function onOpen() {
     .addItem('ตรวจข้อมูลหน้าเว็บกำหนดการ', 'previewSchedule')
     .addSeparator()
     .addItem('สร้างแบบลงทะเบียนทีม', 'createTeamForm')
+    .addItem('ปรับข้อความในฟอร์มตามสคริปต์', 'updateFormText')
     .addItem('ปรับรายชื่อในฟอร์มตามแท็บรายชื่อ', 'updateFormRoster')
     .addItem('ลิงก์แก้ไขคำตอบของทีม', 'teamEditLink')
     .addSeparator()
@@ -141,39 +145,48 @@ function sumCell_(ss, key) {
 
 /* ------------------------------------------------------------------ form */
 
+function formDescription_(sec) {
+  return [
+    COURSE + ' สถาปัตยกรรมซอฟต์แวร์ กลุ่มเรียน SEC' + sec + ' · ตัวแทนทีมกรอกคนเดียว ใช้เวลาประมาณ 10 นาที',
+    'ก่อนกรอก: ทุกคนตรวจเครื่องด้วย check-docker.sh แล้ว และตัวแทนทีมสร้าง repo จากแม่แบบเสร็จแล้ว (ต้องใช้ลิงก์ repo)',
+    'ขั้นตอนทั้งหมด: ' + SITE_URL + 'register.html?sec=' + sec
+  ].join('\n');
+}
+function formConfirmation_(sec) {
+  return 'ลงทะเบียนทีมแล้ว · 1) คัดลอกลิงก์ "แก้ไขคำตอบ" ในหน้านี้ไปใส่ใน README ของ repo ทีม ใช้เมื่อต้องแก้ ไม่ต้องส่งใหม่ · ' +
+    '2) ภายในไม่กี่นาที สมาชิกทุกคนจะได้อีเมลแชร์ไฟล์ "' + COURSE + ' ' + TERM + ' · สถานะทีม S' + sec + '-Txx" เลข Txx คือรหัสทีม ' +
+    'ใส่รหัสทีมและลิงก์ไฟล์นั้นใน README ด้วย';
+}
+function secText_(s, sec) { return String(s || '').replace(/\{SEC\}/g, sec); }
+
 function createTeamForm() {
   var ss = SpreadsheetApp.getActiveSpreadsheet(), sec = secNo_(ss);
   sheetOrStop_(ss, SH.team);
   if (str_(sumCell_(ss, 'formEdit').getValue())) {
     var ui = ui_();
     if (!ui) { Logger.log('มีแบบลงทะเบียนทีมอยู่แล้ว'); return; }
-    if (ui.alert('มีแบบลงทะเบียนทีมอยู่แล้ว', 'สร้างฟอร์มใหม่แทนลิงก์เดิมหรือไม่ (ฟอร์มเดิมยังอยู่ใน Drive แต่สคริปต์จะซิงก์จากฟอร์มใหม่เท่านั้น)',
-      ui.ButtonSet.YES_NO) !== ui.Button.YES) return;
+    if (ui.alert('มีแบบลงทะเบียนทีมอยู่แล้ว', 'สร้างฟอร์มใหม่แทนลิงก์เดิมหรือไม่ (ฟอร์มเดิมยังอยู่ใน Drive แต่สคริปต์จะซิงก์จากฟอร์มใหม่เท่านั้น)\n' +
+      'ถ้าแค่ต้องการแก้ข้อความ ใช้เมนู ปรับข้อความในฟอร์มตามสคริปต์ แทน', ui.ButtonSet.YES_NO) !== ui.Button.YES) return;
   }
   var roster = readRoster_(ss);
   if (!roster.length) throw new Error('ไม่พบรายชื่อในแท็บ รายชื่อ คอลัมน์ B–C');
   var form = FormApp.create(COURSE + ' SEC' + sec + ' ลงทะเบียนทีม Term Project · ภาค ' + TERM);
-  form.setDescription([
-    COURSE + ' สถาปัตยกรรมซอฟต์แวร์ กลุ่มเรียน SEC' + sec + ' · ตัวแทนทีมกรอกคนเดียว ใช้เวลาประมาณ 10 นาที',
-    'เตรียมก่อนกรอก: รหัส Gmail GitHub username และผล check-docker.sh ของสมาชิกทุกคน',
-    'ส่งแล้วแก้ได้จากลิงก์ "แก้ไขคำตอบ" ไม่ต้องส่งใหม่ · รายละเอียด ' + SITE_URL + 'register.html?sec=' + sec
-  ].join('\n'));
+  form.setDescription(formDescription_(sec));
   form.setCollectEmail(true);
   form.setAllowResponseEdits(true);
   form.setLimitOneResponsePerUser(false);
   form.setProgressBar(true);
-  form.setConfirmationMessage('ลงทะเบียนทีมแล้ว เก็บลิงก์ "แก้ไขคำตอบ" ไว้ ถ้าต้องแก้ใช้ลิงก์นั้น ไม่ต้องส่งใหม่ · ' +
-    'ก่อนเริ่ม T02 สร้าง repo จาก ' + TEMPLATE_REPO + ' เพิ่ม ' + TEACHER_GITHUB + ' เป็น collaborator แล้วกลับมาใส่ลิงก์ repo');
+  form.setConfirmationMessage(formConfirmation_(sec));
   var ids = {}, first = true;
   FIELDS.forEach(function (f) {
     if (f.type === 'page') {
       var head = first ? form.addSectionHeaderItem() : form.addPageBreakItem();
       first = false;
       head.setTitle(f.title);
-      if (f.help) head.setHelpText(f.help);
+      if (f.help) head.setHelpText(secText_(f.help, sec));
       return;
     }
-    ids[f.key] = addItem_(form, f, roster).getId();
+    ids[f.key] = addItem_(form, f, roster, sec).getId();
   });
   form.setDestination(FormApp.DestinationType.SPREADSHEET, ss.getId());
   PropertiesService.getDocumentProperties().setProperty(PROP.items, JSON.stringify(ids));
@@ -184,21 +197,63 @@ function createTeamForm() {
     'แท็บคำตอบของฟอร์มที่เพิ่มขึ้นมา ซ่อนได้ ห้ามลบ');
 }
 
-function addItem_(form, f, roster) {
+function addItem_(form, f, roster, sec) {
   var item;
   if (f.type === 'paragraph') item = form.addParagraphTextItem();
   else if (f.type === 'mc') item = form.addMultipleChoiceItem();
   else if (f.type === 'checkbox') item = form.addCheckboxItem();
   else item = form.addTextItem();
+  configItem_(item, f, roster, sec);
+  return item;
+}
+
+/** ตั้งชื่อ คำอธิบาย ช่องบังคับ ตัวเลือก และการตรวจค่า ของคำถามหนึ่งข้อ (ใช้ทั้งตอนสร้างและตอนปรับฟอร์มเดิม) */
+function configItem_(item, f, roster, sec) {
   item.setTitle(f.title).setRequired(!!f.required);
-  if (f.help) item.setHelpText(f.help);
+  item.setHelpText(secText_(f.help, sec));
   if (f.choices) item.setChoiceValues(f.choices === 'ROSTER' ? rosterChoices_(roster) : f.choices);
-  if (f.type === 'url') item.setValidation(FormApp.createTextValidation().setHelpText('ใส่ลิงก์เต็ม ขึ้นต้นด้วย https://github.com/').requireTextIsUrl().build());
+  if (f.type === 'url') item.setValidation(FormApp.createTextValidation()
+    .setHelpText('ใส่ลิงก์หน้าแรกของ repo ขึ้นต้นด้วย https://github.com/ เช่น https://github.com/somchai-dev/engse207-2569-s' + sec + '-cloudcats')
+    .requireTextMatchesPattern('^https://github\\.com/[A-Za-z0-9-]+/[A-Za-z0-9._-]+/?$').build());
+  if (f.key === 'teamName') item.setValidation(FormApp.createTextValidation()
+    .setHelpText('ตัวอักษรอังกฤษ ตัวเลข หรือขีด ขึ้นต้นด้วยตัวอักษร ไม่มีเว้นวรรค 2–30 ตัว เช่น cloudcats')
+    .requireTextMatchesPattern('^[A-Za-z][A-Za-z0-9-]{1,29}$').build());
   if (f.key === 'leader') item.setValidation(FormApp.createTextValidation().setHelpText('รหัสนักศึกษา 11 หลัก ขีด และเลขท้าย เช่น 68543210000-0')
     .requireTextMatchesPattern('^[0-9]{11}-[0-9]$').build());
   if (f.key === 'emails' || f.key === 'github' || f.key === 'machines') item.setValidation(FormApp.createParagraphTextValidation()
     .setHelpText('ใส่รหัสนักศึกษาของทุกคน บรรทัดละคน').requireTextContainsPattern('[0-9]{11}-[0-9]').build());
   return item;
+}
+
+/** ปรับฟอร์มเดิมให้ข้อความ ช่องบังคับ และการตรวจค่าตรงกับสคริปต์ฉบับนี้ ลิงก์ฟอร์มและคำตอบเดิมอยู่ครบ */
+function updateFormText() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet(), sec = secNo_(ss), form = openForm_(ss);
+  if (!form) return;
+  var roster = readRoster_(ss), map = itemKeyMap_(form), byKey = {}, done = [], miss = [];
+  FIELDS.forEach(function (f) { byKey[f.key] = f; });
+  var T = FormApp.ItemType, pages = FIELDS.filter(function (f) { return f.type === 'page'; }), pi = 0;
+  form.getItems().forEach(function (it) {
+    var t = it.getType();
+    if (t === T.SECTION_HEADER || t === T.PAGE_BREAK) {
+      var pg = pages[pi++];
+      if (!pg) return;
+      var h = t === T.SECTION_HEADER ? it.asSectionHeaderItem() : it.asPageBreakItem();
+      h.setTitle(pg.title); h.setHelpText(secText_(pg.help, sec));
+      return;
+    }
+    var f = byKey[map[it.getId()]];
+    if (!f) return;
+    var typed = t === T.PARAGRAPH_TEXT ? it.asParagraphTextItem() : t === T.MULTIPLE_CHOICE ? it.asMultipleChoiceItem() :
+      t === T.CHECKBOX ? it.asCheckboxItem() : t === T.TEXT ? it.asTextItem() : null;
+    if (!typed) return;
+    configItem_(typed, f, roster, sec);
+    done.push(f.key);
+  });
+  FIELDS.forEach(function (f) { if (f.type !== 'page' && done.indexOf(f.key) < 0) miss.push(f.title); });
+  form.setDescription(formDescription_(sec));
+  form.setConfirmationMessage(formConfirmation_(sec));
+  alert_('ปรับฟอร์มแล้ว', 'ปรับ ' + done.length + ' คำถาม คำอธิบายฟอร์ม และข้อความหลังส่ง ลิงก์ฟอร์มเดิมใช้ต่อได้' +
+    (miss.length ? '\nหาคำถามเหล่านี้ไม่พบ: ' + miss.join(', ') : ''));
 }
 
 /** ปรับตัวเลือกสมาชิกในฟอร์มให้ตรงกับแท็บรายชื่อ (เมื่อมีนักศึกษาเพิ่มหรือถอน) */
@@ -282,6 +337,7 @@ function syncTeams_() {
     var noGh = r.members.filter(function (id) { return !tm.gh[id]; });
     if (noGh.length) tm.notes.push('ยังไม่มี GitHub ของ ' + noGh.join(', '));
     if (!str_(r.v.repo)) tm.notes.push('ยังไม่มีลิงก์ repo');
+    else if (!new RegExp('github\\.com/[^/]+/engse207-2569-s' + sec + '-', 'i').test(r.v.repo)) tm.notes.push('ชื่อ repo ไม่ตรงรูปแบบ engse207-2569-s' + sec + '-<ชื่อทีม> (ใช้ต่อได้ ระบบตรวจจากลิงก์)');
   });
   Object.keys(where).forEach(function (id) {
     if (where[id].length < 2) return;

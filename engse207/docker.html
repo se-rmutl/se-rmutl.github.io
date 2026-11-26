@@ -1,0 +1,335 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ENGSE207 ติดตั้ง Docker และตรวจเครื่อง | SE RMUTL</title>
+  <meta name="description" content="ENGSE207 ภาค 2/2569: ติดตั้ง Docker Desktop บน Windows (WSL 2) และ macOS ทีละขั้น พร้อมผลที่ควรเห็น และตรวจเครื่องด้วย check-docker.sh">
+  <meta name="theme-color" content="#101b2e">
+  <link rel="canonical" href="https://se-rmutl.github.io/engse207/docker.html">
+  <link rel="icon" href="../assets/se-logo.png" type="image/png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700&display=swap">
+  <link rel="stylesheet" href="portal.css?v=3">
+  <link rel="stylesheet" href="secui.css?v=2">
+  <script src="data.js?v=3" defer></script>
+  <script src="schedule.js?v=3" defer></script>
+  <style>
+    body[data-os="win"] [data-os="mac"], body[data-os="mac"] [data-os="win"] { display: none !important; }
+    .shot { max-width: 640px; margin: 14px 0; }
+    .shot svg { display: block; width: 100%; height: auto; border-radius: 12px; background: #eef2f7; }
+    .shot figcaption { margin-top: 6px; color: var(--muted); font-size: .84rem; }
+    .shot figcaption b { color: #b3361f; }
+    .wf text { font-family: var(--thai); }
+    .wf .mono { font-family: var(--mono); }
+    .wf .fr { stroke: #31445f; stroke-width: 1.5; }
+    .wf .hl { fill: none; stroke: #d0391f; stroke-width: 2.5; stroke-dasharray: 7 4; }
+    .wf .bd { fill: #d0391f; }
+    .wf .bdt { fill: #fff; font: 700 12px var(--mono); }
+    @media (max-width: 620px) {
+      .shot { overflow-x: auto; }
+      .shot svg { min-width: 540px; }
+      .shot figcaption::after { content: " · เลื่อนภาพไปทางขวาเพื่อดูส่วนที่เหลือ"; }
+      .trouble thead { display: none; }
+      .trouble tr { display: block; padding: 10px 0; border-bottom: 1px solid var(--line); }
+      .trouble td { display: block; padding: 2px 0; border: 0; }
+      .trouble td::before { content: attr(data-label) " · "; font: 600 .72rem/1.4 var(--mono); color: var(--muted); }
+    }
+    .need { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
+    .need .card b { display: block; }
+    .need .card span { color: var(--muted); font-size: .92rem; }
+  </style>
+</head>
+<body data-os="win">
+  <a class="skip" href="#main">ข้ามไปยังเนื้อหาหลัก</a>
+  <header class="top">
+    <div class="wrap top-inner">
+      <a class="brand" href="./" data-keep-sec aria-label="ENGSE207 หน้ารายวิชา">
+        <img src="../assets/se-logo.png" alt="" width="36" height="36">
+        <span><b>ENGSE207</b><small>SOFTWARE ARCHITECTURE</small></span>
+      </a>
+      <div class="menu-panel" id="site-menu">
+      <nav class="nav" aria-label="หน้าของรายวิชา">
+        <a href="./" data-keep-sec>หน้ารายวิชา</a>
+        <a href="deliverables.html" data-keep-sec>สิ่งที่ต้องส่ง</a>
+        <a href="register.html" data-keep-sec>ลงทะเบียนทีม</a>
+        <a href="submissions.html" data-keep-sec>สถานะการส่ง</a>
+      </nav>
+      </div>
+      <button type="button" class="menu-btn" aria-expanded="false" aria-controls="site-menu" aria-label="เมนู"><svg class="bars" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg><svg class="x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg><span>เมนู</span></button>
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="hero">
+      <div class="wrap">
+        <a class="back" href="register.html#docker" data-keep-sec>ลงทะเบียนทีม ขั้นที่ 1</a>
+        <p class="eyebrow">ENGSE207 · ภาค 2/2569 · คู่มือ</p>
+        <h1>ติดตั้ง Docker และตรวจเครื่อง</h1>
+        <p class="lead">ทุกคนทำบนเครื่องของตัวเอง ใช้ทั้งงานกลุ่ม งานเดี่ยว และการสอบปฏิบัติ เลือกระบบของเครื่องคุณ แล้วทำตามทีละข้อ จบแล้วรัน <code>check-docker.sh</code> ให้ผ่านทุกข้อ</p>
+        <div class="ostabs" role="group" aria-label="ระบบของเครื่อง">
+          <button type="button" data-pick="win" aria-pressed="true">Windows</button>
+          <button type="button" data-pick="mac" aria-pressed="false">macOS</button>
+        </div>
+        <p class="facts3"><span>ใช้เวลา <b>30–60 นาที</b> ส่วนใหญ่เป็นเวลาดาวน์โหลด</span><span>พื้นที่ว่าง <b>20 GB</b> ขึ้นไป</span><span>RAM <b>8 GB</b> ขึ้นไป (แนะนำ)</span></p>
+      </div>
+    </section>
+
+    <section class="sec" aria-labelledby="need-title">
+      <div class="wrap">
+        <p class="sec-tag">Before you start</p>
+        <h2 id="need-title">ก่อนเริ่ม</h2>
+        <div class="need" data-os="win">
+          <div class="card"><b>Windows 10 หรือ 11 แบบ 64-bit</b><span>แนะนำ Windows 11 ที่อัปเดตล่าสุด Windows 10 รุ่น 22H2 ยังติดตั้งได้ ถ้าติดตั้งไม่ผ่านให้แจ้งอาจารย์</span></div>
+          <div class="card"><b>เปิด virtualization</b><span>ดูได้ใน Task Manager (ข้อ 1)</span></div>
+          <div class="card"><b>สิทธิ์ผู้ดูแลเครื่อง</b><span>ต้องเปิด PowerShell แบบ Run as administrator ได้</span></div>
+          <div class="card"><b>เทอร์มินัลที่ใช้</b><span>PowerShell สำหรับ WSL และ <b>Ubuntu</b> สำหรับคำสั่ง docker</span></div>
+        </div>
+        <div class="need" data-os="mac">
+          <div class="card"><b>macOS รุ่นปัจจุบัน</b><span>หรือย้อนหลังไม่เกิน 2 รุ่นหลัก</span></div>
+          <div class="card"><b>รู้ชิปของเครื่อง</b><span>Apple silicon (M1, M2, …) หรือ Intel ดูได้ในข้อ 1</span></div>
+          <div class="card"><b>รหัสผ่านเครื่อง</b><span>ใช้ตอนติดตั้งและตอนเปิด Docker ครั้งแรก</span></div>
+          <div class="card"><b>เทอร์มินัลที่ใช้</b><span>แอป <b>Terminal</b></span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="sec" data-os="win" aria-labelledby="win-title">
+      <div class="wrap">
+        <p class="sec-tag">Windows · WSL 2</p>
+        <h2 id="win-title">ติดตั้งบน Windows</h2>
+        <div class="card">
+      <ol class="howto">
+        <li>
+          <h3>ตรวจรุ่น Windows และชนิดของเครื่อง</h3>
+          <p>เปิด <b>Settings › System › About</b> ดูบรรทัด <b>System type</b> ว่าเป็น <code>x64-based</code> (เครื่องส่วนใหญ่) หรือ <code>ARM-based</code> ใช้เลือกตัวติดตั้งในข้อ 4 ถ้า Windows เป็นภาษาไทย เมนูจะเป็นคำไทยในตำแหน่งเดียวกัน</p>
+          <figure class="shot"><svg class="wf" viewBox="0 0 640 250" role="img" aria-label="ภาพจำลอง Settings › System › About ที่บรรทัด System type"><rect class="fr" x="8" y="8" width="624" height="234" rx="10" fill="#ffffff"/><path d="M8 18a10 10 0 0 1 10-10h604a10 10 0 0 1 10 10v20H8z" fill="#e9eef5"/><text x="22" y="29" fill="#1f3346" font-size="12.5">Settings</text><g stroke="#1f3346" stroke-width="1.4" opacity=".7"><path d="M548 24h10"/><rect x="574" y="19" width="10" height="10" fill="none"/><path d="M602 19l10 10M612 19l-10 10"/></g><text x="30" y="70" font-size="14" font-weight="700">System</text><rect x="24" y="84" width="118" height="26" rx="6" fill="#e3ecfb"/><text x="36" y="102" font-size="13">About</text><text x="30" y="134" font-size="13" fill="#7a8ca1">Display</text><text x="30" y="160" font-size="13" fill="#7a8ca1">Storage</text><text x="170" y="70" font-size="16" font-weight="700">System  ›  About</text><rect x="170" y="86" width="446" height="138" rx="8" fill="#f6f8fb" stroke="#d9e1eb"/><text x="186" y="112" font-size="12.5" fill="#4e5f74">Device name</text><text x="306" y="112" font-size="12.5">LAPTOP-1234</text><text x="186" y="140" font-size="12.5" fill="#4e5f74">Processor</text><text x="306" y="140" font-size="12.5">Intel(R) Core(TM) i5 …</text><text x="186" y="168" font-size="12.5" fill="#4e5f74">Installed RAM</text><text x="306" y="168" font-size="12.5">8.00 GB</text><text x="186" y="196" font-size="12.5" fill="#4e5f74">System type</text><text x="306" y="196" font-size="12.5">64-bit operating system, x64-based processor</text><rect class="hl" x="178" y="182" width="430" height="28" rx="7"/><circle class="bd" cx="606" cy="180" r="11"/><text class="bdt" x="606" y="184.5" text-anchor="middle">1</text></svg><figcaption><b>ภาพจำลอง</b> หน้าจอจริงอาจต่างเล็กน้อย · บรรทัด System type บอกว่าต้องโหลดตัวติดตั้งแบบ x64 หรือ ARM</figcaption></figure>
+          <p>ตรวจว่าเปิด virtualization แล้ว: กด <code>Ctrl + Shift + Esc</code> เปิด Task Manager › Performance › CPU ต้องเห็น <b>Virtualization: Enabled</b> ถ้าเป็น Disabled ต้องเปิดใน BIOS/UEFI (ดูตารางแก้ปัญหา)</p>
+        </li>
+        <li>
+          <h3>ติดตั้ง WSL 2 และ Ubuntu</h3>
+          <p>เปิด PowerShell แบบผู้ดูแลระบบ: พิมพ์ <code>powershell</code> ในช่องค้นหาของ Start แล้วเลือก <b>Run as administrator</b> กด Yes เมื่อ Windows ถาม</p>
+          <figure class="shot"><svg class="wf" viewBox="0 0 640 270" role="img" aria-label="ภาพจำลองเมนู Start ค้นหา powershell แล้วเลือก Run as administrator"><rect class="fr" x="8" y="8" width="624" height="254" rx="10" fill="#ffffff"/><path d="M8 18a10 10 0 0 1 10-10h604a10 10 0 0 1 10 10v20H8z" fill="#e9eef5"/><text x="22" y="29" fill="#1f3346" font-size="12.5">Start</text><g stroke="#1f3346" stroke-width="1.4" opacity=".7"><path d="M548 24h10"/><rect x="574" y="19" width="10" height="10" fill="none"/><path d="M602 19l10 10M612 19l-10 10"/></g><rect x="30" y="52" width="580" height="34" rx="17" fill="#f3f6fa" stroke="#c3cfdd"/><circle cx="52" cy="69" r="7" fill="none" stroke="#4e5f74" stroke-width="1.6"/><path d="M57 74l6 6" stroke="#4e5f74" stroke-width="1.6"/><text x="72" y="74" font-size="13.5" class="mono">powershell</text><text x="30" y="112" font-size="12" fill="#7a8ca1">Best match</text><rect x="30" y="120" width="250" height="50" rx="8" fill="#e3ecfb"/><rect x="42" y="130" width="30" height="30" rx="6" fill="#1d3b7a"/><text x="84" y="142" font-size="13" font-weight="700">Windows PowerShell</text><text x="84" y="160" font-size="11.5" fill="#4e5f74">App</text><rect x="300" y="104" width="310" height="148" rx="8" fill="#f6f8fb" stroke="#d9e1eb"/><rect x="438" y="114" width="34" height="34" rx="7" fill="#1d3b7a"/><text x="455" y="166" font-size="12.5" font-weight="700" text-anchor="middle">Windows PowerShell</text><text x="330" y="196" font-size="13">Open</text><text x="330" y="222" font-size="13" font-weight="700">Run as administrator</text><text x="330" y="246" font-size="13" fill="#7a8ca1">Open file location</text><rect class="hl" x="318" y="205" width="200" height="26" rx="7"/><circle class="bd" cx="516" cy="203" r="11"/><text class="bdt" x="516" y="207.5" text-anchor="middle">1</text></svg><figcaption><b>ภาพจำลอง</b> หน้าจอจริงอาจต่างเล็กน้อย · ต้องเป็น Run as administrator ไม่ใช่ Open ธรรมดา</figcaption></figure>
+          <div class="codebox"><div class="cbh"><span class="lbl">พิมพ์ใน PowerShell (Administrator)</span><button type="button" class="copy" data-copy="c1">คัดลอก</button></div><pre class="term" id="c1">wsl --install</pre></div>
+          <p>รอจนติดตั้งเสร็จ แล้ว <b>รีสตาร์ตเครื่อง</b> หลังรีสตาร์ต หน้าต่าง Ubuntu จะเปิดเอง (ถ้าไม่เปิด ให้หา Ubuntu ใน Start) แล้วให้ตั้งชื่อผู้ใช้และรหัสผ่านของ Linux</p>
+          <figure class="shot"><svg class="wf" viewBox="0 0 640 230" role="img" aria-label="ภาพจำลองหน้าต่าง Ubuntu ครั้งแรก ตั้งชื่อผู้ใช้และรหัสผ่าน"><rect class="fr" x="8" y="8" width="624" height="214" rx="10" fill="#0e1726"/><path d="M8 18a10 10 0 0 1 10-10h604a10 10 0 0 1 10 10v20H8z" fill="#1b2a42"/><text x="22" y="29" fill="#dfe7f2" font-size="12.5">Ubuntu</text><g stroke="#dfe7f2" stroke-width="1.4" opacity=".7"><path d="M548 24h10"/><rect x="574" y="19" width="10" height="10" fill="none"/><path d="M602 19l10 10M612 19l-10 10"/></g><text x="24" y="62" font-size="12.5" class="mono" fill="#8193ab">Installing, this may take a few minutes...</text><text x="24" y="84" font-size="12.5" class="mono" fill="#8193ab">Please create a default UNIX user account.</text><text x="24" y="106" font-size="12.5" class="mono" fill="#e2e9f3">Enter new UNIX username: somchai</text><text x="24" y="128" font-size="12.5" class="mono" fill="#e2e9f3">New password:</text><text x="24" y="150" font-size="12.5" class="mono" fill="#e2e9f3">Retype new password:</text><text x="24" y="172" font-size="12.5" class="mono" fill="#8193ab">passwd: password updated successfully</text><text x="24" y="194" font-size="12.5" class="mono" fill="#c9f57a">somchai@LAPTOP-1234:~$ ▍</text><rect class="hl" x="16" y="113" width="236" height="44" rx="7"/><path d="M262 128h40" stroke="#c2412d" stroke-width="2"/><text x="310" y="124" font-size="12.5" fill="#ffb4a6">พิมพ์รหัสผ่านแล้วจะไม่เห็นตัวอักษร</text><text x="310" y="142" font-size="12.5" fill="#ffb4a6">เป็นเรื่องปกติ จำรหัสนี้ไว้ใช้กับ sudo</text></svg><figcaption><b>ภาพจำลอง</b> หน้าจอจริงอาจต่างเล็กน้อย · ชื่อผู้ใช้ใช้ตัวพิมพ์เล็กภาษาอังกฤษ ไม่มีเว้นวรรค</figcaption></figure>
+          <p class="tip">ถ้าเคยติดตั้ง WSL มาก่อน ไม่ต้องติดตั้งใหม่ ให้อัปเดตด้วย <code>wsl --update</code> แทน</p>
+          <p>ตรวจรุ่นของ WSL ใน PowerShell</p>
+          <div class="codebox"><div class="cbh"><span class="lbl">พิมพ์ใน PowerShell</span><button type="button" class="copy" data-copy="c2">คัดลอก</button></div><pre class="term" id="c2">wsl --version
+wsl -l -v</pre></div>
+          <div class="codebox"><span class="lbl">ผลที่ควรเห็น (ตัวเลขเวอร์ชันอาจต่างกัน)</span><pre class="term out">WSL version: 2.6.1.0
+Kernel version: 6.6.87.2-1
+…
+
+  NAME      STATE           VERSION
+* Ubuntu    Running         2</pre></div>
+          <p><b>WSL version</b> ต้องเป็น 2.1.5 ขึ้นไป และคอลัมน์ <b>VERSION</b> ของ Ubuntu ต้องเป็น <b>2</b> ถ้าเป็น 1 ให้รัน</p>
+          <div class="codebox"><div class="cbh"><span class="lbl">พิมพ์ใน PowerShell (เฉพาะเมื่อ VERSION เป็น 1)</span><button type="button" class="copy" data-copy="c3">คัดลอก</button></div><pre class="term" id="c3">wsl --set-version Ubuntu 2</pre></div>
+        </li>
+        <li>
+          <h3>ถ้าเคยติดตั้ง Docker ใน Ubuntu เอง ให้ถอนออกก่อน</h3>
+          <p>คนส่วนใหญ่ข้ามข้อนี้ได้ ตรวจในเทอร์มินัล <b>Ubuntu</b> ถ้าไม่มีผลลัพธ์ขึ้นมา ให้ข้ามไปข้อ 4</p>
+          <div class="codebox"><div class="cbh"><span class="lbl">พิมพ์ใน Ubuntu</span><button type="button" class="copy" data-copy="c4">คัดลอก</button></div><pre class="term" id="c4">dpkg -l | grep -E &#x27;docker|containerd&#x27;</pre></div>
+          <p>ถ้ามีรายการขึ้นมา ให้ถอนออก (แพ็กเกจที่ไม่ได้ติดตั้งจะขึ้นว่าไม่พบ ไม่เป็นไร)</p>
+          <div class="codebox"><div class="cbh"><span class="lbl">พิมพ์ใน Ubuntu (วางทั้งก้อนแล้วกด Enter)</span><button type="button" class="copy" data-copy="c5">คัดลอก</button></div><pre class="term" id="c5">for pkg in docker.io docker-doc docker-compose docker-compose-v2 \
+  podman-docker containerd runc docker-ce docker-ce-cli \
+  containerd.io docker-buildx-plugin docker-compose-plugin; do
+  sudo apt-get remove -y &quot;$pkg&quot;
+done</pre></div>
+        </li>
+        <li>
+          <h3>ติดตั้ง Docker Desktop</h3>
+          <ol>
+            <li>ดาวน์โหลดจาก <a href="https://docs.docker.com/desktop/setup/install/windows-install/" target="_blank" rel="noopener">หน้าติดตั้ง Docker Desktop for Windows</a> เลือกรุ่นให้ตรงกับข้อ 1 (x86_64 หรือ ARM64) ไฟล์ใหญ่ เริ่มโหลดก่อนได้ ถ้าเน็ตในห้องช้าให้ขอไฟล์จากอาจารย์</li>
+            <li>ดับเบิลคลิก <code>Docker Desktop Installer.exe</code> ถ้าถามรูปแบบการติดตั้ง ให้เลือกแบบที่แนะนำ (Per-user)</li>
+            <li>หน้า <b>Configuration</b> เลือก <b>WSL 2</b> แล้วกด OK (รุ่นเก่าเป็นช่องติ๊ก <i>Use WSL 2 instead of Hyper-V</i> ให้ติ๊กไว้)</li>
+            <li>ติดตั้งเสร็จ ถ้าขึ้น Close and restart หรือให้ sign out ให้ทำตาม</li>
+            <li>เปิด Docker Desktop จาก Start กดยอมรับเงื่อนไข ข้ามการ sign in ได้</li>
+            <li>รอจนมุมล่างซ้ายขึ้น <b>Engine running</b></li>
+          </ol>
+          <figure class="shot"><svg class="wf" viewBox="0 0 640 270" role="img" aria-label="ภาพจำลองหน้า Configuration ของตัวติดตั้ง Docker Desktop เลือก WSL 2 แล้วกด OK"><rect class="fr" x="8" y="8" width="624" height="254" rx="10" fill="#ffffff"/><path d="M8 18a10 10 0 0 1 10-10h604a10 10 0 0 1 10 10v20H8z" fill="#e9eef5"/><text x="22" y="29" fill="#1f3346" font-size="12.5">Installing Docker Desktop</text><g stroke="#1f3346" stroke-width="1.4" opacity=".7"><path d="M548 24h10"/><rect x="574" y="19" width="10" height="10" fill="none"/><path d="M602 19l10 10M612 19l-10 10"/></g><text x="32" y="78" font-size="18" font-weight="700">Configuration</text><text x="32" y="102" font-size="12.5" fill="#4e5f74">เลือก backend ที่ใช้รัน container</text><rect x="32" y="118" width="380" height="40" rx="8" fill="#eef7e0" stroke="#9cc86a"/><circle cx="54" cy="138" r="7" fill="none" stroke="#1f3346" stroke-width="1.6"/><circle cx="54" cy="138" r="3.5" fill="#1f3346"/><text x="70" y="143" font-size="13.5" font-weight="700">WSL 2 (recommended)</text><circle cx="54" cy="178" r="7" fill="none" stroke="#7a8ca1" stroke-width="1.6"/><text x="70" y="183" font-size="13" fill="#7a8ca1">Docker VMM (Beta)</text><rect x="46" y="204" width="13" height="13" rx="2" fill="#1f3346"/><path d="M49 210l3 3 5-6" stroke="#fff" stroke-width="1.8" fill="none"/><text x="70" y="215" font-size="13">Add shortcut to desktop</text><rect x="520" y="214" width="88" height="32" rx="6" fill="#1d4fb8"/><text x="564" y="235" font-size="13" fill="#fff" font-weight="700" text-anchor="middle">OK</text><rect class="hl" x="26" y="113" width="392" height="50" rx="7"/><circle class="bd" cx="416" cy="111" r="11"/><text class="bdt" x="416" y="115.5" text-anchor="middle">1</text><rect class="hl" x="514" y="208" width="100" height="44" rx="7"/><circle class="bd" cx="612" cy="206" r="11"/><text class="bdt" x="612" y="210.5" text-anchor="middle">2</text></svg><figcaption><b>ภาพจำลอง</b> หน้าจอจริงอาจต่างเล็กน้อย · เลือก WSL 2 แล้วกด OK</figcaption></figure>
+          <figure class="shot"><svg class="wf" viewBox="0 0 640 150" role="img" aria-label="ภาพจำลองแถบล่างซ้ายของ Docker Desktop ที่ขึ้น Engine running"><rect class="fr" x="8" y="8" width="624" height="134" rx="10" fill="#ffffff"/><path d="M8 18a10 10 0 0 1 10-10h604a10 10 0 0 1 10 10v20H8z" fill="#e9eef5"/><text x="22" y="29" fill="#1f3346" font-size="12.5">Docker Desktop</text><g stroke="#1f3346" stroke-width="1.4" opacity=".7"><path d="M548 24h10"/><rect x="574" y="19" width="10" height="10" fill="none"/><path d="M602 19l10 10M612 19l-10 10"/></g><text x="28" y="70" font-size="15" font-weight="700">Containers</text><text x="28" y="92" font-size="12" fill="#7a8ca1">ยังไม่มี container ก็ไม่เป็นไร</text><path d="M8 110h624" stroke="#d9e1eb"/><circle cx="34" cy="126" r="5.5" fill="#28a745"/><text x="46" y="131" font-size="12.5" font-weight="700">Engine running</text><text x="190" y="131" font-size="12" fill="#7a8ca1">RAM 1.2 GB   CPU 0.5%</text><rect class="hl" x="22" y="113" width="148" height="26" rx="7"/><circle class="bd" cx="168" cy="113" r="11"/><text class="bdt" x="168" y="117.5" text-anchor="middle">1</text></svg><figcaption><b>ภาพจำลอง</b> หน้าจอจริงอาจต่างเล็กน้อย · จุดสีเขียวและคำว่า Engine running แปลว่าพร้อมใช้</figcaption></figure>
+        </li>
+        <li>
+          <h3>เปิด WSL Integration</h3>
+          <p>ใน Docker Desktop กดรูปเฟือง (Settings) › <b>Resources › WSL integration</b> เปิด <b>Enable integration with my default WSL distro</b> เปิดสวิตช์ <b>Ubuntu</b> แล้วกด <b>Apply &amp; restart</b></p>
+          <figure class="shot"><svg class="wf" viewBox="0 0 640 330" role="img" aria-label="ภาพจำลอง Docker Desktop Settings › Resources › WSL integration เปิดสวิตช์ Ubuntu แล้วกด Apply &amp; restart"><rect class="fr" x="8" y="8" width="624" height="314" rx="10" fill="#ffffff"/><path d="M8 18a10 10 0 0 1 10-10h604a10 10 0 0 1 10 10v20H8z" fill="#e9eef5"/><text x="22" y="29" fill="#1f3346" font-size="12.5">Docker Desktop</text><g stroke="#1f3346" stroke-width="1.4" opacity=".7"><path d="M548 24h10"/><rect x="574" y="19" width="10" height="10" fill="none"/><path d="M602 19l10 10M612 19l-10 10"/></g><g stroke="#1f3346" stroke-width="1.6" fill="none"><circle cx="594" cy="56" r="8"/><circle cx="594" cy="56" r="3"/></g><text x="560" y="60" font-size="1"></text><rect class="hl" x="580" y="42" width="28" height="28" rx="7"/><circle class="bd" cx="606" cy="42" r="11"/><text class="bdt" x="606" y="46.5" text-anchor="middle">1</text><text x="28" y="64" font-size="15" font-weight="700">Settings</text><text x="30" y="98" font-size="12.5" fill="#4e5f74">General</text><text x="30" y="124" font-size="12.5" fill="#1f3346" font-weight="700">Resources</text><text x="30" y="150" font-size="12.5" fill="#7a8ca1">  Advanced</text><text x="30" y="176" font-size="12.5" fill="#7a8ca1">  File sharing</text><text x="30" y="202" font-size="12.5" fill="#7a8ca1">  Network</text><rect x="22" y="211" width="146" height="24" rx="6" fill="#e3ecfb"/><text x="30" y="228" font-size="12.5" fill="#1f3346" font-weight="700">  WSL integration</text><text x="30" y="254" font-size="12.5" fill="#4e5f74">Docker Engine</text><text x="30" y="280" font-size="12.5" fill="#4e5f74">Kubernetes</text><rect class="hl" x="18" y="208" width="154" height="30" rx="7"/><circle class="bd" cx="170" cy="206" r="11"/><text class="bdt" x="170" y="210.5" text-anchor="middle">2</text><path d="M184 76v232" stroke="#d9e1eb"/><text x="204" y="98" font-size="16" font-weight="700">WSL integration</text><rect x="204" y="118" width="13" height="13" rx="2" fill="#1f3346"/><path d="M207 124l3 3 5-6" stroke="#fff" stroke-width="1.8" fill="none"/><text x="226" y="129" font-size="12.5">Enable integration with my default WSL distro</text><text x="204" y="164" font-size="12.5" fill="#4e5f74">Enable integration with additional distros:</text><rect x="204" y="176" width="40" height="22" rx="11" fill="#1d4fb8"/><circle cx="233" cy="187" r="8" fill="#fff"/><text x="256" y="192" font-size="13" font-weight="700">Ubuntu</text><rect class="hl" x="198" y="170" width="120" height="34" rx="7"/><circle class="bd" cx="316" cy="168" r="11"/><text class="bdt" x="316" y="172.5" text-anchor="middle">3</text><rect x="478" y="270" width="132" height="32" rx="6" fill="#1d4fb8"/><text x="544" y="291" font-size="12.5" fill="#fff" font-weight="700" text-anchor="middle">Apply &amp; restart</text><rect class="hl" x="472" y="264" width="144" height="44" rx="7"/><circle class="bd" cx="614" cy="262" r="11"/><text class="bdt" x="614" y="266.5" text-anchor="middle">4</text></svg><figcaption><b>ภาพจำลอง</b> หน้าจอจริงอาจต่างเล็กน้อย · ทำตามเลข 1 → 4</figcaption></figure>
+        </li>
+        <li>
+          <h3>ทดสอบในเทอร์มินัล Ubuntu</h3>
+          <p>ปิดหน้าต่าง Ubuntu เดิมแล้วเปิดใหม่ จากนั้นรัน</p>
+          <div class="codebox"><div class="cbh"><span class="lbl">พิมพ์ใน Ubuntu (ไม่ต้องใส่ sudo)</span><button type="button" class="copy" data-copy="c6">คัดลอก</button></div><pre class="term" id="c6">docker version
+docker run hello-world</pre></div>
+          <div class="codebox"><span class="lbl">ผลที่ควรเห็น (ตัวเลขเวอร์ชันอาจต่างกัน)</span><pre class="term out">Client:
+ Version:           28.x.x
+ …
+Server: Docker Desktop 4.xx.x
+ Engine:
+  Version:          28.x.x
+ …
+
+Hello from Docker!
+This message shows that your installation appears to be working correctly.</pre></div>
+          <p>ต้องเห็นทั้งส่วน <b>Client</b> และ <b>Server</b> และข้อความ <b>Hello from Docker!</b></p>
+          <p class="tip">ทำงานในโฟลเดอร์ของ Linux (<code>~/</code>) ไม่ใช่ใน <code>/mnt/c/...</code> ระบบจะเร็วกว่ามากเมื่อรันโปรเจกต์ใน T02</p>
+        </li>
+      </ol>
+        </div>
+      </div>
+    </section>
+
+    <section class="sec" data-os="mac" aria-labelledby="mac-title">
+      <div class="wrap">
+        <p class="sec-tag">macOS</p>
+        <h2 id="mac-title">ติดตั้งบน macOS</h2>
+        <div class="card">
+      <ol class="howto">
+        <li>
+          <h3>ตรวจชิปและรุ่น macOS</h3>
+          <p>เมนู Apple (มุมซ้ายบน) › <b>About This Mac</b> ถ้าขึ้น <b>Chip Apple M…</b> คือ Apple silicon ถ้าขึ้น <b>Processor … Intel</b> คือ Intel ใช้เลือกตัวติดตั้งในข้อ 3</p>
+          <figure class="shot"><svg class="wf" viewBox="0 0 640 260" role="img" aria-label="ภาพจำลองหน้าต่าง About This Mac ที่บรรทัด Chip"><rect class="fr" x="8" y="8" width="624" height="244" rx="12" fill="#ffffff"/><path d="M8 20a12 12 0 0 1 12-12h600a12 12 0 0 1 12 12v18H8z" fill="#eef1f5"/><circle cx="26" cy="23" r="5" fill="#ff6159"/><circle cx="43" cy="23" r="5" fill="#ffbd2e"/><circle cx="60" cy="23" r="5" fill="#28c941"/><text x="320.0" y="28" text-anchor="middle" fill="#1f3346" font-size="12.5">About This Mac</text><rect x="250" y="54" width="140" height="78" rx="8" fill="#eef1f5" stroke="#c3cfdd"/><path d="M234 138h172l-12 10H246z" fill="#d9e1eb"/><text x="320" y="172" font-size="17" font-weight="700" text-anchor="middle">MacBook Air</text><text x="312" y="198" font-size="12.5" fill="#4e5f74" text-anchor="end">Chip</text><text x="324" y="198" font-size="12.5" font-weight="700">Apple M2</text><text x="312" y="218" font-size="12.5" fill="#4e5f74" text-anchor="end">Memory</text><text x="324" y="218" font-size="12.5">8 GB</text><text x="312" y="238" font-size="12.5" fill="#4e5f74" text-anchor="end">macOS</text><text x="324" y="238" font-size="12.5">Sequoia 15.x</text><rect class="hl" x="236" y="183" width="170" height="22" rx="7"/><circle class="bd" cx="404" cy="181" r="11"/><text class="bdt" x="404" y="185.5" text-anchor="middle">1</text></svg><figcaption><b>ภาพจำลอง</b> หน้าจอจริงอาจต่างเล็กน้อย · บรรทัด Chip บอกว่าเป็น Apple silicon</figcaption></figure>
+          <p>หรือดูใน Terminal (เปิดจาก Spotlight: กด <code>⌘ + Space</code> พิมพ์ Terminal)</p>
+          <div class="codebox"><div class="cbh"><span class="lbl">พิมพ์ใน Terminal</span><button type="button" class="copy" data-copy="c7">คัดลอก</button></div><pre class="term" id="c7">uname -m
+sw_vers -productVersion</pre></div>
+          <div class="codebox"><span class="lbl">ผลที่ควรเห็น (arm64 = Apple silicon · x86_64 = Intel)</span><pre class="term out">arm64
+15.x</pre></div>
+        </li>
+        <li>
+          <h3>(เฉพาะ Apple silicon) ติดตั้ง Rosetta 2</h3>
+          <p>ช่วยให้เครื่องมือบางตัวที่ทำมาสำหรับ Intel ทำงานได้ ถ้ามีอยู่แล้วคำสั่งจะจบเอง</p>
+          <div class="codebox"><div class="cbh"><span class="lbl">พิมพ์ใน Terminal</span><button type="button" class="copy" data-copy="c8">คัดลอก</button></div><pre class="term" id="c8">softwareupdate --install-rosetta --agree-to-license</pre></div>
+        </li>
+        <li>
+          <h3>ติดตั้ง Docker Desktop</h3>
+          <ol>
+            <li>ดาวน์โหลดจาก <a href="https://docs.docker.com/desktop/setup/install/mac-install/" target="_blank" rel="noopener">หน้าติดตั้ง Docker Desktop for Mac</a> เลือก <b>Apple silicon</b> หรือ <b>Intel chip</b> ให้ตรงกับข้อ 1 ถ้าเน็ตในห้องช้าให้ขอไฟล์จากอาจารย์</li>
+            <li>เปิดไฟล์ <code>Docker.dmg</code> แล้วลาก Docker ไปวางที่โฟลเดอร์ <b>Applications</b></li>
+            <li>เปิด Docker จาก Applications ถ้า macOS ถามว่าแน่ใจไหมที่จะเปิดแอปที่ดาวน์โหลดมา ให้กด <b>Open</b> และใส่รหัสผ่านเครื่องเมื่อถูกถาม</li>
+            <li>กดยอมรับเงื่อนไข เลือกการตั้งค่าที่แนะนำ ข้ามการ sign in ได้</li>
+            <li>รอจนขึ้น <b>Engine running</b></li>
+          </ol>
+          <figure class="shot"><svg class="wf" viewBox="0 0 640 230" role="img" aria-label="ภาพจำลองหน้าต่างติดตั้ง ลาก Docker ไปวางที่โฟลเดอร์ Applications"><rect class="fr" x="8" y="8" width="624" height="214" rx="12" fill="#ffffff"/><path d="M8 20a12 12 0 0 1 12-12h600a12 12 0 0 1 12 12v18H8z" fill="#eef1f5"/><circle cx="26" cy="23" r="5" fill="#ff6159"/><circle cx="43" cy="23" r="5" fill="#ffbd2e"/><circle cx="60" cy="23" r="5" fill="#28c941"/><text x="320.0" y="28" text-anchor="middle" fill="#1f3346" font-size="12.5">Docker</text><rect x="130" y="70" width="96" height="96" rx="22" fill="#1d4fb8"/><text x="178" y="125" font-size="15" fill="#fff" font-weight="700" text-anchor="middle">Docker</text><text x="178" y="192" font-size="12.5" text-anchor="middle">Docker.app</text><path d="M252 118h120" stroke="#c2412d" stroke-width="3" stroke-dasharray="8 6"/><path d="M372 106l18 12-18 12z" fill="#c2412d"/><path d="M412 82h34l8 10h52v74h-94z" fill="#8fbaf0" stroke="#4a78b8"/><text x="459" y="192" font-size="12.5" text-anchor="middle">Applications</text><text x="320" y="100" font-size="13" fill="#c2412d" font-weight="700" text-anchor="middle">ลากไปวาง</text></svg><figcaption><b>ภาพจำลอง</b> หน้าจอจริงอาจต่างเล็กน้อย · ลากไอคอนทางซ้ายไปวางที่ Applications</figcaption></figure>
+          <figure class="shot"><svg class="wf" viewBox="0 0 640 200" role="img" aria-label="ภาพจำลองคำเตือนของ macOS เมื่อเปิด Docker ครั้งแรก กด Open"><rect class="fr" x="150" y="12" width="340" height="176" rx="14" fill="#ffffff"/><rect x="298" y="28" width="44" height="44" rx="10" fill="#1d4fb8"/><text x="320" y="96" font-size="13" font-weight="700" text-anchor="middle">“Docker” is an app downloaded</text><text x="320" y="114" font-size="13" font-weight="700" text-anchor="middle">from the Internet. Are you sure</text><text x="320" y="132" font-size="13" font-weight="700" text-anchor="middle">you want to open it?</text><rect x="172" y="146" width="140" height="28" rx="7" fill="#eef1f5"/><text x="242" y="165" font-size="12.5" text-anchor="middle">Cancel</text><rect x="328" y="146" width="140" height="28" rx="7" fill="#1d4fb8"/><text x="398" y="165" font-size="12.5" fill="#fff" font-weight="700" text-anchor="middle">Open</text><rect class="hl" x="322" y="140" width="152" height="40" rx="7"/><circle class="bd" cx="472" cy="138" r="11"/><text class="bdt" x="472" y="142.5" text-anchor="middle">1</text></svg><figcaption><b>ภาพจำลอง</b> หน้าจอจริงอาจต่างเล็กน้อย · เปิดครั้งแรก macOS จะถาม ให้กด Open</figcaption></figure>
+          <figure class="shot"><svg class="wf" viewBox="0 0 640 150" role="img" aria-label="ภาพจำลองแถบล่างซ้ายของ Docker Desktop ที่ขึ้น Engine running"><rect class="fr" x="8" y="8" width="624" height="134" rx="10" fill="#ffffff"/><path d="M8 18a10 10 0 0 1 10-10h604a10 10 0 0 1 10 10v20H8z" fill="#e9eef5"/><text x="22" y="29" fill="#1f3346" font-size="12.5">Docker Desktop</text><g stroke="#1f3346" stroke-width="1.4" opacity=".7"><path d="M548 24h10"/><rect x="574" y="19" width="10" height="10" fill="none"/><path d="M602 19l10 10M612 19l-10 10"/></g><text x="28" y="70" font-size="15" font-weight="700">Containers</text><text x="28" y="92" font-size="12" fill="#7a8ca1">ยังไม่มี container ก็ไม่เป็นไร</text><path d="M8 110h624" stroke="#d9e1eb"/><circle cx="34" cy="126" r="5.5" fill="#28a745"/><text x="46" y="131" font-size="12.5" font-weight="700">Engine running</text><text x="190" y="131" font-size="12" fill="#7a8ca1">RAM 1.2 GB   CPU 0.5%</text><rect class="hl" x="22" y="113" width="148" height="26" rx="7"/><circle class="bd" cx="168" cy="113" r="11"/><text class="bdt" x="168" y="117.5" text-anchor="middle">1</text></svg><figcaption><b>ภาพจำลอง</b> หน้าจอจริงอาจต่างเล็กน้อย · จุดสีเขียวและคำว่า Engine running แปลว่าพร้อมใช้</figcaption></figure>
+        </li>
+        <li>
+          <h3>ทดสอบใน Terminal</h3>
+          <div class="codebox"><div class="cbh"><span class="lbl">พิมพ์ใน Terminal</span><button type="button" class="copy" data-copy="c9">คัดลอก</button></div><pre class="term" id="c9">docker version
+docker run hello-world</pre></div>
+          <div class="codebox"><span class="lbl">ผลที่ควรเห็น (ตัวเลขเวอร์ชันอาจต่างกัน)</span><pre class="term out">Client:
+ Version:           28.x.x
+ …
+Server: Docker Desktop 4.xx.x
+ Engine:
+  Version:          28.x.x
+ …
+
+Hello from Docker!
+This message shows that your installation appears to be working correctly.</pre></div>
+          <p>ต้องเห็นทั้งส่วน <b>Client</b> และ <b>Server</b> และข้อความ <b>Hello from Docker!</b></p>
+        </li>
+      </ol>
+        </div>
+      </div>
+    </section>
+
+    <section class="sec" id="check" aria-labelledby="check-title">
+      <div class="wrap">
+        <p class="sec-tag">Check</p>
+        <h2 id="check-title">ตรวจเครื่องด้วย check-docker.sh</h2>
+        <div class="card">
+      <p>สคริปต์อยู่ใน repo รายวิชา <a href="https://github.com/se-rmutl/engse207/blob/main/weeks/week01/check-docker.sh" target="_blank" rel="noopener"><code>se-rmutl/engse207</code> › <code>weeks/week01/check-docker.sh</code></a> อ่านค่าอย่างเดียว ไม่แก้อะไรในเครื่อง (รัน hello-world แล้วลบทิ้งเอง) ไม่ต้องดาวน์โหลดจากหน้าเว็บ ใช้คำสั่งด้านล่างดึงมารันได้เลย</p>
+      <div class="codebox"><div class="cbh"><span class="lbl">พิมพ์ใน Ubuntu (Windows) หรือ Terminal (macOS)</span><button type="button" class="copy" data-copy="c10">คัดลอก</button></div><pre class="term" id="c10">cd ~
+curl -fsSL https://raw.githubusercontent.com/se-rmutl/engse207/main/weeks/week01/check-docker.sh -o check-docker.sh
+bash check-docker.sh</pre></div>
+      <div data-os="win"><div class="codebox"><span class="lbl">ผลที่ควรเห็นบน Windows</span><pre class="term out">ENGSE207 · T01 · check-docker
+วันที่: 2026-11-27 09:15
+เครื่อง: Windows (WSL 2) · Ubuntu 24.04.1 LTS
+
+  <span class="ok">[ OK ]</span> พบคำสั่ง docker (Docker version 28.x.x, build xxxxxxx)
+  <span class="ok">[ OK ]</span> Docker Engine ทำงานอยู่ (server 28.x.x)
+  <span class="ok">[ OK ]</span> Docker Compose (2.xx.x)
+  <span class="ok">[ OK ]</span> รัน hello-world ได้
+  <span class="ok">[ OK ]</span> WSL เวอร์ชัน 2
+
+สรุป: ผ่าน 5 จาก 5
+พร้อมสำหรับแล็บ A–D แล้ว คัดลอกผลทั้งหมดนี้เก็บไว้ส่งงาน</pre></div></div>
+      <div data-os="mac"><div class="codebox"><span class="lbl">ผลที่ควรเห็นบน macOS</span><pre class="term out">ENGSE207 · T01 · check-docker
+วันที่: 2026-11-27 09:15
+เครื่อง: macOS 15.x · arm64
+
+  <span class="ok">[ OK ]</span> พบคำสั่ง docker (Docker version 28.x.x, build xxxxxxx)
+  <span class="ok">[ OK ]</span> Docker Engine ทำงานอยู่ (server 28.x.x)
+  <span class="ok">[ OK ]</span> Docker Compose (2.xx.x)
+  <span class="ok">[ OK ]</span> รัน hello-world ได้
+
+สรุป: ผ่าน 4 จาก 4
+พร้อมสำหรับแล็บ A–D แล้ว คัดลอกผลทั้งหมดนี้เก็บไว้ส่งงาน</pre></div></div>
+      <p>ถ้ามีบรรทัด <b>[FAIL]</b> ให้ทำตามคำแนะนำหลังลูกศร <code>-&gt;</code> แล้วรันใหม่จนผ่านทุกข้อ ตัวอย่างตอนลืมเปิด Docker Desktop</p>
+      <div class="codebox"><span class="lbl">ตัวอย่างผลที่ยังไม่ผ่าน (Mac ที่ยังไม่ได้เปิด Docker Desktop)</span><pre class="term out">  <span class="ok">[ OK ]</span> พบคำสั่ง docker (Docker version 28.x.x, build xxxxxxx)
+  <span class="bad">[FAIL]</span> ติดต่อ Docker Engine ไม่ได้
+         -&gt; เปิด Docker Desktop แล้วรอจนขึ้น Engine running (ถ้าขึ้น permission denied ดูตารางแก้ปัญหาในใบงาน)
+  <span class="ok">[ OK ]</span> Docker Compose (2.xx.x)
+  <span class="bad">[FAIL]</span> รัน hello-world ไม่สำเร็จ
+         -&gt; ตรวจอินเทอร์เน็ต แล้วลอง docker run hello-world เพื่อดูข้อความ error
+
+สรุป: ผ่าน 2 จาก 4
+ยังไม่ผ่านทุกข้อ แก้ตามคำแนะนำด้านบน แล้วรันสคริปต์นี้อีกครั้ง</pre></div>
+      <h3>ผ่านแล้วเอาผลไปใช้ที่ไหน</h3>
+      <ul class="rules">
+        <li>คัดลอกผลทั้งหมดเก็บไว้ ส่งให้ตัวแทนทีม ใช้ตอบช่อง <b>เครื่องและผล check-docker.sh</b> ในแบบลงทะเบียน (<a href="register.html#signup" data-keep-sec>ขั้นที่ 4</a>)</li>
+        <li>เมื่อทีมสร้าง repo แล้ว (<a href="register.html#repo" data-keep-sec>ขั้นที่ 3</a>) วางผลลงในไฟล์ <code>individual/T01-&lt;รหัสนักศึกษา&gt;.md</code> ของตัวเอง (งาน I01)</li>
+        <li>ทำแล็บ A–D ต่อใน<a href="https://github.com/se-rmutl/engse207/blob/main/weeks/week01/README.md" target="_blank" rel="noopener">ใบงาน T01</a></li>
+      </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="sec" id="trouble" aria-labelledby="trouble-title">
+      <div class="wrap">
+        <p class="sec-tag">Troubleshooting</p>
+        <h2 id="trouble-title">ตารางแก้ปัญหา</h2>
+        <div class="card scroll"><table class="trouble"><thead><tr><th>อาการ</th><th>สาเหตุที่พบบ่อย</th><th>วิธีแก้</th></tr></thead><tbody>
+<tr><td data-label="อาการ">PowerShell ขึ้นว่า <code>wsl --version</code> ไม่รู้จักคำสั่ง หรือ invalid option</td><td data-label="สาเหตุ">WSL รุ่นเก่ามากที่มากับ Windows</td><td data-label="วิธีแก้"><code>wsl --update</code> แล้วรันใหม่</td></tr><tr><td data-label="อาการ">Docker Desktop แจ้งว่า WSL ต้องอัปเดต หรือติดตั้งไม่ครบ</td><td data-label="สาเหตุ">WSL รุ่นเก่า</td><td data-label="วิธีแก้">PowerShell: <code>wsl --update</code> แล้วเปิด Docker Desktop ใหม่</td></tr><tr><td data-label="อาการ">แจ้งว่าไม่พบ virtualization</td><td data-label="สาเหตุ">ยังไม่เปิดใน BIOS/UEFI</td><td data-label="วิธีแก้">รีสตาร์ตเข้า BIOS (มักกด F2, F10 หรือ Del ตอนเปิดเครื่อง) เปิด Intel VT-x หรือ AMD-V (SVM)</td></tr><tr><td data-label="อาการ"><code>wsl -l -v</code> ขึ้น VERSION 1</td><td data-label="สาเหตุ">Ubuntu ยังเป็น WSL 1</td><td data-label="วิธีแก้"><code>wsl --set-version Ubuntu 2</code></td></tr><tr><td data-label="อาการ">ใน Ubuntu พิมพ์ <code>docker</code> แล้วไม่พบคำสั่ง</td><td data-label="สาเหตุ">ยังไม่เปิด WSL Integration</td><td data-label="วิธีแก้">Settings › Resources › WSL integration เปิด Ubuntu แล้วเปิดเทอร์มินัลใหม่</td></tr><tr><td data-label="อาการ"><code>Cannot connect to the Docker daemon</code></td><td data-label="สาเหตุ">Docker Desktop ยังไม่เปิด หรือยังไม่พร้อม</td><td data-label="วิธีแก้">เปิด Docker Desktop รอจนขึ้น Engine running</td></tr><tr><td data-label="อาการ"><code>permission denied</code> ที่ <code>docker.sock</code> ใน Ubuntu</td><td data-label="สาเหตุ">มี Docker ที่ลงเองใน Ubuntu ค้างอยู่ หรือ integration ยังไม่ทำงาน</td><td data-label="วิธีแก้">ทำข้อ 3 ของ Windows แล้วปิดเปิด Docker Desktop <b>ไม่ต้องใส่ <code>sudo</code> หน้าคำสั่ง docker</b></td></tr><tr><td data-label="อาการ"><code>curl: command not found</code></td><td data-label="สาเหตุ">Ubuntu ยังไม่มี curl</td><td data-label="วิธีแก้"><code>sudo apt update &amp;&amp; sudo apt install -y curl</code></td></tr><tr><td data-label="อาการ">macOS ขึ้นว่า Docker.app is damaged</td><td data-label="สาเหตุ">ปัญหาการตรวจสอบแอปของ macOS</td><td data-label="วิธีแก้">ทำตามหัวข้อ Docker.app is damaged ในหน้าติดตั้ง Docker Desktop for Mac</td></tr><tr><td data-label="อาการ">Mac ติดตั้งแล้วเปิดไม่ได้</td><td data-label="สาเหตุ">ดาวน์โหลดตัวติดตั้งผิดชิป</td><td data-label="วิธีแก้">ลบแอปออก แล้วติดตั้งรุ่นที่ตรงกับผล <code>uname -m</code></td></tr><tr><td data-label="อาการ">ดาวน์โหลดช้ามาก</td><td data-label="สาเหตุ">หลายคนโหลดพร้อมกัน</td><td data-label="วิธีแก้">ขอไฟล์ติดตั้งจากอาจารย์ หรือโหลดที่บ้านก่อนเข้าคาบ</td></tr>
+        </tbody></table>
+        <p class="warn">ไม่มีเครื่องส่วนตัว หรือแก้แล้วยังไม่ผ่าน: ทำแล็บบนเครื่องของเพื่อนในทีมไปก่อน บันทึกข้อความ error ทั้งหมดกับผลจาก <code>check-docker.sh</code> แล้วแจ้งอาจารย์ ในแบบลงทะเบียนให้ตอบตามจริงว่า ยังไม่ผ่าน หรือ ไม่มีเครื่อง</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <div class="wrap"><span>ENGSE207 สถาปัตยกรรมซอฟต์แวร์ · ภาคการศึกษาที่ 2/2569 · อ.ธนิต เกตุแก้ว</span><span>เนื้อหาตรงกับใบงาน T01 ใน repo รายวิชา</span></div>
+  </footer>
+
+  <script>
+  document.addEventListener("DOMContentLoaded", function () {
+    "use strict";
+    var X = window.ENGSE207Schedule;
+    if (X) X.keepSec(X.getSec());
+    var q = /[?&]os=(win|mac)/.exec(location.search), saved = null;
+    try { saved = localStorage.getItem("engse207.os"); } catch (e) { /* โหมดส่วนตัว */ }
+    var guess = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent) ? "mac" : "win";
+    function pick(os) {
+      document.body.dataset.os = os;
+      Array.prototype.forEach.call(document.querySelectorAll("[data-pick]"), function (b) { b.setAttribute("aria-pressed", String(b.dataset.pick === os)); });
+      try { localStorage.setItem("engse207.os", os); } catch (e) { /* โหมดส่วนตัว */ }
+    }
+    pick(q ? q[1] : saved || guess);
+    function centerShots() { Array.prototype.forEach.call(document.querySelectorAll(".shot"), function (f) { if (f.scrollWidth > f.clientWidth) f.scrollLeft = (f.scrollWidth - f.clientWidth) / 2; }); }
+    centerShots();
+    document.addEventListener("click", function (e) {
+      var p = e.target.closest("[data-pick]");
+      if (p) { pick(p.dataset.pick); centerShots(); return; }
+      var b = e.target.closest("[data-copy]");
+      if (!b || !X) return;
+      X.copyText(document.getElementById(b.dataset.copy).textContent).then(function () {
+        b.textContent = "คัดลอกแล้ว"; b.classList.add("done");
+        setTimeout(function () { b.textContent = "คัดลอก"; b.classList.remove("done"); }, 1800);
+      }, function () { b.textContent = "คัดลอกไม่ได้"; });
+    });
+  });
+  </script>
+</body>
+</html>
