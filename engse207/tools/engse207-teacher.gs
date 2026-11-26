@@ -28,10 +28,11 @@
  *   แก้สคริปต์ภายหลัง: Deploy > Manage deployments > ไอคอนดินสอ > Version: New version (URL เดิมใช้ต่อได้)
  *
  * repo ทีมเป็น private: สคริปต์เรียก GitHub ด้วย token ของบัญชี tkeatkaew ซึ่งทีมเพิ่มเป็น collaborator (รับคำเชิญให้อัตโนมัติ)
- * รหัสทีมที่ออกแล้วไม่นำกลับมาใช้ซ้ำ คำตอบที่เลือกสมาชิกชุดเดียวกันถือเป็นทีมเดิม (ใช้คำตอบล่าสุด)
+ * รหัสทีมที่ออกแล้วไม่นำกลับมาใช้ซ้ำ (ยกเว้นสั่ง ล้างการลงทะเบียนทั้งหมด) คำตอบที่เลือกสมาชิกชุดเดียวกันถือเป็นทีมเดิม (ใช้คำตอบล่าสุด)
  * แท็บ ทีม มี 9 ช่อง (S?-T01 ถึง T09) ทีมละ 4 แถว ถ้าเกิน 9 ทีมให้เพิ่มแถวในแท็บ ทีม แล้วแก้ TEAM.blocks
  *
  * ฉบับ 1.1 (26 พ.ย. 2569): ชื่อทีมภาษาอังกฤษ ชื่อ repo ตามชื่อทีม ลิงก์ repo เป็นช่องบังคับ เมนูปรับข้อความในฟอร์มเดิม
+ * ฉบับ 1.2 (26 พ.ย. 2569): เมนู ล้างการลงทะเบียนทั้งหมด เพื่อเริ่มลงทะเบียนใหม่ (ทีมถัดไปได้ S?-T01 ลิงก์ฟอร์มเดิมใช้ต่อได้)
  */
 
 var COURSE = 'ENGSE207', TERM = '2/2569';
@@ -119,6 +120,8 @@ function onOpen() {
     .addItem('ยกเลิกเผยแพร่อัตโนมัติ', 'removeNightlyPublish')
     .addSeparator()
     .addItem('ตั้ง GitHub token', 'setGithubToken')
+    .addSeparator()
+    .addItem('ล้างการลงทะเบียนทั้งหมด เพื่อเริ่มใหม่…', 'resetRegistration')
     .addToUi();
 }
 
@@ -1205,6 +1208,130 @@ function shareStatus_(fileId, members, mails) {
   managed.forEach(function (em) { if (!want[em]) { try { file.removeViewer(em); } catch (e) { /* ไม่มีสิทธิ์อยู่แล้ว */ } } });
   props.setProperty(pkey, JSON.stringify(kept));
   return res;
+}
+
+/* ------------------------------------------------------------------ ล้างการลงทะเบียน */
+
+/** คอลัมน์ในแท็บทีมที่ล้างเมื่อเริ่มลงทะเบียนใหม่: ชื่อทีม สมาชิก บทบาท 4 ช่วง repo ไฟล์สถานะ ข้อความถึงทีม เผยแพร่ล่าสุด */
+var RESET_TEAM_COLS = [2, 4, 7, 8, 9, 10, 11, 12, 13, 14];
+
+/** ล้างการลงทะเบียนทีมทั้งหมดของ SEC นี้ แล้วเริ่มลงทะเบียนใหม่ด้วยฟอร์มและลิงก์เดิม
+ *  ลบคำตอบในฟอร์มและแถวในแท็บคำตอบ (สำเนาเก็บในแท็บสำรองที่ซ่อนไว้) · ล้างทีมในแท็บ ทีม และข้อมูลจากฟอร์มในแท็บ รายชื่อ
+ *  · ถอนสิทธิ์และย้ายไฟล์สถานะทีมไปถังขยะ · ล้างผลตรวจการส่งงาน · ทีมถัดไปได้ S?-T01
+ *  ไม่แตะ เช็คชื่อ คะแนน กำหนดการ ทริกเกอร์ token และ repo ของนักศึกษาบน GitHub */
+function resetRegistration() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet(), sec = secNo_(ss), ui = ui_();
+  if (!ui) { Logger.log('สั่งจากเมนูในชีตเท่านั้น'); return; }
+  var form = openForm_(ss);
+  if (!form) return;
+  var rs = responseSheet_(ss, form), files = teamStatusFiles_(ss), word = 'SEC' + sec;
+  var nResp = form.getResponses().length, nTeam = Object.keys(readSyncKeys_(ss)).length;
+  var r = ui.prompt('ล้างการลงทะเบียนทีมทั้งหมดของ SEC' + sec,
+    'จะทำดังนี้ ย้อนกลับไม่ได้\n' +
+    '• ลบคำตอบในฟอร์ม ' + nResp + ' คำตอบ ลิงก์แก้ไขคำตอบเดิมของนักศึกษาใช้ไม่ได้ ลิงก์ฟอร์มสำหรับนักศึกษาใช้ต่อได้\n' +
+    '• ลบแถวคำตอบในแท็บ ' + (rs ? '"' + rs.getName() + '"' : 'คำตอบ') + ' สำเนาเก็บไว้ในแท็บ "สำรองลงทะเบียน …" ที่ซ่อนไว้\n' +
+    '• ล้างทีม ' + nTeam + ' ทีมในแท็บ ทีม (ชื่อทีม สมาชิก บทบาท repo ไฟล์สถานะ ข้อความถึงทีม) และ GitHub เครื่อง Docker Gmail ในแท็บ รายชื่อ\n' +
+    '• ถอนสิทธิ์สมาชิกและย้ายไฟล์สถานะทีม ' + files.length + ' ไฟล์ไปถังขยะ (กู้คืนได้ใน 30 วัน)\n' +
+    '• ล้างผลตรวจการส่งงาน ทีมที่ลงทะเบียนถัดไปได้รหัส ' + teamCode_(sec, 1) + '\n' +
+    'ไม่แตะ: เช็คชื่อ คะแนน กำหนดการ การตั้งอัตโนมัติ และ repo ของนักศึกษาบน GitHub\n\n' +
+    'พิมพ์ ' + word + ' แล้วกด OK เพื่อยืนยัน', ui.ButtonSet.OK_CANCEL);
+  if (r.getSelectedButton() !== ui.Button.OK) return;
+  if (r.getResponseText().replace(/\s+/g, '').toUpperCase() !== word) { alert_('ยังไม่ได้ล้าง', 'ข้อความยืนยันไม่ตรงกับ ' + word + ' ข้อมูลทุกอย่างยังอยู่ครบ'); return; }
+  var lock = LockService.getDocumentLock();
+  if (!lock.tryLock(120000)) { alert_('ยังไม่ได้ล้าง', 'ซิงก์อื่นกำลังทำงาน ลองใหม่ในอีกสักครู่'); return; }
+  var res;
+  try { res = resetRegistration_(ss, sec, form, rs, files); } finally { lock.releaseLock(); }
+  alert_('ล้างการลงทะเบียนของ SEC' + sec + ' แล้ว',
+    'ลบคำตอบ ' + res.responses + ' คำตอบ · ล้างทีม ' + nTeam + ' ทีม · ย้ายไฟล์สถานะทีม ' + res.files + ' ไฟล์ไปถังขยะ' +
+    (res.fileFail.length ? ' · จัดการไฟล์ไม่ได้ ' + res.fileFail.length + ' ไฟล์ (ลบเองใน Drive)' : '') +
+    (res.backup ? '\nสำเนาคำตอบเดิมอยู่ในแท็บ "' + res.backup + '" (ซ่อนไว้ ลบได้เมื่อไม่ใช้)' : '') +
+    '\n\nแจ้งทีมให้สร้าง repo ใหม่จากแม่แบบ เพิ่ม ' + TEACHER_GITHUB + ' แล้วกรอกฟอร์มใหม่ ทีมแรกที่ส่งจะได้ ' + teamCode_(sec, 1));
+}
+
+function resetRegistration_(ss, sec, form, rs, files) {
+  var tz = ss.getSpreadsheetTimeZone(), now = new Date(), stamp = Utilities.formatDate(now, tz, 'd/M/yyyy HH:mm');
+  var out = { responses: 0, backup: '', files: 0, fileFail: [] }, props = PropertiesService.getDocumentProperties();
+  var accepting = form.isAcceptingResponses();
+  form.setAcceptingResponses(false);
+  try {
+    // 1. สำรองแถวคำตอบไว้ในแท็บที่ซ่อน แล้วลบคำตอบในฟอร์มและแถวในแท็บคำตอบ
+    if (rs && rs.getLastRow() > 1) {
+      var bk = rs.copyTo(ss).setName('สำรองลงทะเบียน ' + Utilities.formatDate(now, tz, 'd-M-yyyy HHmm'));
+      bk.hideSheet();
+      out.backup = bk.getName();
+    }
+    out.responses = form.getResponses().length;
+    form.deleteAllResponses();
+    if (rs && rs.getLastRow() > 1) {
+      var last = rs.getLastRow();
+      if (last >= rs.getMaxRows()) rs.insertRowsAfter(rs.getMaxRows(), 1);
+      rs.deleteRows(2, last - 1);
+    }
+    // 2. ไฟล์สถานะทีม: ถอนสิทธิ์ผู้ดู แล้วย้ายไปถังขยะ (ไฟล์ในถังขยะที่ยังแชร์อยู่ คนที่ได้แชร์ยังเปิดได้ จึงต้องถอนก่อน)
+    files.forEach(function (id) {
+      try {
+        var f = DriveApp.getFileById(id);
+        f.getViewers().forEach(function (u) { try { f.removeViewer(u.getEmail()); } catch (e) { /* สิทธิ์จากโฟลเดอร์ */ } });
+        f.setTrashed(true);
+        out.files++;
+      } catch (e) { out.fileFail.push(id); }
+      props.deleteProperty('engse207.shared.' + id);
+    });
+    // 3. แท็บทีม และข้อมูลจากฟอร์มในแท็บรายชื่อ (ช่องสูตรไม่แตะ)
+    var tsh = sheetOrStop_(ss, SH.team), nt = TEAM.blocks * TEAM.size;
+    RESET_TEAM_COLS.forEach(function (c) { clearValues_(tsh, TEAM.first, c, nt); });
+    var rsh = sheetOrStop_(ss, SH.roster), nr = ROSTER.last - ROSTER.first + 1;
+    [ROSTER.c.github, ROSTER.c.machine, ROSTER.c.docker, ROSTER.c.gmail].forEach(function (c) { clearValues_(rsh, ROSTER.first, c, nr); });
+    // 4. ข้อมูลซิงก์ เลขทีม และผลตรวจการส่งงาน
+    ensureSyncSheet_(ss).getRange(2, 1, SYNC_ROWS, SYNC_COLS.length).clearContent();
+    props.deleteProperty(PROP.maxTeam);
+    subStoreWrite_(ss, {});
+    var sp = PropertiesService.getScriptProperties();
+    sp.deleteProperty(SUB.checkedProp);
+    sp.deleteProperty(SUB.sigProp);
+    try { CacheService.getScriptCache().remove(SUB.cacheKey); } catch (e) { /* ไม่มีแคช */ }
+    SpreadsheetApp.flush();
+    var sc = readSchedule_(ss);
+    if (sc) subRender_(ss, sc, subItems_(sc), {}, now, ghClient_());
+    // 5. ภาพรวม
+    sumCell_(ss, 'lastSync').setValue(stamp);
+    sumCell_(ss, 'syncNote').setValue('ล้างการลงทะเบียนทั้งหมดเมื่อ ' + stamp + ' · ทีมถัดไปได้ ' + teamCode_(sec, 1) +
+      (out.backup ? ' · สำเนาคำตอบเดิมอยู่ในแท็บ ' + out.backup + ' (ซ่อน)' : ''));
+    sumCell_(ss, 'lastCheck').setValue('');
+    sumCell_(ss, 'lastPub').setValue('');
+    sumCell_(ss, 'pubNote').setValue('');
+  } finally {
+    form.setAcceptingResponses(accepting);
+  }
+  return out;
+}
+
+/** แท็บที่ฟอร์มนี้ส่งคำตอบมา (Form Responses …) */
+function responseSheet_(ss, form) {
+  var id = form.getId(), found = null;
+  ss.getSheets().forEach(function (sh) {
+    if (found) return;
+    var u = '';
+    try { u = sh.getFormUrl() || ''; } catch (e) { u = ''; }
+    if (!u) return;
+    if (u.indexOf(id) >= 0) { found = sh; return; }
+    try { if (FormApp.openByUrl(u).getId() === id) found = sh; } catch (e) { /* ฟอร์มอื่น */ }
+  });
+  return found;
+}
+
+/** id ไฟล์สถานะทีมจากแท็บทีม คอลัมน์ L */
+function teamStatusFiles_(ss) {
+  var v = sheetOrStop_(ss, SH.team).getRange(TEAM.first, TEAM.c.file, TEAM.blocks * TEAM.size, 1).getValues(), out = [];
+  v.forEach(function (r) { var m = String(r[0]).match(/\/d\/([a-zA-Z0-9_-]{20,})/); if (m && out.indexOf(m[1]) < 0) out.push(m[1]); });
+  return out;
+}
+
+/** ล้างค่าในคอลัมน์ c แถว r ถึง r+n-1 เฉพาะช่องที่ไม่ใช่สูตร */
+function clearValues_(sh, r, c, n) {
+  var rg = sh.getRange(r, c, n, 1), f = rg.getFormulas(), v = rg.getValues();
+  if (!f.some(function (x) { return x[0]; })) { rg.clearContent(); return; }
+  v.forEach(function (x, i) { if (!f[i][0] && x[0] !== '') sh.getRange(r + i, c).clearContent(); });
 }
 
 /* ------------------------------------------------------------------ helpers */
