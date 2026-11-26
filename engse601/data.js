@@ -8,11 +8,12 @@
  */
 window.ENGSE601 = {
   meta: {
-    version: "2.1",
+    version: "2.2",
     term: "2/2569",
     updated: "25 พฤศจิกายน 2569",
     scheduleNote: "เรียนวันอังคาร 13:00–16:00 น. ห้อง C3-404 สัปดาห์ในแผนนับจากสัปดาห์แรกของภาค วันที่จริงของแต่ละครั้งและวันหยุดดูที่หน้าสิ่งที่ต้องส่ง",
     history: [
+      { v: "2.2", date: "26 พ.ย. 2569", note: "เอกสารประกอบการเรียนรายครั้ง (อ่านบนเว็บหรือ PDF A4) เริ่มครั้งที่ 1 และ 2 ละเอียดกว่าสไลด์ มีคำถามทบทวนคลิกดูเฉลย ลิงก์ในแต่ละครั้งจัดเป็นกลุ่ม อ่านและทบทวน ทำงานของทีม และคู่มือ" },
       { v: "2.1", date: "26 พ.ย. 2569", note: "เปิดหรือปิดรับลงทะเบียนทีมใหม่ได้จากช่องติ๊กในแผ่นกำหนดการของอาจารย์ เมื่อปิด หน้าลงทะเบียนบอกวิธีดูรหัสทีมและวิธีแก้ข้อมูล" },
       { v: "2.0", date: "26 พ.ย. 2569", note: "หน้าสถานะการส่งงานใน repo (submissions.html): ทุกทีมตรวจเองได้ว่าไฟล์ครบและอยู่ถูกที่หรือยัง ข้อมูลจากสคริปต์ชีตอาจารย์ฉบับ 1.5 ตรวจทุกชั่วโมง" },
       { v: "1.9", date: "25 พ.ย. 2569", note: "สไลด์ครั้งที่ 2 ฉบับ 1.1: คำถามในสไลด์คลิกดูเฉลยได้ (กด A เปิดทั้งหน้า) เพิ่มคำถามทบทวนครั้งที่ 1 ต้นคาบกับข้อเดียวกันก่อนและหลังเรียน และภาพประกอบ PDF แสดงเฉลยครบ" },
@@ -88,27 +89,29 @@ window.ENGSE601 = {
       topics: ["ทำไมต้องทดสอบ และต้นทุนของข้อบกพร่องที่พบช้า", "error · defect · failure ต่างกันอย่างไร", "หลัก 7 ข้อของการทดสอบ", "testing กับ debugging และ QA · QC · testing"],
       inClass: "วิเคราะห์กรณีซอฟต์แวร์ล้มเหลวจริง", project: "ลงทะเบียนทีม และส่ง V&V Profile", clo: ["CLO1"], desc: ["d1"],
       links: [
-        { label: "สไลด์ 1 แนะนำรายวิชา", href: "slides/session-01-intro.html" },
-        { label: "สไลด์ 2 พื้นฐานการทดสอบ", href: "slides/session-01-fundamentals.html" },
-        { label: "สไลด์ 3 กิจกรรม", href: "slides/session-01-activity.html" },
-        { label: "ลงทะเบียนทีม", href: "register.html" },
-        { label: "ใบงาน", href: "handouts/session-01-worksheet.html" },
-        { label: "การ์ดกรณีศึกษา (PDF)", href: "handouts/ENGSE601-session-01-cases.pdf" },
-        { label: "แม่แบบ V&V Profile", href: "handouts/vv-profile-template.md" }
+        { label: "เอกสารประกอบการเรียน", href: "notes/session-01.html", g: "read", main: true },
+        { label: "สไลด์ 1 แนะนำรายวิชา", href: "slides/session-01-intro.html", g: "read" },
+        { label: "สไลด์ 2 พื้นฐานการทดสอบ", href: "slides/session-01-fundamentals.html", g: "read" },
+        { label: "สไลด์ 3 กิจกรรม", href: "slides/session-01-activity.html", g: "read" },
+        { label: "ลงทะเบียนทีม", href: "register.html", g: "work" },
+        { label: "ใบงาน", href: "handouts/session-01-worksheet.html", g: "work" },
+        { label: "การ์ดกรณีศึกษา (PDF)", href: "handouts/ENGSE601-session-01-cases.pdf", g: "read" },
+        { label: "แม่แบบ V&V Profile", href: "handouts/vv-profile-template.md", g: "work" }
       ] },
     S2: { no: "ครั้งที่ 2", week: "สัปดาห์ 2", hours: 3, title: "V&V และแบบจำลองกระบวนการทดสอบ",
       topics: ["verification กับ validation", "IEEE 1012 และระดับความสำคัญของระบบ (integrity level)", "กระบวนการทดสอบตาม ISO/IEC/IEEE 29119-2", "V-model, Agile testing quadrants และ test pyramid", "ระดับและชนิดของการทดสอบ"],
       inClass: "เรียนออนไลน์ MS Teams: สาธิตกับระบบตัวอย่าง SE LabBook และตอบคำถามในแชต กิจกรรมจับคู่ Sprint กับระดับการทดสอบทำเป็นการบ้าน D06", project: "ร่าง V&V Strategy 1 หน้า และแปลง SE02 เป็น SRS ฉบับ 1.0", clo: ["CLO1"], desc: ["d2", "d3"],
       links: [
-        { label: "สไลด์ 1 V&V และระดับความสำคัญ", href: "slides/session-02-vv.html" },
-        { label: "สไลด์ 2 กระบวนการและระดับการทดสอบ", href: "slides/session-02-process.html" },
-        { label: "สไลด์ 3 จากแบบเสนอสู่ SRS", href: "slides/session-02-srs.html" },
-        { label: "สไลด์ทั้ง 3 ชุด (PDF)", href: "slides/pdf/ENGSE601-session-02-slides.pdf" },
-        { label: "แม่แบบ V&V Strategy", href: "handouts/vv-strategy-template.md" },
-        { label: "ตัวอย่าง V&V Strategy SE LabBook", href: "handouts/vv-strategy-example.md" },
-        { label: "คู่มือเขียน SRS", href: "srs-guide.html" },
-        { label: "แม่แบบ SRS (Word)", href: "handouts/srs/ENGSE601-SRS-template.docx" },
-        { label: "ตัวอย่าง SRS SE LabBook (PDF)", href: "handouts/srs/ENGSE601-SRS-example-SE-LabBook.pdf" }
+        { label: "เอกสารประกอบการเรียน", href: "notes/session-02.html", g: "read", main: true },
+        { label: "สไลด์ 1 V&V และระดับความสำคัญ", href: "slides/session-02-vv.html", g: "read" },
+        { label: "สไลด์ 2 กระบวนการและระดับการทดสอบ", href: "slides/session-02-process.html", g: "read" },
+        { label: "สไลด์ 3 จากแบบเสนอสู่ SRS", href: "slides/session-02-srs.html", g: "read" },
+        { label: "สไลด์ทั้ง 3 ชุด (PDF)", href: "slides/pdf/ENGSE601-session-02-slides.pdf", g: "read" },
+        { label: "แม่แบบ V&V Strategy", href: "handouts/vv-strategy-template.md", g: "work" },
+        { label: "ตัวอย่าง V&V Strategy SE LabBook", href: "handouts/vv-strategy-example.md", g: "work" },
+        { label: "คู่มือเขียน SRS", href: "srs-guide.html", g: "guide" },
+        { label: "แม่แบบ SRS (Word)", href: "handouts/srs/ENGSE601-SRS-template.docx", g: "work" },
+        { label: "ตัวอย่าง SRS SE LabBook (PDF)", href: "handouts/srs/ENGSE601-SRS-example-SE-LabBook.pdf", g: "work" }
       ] },
     S3: { no: "ครั้งที่ 3", week: "สัปดาห์ 3", hours: 3, title: "เทคนิคการทบทวน",
       topics: ["ประเภทการทบทวนตาม IEEE 1028: technical review, walkthrough, inspection, audit", "บทบาทและขั้นตอนของ inspection", "checklist คุณภาพความต้องการตาม ISO/IEC/IEEE 29148"],
