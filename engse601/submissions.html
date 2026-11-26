@@ -63,6 +63,18 @@
     .c { display: inline-block; min-width: 26px; padding: 2px 6px; border-radius: 7px; font-weight: 800; }
     .c-ok { background: var(--okbg); color: var(--ok); } .c-late, .c-branch { background: var(--wabg); color: var(--wa); }
     .c-miss { background: var(--nobg); color: var(--no); } .c-due { color: #8696a6; } .c-na, .c-unchecked { background: var(--nabg); color: var(--na); }
+    .nt { display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border: 1px solid var(--line); border-radius: 999px; background: #fff; color: #405a72; font: inherit; font-size: .8rem; font-weight: 800; cursor: pointer; }
+    .nt svg { width: 15px; height: 15px; }
+    .nt.lv-no { border-color: #efb4ae; background: var(--nobg); color: var(--no); }
+    .nt.lv-wa { border-color: #ebd29c; background: var(--wabg); color: var(--wa); }
+    .nt.lv-ok { border-color: transparent; background: transparent; color: var(--ok); cursor: default; }
+    .nt[aria-expanded="true"] { outline: 2px solid currentColor; outline-offset: 1px; }
+    table.mx tr.note-row td { padding: 0 10px 12px; text-align: left; white-space: normal; background: #fbfcfd; }
+    table.mx tr.note-row td:first-child { position: static; background: #fbfcfd; font-weight: 400; }
+    .notes { position: sticky; left: 10px; box-sizing: border-box; max-width: min(100%, calc(100vw - 48px)); margin: 0; padding: 10px 12px; list-style: none; display: grid; gap: 6px; border: 1px solid var(--line); border-radius: 12px; background: #fff; font-size: .86rem; color: #314a62; }
+    .notes li { padding-left: 14px; position: relative; }
+    .notes li::before { content: ""; position: absolute; left: 0; top: .55em; width: 7px; height: 7px; border-radius: 50%; background: #c2ccd6; }
+    .notes li.no::before { background: var(--no); } .notes li.wa::before { background: #d3a321; }
     .legend { display: flex; flex-wrap: wrap; gap: 8px 16px; margin: 12px 0 0; padding: 0; list-style: none; color: #405a72; font-size: .84rem; }
     .tools { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin: 0 0 12px; }
     .tools label { display: inline-flex; align-items: center; gap: 6px; color: #314a62; font-size: .88rem; cursor: pointer; }
@@ -104,7 +116,7 @@
     <section class="sec" id="all">
       <div class="wrap">
         <h2>ทุกทีม</h2>
-        <p class="sec-lead">แสดงเฉพาะรหัสทีมและสถานะ ไม่มีชื่อ คะแนน หรือเนื้อหาในไฟล์ งานที่ยังไม่ถึงกำหนดแสดงเป็น – จนกว่าทีมจะส่ง</p>
+        <p class="sec-lead">แสดงเฉพาะรหัสทีมและสถานะ ไม่มีชื่อ คะแนน หรือเนื้อหาในไฟล์ งานที่ยังไม่ถึงกำหนดแสดงเป็น – จนกว่าทีมจะส่ง · คลิกกระดิ่งในคอลัมน์แจ้งเตือนเพื่อดูว่าทีมต้องทำอะไร</p>
         <div class="tools">
           <label><input type="checkbox" id="every"> แสดงงานทั้งภาค</label>
           <span class="msg">หน้านี้โหลดข้อมูลใหม่เองทุก 5 นาที</span>
@@ -117,6 +129,7 @@
           <li><span class="c c-due">–</span> ยังไม่ส่ง ยังไม่ถึงกำหนด</li>
           <li><span class="c c-miss">✗</span> เลยกำหนดแล้วยังไม่ส่ง</li>
           <li><span class="c c-na">?</span> เปิด repo ไม่ได้</li>
+          <li><span class="nt lv-no" style="cursor:default"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 8 3 8H3s3-1 3-8"/><path d="M10.3 20a2 2 0 0 0 3.4 0"/></svg>2</span> จำนวนเรื่องที่ทีมต้องทำ คลิกเพื่อดู</li>
         </ul>
       </div>
     </section>
@@ -235,19 +248,56 @@
         '</p><ul class="rows">' + rows + "</ul></div>";
     }
 
+    var BELL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 8 3 8H3s3-1 3-8"/><path d="M10.3 20a2 2 0 0 0 3.4 0"/></svg>';
+    /** ข้อความแจ้งเตือนของทีม (แบบเดียวกับคอลัมน์ข้อความเตือนในชีตอาจารย์) level: no เลยกำหนด/เปิดไม่ได้ · wa ต้องแก้ · '' ยังไม่ถึงกำหนด */
+    function teamNotes(t) {
+      var out = [], ahead = nowMs() + (data.aheadDays || 14) * 864e5;
+      if (t.access === "noaccess" || t.access === "norepo") return [{ lv: "no", h: "อาจารย์ยังเปิด repo ไม่ได้ ตั้ง repo เป็น public และตรวจลิงก์ repo ในแบบลงทะเบียน" }];
+      if (t.access === "unchecked") return [];
+      if (t.access === "empty") out.push({ lv: "wa", h: "repo ยังว่าง ยังไม่มี commit" });
+      data.items.forEach(function (it) {
+        var c = cellOf(t, it.id), due = +new Date(it.due);
+        if (c.s === "branch") out.push({ lv: "wa", h: "<b>" + esc(it.id) + "</b> อยู่ใน branch <code>" + esc(c.br) + "</code> ให้ merge เข้า <code>" + esc(t.def) + "</code>" });
+        if (c.s !== "miss" && c.s !== "due") return;
+        if (c.s === "due" && due > ahead) return;
+        var txt = "<b>" + esc(it.id) + "</b> " + esc(it.title) + " · ส่ง " + esc(when(it.due, true));
+        if (c.miss && c.miss.length) txt += " · ยังขาด " + c.miss.map(function (m) { return "<code>" + esc(m) + "</code>"; }).join(" ");
+        if (c.hint && c.hint.length) txt += " · พบ " + c.hint.map(function (x) { return "<code>" + esc(x) + "</code>"; }).join(" ") + " ให้ย้ายหรือเปลี่ยนชื่อเป็น <code>" + esc(String((it.paths || [])[0] || "").replace(/\{T\}/g, t.id)) + "</code>";
+        out.push({ lv: c.s === "miss" ? "no" : (c.hint && c.hint.length) || (c.miss && c.miss.length) ? "wa" : "", h: txt });
+      });
+      return out;
+    }
+    var openNotes = {};
+
     function renderMatrix(me) {
       var items = visibleItems($("every").checked);
-      var h = "<thead><tr><th>ทีม</th>" + items.map(function (it) {
+      var h = "<thead><tr><th>ทีม</th><th>แจ้งเตือน</th>" + items.map(function (it) {
         return '<th title="' + esc(it.title) + '">' + esc(it.id) + "<small>" + esc(when(it.due).replace(/ น\.$/, "")) + "</small></th>";
       }).join("") + "</tr></thead><tbody>";
       h += data.teams.map(function (t) {
-        return '<tr class="' + (t.id === me ? "me" : "") + '"><td>' + esc(t.id) + "</td>" + items.map(function (it) {
+        var ns = teamNotes(t), lv = ns.some(function (n) { return n.lv === "no"; }) ? "no" : ns.some(function (n) { return n.lv === "wa"; }) ? "wa" : ns.length ? "" : "ok";
+        var btn = ns.length
+          ? '<button type="button" class="nt lv-' + lv + '" data-team="' + esc(t.id) + '" aria-expanded="' + (openNotes[t.id] ? "true" : "false") + '" aria-label="แจ้งเตือนของ ' + esc(t.id) + " " + ns.length + ' ข้อ">' + BELL + ns.length + "</button>"
+          : (t.access === "unchecked" ? "" : '<span class="nt lv-ok" title="ไม่มีงานค้าง">✓</span>');
+        var row = '<tr class="' + (t.id === me ? "me" : "") + '"><td>' + esc(t.id) + "</td><td>" + btn + "</td>" + items.map(function (it) {
           var c = cellOf(t, it.id);
           return '<td><span class="c c-' + esc(c.s) + '" title="' + esc(NAME[c.s] + (c.at ? " · " + when(c.at) : "")) + '">' + MARK[c.s] + "</span></td>";
         }).join("") + "</tr>";
+        if (openNotes[t.id] && ns.length) row += '<tr class="note-row"><td colspan="' + (items.length + 2) + '"><ul class="notes">' +
+          ns.map(function (n) { return '<li class="' + n.lv + '">' + n.h + "</li>"; }).join("") + "</ul></td></tr>";
+        return row;
       }).join("") + "</tbody>";
       $("mx").innerHTML = h;
     }
+    $("mx").addEventListener("click", function (e) {
+      var b = e.target.closest ? e.target.closest("button.nt") : null;
+      if (!b) return;
+      var id = b.getAttribute("data-team");
+      openNotes[id] = !openNotes[id];
+      renderMatrix(myTeam());
+      var nb = $("mx").querySelector('button.nt[data-team="' + id + '"]');
+      if (nb) nb.focus();
+    });
 
     $("team").addEventListener("change", function () {
       var v = safeTeam(this.value);
