@@ -12,7 +12,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap">
   <link rel="stylesheet" href="../assets/class-portal.css?v=2">
-  <script src="data.js?v=13" defer></script>
+  <script src="data.js?v=14" defer></script>
   <script src="schedule-data.js?v=4" defer></script>
   <script src="tasks.js?v=2" defer></script>
   <script src="schedule.js?v=2" defer></script>
@@ -60,6 +60,11 @@
     .now-strip a.join { display: inline-block; margin-top: 6px; padding: 4px 10px; border-radius: 9px; background: #4b53bc; color: #fff; font-size: .82rem; font-weight: 700; text-decoration: none; }
     .now-strip .join-note { margin-top: 6px; color: #4b53bc; font-size: .82rem; font-weight: 600; }
     .sess-links a.hw { border-color: var(--course); background: var(--course); color: #fff; }
+    .sess-links a.main { border-color: var(--course-ink); background: var(--course-ink); color: #fff; }
+    .sess-links.grp { display: grid; gap: 8px; }
+    .sess-links .lg { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+    .sess-links .lg + .lg { padding-top: 8px; border-top: 1px dashed color-mix(in srgb, var(--course), transparent 65%); }
+    .sess-links .lt { flex: 0 0 100%; color: var(--muted); font-size: .74rem; font-weight: 800; letter-spacing: .02em; }
     .sess-date.wait { color: #7a510a; }
     .note { margin-top: 14px; padding: 12px 14px; border-left: 3px solid var(--course); background: color-mix(in srgb, var(--course), transparent 93%); color: #405a72; font-size: .88rem; }
 
@@ -417,10 +422,19 @@
         if (s.tools) dl += "<dt>เครื่องมือสาธิต</dt><dd>" + esc(s.tools) + "</dd>";
         var tags = (s.cp ? '<span class="chip due"><a href="#' + s.cp.toLowerCase() + '">ส่ง ' + esc(s.cp) + "</a></span>" : "") + chips(s.clo, "c");
         var nHw = Object.keys(TK).filter(function (k) { return TK[k].assigned === id; }).length;
-        var links = (nHw ? '<a class="hw" href="deliverables.html#after-' + id.toLowerCase() + '">งานหลังเรียน ' + nHw + " ชิ้น →</a>" : "") +
-          (s.links || []).map(function (l) { return '<a href="' + esc(l.href) + '">' + esc(l.label) + " →</a>"; }).join("");
+        var hw = nHw ? '<a class="hw" href="deliverables.html#after-' + id.toLowerCase() + '">งานหลังเรียน ' + nHw + " ชิ้น →</a>" : "";
+        var ln = function (l) { return '<a' + (l.main ? ' class="main"' : "") + ' href="' + esc(l.href) + '">' + esc(l.label) + " →</a>"; };
+        var L = s.links || [], links;
+        if (L.some(function (l) { return l.g; })) {
+          links = [["read", "อ่านและทบทวน"], ["work", "ทำงานของทีม"], ["guide", "คู่มือ"]].map(function (g) {
+            var xs = L.filter(function (l) { return (l.g || "read") === g[0]; }).map(ln).join("");
+            if (g[0] === "work") xs = hw + xs;
+            return xs ? '<div class="lg"><span class="lt">' + g[1] + "</span>" + xs + "</div>" : "";
+          }).join("");
+        } else links = hw + L.map(ln).join("");
+        var grouped = L.some(function (l) { return l.g; });
         return '<div class="sess" id="' + id.toLowerCase() + '"><div class="sess-top"><span class="sess-no">' + esc(s.no) + '</span><span class="sess-wk">' + esc(s.week) + " · " + s.hours + ' ชม.</span><span class="sess-date" data-sid="' + id + '"></span></div>' +
-          "<h4>" + esc(s.title) + "</h4><ul>" + li(s.topics) + '</ul><dl class="sess-dl">' + dl + '</dl><div class="tags">' + tags + "</div>" + (links ? '<div class="sess-links">' + links + "</div>" : "") + "</div>";
+          "<h4>" + esc(s.title) + "</h4><ul>" + li(s.topics) + '</ul><dl class="sess-dl">' + dl + '</dl><div class="tags">' + tags + "</div>" + (links ? '<div class="sess-links' + (grouped ? " grp" : "") + '">' + links + "</div>" : "") + "</div>";
       }).join("");
       return '<article class="phase" style="--pc:var(--p' + (i + 1) + ')"><span class="phase-meta">ช่วง ' + (i + 1) + " · " + esc(p.weeks) + "</span>" +
         "<h3>" + esc(p.name) + "</h3><p>" + esc(p.goal) + "</p>" + sess + "</article>";
