@@ -321,7 +321,78 @@
     });
   }
 
-  window.ENGSE207Schedule = { load: load, getSec: getSec, setSec: setSec, secSwitch: secSwitch, secInfo: secInfo, withSec: withSec, keepSec: keepSec, model: model, now: now, date: date, shortDate: shortDate, time: time, due: due,
+  /** กล่องเลือกกลุ่มเรียน (ใช้ทุกหน้า) และป้าย SEC ที่ header
+   *  o.box กล่องว่าง · o.chip ลิงก์ป้ายที่ header · o.hint ข้อความใต้คำถาม · o.onChange(sec, extraEl)
+   *  ยังไม่เลือก: แสดงปุ่ม 3 กลุ่ม · เลือกแล้ว: แถบ [SEC n] วันเวลา ห้อง [เปลี่ยนกลุ่ม] และช่อง extra ให้หน้านั้นเติม
+   *  คืน { sec, extra } */
+  function secUI(o) {
+    var D = window.ENGSE207 || {}, secs = D.secs || {}, box = o.box, chip = o.chip, cur = getSec();
+    var e = function (v) { return String(v == null ? "" : v).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); };
+    box.className = "secbox"; box.setAttribute("aria-label", "กลุ่มเรียนของคุณ");
+    box.innerHTML = '<div class="secbox-pick"><p class="secbox-q"><span class="dot" aria-hidden="true"></span><span class="secbox-title"></span></p>' +
+      '<p class="secbox-hint">' + e(o.hint || "เลือกครั้งเดียว เครื่องนี้จำไว้") + '</p><div class="secbox-opts" role="group" aria-label="กลุ่มเรียน">' +
+      Object.keys(secs).map(function (k) {
+        var i = secs[k];
+        return '<button type="button" class="sec-opt s' + k + '" data-sec="' + k + '"><b>' + e(i.label) + "</b><span>" + e(i.block ? "Block course" : "วัน" + i.day) +
+          "</span><small>" + e(i.block ? "กำหนดการประกาศภายหลัง" : i.time + " น. · ห้อง " + i.room) + "</small></button>";
+      }).join("") + '</div><button type="button" class="secbox-cancel" hidden>ยกเลิก ใช้กลุ่มเดิม</button></div>' +
+      '<div class="secbox-mine" hidden><div class="secbox-head"><span class="sec-badge"></span><span class="sec-when"></span>' +
+      '<button type="button" class="sec-change">เปลี่ยนกลุ่ม</button></div><div class="secbox-extra" aria-live="polite"></div></div>';
+    var q = function (c) { return box.querySelector(c); }, pickEl = q(".secbox-pick"), mineEl = q(".secbox-mine"), extra = q(".secbox-extra");
+    function paintChip() {
+      if (!chip) return;
+      var info = secInfo(cur);
+      chip.className = "sec-chip" + (info ? " on s" + cur : "");
+      chip.textContent = info ? info.label : "เลือก SEC";
+      chip.setAttribute("aria-label", info ? "กำลังดู " + info.label + " แตะเพื่อเปลี่ยนกลุ่มเรียน" : "เลือกกลุ่มเรียน");
+    }
+    function showPick(changing) {
+      pickEl.hidden = false; mineEl.hidden = true;
+      q(".secbox-cancel").hidden = !changing;
+      q(".secbox-title").textContent = changing ? "เปลี่ยนเป็นกลุ่มไหน" : "คุณเรียนกลุ่มไหน";
+      box.className = "secbox picking";
+      Array.prototype.forEach.call(box.querySelectorAll(".sec-opt"), function (b) { b.setAttribute("aria-pressed", String(b.dataset.sec === cur)); });
+    }
+    function showMine() {
+      var info = secInfo(cur);
+      if (!info) { showPick(false); return; }
+      pickEl.hidden = true; mineEl.hidden = false;
+      box.className = "secbox s" + cur;
+      q(".sec-badge").textContent = info.label;
+      q(".sec-when").textContent = info.block ? "Block course · กำหนดการประกาศภายหลัง" : "วัน" + info.day + " " + info.time + " น. · ห้อง " + info.room;
+    }
+    q(".secbox-opts").addEventListener("click", function (ev) {
+      var b = ev.target.closest("[data-sec]");
+      if (!b) return;
+      var changed = b.dataset.sec !== cur;
+      cur = setSec(b.dataset.sec); keepSec(cur); paintChip(); showMine();
+      if (changed || !extra.innerHTML) o.onChange(cur, extra);
+    });
+    q(".sec-change").addEventListener("click", function () { showPick(true); q(".sec-opt").focus(); });
+    q(".secbox-cancel").addEventListener("click", showMine);
+    if (chip) chip.addEventListener("click", function (ev) {
+      ev.preventDefault();
+      if (secInfo(cur)) showPick(true);
+      box.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
+    keepSec(cur); paintChip(); showMine();
+    return { sec: cur, extra: extra };
+  }
+
+  /** เมนูมือถือ: ปุ่ม .menu-btn ใน header เปิด/ปิด .menu-panel */
+  function initMenu() {
+    var top = document.querySelector(".top"), btn = top && top.querySelector(".menu-btn");
+    if (!btn) return;
+    var set = function (open) { top.classList.toggle("menu-open", open); btn.setAttribute("aria-expanded", String(open)); };
+    btn.addEventListener("click", function (ev) { ev.stopPropagation(); set(!top.classList.contains("menu-open")); });
+    top.querySelector(".menu-panel").addEventListener("click", function (ev) { if (ev.target.closest("a")) set(false); });
+    document.addEventListener("click", function (ev) { if (!top.contains(ev.target)) set(false); });
+    document.addEventListener("keydown", function (ev) { if (ev.key === "Escape" && top.classList.contains("menu-open")) { set(false); btn.focus(); } });
+    window.addEventListener("resize", function () { if (window.innerWidth > 800) set(false); });
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", initMenu); else initMenu();
+
+  window.ENGSE207Schedule = { load: load, getSec: getSec, setSec: setSec, secSwitch: secSwitch, secUI: secUI, secInfo: secInfo, withSec: withSec, keepSec: keepSec, model: model, now: now, date: date, shortDate: shortDate, time: time, due: due,
     sessWhen: sessWhen, countdown: countdown, safeLink: safeLink, ics: ics, download: download, sourceText: sourceText, KIND: KIND,
     place: place, nextAfter: nextAfter, lineText: lineText, copyText: copyText };
 })();
