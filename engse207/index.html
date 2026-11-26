@@ -11,6 +11,10 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="data.js?v=1" defer></script>
+  <script src="schedule-data.js?v=1" defer></script>
+  <script src="tasks.js?v=1" defer></script>
+  <script src="schedule.js?v=1" defer></script>
   <style>
     :root {
       color-scheme: light;
@@ -24,6 +28,24 @@
       --thai: "IBM Plex Sans Thai", system-ui, sans-serif;
       --english: "Space Grotesk", var(--thai);
     }
+    /* แถบตอนนี้ (กำหนดการตาม SEC จาก schedule.js) */
+    .now-strip { background: #0c1524; color: #dfe7f2; border-top: 1px solid #22324d; }
+    .now-inner { display: grid; grid-template-columns: auto 1fr; gap: 1rem 1.5rem; align-items: start; padding-block: 1.2rem; }
+    .now-secs { display: flex; gap: .3rem; padding: .25rem; border: 1px solid #34486a; border-radius: 9px; }
+    .now-secs button { padding: .35rem .7rem; border: 0; border-radius: 6px; background: transparent; color: #c9d4e4; font: 650 .82rem var(--english); cursor: pointer; }
+    .now-secs button[aria-pressed="true"] { background: var(--mint); color: var(--night); }
+    .now-body { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: .6rem 1.6rem; font-size: .92rem; }
+    .now-body p { margin: 0; }
+    .now-body .lbl { display: block; color: #93a7c4; font: 600 .7rem/1.4 var(--english); letter-spacing: .08em; text-transform: uppercase; }
+    .now-body b { color: #fff; }
+    .now-body a { color: var(--mint); }
+    .now-body ul { margin: .2rem 0 0; padding: 0; list-style: none; }
+    .now-body li + li { margin-top: .15rem; }
+    .now-body .cd { color: #f0b35a; font-weight: 600; }
+    .now-links { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: .4rem 1.2rem; margin: 0; }
+    @media (max-width: 620px) { .now-inner { grid-template-columns: 1fr; } }
+    .sec-detail { margin-top: .4rem; }
+    .sec-detail ul { margin: .5rem 0 0; padding-left: 1.1rem; }
     *, *::before, *::after { box-sizing: border-box; }
     html { scroll-padding-top: 5rem; }
     body { margin: 0; font: 1rem/1.65 var(--thai); color: var(--ink); background: var(--paper); }
@@ -172,7 +194,9 @@
         <a href="slides/course-overview.html" data-en="Overview slides">สไลด์ภาพรวม</a>
         <a href="#studio" data-en="Task Board">ระบบตัวอย่าง</a>
         <a href="#weeks" data-en="Weekly plan">แผนรายสัปดาห์</a>
-        <a href="#groups" data-en="Class sections">กลุ่มเรียน</a>
+        <a href="deliverables.html" data-keep-sec data-en="Deliverables">สิ่งที่ต้องส่ง</a>
+        <a href="register.html" data-keep-sec data-en="Team sign-up">ลงทะเบียนทีม</a>
+        <a href="submissions.html" data-keep-sec data-en="Submissions">สถานะการส่ง</a>
       </nav>
       <div class="languages" role="group" aria-label="ภาษา" data-en-label="Language">
         <button type="button" data-language="th" lang="th" aria-label="ภาษาไทย" aria-pressed="true">TH</button>
@@ -191,7 +215,7 @@
             <p class="lead" data-en="Trace a working system from interface to database. Draw its architecture, compare trade-offs, and test what changes when you deploy it or split a service.">เริ่มจากระบบที่รันได้จริง ไล่เส้นทางตั้งแต่หน้าจอถึงฐานข้อมูล แล้ววาดแบบ เปรียบเทียบข้อแลกเปลี่ยน และทดลองว่าจะเกิดอะไรขึ้นเมื่อย้ายขึ้น Cloud หรือแยกบริการ</p>
             <div class="actions">
               <a class="button" href="slides/course-overview.html" data-en="Open course overview slides">เปิดสไลด์ภาพรวมรายวิชา</a>
-              <a class="button secondary" href="#weeks" data-en="See weekly plan">ดูแผนรายสัปดาห์</a>
+              <a class="button secondary" href="deliverables.html" data-keep-sec data-en="Deliverables and due dates">สิ่งที่ต้องส่งและกำหนดส่ง</a>
               <a class="button secondary" href="#groups" data-en="Find my section">เลือกกลุ่มเรียน</a>
             </div>
           </div>
@@ -205,6 +229,13 @@
           <div><dt data-en="Teaching sessions">ครั้งสอน + สอบกลางและปลายภาค</dt><dd data-en="15 + 2 exams">15 + 2 สอบ</dd></div>
           <div><dt data-en="Registered sections">กลุ่มเรียน</dt><dd>SEC 1–3</dd></div>
         </dl>
+      </div>
+    </section>
+
+    <section class="now-strip" aria-label="กำหนดการของกลุ่มเรียน" data-en-label="Section schedule">
+      <div class="wrap now-inner">
+        <div class="now-secs" id="now-secs" role="group" aria-label="กลุ่มเรียน"></div>
+        <div class="now-body" id="now-body" aria-live="polite"></div>
       </div>
     </section>
 
@@ -270,56 +301,56 @@
               <summary><span class="week-no">01</span><span data-en="Course and architecture overview">ภาพรวมรายวิชาและสถาปัตยกรรม</span></summary>
               <div class="week-body">
                 <p data-en="Meet the course, the Task Board case, and how you will be assessed. Form a team of three or four, then install Docker and run your first containers. No project code yet; Task Board first runs in week 2.">รู้จักรายวิชา ระบบ Task Board และวิธีประเมิน จัดทีม 3–4 คน แล้วติดตั้ง Docker ให้รัน container แรกได้ ครั้งนี้ยังไม่ใช้โค้ดของระบบ Task Board จะรันครั้งแรกในสัปดาห์ที่ 2</p>
-                <p class="materials"><a class="slide-link" href="slides/course-overview.html"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 17v4M10 8.5l4 2.5-4 2.5z"/></svg><span data-en="Course overview slides">สไลด์ภาพรวมรายวิชา</span></a><a href="https://github.com/se-rmutl/engse207/tree/main/weeks/week01" data-en="T01 worksheet · Docker">ใบงาน T01 · Docker</a></p>
+                <p class="materials"><a href="deliverables.html#g-t01" data-keep-sec data-en="Tasks and due dates">งานและกำหนดส่ง</a><a class="slide-link" href="slides/course-overview.html"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 17v4M10 8.5l4 2.5-4 2.5z"/></svg><span data-en="Course overview slides">สไลด์ภาพรวมรายวิชา</span></a><a href="https://github.com/se-rmutl/engse207/tree/main/weeks/week01" data-en="T01 worksheet · Docker">ใบงาน T01 · Docker</a></p>
               </div>
             </details>
             <details id="week-02">
               <summary><span class="week-no">02</span><span data-en="Client–server and data flow">Client–Server และเส้นทางข้อมูล</span></summary>
               <div class="week-body">
                 <p data-en="Trace data from React through the API to the database. Change one validation rule and review the Git diff.">ไล่ข้อมูลจาก React ผ่าน API และฐานข้อมูล แล้วแก้กฎตรวจข้อมูลหนึ่งจุดและตรวจผลผ่าน Git diff</p>
-                <p class="materials"><a href="https://github.com/se-rmutl/engse207/tree/main/weeks/week02" data-en="Week outline">รายละเอียดสัปดาห์</a><span class="pending" data-en="Slides will be posted here.">สไลด์จะเผยแพร่ที่นี่</span></p>
+                <p class="materials"><a href="deliverables.html#g-t02" data-keep-sec data-en="Tasks and due dates">งานและกำหนดส่ง</a><a href="https://github.com/se-rmutl/engse207/tree/main/weeks/week02" data-en="Week outline">รายละเอียดสัปดาห์</a><span class="pending" data-en="Slides will be posted here.">สไลด์จะเผยแพร่ที่นี่</span></p>
               </div>
             </details>
             <details id="week-03">
               <summary><span class="week-no">03</span><span data-en="Quality attributes and debugging">คุณลักษณะคุณภาพและการวิเคราะห์ข้อขัดข้อง</span></summary>
               <div class="week-body">
                 <p data-en="Write a measurable quality scenario. Use the Network panel and logs to locate a fault and verify data after restart.">เขียนสถานการณ์คุณภาพที่วัดได้ ใช้ Network panel และ log ระบุจุดที่ผิด และตรวจข้อมูลหลังรีสตาร์ต</p>
-                <p class="materials"><a href="https://github.com/se-rmutl/engse207/tree/main/weeks/week03" data-en="Week outline">รายละเอียดสัปดาห์</a><span class="pending" data-en="Slides will be posted here.">สไลด์จะเผยแพร่ที่นี่</span></p>
+                <p class="materials"><a href="deliverables.html#g-t03" data-keep-sec data-en="Tasks and due dates">งานและกำหนดส่ง</a><a href="https://github.com/se-rmutl/engse207/tree/main/weeks/week03" data-en="Week outline">รายละเอียดสัปดาห์</a><span class="pending" data-en="Slides will be posted here.">สไลด์จะเผยแพร่ที่นี่</span></p>
               </div>
             </details>
             <details id="week-04">
               <summary><span class="week-no">04</span><span data-en="Layered architecture and modular monoliths">Layered และ Modular Monolith</span></summary>
               <div class="week-body">
                 <p data-en="Separate route, service, and repository responsibilities in one flow and check that the existing behavior still works.">แยกหน้าที่ route, service และ repository ในหนึ่ง flow แล้วตรวจว่าพฤติกรรมเดิมยังทำงาน</p>
-                <p class="materials"><a href="https://github.com/se-rmutl/engse207/tree/main/weeks/week04" data-en="Week outline">รายละเอียดสัปดาห์</a><span class="pending" data-en="Slides will be posted here.">สไลด์จะเผยแพร่ที่นี่</span></p>
+                <p class="materials"><a href="deliverables.html#g-t04" data-keep-sec data-en="Tasks and due dates">งานและกำหนดส่ง</a><a href="https://github.com/se-rmutl/engse207/tree/main/weeks/week04" data-en="Week outline">รายละเอียดสัปดาห์</a><span class="pending" data-en="Slides will be posted here.">สไลด์จะเผยแพร่ที่นี่</span></p>
               </div>
             </details>
             <details id="week-05">
               <summary><span class="week-no">05</span><span data-en="Architecture frameworks and C4 views">กรอบแนวคิดและการสื่อสารด้วย C4</span></summary>
               <div class="week-body">
                 <p data-en="Draw Context and Container views, match their elements to the running system, and explain a key flow.">วาด Context และ Container จับคู่กล่องกับระบบที่รันจริง และอธิบายหนึ่งเส้นทางสำคัญ</p>
-                <p class="materials"><a href="https://github.com/se-rmutl/engse207/tree/main/weeks/week05" data-en="Week outline">รายละเอียดสัปดาห์</a><span class="pending" data-en="Slides will be posted here.">สไลด์จะเผยแพร่ที่นี่</span></p>
+                <p class="materials"><a href="deliverables.html#g-t05" data-keep-sec data-en="Tasks and due dates">งานและกำหนดส่ง</a><a href="https://github.com/se-rmutl/engse207/tree/main/weeks/week05" data-en="Week outline">รายละเอียดสัปดาห์</a><span class="pending" data-en="Slides will be posted here.">สไลด์จะเผยแพร่ที่นี่</span></p>
               </div>
             </details>
             <details id="week-06">
               <summary><span class="week-no">06</span><span data-en="Architecture decisions and trade-offs">การตัดสินใจและข้อแลกเปลี่ยน</span></summary>
               <div class="week-body">
                 <p data-en="Compare two ways to support a task assignment rule, then record the decision and how to verify it in an ADR.">เทียบสองวิธีรองรับกฎการมอบหมายงาน แล้วเขียน ADR บันทึกเหตุผลและผลที่ต้องตรวจ</p>
-                <p class="materials"><a href="https://github.com/se-rmutl/engse207/tree/main/weeks/week06" data-en="Week outline">รายละเอียดสัปดาห์</a><span class="pending" data-en="Slides will be posted here.">สไลด์จะเผยแพร่ที่นี่</span></p>
+                <p class="materials"><a href="deliverables.html#g-t06" data-keep-sec data-en="Tasks and due dates">งานและกำหนดส่ง</a><a href="https://github.com/se-rmutl/engse207/tree/main/weeks/week06" data-en="Week outline">รายละเอียดสัปดาห์</a><span class="pending" data-en="Slides will be posted here.">สไลด์จะเผยแพร่ที่นี่</span></p>
               </div>
             </details>
             <details id="week-07">
               <summary><span class="week-no">07</span><span data-en="Architecture review and individual checkpoint">ทบทวนระบบและจุดตรวจรายบุคคล</span></summary>
               <div class="week-body">
                 <p data-en="Explain a flow using the diagram and code, make a small individual change, and review the team architecture.">อธิบายเส้นทางข้อมูลจากแบบและโค้ด แก้โจทย์ย่อยด้วยตนเอง และทบทวนแบบสถาปัตยกรรมของทีม</p>
-                <p class="materials"><a href="https://github.com/se-rmutl/engse207/tree/main/weeks/week07" data-en="Week outline">รายละเอียดสัปดาห์</a><span class="pending" data-en="Slides will be posted here.">สไลด์จะเผยแพร่ที่นี่</span></p>
+                <p class="materials"><a href="deliverables.html#g-t07" data-keep-sec data-en="Tasks and due dates">งานและกำหนดส่ง</a><a href="https://github.com/se-rmutl/engse207/tree/main/weeks/week07" data-en="Week outline">รายละเอียดสัปดาห์</a><span class="pending" data-en="Slides will be posted here.">สไลด์จะเผยแพร่ที่นี่</span></p>
               </div>
             </details>
             <details id="week-08" class="exam">
               <summary><span class="week-no">08</span><span data-en="Midterm exam">สอบกลางภาค</span></summary>
               <div class="week-body">
                 <p data-en="Review principles, architectural styles, diagrams, and data flow. See the university announcement for the exam date.">ทบทวนหลักการ รูปแบบสถาปัตยกรรม และการอ่านแผนภาพและการไหลของข้อมูล วันสอบตามประกาศมหาวิทยาลัย</p>
-                <p class="materials"><a href="https://github.com/se-rmutl/engse207/tree/main/weeks/week08" data-en="Exam scope and weighting">ขอบเขตและสัดส่วนคะแนน</a></p>
+                <p class="materials"><a href="deliverables.html#g-mid" data-keep-sec data-en="Tasks and due dates">งานและกำหนดส่ง</a><a href="https://github.com/se-rmutl/engse207/tree/main/weeks/week08" data-en="Exam scope and weighting">ขอบเขตและสัดส่วนคะแนน</a></p>
               </div>
             </details>
           </div>
@@ -329,63 +360,63 @@
               <summary><span class="week-no">09</span><span data-en="Cloud and deployment">Cloud และการนำระบบขึ้นใช้งาน</span></summary>
               <div class="week-body">
                 <p data-en="Deploy the baseline to the cloud, verify connectivity and data after restart, and draw the Deployment view.">นำระบบฐานขึ้น Cloud ตรวจการเชื่อมต่อและข้อมูลหลังรีสตาร์ต แล้ววาด Deployment view</p>
-                <p class="materials"><a href="https://github.com/se-rmutl/engse207/tree/main/weeks/week09" data-en="Week outline">รายละเอียดสัปดาห์</a><span class="pending" data-en="Slides will be posted here.">สไลด์จะเผยแพร่ที่นี่</span></p>
+                <p class="materials"><a href="deliverables.html#g-t08" data-keep-sec data-en="Tasks and due dates">งานและกำหนดส่ง</a><a href="https://github.com/se-rmutl/engse207/tree/main/weeks/week09" data-en="Week outline">รายละเอียดสัปดาห์</a><span class="pending" data-en="Slides will be posted here.">สไลด์จะเผยแพร่ที่นี่</span></p>
               </div>
             </details>
             <details id="week-10">
               <summary><span class="week-no">10</span><span data-en="Data architecture">สถาปัตยกรรมข้อมูล</span></summary>
               <div class="week-body">
                 <p data-en="Keep PostgreSQL as the baseline and try MongoDB for one module to compare data shapes and query needs.">ใช้ PostgreSQL เป็นฐาน แล้วทดลอง MongoDB ในส่วนย่อยเพื่อเปรียบเทียบกับรูปแบบข้อมูลและคำค้นจริงของระบบ</p>
-                <p class="materials"><a href="https://github.com/se-rmutl/engse207/tree/main/weeks/week10" data-en="Week outline">รายละเอียดสัปดาห์</a><span class="pending" data-en="Slides will be posted here.">สไลด์จะเผยแพร่ที่นี่</span></p>
+                <p class="materials"><a href="deliverables.html#g-t09" data-keep-sec data-en="Tasks and due dates">งานและกำหนดส่ง</a><a href="https://github.com/se-rmutl/engse207/tree/main/weeks/week10" data-en="Week outline">รายละเอียดสัปดาห์</a><span class="pending" data-en="Slides will be posted here.">สไลด์จะเผยแพร่ที่นี่</span></p>
               </div>
             </details>
             <details id="week-11">
               <summary><span class="week-no">11</span><span data-en="Service boundaries and partial failure">การแยกบริการและข้อขัดข้องบางส่วน</span></summary>
               <div class="week-body">
                 <p data-en="Separate one service, observe what happens when it is unavailable, and record whether to keep the split.">ทดลองแยกส่วนงานหนึ่งบริการ สังเกตผลเมื่อบริการหยุด และบันทึกเหตุผลว่าจะคงหรือแยก</p>
-                <p class="materials"><a href="https://github.com/se-rmutl/engse207/tree/main/weeks/week11" data-en="Week outline">รายละเอียดสัปดาห์</a><span class="pending" data-en="Slides will be posted here.">สไลด์จะเผยแพร่ที่นี่</span></p>
+                <p class="materials"><a href="deliverables.html#g-t10" data-keep-sec data-en="Tasks and due dates">งานและกำหนดส่ง</a><a href="https://github.com/se-rmutl/engse207/tree/main/weeks/week11" data-en="Week outline">รายละเอียดสัปดาห์</a><span class="pending" data-en="Slides will be posted here.">สไลด์จะเผยแพร่ที่นี่</span></p>
               </div>
             </details>
             <details id="week-12">
               <summary><span class="week-no">12</span><span data-en="Event-driven architecture">Event-Driven Architecture</span></summary>
               <div class="week-body">
                 <p data-en="Use one event to trigger background work and observe the user response and limits when processing is delayed.">ทดลองให้หนึ่งเหตุการณ์เรียกงานเบื้องหลัง แล้วสังเกตการตอบสนองและข้อจำกัดเมื่อประมวลผลล่าช้า</p>
-                <p class="materials"><a href="https://github.com/se-rmutl/engse207/tree/main/weeks/week12" data-en="Week outline">รายละเอียดสัปดาห์</a><span class="pending" data-en="Slides will be posted here.">สไลด์จะเผยแพร่ที่นี่</span></p>
+                <p class="materials"><a href="deliverables.html#g-t11" data-keep-sec data-en="Tasks and due dates">งานและกำหนดส่ง</a><a href="https://github.com/se-rmutl/engse207/tree/main/weeks/week12" data-en="Week outline">รายละเอียดสัปดาห์</a><span class="pending" data-en="Slides will be posted here.">สไลด์จะเผยแพร่ที่นี่</span></p>
               </div>
             </details>
             <details id="week-13">
               <summary><span class="week-no">13</span><span data-en="Mobile use and slow networks">การใช้งานบนมือถือและเครือข่ายช้า</span></summary>
               <div class="week-body">
                 <p data-en="Try the existing app on a small screen and a slow connection. Improve one loading, error, or retry state.">ทดลองเว็บเดิมบนหน้าจอเล็กและเครือข่ายช้า ปรับสถานะ loading, error หรือ retry หนึ่งจุด</p>
-                <p class="materials"><a href="https://github.com/se-rmutl/engse207/tree/main/weeks/week13" data-en="Week outline">รายละเอียดสัปดาห์</a><span class="pending" data-en="Slides will be posted here.">สไลด์จะเผยแพร่ที่นี่</span></p>
+                <p class="materials"><a href="deliverables.html#g-t12" data-keep-sec data-en="Tasks and due dates">งานและกำหนดส่ง</a><a href="https://github.com/se-rmutl/engse207/tree/main/weeks/week13" data-en="Week outline">รายละเอียดสัปดาห์</a><span class="pending" data-en="Slides will be posted here.">สไลด์จะเผยแพร่ที่นี่</span></p>
               </div>
             </details>
             <details id="week-14">
               <summary><span class="week-no">14</span><span data-en="Evaluate architecture with evidence">ประเมินสถาปัตยกรรมด้วยหลักฐาน</span></summary>
               <div class="week-body">
                 <p data-en="Compare two scenarios under comparable conditions, record measurements, and choose one improvement.">เปรียบเทียบสองสถานการณ์ภายใต้เงื่อนไขที่เทียบกันได้ เก็บผลวัดและเลือกหนึ่งจุดที่ควรปรับ</p>
-                <p class="materials"><a href="https://github.com/se-rmutl/engse207/tree/main/weeks/week14" data-en="Week outline">รายละเอียดสัปดาห์</a><span class="pending" data-en="Slides will be posted here.">สไลด์จะเผยแพร่ที่นี่</span></p>
+                <p class="materials"><a href="deliverables.html#g-t13" data-keep-sec data-en="Tasks and due dates">งานและกำหนดส่ง</a><a href="https://github.com/se-rmutl/engse207/tree/main/weeks/week14" data-en="Week outline">รายละเอียดสัปดาห์</a><span class="pending" data-en="Slides will be posted here.">สไลด์จะเผยแพร่ที่นี่</span></p>
               </div>
             </details>
             <details id="week-15">
               <summary><span class="week-no">15</span><span data-en="Refine and prepare the handoff">ปรับระบบและเตรียมส่งมอบ</span></summary>
               <div class="week-body">
                 <p data-en="Check that another person can run the system with the README. Align diagrams with the code and explain your contribution.">ตรวจว่าคนอื่นเริ่มระบบตาม README ได้ จัดแบบและโค้ดให้ตรงรุ่น และอธิบายส่วนที่ตนมีส่วนร่วม</p>
-                <p class="materials"><a href="https://github.com/se-rmutl/engse207/tree/main/weeks/week15" data-en="Week outline">รายละเอียดสัปดาห์</a><span class="pending" data-en="Slides will be posted here.">สไลด์จะเผยแพร่ที่นี่</span></p>
+                <p class="materials"><a href="deliverables.html#g-t14" data-keep-sec data-en="Tasks and due dates">งานและกำหนดส่ง</a><a href="https://github.com/se-rmutl/engse207/tree/main/weeks/week15" data-en="Week outline">รายละเอียดสัปดาห์</a><span class="pending" data-en="Slides will be posted here.">สไลด์จะเผยแพร่ที่นี่</span></p>
               </div>
             </details>
             <details id="week-16">
               <summary><span class="week-no">16</span><span data-en="Present, review, and reflect">นำเสนอ ทบทวนกับเพื่อน และต่อยอด</span></summary>
               <div class="week-body">
                 <p data-en="Demonstrate a flow and its trade-offs, gather peer feedback, and reflect on what to carry into a future project.">สาธิตการทำงานและข้อแลกเปลี่ยน รับข้อเสนอแนะจากเพื่อน แล้วสะท้อนสิ่งที่จะนำไปใช้กับโครงงาน</p>
-                <p class="materials"><a href="https://github.com/se-rmutl/engse207/tree/main/weeks/week16" data-en="Week outline">รายละเอียดสัปดาห์</a><span class="pending" data-en="Slides will be posted here.">สไลด์จะเผยแพร่ที่นี่</span></p>
+                <p class="materials"><a href="deliverables.html#g-t15" data-keep-sec data-en="Tasks and due dates">งานและกำหนดส่ง</a><a href="https://github.com/se-rmutl/engse207/tree/main/weeks/week16" data-en="Week outline">รายละเอียดสัปดาห์</a><span class="pending" data-en="Slides will be posted here.">สไลด์จะเผยแพร่ที่นี่</span></p>
               </div>
             </details>
             <details id="week-17" class="exam">
               <summary><span class="week-no">17</span><span data-en="Final exam">สอบปลายภาค</span></summary>
               <div class="week-body">
                 <p data-en="Review architecture choices, experimental results, and small changes to a prepared system. See the university announcement for the exam date.">ทบทวนการเลือกแบบ อ่านผลทดลอง และแก้โจทย์เล็กบนระบบที่เตรียมไว้ วันสอบตามประกาศมหาวิทยาลัย</p>
-                <p class="materials"><a href="https://github.com/se-rmutl/engse207/tree/main/weeks/week17" data-en="Exam scope and weighting">ขอบเขตและสัดส่วนคะแนน</a></p>
+                <p class="materials"><a href="deliverables.html#g-fin" data-keep-sec data-en="Tasks and due dates">งานและกำหนดส่ง</a><a href="https://github.com/se-rmutl/engse207/tree/main/weeks/week17" data-en="Exam scope and weighting">ขอบเขตและสัดส่วนคะแนน</a></p>
               </div>
             </details>
           </div>
@@ -413,7 +444,8 @@
           </ul>
           <div class="group-note" aria-live="polite">
             <strong id="selected-section" hidden></strong>
-            <p data-en="Section schedules, submission links, and assessment details will be posted by the instructor.">วันเรียนตามกลุ่ม ลิงก์ส่งงาน และรายละเอียดการประเมินจะประกาศโดยผู้สอน</p>
+            <div class="sec-detail" id="sec-detail"></div>
+            <p data-en="Class days, rooms, and due dates for each section are on the Deliverables page.">วันเรียน ห้อง และกำหนดส่งของแต่ละกลุ่มอยู่ในหน้าสิ่งที่ต้องส่ง เลือกกลุ่มแล้วลิงก์ด้านบนจะพาไปที่กลุ่มของคุณ</p>
           </div>
           <p class="contact"><strong data-en="Instructor · Thanit Ketkaew">ผู้สอน · อาจารย์ธนิต เกตุแก้ว</strong><br><a href="mailto:thanit@rmutl.ac.th">thanit@rmutl.ac.th</a></p>
         </div>
@@ -501,6 +533,45 @@
 
     window.addEventListener("hashchange", followHash);
     followHash();
+  </script>
+  <script>
+    /* แถบกำหนดการตาม SEC และลิงก์ของกลุ่มเรียน (ข้อมูลจาก data.js · schedule-data.js · schedule.js) */
+    document.addEventListener("DOMContentLoaded", function () {
+      var D = window.ENGSE207, X = window.ENGSE207Schedule;
+      if (!D || !X) return;
+      var esc = function (s) { return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); };
+      var body = document.getElementById("now-body"), detail = document.getElementById("sec-detail"), token = 0;
+      function links(sec) {
+        return '<p class="now-links"><a href="' + X.withSec("deliverables.html", sec) + '">สิ่งที่ต้องส่งทั้งภาค</a><a href="' + X.withSec("register.html", sec) + '">ลงทะเบียนทีม</a><a href="' + X.withSec("submissions.html", sec) + '">สถานะการส่ง</a></p>';
+      }
+      function render(sec) {
+        var my = ++token, info = X.secInfo(sec);
+        X.keepSec(sec);
+        detail.innerHTML = info ? "<p>" + esc(info.block ? info.note : info.day + " " + info.time + " น. · ห้อง " + info.room) + "</p>" + (info.block ? "" : links(sec)) : "";
+        if (!info) { body.innerHTML = "<p>เลือกกลุ่มเรียนเพื่อดูคาบถัดไป และงานที่ใกล้ครบกำหนดของกลุ่มคุณ</p>"; return; }
+        if (info.block) { body.innerHTML = "<p>" + esc(info.note) + "</p>"; return; }
+        X.load(sec, function (data) {
+          if (my !== token || !data) return;
+          var M = X.model(data, X.now()), s = M.current || M.next, html = "";
+          html += '<div><span class="lbl">' + (M.current ? "กำลังเรียน" : "คาบถัดไป") + "</span>" + (s ? "<b>" + esc(s.label) + "</b>" + (s.exam ? "" : " · " + esc(s.topic)) + "<br>" + esc(X.sessWhen(M, s)) + (s.room && !s.exam ? ' · <span style="white-space:nowrap">ห้อง ' + esc(s.room) + "</span>" : "") : "ไม่มีคาบเรียนแล้ว") + "</div>";
+          var up = M.upcoming.slice(0, 3);
+          html += '<div><span class="lbl">ใกล้ครบกำหนด</span><ul>' + (up.length ? up.map(function (it) {
+            var c = X.countdown(M, it);
+            return '<li><a href="' + X.withSec("deliverables.html#item-" + it.id, sec) + '">' + esc(it.id) + "</a> " + esc(it.title) + (c.text ? ' <span class="cd">' + esc(c.text) + "</span>" : "") + "</li>";
+          }).join("") : "<li>ไม่มีงานค้าง</li>") + "</ul></div>";
+          body.innerHTML = html + links(sec);
+        });
+      }
+      var sec = X.secSwitch(document.getElementById("now-secs"), render);
+      render(sec);
+      Array.prototype.forEach.call(document.querySelectorAll("[data-section]"), function (a) {
+        a.addEventListener("click", function () {
+          X.setSec(a.dataset.section);
+          var b = document.querySelector('#now-secs [data-sec="' + a.dataset.section + '"]');
+          if (b) b.click(); else render(a.dataset.section);
+        });
+      });
+    });
   </script>
 </body>
 </html>
