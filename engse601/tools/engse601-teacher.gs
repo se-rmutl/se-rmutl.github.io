@@ -35,6 +35,10 @@
  *   แก้สคริปต์ภายหลัง: Deploy > Manage deployments > แก้ deployment เดิม > Version: New version
  *   (URL เดิมใช้ต่อได้ ถ้าสร้าง deployment ใหม่จะได้ URL ใหม่)
  *
+ * ฉบับ 1.5.1 (26 พ.ย. 2569): เมนู "ลิงก์แก้ไขคำตอบของทีม" สำหรับทีมที่ทำลิงก์แก้ไขหาย
+ *   และช่องติ๊ก "รับลงทะเบียนทีมใหม่" ในแผ่นกำหนดการ (ค่าเริ่มต้น) หน้าลงทะเบียนเปิดหรือปิดตามช่องนี้
+ *   ฟอร์มยังเปิดรับคำตอบไว้เสมอ เพราะถ้าปิดฟอร์ม ลิงก์แก้ไขคำตอบจะใช้ไม่ได้
+ *   ต้อง deploy ใหม่: Deploy > Manage deployments > ไอคอนดินสอ > Version: New version (URL เดิม)
  * ฉบับ 1.5 (26 พ.ย. 2569): ตรวจการส่งงานใน repo ของทุกทีมผ่าน GitHub API ผลอยู่ในแผ่น "การส่งงาน"
  *   และหน้าเว็บ submissions.html (doGet?what=submissions) กติกาการตรวจอยู่ในแผ่นกำหนดการ คอลัมน์ M
  *   ตั้งครั้งเดียว: ENGSE601 > ตั้ง GitHub token แล้ว ENGSE601 > ตั้งตรวจการส่งงานอัตโนมัติทุกชั่วโมง
@@ -81,7 +85,7 @@ var SITE_URL = 'https://se-rmutl.github.io/engse601/';
 var SCHED = { sheet: 'กำหนดการ', settings: 'ค่าเริ่มต้น', sessions: 'คาบเรียน', items: 'สิ่งที่ต้องส่ง',
   scanRows: 300, width: 13, cacheKey: 'engse601.schedule.v1', cacheSec: 300 };
 var SCHED_SETTINGS = [['วันเรียน', 'day'], ['เวลาเริ่ม', 'start'], ['เวลาเลิก', 'end'], ['ห้อง', 'room'],
-  ['เวลาส่งจุดตรวจ', 'cpTime'], ['ลิงก์แบบประเมินเพื่อน', 'peerUrl']];
+  ['เวลาส่งจุดตรวจ', 'cpTime'], ['ลิงก์แบบประเมินเพื่อน', 'peerUrl'], ['รับลงทะเบียนทีมใหม่', 'regOpen']];
 // คอลัมน์ A, B, C, ... ของตารางคาบเรียน และตารางสิ่งที่ต้องส่ง
 var SESS_COLS = ['id', 'label', 'week', 'date', 'start', 'end', 'room', 'status', 'topic', 'note', 'link'];
 var ITEM_COLS = ['id', 'title', 'scope', 'kind', 'session', 'override', 'due', 'weight', 'where', 'link', 'note', 'show', 'check'];
@@ -146,6 +150,7 @@ function onOpen() {
     .addItem('สร้างแบบลงทะเบียนทีม', 'createTeamForm')
     .addItem('เพิ่มคำถามอีเมลสมาชิกในฟอร์มเดิม', 'addEmailQuestion')
     .addItem('ปรับรายชื่อในฟอร์มตามแผ่นคะแนน', 'updateFormRoster')
+    .addItem('ลิงก์แก้ไขคำตอบของทีม', 'teamEditLink')
     .addSeparator()
     .addItem('ตั้งซิงก์อัตโนมัติเมื่อมีคนส่งฟอร์ม', 'installSubmitTrigger')
     .addItem('ยกเลิกซิงก์อัตโนมัติ', 'removeSubmitTrigger')
@@ -721,7 +726,8 @@ function scheduleJson_(sc, now) {
   return {
     ok: true, version: 1, updated: iso(now), offset: off,
     settings: { day: set('day').d, start: hm(set('start').d), end: hm(set('end').d), room: set('room').d,
-      cpTime: hm(set('cpTime').d), peerUrl: /^https:\/\//.test(set('peerUrl').d) ? set('peerUrl').d : '' },
+      cpTime: hm(set('cpTime').d), peerUrl: /^https:\/\//.test(set('peerUrl').d) ? set('peerUrl').d : '',
+      regOpen: set('regOpen').v === true ? true : set('regOpen').v === false ? false : null },
     sessions: sc.sessions.map(function (r) {
       return { id: r.id, label: r._label, week: Number(r.week) || null, date: day(r.date), start: hm(r._start), end: hm(r._end),
         room: r._room, status: r._status, topic: r._topic, note: r._note, link: /^https:\/\/\S+$/.test(r._link) ? r._link : '' };
@@ -792,6 +798,31 @@ function previewSchedule() {
     (pending.length ? '\nงานที่ยังไม่มีกำหนดส่ง: ' + pending.join(', ') : '') +
     '\n\nURL ของเว็บแอปดูที่ Deploy > Manage deployments (ลงท้าย /exec) แล้วใส่ใน schedule.url ของ engse601/data.js' +
     '\nล้างแคชแล้ว หน้าเว็บจะเห็นข้อมูลใหม่เมื่อเปิดหน้าอีกครั้ง');
+}
+
+/** เมนู: ลิงก์แก้ไขคำตอบล่าสุดของทีม สำหรับส่งให้ตัวแทนทีมที่ทำลิงก์หาย (ส่งทางแชตส่วนตัว ใครมีลิงก์ก็แก้คำตอบได้) */
+function teamEditLink() {
+  var ui = ui_();
+  if (!ui) throw new Error('สั่งจากเมนูในชีต');
+  var r = ui.prompt('ลิงก์แก้ไขคำตอบของทีม', 'พิมพ์รหัสทีม เช่น T04', ui.ButtonSet.OK_CANCEL);
+  if (r.getSelectedButton() !== ui.Button.OK) return;
+  var t = r.getResponseText().trim().toUpperCase();
+  if (/^T\d$/.test(t)) t = 'T0' + t.slice(1);
+  var ss = SpreadsheetApp.getActiveSpreadsheet(), out = sheetOrStop_(ss, SHEET.sync);
+  var rows = out.getRange(2, 1, SYNC_ROWS, 2).getValues().filter(function (x) { return str_(x[0]) === t; });
+  if (!rows.length) { alert_('ไม่พบทีม ' + t, 'ดูรหัสทีมในแผ่นข้อมูลซิงก์ คอลัมน์ A'); return; }
+  var keys = str_(rows[0][1]).split(',').map(function (k) { return k.trim(); }).filter(String);
+  var form = openForm_(ss);
+  if (!form || !keys.length) return;
+  var resp = null;
+  try { resp = form.getResponse(keys[keys.length - 1]); } catch (e) { resp = null; }
+  if (!resp) { alert_('ไม่พบคำตอบของ ' + t, 'คำตอบอาจถูกลบจากฟอร์ม สั่ง ENGSE601 > ซิงก์ทีมตอนนี้ แล้วลองใหม่'); return; }
+  var html = HtmlService.createHtmlOutput('<div style="font:14px sans-serif">' +
+    '<p>ลิงก์แก้ไขคำตอบล่าสุดของ <b>' + t + '</b> ส่งให้ตัวแทนทีมทางแชตส่วนตัวเท่านั้น (ใครมีลิงก์นี้ก็แก้คำตอบของทีมได้)</p>' +
+    '<textarea style="width:100%;height:90px" readonly onclick="this.select()">' + resp.getEditResponseUrl() + '</textarea>' +
+    '<p style="color:#5d6878">แก้แล้วแผ่นข้อมูลซิงก์อัปเดตเอง (ถ้าตั้งซิงก์อัตโนมัติไว้) รหัสทีมเหมือนเดิมเมื่อเลือกสมาชิกชุดเดิม</p></div>')
+    .setWidth(520).setHeight(250);
+  ui.showModalDialog(html, 'ลิงก์แก้ไขคำตอบ ' + t);
 }
 
 /* ------------------------------------------------------------------ submissions (ฉบับ 1.5)
