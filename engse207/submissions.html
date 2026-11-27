@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700&display=swap">
-  <link rel="stylesheet" href="portal.css?v=4">
+  <link rel="stylesheet" href="portal.css?v=5">
   <link rel="stylesheet" href="secui.css?v=2">
   <script src="data.js?v=3" defer></script>
   <script src="schedule.js?v=3" defer></script>
@@ -58,6 +58,7 @@
         <p class="sec-tag">Your team</p>
         <h2 id="mine-title">งานของทีม</h2>
         <p class="sec-lead" id="mine-meta"></p>
+        <div id="mine-sum" class="mine-sum" hidden></div>
         <div class="card"><ul class="mylist" id="mine"></ul></div>
       </div>
     </section>
@@ -69,7 +70,7 @@
         <p class="sec-lead" id="privacy"></p>
         <div class="toolbar"><div class="filters"><label><input type="checkbox" id="every"> แสดงงานทั้งภาค (ปกติแสดงเฉพาะงานที่ครบกำหนดภายใน 14 วัน)</label></div></div>
         <div class="mx-wrap"><table class="mx" id="mx"></table></div>
-        <p class="legend"><span><b>✓</b> ส่งแล้ว</span><span><b>✓ ช้า</b> ส่งหลังกำหนด</span><span><b>⚠</b> ตรวจเนื้อหา / อยู่ branch อื่น</span><span><b>–</b> ยังไม่ถึงกำหนด</span><span><b>✗</b> เลยกำหนดแล้วยังไม่ส่ง</span><span><b>?</b> เปิด repo ไม่ได้</span></p>
+        <p class="legend"><span><i class="lg-p ok">✓</i> ส่งแล้ว ตรงเวลา</span><span><i class="lg-p late">✓</i> ส่งหลังกำหนด</span><span><i class="lg-p warn">⚠</i> ตรวจเนื้อหา / อยู่ branch อื่น</span><span><i class="lg-p due">–</i> ยังไม่ส่ง ยังไม่ถึงกำหนด</span><span><i class="lg-p miss">✗</i> เลยกำหนดแล้วยังไม่ส่ง</span><span><i class="lg-p na">?</i> เปิด repo ไม่ได้</span><span><i class="lg-bell">🔔 2</i> จำนวนเรื่องที่ทีมต้องทำ คลิกเพื่อดู</span></p>
       </div>
     </section>
 
@@ -105,11 +106,11 @@
     if (!D || !X) return;
     var $ = function (id) { return document.getElementById(id); };
     var esc = function (s) { return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); };
-    var MARK = { ok: "✓", late: "✓ ช้า", warn: "⚠", branch: "⚠", due: "–", miss: "✗", na: "?", unchecked: "?" };
+    var MARK = { ok: "✓", late: "✓", warn: "⚠", branch: "⚠", due: "–", miss: "✗", na: "?", unchecked: "?" };
     var NAME = { ok: "ส่งแล้ว", late: "ส่งหลังกำหนด", warn: "ตรวจเนื้อหา", branch: "อยู่ใน branch อื่น", due: "ยังไม่ถึงกำหนด", miss: "เลยกำหนดแล้วยังไม่ส่ง", na: "เปิด repo ไม่ได้", unchecked: "ยังไม่ได้ตรวจ" };
     var TH_M = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."];
     var TH_D = ["อา.", "จ.", "อ.", "พ.", "พฤ.", "ศ.", "ส."];
-    var sec = "", base = "", data = null, cool = 0, timer = null, token = 0;
+    var sec = "", base = "", data = null, cool = 0, timer = null, token = 0, openTeams = {};
     $("lead").textContent = D.submissions.lead;
     $("privacy").textContent = D.submissions.privacy;
     $("updated").textContent = "ฉบับ " + D.meta.version + " · ปรับปรุงล่าสุด " + D.meta.updated;
@@ -169,6 +170,76 @@
       renderMine(me); renderMatrix(me);
     }
 
+    function fixLinksHtml(it, c) {
+      var q = sec ? "?sec=" + encodeURIComponent(sec) : "";
+      var links = ['<a href="deliverables.html' + q + "#i-" + encodeURIComponent(it.id) + '">ดูวิธีทำ ' + esc(it.id) + "</a>"];
+      var cwText = (c.cw || []).join(" ");
+      if (it.id === "I01" || /docker/i.test(cwText)) links.push('<a href="docker.html' + q + '">คู่มือ Docker</a>');
+      if (it.id === "D01") links.push('<a href="register.html' + q + '#repo">ขั้นตอนสร้าง repo</a>');
+      return links.join(" · ");
+    }
+
+    /** รวบรวมรายการที่ทีมต้องทำ/ต้องแก้ สำหรับปุ่มกระดิ่งและการ์ดสรุป */
+    function teamTodos(t, items) {
+      var list = [], lv = "ok";
+      var bump = function (x) { var r = { ok: 0, due: 1, wa: 2, no: 3 }; if (r[x] > r[lv]) lv = x; };
+      var q = sec ? "?sec=" + encodeURIComponent(sec) : "";
+      if (t.access === "noaccess" || t.access === "norepo") {
+        bump("no");
+        list.push({ lv: "no", html: (t.access === "norepo" ? "ยังไม่มีลิงก์ repo ในแบบลงทะเบียน แก้คำตอบแล้วใส่ลิงก์" : "อาจารย์ยังเปิด repo ไม่ได้ เพิ่ม <code>tkeatkaew</code> เป็น collaborator และตรวจลิงก์ repo ในแบบลงทะเบียน") + ' <span class="det-links"><a href="register.html' + q + '#repo">ดูวิธีตั้งค่า repo</a></span>' });
+        return { lv: lv, list: list };
+      }
+      if (t.access === "empty") {
+        bump("wa");
+        list.push({ lv: "wa", html: "repo ยังว่าง ยังไม่มี commit" });
+      }
+      items.forEach(function (it) {
+        var c = cellOf(t, it.id), dueTxt = it.due ? " · ส่ง " + esc(when(it.due, true)) : "";
+        var lnk = ' <span class="det-links">' + fixLinksHtml(it, c) + "</span>";
+        if (c.s === "warn") {
+          bump("wa");
+          list.push({ lv: "wa", html: "<b>" + esc(it.id) + "</b> " + esc(it.title) + " · ⚠ " + (c.cw || []).map(esc).join(" · ") + lnk });
+        } else if (c.s === "branch") {
+          bump("wa");
+          list.push({ lv: "wa", html: "<b>" + esc(it.id) + "</b> " + esc(it.title) + " · อยู่ใน branch <code>" + esc(c.br) + "</code> ยังไม่ merge เข้า <code>" + esc(t.def || "main") + "</code>" + lnk });
+        } else if (c.s === "miss") {
+          bump("no");
+          var ex = (c.miss && c.miss.length ? " · ยังขาด " + c.miss.map(function (m) { return "<code>" + esc(m) + "</code>"; }).join(" ") : "") + (c.hint && c.hint.length ? " · พบ " + c.hint.map(function (h) { return "<code>" + esc(h) + "</code>"; }).join(" ") + " ให้ย้าย/เปลี่ยนชื่อ" : "");
+          list.push({ lv: "no", html: "<b>" + esc(it.id) + "</b> " + esc(it.title) + dueTxt + " (เลยกำหนดแล้ว)" + ex + lnk });
+        } else if (c.s === "due") {
+          bump("due");
+          var ex2 = (c.miss && c.miss.length ? " · ยังขาด " + c.miss.map(function (m) { return "<code>" + esc(m) + "</code>"; }).join(" ") : "") + (c.hint && c.hint.length ? " · พบ " + c.hint.map(function (h) { return "<code>" + esc(h) + "</code>"; }).join(" ") + " ให้ย้าย/เปลี่ยนชื่อ" : "");
+          list.push({ lv: "due", html: "<b>" + esc(it.id) + "</b> " + esc(it.title) + dueTxt + ex2 + lnk });
+        }
+      });
+      return { lv: lv, list: list };
+    }
+
+    function selectTeam(v) {
+      v = safeTeam(v);
+      try { if (v) localStorage.setItem(key(), v); else localStorage.removeItem(key()); } catch (e) { /* โหมดส่วนตัว */ }
+      $("team").value = v;
+      $("msg").textContent = "";
+      if (v) openTeams[v] = true;
+      if (data) { renderMine(v); renderMatrix(v); }
+    }
+
+    function triggerRecheck(id) {
+      id = safeTeam(id);
+      if (!id) return;
+      if (myTeam() !== id) selectTeam(id);
+      var btn = $("recheck"), msg = $("msg");
+      btn.disabled = true; msg.className = "msg"; msg.textContent = "กำลังตรวจ " + id + " ใช้เวลาไม่เกิน 1 นาที…";
+      load("&recheck=" + encodeURIComponent(id)).then(function (d) {
+        var r = (d && d.recheck) || {};
+        if (r.done) { msg.className = "msg ok"; msg.textContent = "ตรวจ " + id + " ใหม่แล้ว"; cool = Date.now() + (d.recheckSec || 300) * 1000; }
+        else if (r.wait) { msg.textContent = "เพิ่งตรวจทีมนี้ไป ตรวจใหม่ได้อีกครั้งในอีก " + Math.ceil(r.wait / 60) + " นาที"; cool = Date.now() + r.wait * 1000; }
+        else { msg.className = "msg err"; msg.textContent = "ตรวจใหม่ไม่สำเร็จ ลองอีกครั้งภายหลัง"; }
+        btn.disabled = cool > Date.now();
+        if (cool > Date.now()) setTimeout(function () { btn.disabled = !myTeam(); }, cool - Date.now());
+      }).catch(function () { msg.className = "msg err"; msg.textContent = "เชื่อมต่อไม่ได้ ลองอีกครั้งภายหลัง"; btn.disabled = false; });
+    }
+
     function renderMine(id) {
       $("recheck").disabled = !id || cool > Date.now();
       var t = id && data.teams.filter(function (x) { return x.id === id; })[0];
@@ -179,57 +250,69 @@
         norepo: "ยังไม่มีลิงก์ repo ในแบบลงทะเบียน แก้คำตอบแล้วใส่ลิงก์", unchecked: "ยังไม่ได้ตรวจ" }[t.access] || "";
       $("mine-title").textContent = "งานของทีม " + t.id;
       $("mine-meta").textContent = access + (t.checked ? " · ตรวจทีมนี้ล่าสุด " + when(t.checked) : "");
-      $("mine").innerHTML = data.items.filter(function (it) {
+      var mineItems = data.items.filter(function (it) {
         var c = cellOf(t, it.id);
         return c.s !== "due" || !it.due || +new Date(it.due) <= ahead();
-      }).map(function (it) {
+      });
+      var todo = teamTodos(t, mineItems), sumEl = $("mine-sum");
+      show("mine-sum", true);
+      sumEl.className = "mine-sum " + (todo.lv === "no" ? "no" : todo.lv === "wa" ? "wa" : todo.lv === "ok" ? "ok" : "");
+      sumEl.innerHTML = todo.list.length
+        ? "<span><b>" + esc(t.id) + " มี " + todo.list.length + " รายการที่ต้องส่ง/ตรวจแก้</b> · แก้ไฟล์แล้ว <code>git push</code> ขึ้น <code>main</code> จากนั้นกดปุ่ม <b>ตรวจทีมนี้ใหม่</b> ด้านบน</span>"
+        : "<span><b>✓ งานของ " + esc(t.id) + " ในช่วงนี้ส่งครบและผ่านการตรวจเบื้องต้นแล้ว</b></span>";
+      $("mine").innerHTML = mineItems.map(function (it) {
         var c = cellOf(t, it.id), extra = "";
         if (c.at) extra += '<p class="h">commit ' + esc(when(c.at, true)) + "</p>";
-        if (c.s === "branch") extra += '<p class="h">พบใน branch <code>' + esc(c.br) + "</code> ให้ merge เข้า main ก่อนครบกำหนด</p>";
+        if (c.s === "branch") extra += '<p class="h warn-note">พบใน branch <code>' + esc(c.br) + "</code> ให้ merge เข้า main ก่อนครบกำหนด</p>";
         if (c.cw && c.cw.length) extra += '<p class="h warn-note">⚠ จุดที่ควรตรวจแก้: ' + c.cw.map(esc).join(" · ") + "</p>";
         if (c.miss && c.miss.length) extra += '<p class="h">ยังขาด ' + c.miss.map(function (m) { return "<code>" + esc(m) + "</code>"; }).join(" ") + "</p>";
         if (c.hint && c.hint.length) extra += '<p class="h">พบ ' + c.hint.map(function (h) { return "<code>" + esc(h) + "</code>"; }).join(" ") + " ให้ย้ายหรือเปลี่ยนชื่อเป็น path ที่กำหนด</p>";
+        if (/warn|branch|miss|due/.test(c.s)) extra += '<p class="fix-links">' + fixLinksHtml(it, c) + "</p>";
         var paths = (it.paths || []).map(function (p) { return "<code>" + esc(pathText(p)) + "</code>"; }).concat((it.tags || []).map(function (g) { return "tag <code>" + esc(g) + "</code>"; })).join(" ");
-        return '<li><div><span class="mark ' + esc(c.s) + '">' + esc(MARK[c.s].charAt(0) + " " + NAME[c.s]) + '</span></div><div><b><span class="it-id">' + esc(it.id) + "</span> " + esc(it.title) +
+        return '<li><div><span class="mark ' + esc(c.s) + '">' + esc(MARK[c.s] + " " + NAME[c.s]) + '</span></div><div><b><span class="it-id">' + esc(it.id) + "</span> " + esc(it.title) +
           '</b><p class="h">ครบกำหนด ' + esc(when(it.due, true) || "ตามที่อาจารย์แจ้ง") + (paths ? " · " + paths : "") + "</p>" + extra + "</div></li>";
       }).join("") || '<li><div></div><div>ยังไม่มีงานที่ถึงช่วงตรวจ</div></li>';
     }
 
     function renderMatrix(me) {
-      var items = visibleItems($("every").checked);
-      var h = "<thead><tr><th>ทีม</th>" + items.map(function (it) {
+      var items = visibleItems($("every").checked), cols = items.length + 2;
+      var h = "<thead><tr><th>ทีม</th><th>ต้องทำ</th>" + items.map(function (it) {
         return '<th title="' + esc(it.title) + '">' + esc(it.id) + "</th>";
       }).join("") + "</tr></thead><tbody>";
       h += data.teams.map(function (t) {
-        return '<tr class="' + (t.id === me ? "me" : "") + '"><td>' + esc(t.id) + "</td>" + items.map(function (it) {
+        var todo = teamTodos(t, items), isOpen = !!openTeams[t.id];
+        var bell = todo.list.length
+          ? '<button type="button" class="bell-btn lv-' + todo.lv + '" data-toggle="' + esc(t.id) + '" aria-expanded="' + (isOpen ? "true" : "false") + '">🔔 ' + todo.list.length + "</button>"
+          : '<button type="button" class="bell-btn lv-ok" data-toggle="' + esc(t.id) + '" aria-expanded="' + (isOpen ? "true" : "false") + '">✓ ครบ</button>';
+        var row = '<tr class="mx-row' + (t.id === me ? " me" : "") + '" data-team="' + esc(t.id) + '"><td>' + esc(t.id) + "</td><td>" + bell + "</td>" + items.map(function (it) {
           var c = cellOf(t, it.id);
           var tip = it.id + " · " + NAME[c.s] + (c.at ? " · " + when(c.at) : "") + (c.cw && c.cw.length ? " · " + c.cw.join("; ") : "");
-          return '<td class="' + esc(c.s) + '" title="' + esc(tip) + '">' + esc(MARK[c.s]) + "</td>";
+          return '<td title="' + esc(tip) + '"><span class="pill-s ' + esc(c.s) + '">' + esc(MARK[c.s]) + "</span></td>";
         }).join("") + "</tr>";
+        if (!isOpen) return row;
+        var detBody = todo.list.length
+          ? '<ul class="det-list">' + todo.list.map(function (x) { return '<li class="lv-' + x.lv + '">' + x.html + "</li>"; }).join("") + "</ul>"
+          : '<ul class="det-list"><li class="lv-ok">งานในช่วงนี้ส่งครบและผ่านการตรวจเบื้องต้นแล้ว</li></ul>';
+        var detFoot = '<div class="det-foot"><span>แก้ไฟล์แล้ว push ขึ้น <code>' + esc(t.def || "main") + '</code> จากนั้นกดตรวจใหม่ได้เลย</span><span><button type="button" data-recheck="' + esc(t.id) + '">ตรวจ ' + esc(t.id) + " ใหม่</button></span></div>";
+        return row + '<tr class="mx-det"><td colspan="' + cols + '"><div class="det-box">' + detBody + detFoot + "</div></td></tr>";
       }).join("") + "</tbody>";
       $("mx").innerHTML = h;
     }
 
-    $("team").addEventListener("change", function () {
-      var v = safeTeam(this.value);
-      try { if (v) localStorage.setItem(key(), v); else localStorage.removeItem(key()); } catch (e) { /* โหมดส่วนตัว */ }
-      $("msg").textContent = "";
-      if (data) { renderMine(v); renderMatrix(v); }
-    });
-    $("every").addEventListener("change", function () { if (data) renderMatrix(myTeam()); });
-    $("recheck").addEventListener("click", function () {
-      var id = myTeam(), btn = this, msg = $("msg");
+    $("mx").addEventListener("click", function (e) {
+      var rc = e.target.closest("button[data-recheck]");
+      if (rc) { e.stopPropagation(); triggerRecheck(rc.getAttribute("data-recheck")); return; }
+      if (e.target.closest("a")) return;
+      var row = e.target.closest("tr.mx-row");
+      if (!row) return;
+      var id = row.getAttribute("data-team");
       if (!id) return;
-      btn.disabled = true; msg.className = "msg"; msg.textContent = "กำลังตรวจ " + id + " ใช้เวลาไม่เกิน 1 นาที…";
-      load("&recheck=" + encodeURIComponent(id)).then(function (d) {
-        var r = (d && d.recheck) || {};
-        if (r.done) { msg.className = "msg ok"; msg.textContent = "ตรวจ " + id + " ใหม่แล้ว"; cool = Date.now() + (d.recheckSec || 300) * 1000; }
-        else if (r.wait) { msg.textContent = "เพิ่งตรวจทีมนี้ไป ตรวจใหม่ได้อีกครั้งในอีก " + Math.ceil(r.wait / 60) + " นาที"; cool = Date.now() + r.wait * 1000; }
-        else { msg.className = "msg err"; msg.textContent = "ตรวจใหม่ไม่สำเร็จ ลองอีกครั้งภายหลัง"; }
-        btn.disabled = cool > Date.now();
-        if (cool > Date.now()) setTimeout(function () { btn.disabled = !myTeam(); }, cool - Date.now());
-      }).catch(function () { msg.className = "msg err"; msg.textContent = "เชื่อมต่อไม่ได้ ลองอีกครั้งภายหลัง"; btn.disabled = false; });
+      openTeams[id] = !openTeams[id];
+      renderMatrix(myTeam());
     });
+    $("team").addEventListener("change", function () { selectTeam(this.value); });
+    $("every").addEventListener("change", function () { if (data) renderMatrix(myTeam()); });
+    $("recheck").addEventListener("click", function () { triggerRecheck(myTeam()); });
 
     function showSec(n) {
       sec = n; token++; data = null; var info = X.secInfo(n);
