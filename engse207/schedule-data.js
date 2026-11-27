@@ -11,7 +11,7 @@ window.ENGSE207_SCHEDULE = {
     "sec": "1",
     "updated": "2026-11-26T12:00:00+07:00",
     "offset": "+07:00",
-    "settings": {"day":"จันทร์","start":"08:00","end":"13:00","room":"C3-405","cpTime":"23:59","peerUrl":"","regOpen":false},
+    "settings": {"day":"จันทร์","start":"08:00","end":"13:00","room":"C3-405","cpTime":"23:59","peerUrl":"","regOpen":true},
     "sessions": [
       {"id":"T01","label":"T01","week":1,"date":"2026-11-23","start":"08:00","end":"13:00","room":"C3-405","status":"ปกติ","topic":"ภาพรวมรายวิชาและการมองระบบในเชิงสถาปัตยกรรม","note":"","link":""},
       {"id":"T02","label":"T02","week":2,"date":"2026-11-30","start":"08:00","end":"13:00","room":"C3-405","status":"ปกติ","topic":"ความรับผิดชอบขององค์ประกอบและเส้นทางข้อมูล","note":"","link":""},
@@ -80,7 +80,7 @@ window.ENGSE207_SCHEDULE = {
     "sec": "2",
     "updated": "2026-11-26T12:00:00+07:00",
     "offset": "+07:00",
-    "settings": {"day":"ศุกร์","start":"08:00","end":"13:00","room":"C3-405","cpTime":"23:59","peerUrl":"","regOpen":false},
+    "settings": {"day":"ศุกร์","start":"08:00","end":"13:00","room":"C3-405","cpTime":"23:59","peerUrl":"","regOpen":true},
     "sessions": [
       {"id":"T01","label":"T01","week":1,"date":"2026-11-27","start":"08:00","end":"13:00","room":"C3-405","status":"ปกติ","topic":"ภาพรวมรายวิชาและการมองระบบในเชิงสถาปัตยกรรม","note":"","link":""},
       {"id":"T02","label":"T02","week":2,"date":"2026-12-04","start":"08:00","end":"13:00","room":"C3-405","status":"ปกติ","topic":"ความรับผิดชอบขององค์ประกอบและเส้นทางข้อมูล","note":"","link":""},
