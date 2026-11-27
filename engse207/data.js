@@ -34,9 +34,7 @@ window.ENGSE207 = {
     "2": { label: "SEC 2", day: "ศุกร์", time: "08:00–13:00", room: "C3-405",
       scheduleUrl: "https://script.google.com/macros/s/AKfycbxKBakPvV5UT32IfZOyAdIVUgCwztr4qYyQN7RyNbBNc3cqPIyTeaykE2Ng1_iBtqLPNw/exec",
       formUrl: "https://docs.google.com/forms/d/e/1FAIpQLSdiy-RhemGRhTjSwI-beuRGT6vH8QfOYnc4gwnUBl8IQZ_tqA/viewform" },
-    /* SEC3 เว็บแอปและฟอร์มพร้อมแล้ว ใส่เมื่อชีต SEC3 มีแท็บ กำหนดการ และเปิดให้ SEC3 ลงทะเบียน:
-       scheduleUrl https://script.google.com/macros/s/AKfycbxffZtH21obKij4RzFgsZ_c4uWdDffVVzpKdmPekQT1jvPPE1HZUBuysruCFiiUOhTZ/exec
-       formUrl     https://docs.google.com/forms/d/e/1FAIpQLSfW5gDfQcQnBqsoGk8SK_oBmtoHk-8q2GhOKwRrRLM_lGt_cg/viewform */
+    /* SEC3: เก็บ scheduleUrl และ formUrl ไว้ใน resources/data/deployment.txt จนกว่าจะเปิดใช้งานจริง */
     "3": { label: "SEC 3", day: "อาทิตย์", time: "", room: "C3-407", block: true, scheduleUrl: "", formUrl: "",
       note: "เรียนแบบ block course 6 วัน วันละ 8 ชั่วโมง กำหนดการและกำหนดส่งของ SEC 3 จะประกาศแยก" }
   },
