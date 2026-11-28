@@ -88,7 +88,7 @@
         <p class="sec-tag">All teams</p>
         <h2>ทุกทีมใน SEC นี้</h2>
         <p class="sec-lead" id="privacy"></p>
-        <div class="toolbar"><div class="filters"><label><input type="checkbox" id="every"> แสดงงานทั้งภาค (ปกติแสดงเฉพาะงานที่ครบกำหนดภายใน 7 วัน)</label></div></div>
+        <div class="toolbar"><div class="filters"><label><input type="checkbox" id="every"> แสดงงานทั้งภาค (ปกติแสดงงานที่สั่งแล้ว และงานที่ครบกำหนดภายใน 7 วัน)</label></div></div>
         <div class="mx-wrap"><table class="mx" id="mx"></table></div>
         <p class="legend"><span><i class="lg-p ok">✓</i> ส่งแล้ว ตรงเวลา</span><span><i class="lg-p late">✓</i> ส่งหลังกำหนด</span><span><i class="lg-p warn">⚠︎</i> ตรวจเนื้อหา / อยู่ branch อื่น</span><span><i class="lg-p due">–</i> ยังไม่ส่ง ยังไม่ถึงกำหนด</span><span><i class="lg-p miss">✗</i> เลยกำหนดแล้วยังไม่ส่ง</span><span><i class="lg-p na">?</i> เปิด repo ไม่ได้</span><span><i class="lg-bell"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>2</i> จำนวนเรื่องที่ทีมต้องทำ คลิกเพื่อดู</span></p>
       </div>
@@ -110,6 +110,7 @@
             <li>เวลาที่แสดงคือเวลา commit แรกที่ไฟล์นั้นเข้ามา ถ้าหลังเวลาครบกำหนดจะขึ้นว่าส่งหลังกำหนด</li>
             <li>งาน <code>D02</code> และ <code>I01</code> มีการตรวจความครบถ้วนเบื้องต้น (เช่น ข้อความแม่แบบค้าง, รายชื่อสมาชิก, คำตอบ C1–C8, ผล <code>check-docker.sh</code>) ถ้าขึ้น <code>⚠</code> ให้แก้แล้ว push ขึ้น <code>main</code> จากนั้นกดปุ่ม <b>ตรวจทีมนี้ใหม่</b> ได้เลย (อาจารย์ตรวจเนื้อหาเชิงลึกและให้คะแนนแยก)</li>
           </ul>
+          <p class="legend codes" aria-label="ความหมายของรหัสงาน"><span><b>รหัสงาน</b></span><span><i class="it-id">D</i> งานทีมที่เป็นไฟล์ใน repo ทำต่อเนื่อง ไม่มีคะแนนแยก ตรวจรวมในจุดตรวจ</span><span><i class="it-id">P</i> งานทีมเตรียมระบบก่อนคาบ เลขคือคาบที่ใช้ (P02 ก่อน T02)</span><span><i class="it-id">I</i> งานเดี่ยว ไม่คิดคะแนน</span><span><i class="it-id">L</i> บันทึกแล็บของทีม เลขคือครั้งที่ทำแล็บ</span><span><i class="it-id">A</i> งานที่มีคะแนน A1–A9 (A9L บันทึกสะสมของ A9)</span><span><i class="it-id">REG</i> ลงทะเบียนทีม</span><span><i class="it-id">H06</i> ARCH-06 ส่งต่อ</span></p>
         </div>
       </div>
     </section>
@@ -209,9 +210,11 @@
         });
     }
     function ahead() { return nowMs() + (data.aheadDays || 7) * 864e5; }
+    /* แสดงงานที่สั่งแล้ว (from = เริ่มคาบที่สั่ง) และงานที่ครบกำหนดภายใน aheadDays วัน */
+    function shown(it) { return !it.due || +new Date(it.due) <= ahead() || (!!it.from && +new Date(it.from) <= nowMs()); }
     function visibleItems(all) {
       return data.items.filter(function (it) {
-        if (all || !it.due || +new Date(it.due) <= ahead()) return true;
+        if (all || shown(it)) return true;
         return data.teams.some(function (t) { var c = t.cells[it.id]; return c && /ok|late|warn|branch/.test(c.s); });
       });
     }
@@ -310,7 +313,7 @@
       $("mine-meta").textContent = access + (t.checked ? " · ตรวจทีมนี้ล่าสุด " + when(t.checked) : "");
       var mineItems = data.items.filter(function (it) {
         var c = cellOf(t, it.id);
-        return c.s !== "due" || !it.due || +new Date(it.due) <= ahead();
+        return c.s !== "due" || shown(it);
       });
       var todo = teamTodos(t, mineItems), sumEl = $("mine-sum"), tail = myTail(), mi = $("my-indiv");
       show("my-indiv", !!tail);
