@@ -42,12 +42,21 @@
         "ถ้ายังไม่ผ่าน เขียนอาการและข้อความ error ในไฟล์ และแจ้งในกลุ่ม LINE ของ SEC"],
       done: "ไฟล์อยู่ใน main มีคำตอบ C1–C8 และผล check-docker.sh และ commit เป็นชื่อเจ้าของไฟล์", time: "15 นาทีในคาบ + ติดตั้ง Docker 1–2 ชม.",
       links: [{ label: "ใบงาน T01", href: "handouts/t01-worksheet.html" }, { label: "คู่มือติดตั้ง Docker", href: "docker.html" }, TPL_LINK("T01-result.md", "แม่แบบไฟล์ T01")] },
+    P02: { assigned: "T02",
+      why: "ทีมได้ระบบ Task Board v1 อยู่ใน repo ของตัวเองก่อนเข้าห้อง เวลาในห้องของวันชดเชยจึงใช้ลงมือกับระบบได้เต็มที่ ไม่คิดคะแนน",
+      steps: ["อ่านเอกสารประกอบการเรียนครั้งที่ 2 ส่วนที่ 6 ก่อน",
+        "ตัวแทนทีมเปิดเทอร์มินัลที่โฟลเดอร์ repo ทีม รัน git pull แล้วรันคำสั่งคัดลอกโค้ดจาก repo กลาง (คำสั่งอยู่ในเอกสารส่วนที่ 6.1)",
+        "git status ต้องเห็น app/ db/ docker-compose.yml .env.example RUN.md เป็นไฟล์ใหม่ แล้ว commit และ push ขึ้น main",
+        "ทุกคนที่เครื่องผ่าน check-docker: git pull แล้ว docker compose up -d --build เปิด http://localhost:3000 ใครรันไม่ได้ให้จดข้อความ error มาในคาบ"],
+      done: "docker-compose.yml และ app/server.js อยู่บน main ของ repo ทีมก่อนเริ่มคาบ T02", time: "ตัวแทนทีม 15 นาที · รันครั้งแรก 5–10 นาที",
+      links: [{ label: "เอกสารครั้งที่ 2 ส่วนที่ 6", href: "notes/t02.html#p6" }, { label: "repo กลาง engse207-taskboard", href: "https://github.com/se-rmutl/engse207-taskboard" }, { label: "คู่มือติดตั้ง Docker", href: "docker.html" }] },
     D03: { assigned: "T03",
       why: "บริบท ขอบเขต และ quality scenario เป็นฐานของการตัดสินใจทุกเรื่องที่ตามมาในภาค",
       steps: ["คัดลอก templates/arch-01-context.md ไปที่ docs/arch-01-context.md",
         "เขียนผู้ใช้ เป้าหมาย ขอบเขต ข้อจำกัด และข้อสมมติ",
         "เขียน quality scenario 2 เรื่องที่วัดได้ ระบุ source, stimulus, environment, artifact, response และ response measure"],
-      done: "เพื่อนทีมอื่นอ่านแล้วบอกได้ว่าระบบทำอะไรให้ใคร และสถานการณ์คุณภาพวัดด้วยตัวเลขอะไร", time: "1–2 ชม.", links: [TP] },
+      done: "เพื่อนทีมอื่นอ่านแล้วบอกได้ว่าระบบทำอะไรให้ใคร และสถานการณ์คุณภาพวัดด้วยตัวเลขอะไร", time: "1–2 ชม.",
+      links: [{ label: "เอกสารครั้งที่ 3 ส่วนที่ 2 และ 6", href: "notes/t03.html#p6" }, { label: "ใบงาน T03 ส่วน D", href: "handouts/t03-worksheet.html#d" }, TPL_LINK("arch-01-context.md"), TP] },
     D04: { assigned: "T05",
       why: "แผนภาพ Context และ Container ทำให้ทุกคนเห็นขอบเขตของระบบและส่วนที่ต้องสื่อสารกันตรงกัน",
       steps: ["วาด C4 System Context และ Container ใน draw.io",
@@ -150,8 +159,8 @@
 
   /* บันทึกแล็บ L02–L14: สั่งท้ายคาบนั้น ส่งก่อนเริ่มคาบถัดไป */
   var LAB = {
-    T02: "รันระบบด้วย Docker Compose ตามค่าหนึ่งเส้นจาก React ผ่าน API ถึงฐานข้อมูล และแก้ validation หนึ่งจุด",
-    T03: "เขียน quality scenario ที่วัดได้ ใช้ Network panel และ log หาจุดขัดข้อง และตรวจข้อมูลหลังรีสตาร์ต",
+    T02: "รัน Task Board v1 (Monolith) ด้วย Docker Compose ทายก่อนรันแล้วดู Network และ log และแก้กฎชื่องานให้ครบทุกที่ พร้อมผลทดสอบ 6 กรณี",
+    T03: "ส่อง Docker ของระบบ วัดคุณภาพ 5 การทดลอง ไล่หาจุดเสียจากการ์ดข้อขัดข้องอย่างน้อย 2 รอบ และเชื่อมผลกับ quality scenario",
     T04: "แบ่งโมดูลตาม layer หรือ feature และบอกเหตุผลของขอบเขต",
     T05: "วาดแผนภาพ C4 จากระบบจริง และตรวจว่าตรงกับโค้ด",
     T06: "เปรียบเทียบทางเลือกและเขียน ADR ฉบับแรก",
@@ -175,6 +184,8 @@
         "เขียนสิ่งที่ยังค้างหรือคำถาม 1–3 ข้อ"],
       done: "ไฟล์อยู่ใน main ก่อนเริ่มคาบถัดไป", time: "20–30 นาที" };
   });
+  items.L02.links = [{ label: "ใบงาน T02 (ปุ่มคัดลอกบันทึกแล็บ)", href: "handouts/t02-worksheet.html" }, TPL_LINK("lab-note.md")];
+  items.L03.links = [{ label: "ใบงาน T03 (ปุ่มคัดลอกบันทึกแล็บ)", href: "handouts/t03-worksheet.html" }, TPL_LINK("lab-note.md")];
 
   window.ENGSE207_TASKS = { version: 1, items: items };
 })();

@@ -71,7 +71,8 @@ window.ENGSE207_SCHEDULE = {
       {"id":"H06","title":"ARCH-06 บทสรุปส่งต่อ (ไทย/อังกฤษ)","scope":"กลุ่ม","kind":"จุดตรวจ","session":"T15","due":"2027-03-08T23:59:00+07:00","weight":null,"where":"docs/arch-06-handover.md","link":"","note":"หลักฐานของ A8 และ A9"},
       {"id":"A9","title":"A9 Reflection และสรุปหลักฐานรายคน","scope":"เดี่ยว","kind":"จุดตรวจ","session":"T15","due":"2027-03-08T23:59:00+07:00","weight":10,"where":"individual/A9-reflection-<รหัสนักศึกษา>.md","link":"","note":"อ้างบันทึก A9 ทั้งภาค"},
       {"id":"FIN","title":"สอบปลายภาค (A4)","scope":"เดี่ยว","kind":"สอบ","session":"FIN","due":"2027-03-15T00:00:00+07:00","weight":15,"where":"ห้องสอบตามตารางสอบ","link":"","note":"วันเวลาตามตารางสอบของมหาวิทยาลัย"},
-      {"id":"A9L","title":"บันทึกบทบาท แหล่งอ้างอิง และการใช้ AI","scope":"เดี่ยว","kind":"ทุกคาบ","session":"","due":"","weight":null,"where":"individual/A9-log-<รหัสนักศึกษา>.md","link":"","note":"เพิ่มทุกครั้งสอนตั้งแต่ T02 ใช้ประกอบ A9"}
+      {"id":"A9L","title":"บันทึกบทบาท แหล่งอ้างอิง และการใช้ AI","scope":"เดี่ยว","kind":"ทุกคาบ","session":"","due":"","weight":null,"where":"individual/A9-log-<รหัสนักศึกษา>.md","link":"","note":"เพิ่มทุกครั้งสอนตั้งแต่ T02 ใช้ประกอบ A9"},
+      {"id":"P02","title":"นำโค้ด Task Board v1 เข้า repo ทีม และลองรัน","scope":"กลุ่ม","kind":"ก่อนคาบ","session":"T02","due":"2026-12-07T08:00:00+07:00","weight":null,"where":"docker-compose.yml · app/ · db/ ใน repo ทีม","link":"notes/t02.html#p6","note":"ไม่คิดคะแนน · ช่วงหยุด ตัวแทนทีมคัดลอกจาก repo กลาง ทุกคนที่เครื่องผ่าน check-docker ลองรันที่บ้าน"}
     ]
   },
   "S2": {
@@ -141,7 +142,8 @@ window.ENGSE207_SCHEDULE = {
       {"id":"H06","title":"ARCH-06 บทสรุปส่งต่อ (ไทย/อังกฤษ)","scope":"กลุ่ม","kind":"จุดตรวจ","session":"T15","due":"2027-03-12T23:59:00+07:00","weight":null,"where":"docs/arch-06-handover.md","link":"","note":"หลักฐานของ A8 และ A9"},
       {"id":"A9","title":"A9 Reflection และสรุปหลักฐานรายคน","scope":"เดี่ยว","kind":"จุดตรวจ","session":"T15","due":"2027-03-12T23:59:00+07:00","weight":10,"where":"individual/A9-reflection-<รหัสนักศึกษา>.md","link":"","note":"อ้างบันทึก A9 ทั้งภาค"},
       {"id":"FIN","title":"สอบปลายภาค (A4)","scope":"เดี่ยว","kind":"สอบ","session":"FIN","due":"2027-03-19T00:00:00+07:00","weight":15,"where":"ห้องสอบตามตารางสอบ","link":"","note":"วันเวลาตามตารางสอบของมหาวิทยาลัย"},
-      {"id":"A9L","title":"บันทึกบทบาท แหล่งอ้างอิง และการใช้ AI","scope":"เดี่ยว","kind":"ทุกคาบ","session":"","due":"","weight":null,"where":"individual/A9-log-<รหัสนักศึกษา>.md","link":"","note":"เพิ่มทุกครั้งสอนตั้งแต่ T02 ใช้ประกอบ A9"}
+      {"id":"A9L","title":"บันทึกบทบาท แหล่งอ้างอิง และการใช้ AI","scope":"เดี่ยว","kind":"ทุกคาบ","session":"","due":"","weight":null,"where":"individual/A9-log-<รหัสนักศึกษา>.md","link":"","note":"เพิ่มทุกครั้งสอนตั้งแต่ T02 ใช้ประกอบ A9"},
+      {"id":"P02","title":"นำโค้ด Task Board v1 เข้า repo ทีม และลองรัน","scope":"กลุ่ม","kind":"ก่อนคาบ","session":"T02","due":"2026-12-11T08:00:00+07:00","weight":null,"where":"docker-compose.yml · app/ · db/ ใน repo ทีม","link":"notes/t02.html#p6","note":"ไม่คิดคะแนน · ช่วงหยุด ตัวแทนทีมคัดลอกจาก repo กลาง ทุกคนที่เครื่องผ่าน check-docker ลองรันที่บ้าน"}
     ]
   }
 };

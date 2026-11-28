@@ -56,8 +56,9 @@ window.ENGSE207 = {
     repo: [
       { n: "README.md", d: "วิธีรันแบบ clean start และ Cloud URL", ids: ["D06", "A6"] },
       { n: ".env.example", d: "ตัวแปรที่ต้องตั้ง ไม่มีค่าจริง", ids: ["A6"] },
-      { n: "docker-compose.yml", d: "รันระบบทั้งชุดบนเครื่อง", ids: ["A6"] },
-      { n: "frontend/ · backend/", d: "ระบบ Task Board ของทีม (ARCH-04)" },
+      { n: "docker-compose.yml", d: "รันระบบทั้งชุดบนเครื่อง มาจาก repo กลางตั้งแต่ T02", ids: ["P02", "A6"] },
+      { n: "RUN.md", d: "วิธีรัน คำสั่ง และแผนที่โค้ดของ Task Board" },
+      { n: "app/ · db/", d: "ระบบ Task Board ของทีม (ARCH-04) เริ่มจาก v1 Monolith ใน T02 แล้วเปลี่ยนโครงสร้างทีละรุ่น", ids: ["P02"] },
       { n: "docs/", c: [
         { n: "team-charter.md", d: "สมาชิก บทบาท และกติกาของทีม", ids: ["D02"] },
         { n: "arch-01-context.md", d: "ARCH-01 บริบท ขอบเขต quality scenarios", ids: ["D03", "A5a"] },
@@ -69,7 +70,7 @@ window.ENGSE207 = {
         { n: "presentation/slides.pdf", d: "สไลด์นำเสนอ T15", ids: ["A8"] }
       ] },
       { n: "individual/", d: "งานเดี่ยว ชื่อไฟล์ลงท้ายด้วยรหัสนักศึกษา", c: [
-        { n: "T01-<รหัส>.md", d: "ผลแล็บ Docker T01", ids: ["I01"] },
+        { n: "T01-<รหัส>.md", d: "แบบสำรวจเครื่อง แบบวัดพื้นฐาน และผล check-docker", ids: ["I01"] },
         { n: "A1a-<รหัส>.md · A1b-<รหัส>.md", d: "log และ diff ของ A1", ids: ["A1a", "A1b"] },
         { n: "A2a-<รหัส>.md · A2b-<รหัส>.md", d: "เหตุผลเลือกแบบ และการอ่านผลทดลอง", ids: ["A2a", "A2b"] },
         { n: "A9-log-<รหัส>.md", d: "บันทึกบทบาท แหล่งอ้างอิง และการใช้ AI ทุกครั้งสอน", ids: ["A9L"] },

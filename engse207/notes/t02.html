@@ -1,0 +1,819 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ENGSE207 ครั้งที่ 2 เอกสารประกอบการเรียน · ความรับผิดชอบขององค์ประกอบและเส้นทางข้อมูล</title>
+<meta name="description" content="เอกสารประกอบการเรียน ENGSE207 ครั้งที่ 2: องค์ประกอบและความรับผิดชอบ separation of concerns cohesion coupling modularity Task Board รุ่นแรกแบบ Monolith เส้นทางข้อมูลจากหน้าจอถึงฐานข้อมูล HTTP JSON status code async/await ขอบเขตความเชื่อถือ Docker Compose และความต่างของ C4 Container กับ Docker container">
+<link rel="canonical" href="https://se-rmutl.github.io/engse207/notes/t02.html">
+<link rel="icon" href="../../assets/se-logo.png" type="image/png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=Sarabun:wght@400;500;700&family=JetBrains+Mono:wght@500&display=swap">
+<script src="../plan.js?v=2" defer></script>
+<style>
+:root{--night:#101b2e;--navy:#13294b;--blue:#2459a6;--blue-soft:#e5edfa;--teal:#0f7f70;--teal-soft:#def3ef;--violet:#6a45c4;--violet-soft:#efe9fb;
+--or:#c95f1f;--or-soft:#fcece1;--gold:#9a6400;--gold-soft:#fbf1dc;--ok:#1f6b33;--ok-soft:#e3f1e6;--bad:#b3261e;--bad-soft:#fdecea;
+--ink:#16233a;--muted:#5a6880;--rule:#d7e0ec;--tint:#f3f6fb;--paper:#fff;--p1:#2f6fe4;--p2:#7a4fd6;--p3:#0f8f7d;--p4:#d0662b;
+--head:"IBM Plex Sans Thai","Sarabun",system-ui,sans-serif;--body:"Sarabun","IBM Plex Sans Thai",system-ui,sans-serif;--mono:"JetBrains Mono",ui-monospace,monospace}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:#eef2f7;color:var(--ink);font:400 18px/1.75 var(--body);-webkit-text-size-adjust:100%}
+a{color:var(--blue)}
+a:focus-visible,button:focus-visible,li.rv:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
+.bar{position:sticky;top:0;z-index:10;display:flex;align-items:center;gap:10px;padding:10px 18px;background:rgba(255,255,255,.94);border-bottom:1px solid var(--rule);backdrop-filter:blur(6px);font-family:var(--head);font-size:.9rem}
+.bar a.back{color:var(--navy);font-weight:600;text-decoration:none}
+.bar .sp{flex:1}
+.bar button,.bar a.pdf{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border:1px solid var(--navy);border-radius:999px;background:#fff;color:var(--navy);font:600 .86rem var(--head);cursor:pointer;text-decoration:none}
+.bar button.pri{background:var(--navy);color:#fff}
+.doc{max-width:880px;margin:24px auto 64px;padding:44px 56px;background:#fff;border:1px solid var(--rule);border-radius:18px}
+.kick{margin:0;color:var(--or);font:700 .82rem var(--head);letter-spacing:.08em}
+h1{margin:6px 0 4px;font:700 2.05rem/1.3 var(--head);color:var(--navy);letter-spacing:-.01em}
+.meta{margin:0 0 18px;color:var(--muted);font:500 .9rem var(--head)}
+h2{margin:46px 0 10px;padding-top:8px;font:700 1.55rem/1.35 var(--head);color:var(--navy);border-top:3px solid var(--navy);scroll-margin-top:70px}
+h2 .no{color:var(--or);margin-right:8px}
+h3{margin:30px 0 6px;font:700 1.18rem/1.45 var(--head);color:var(--navy);scroll-margin-top:70px}
+h4{margin:18px 0 4px;font:700 1rem var(--head);color:var(--ink)}
+p{margin:0 0 12px}
+ul,ol{margin:0 0 12px;padding-left:24px}
+li{margin:3px 0}
+code{font:500 .84em var(--mono);background:var(--tint);border:1px solid #e3e9f2;border-radius:5px;padding:0 5px;overflow-wrap:anywhere}
+b,strong{font-weight:700;color:var(--navy)}
+.en{color:var(--muted);font-size:.92em}
+.box{margin:16px 0;padding:14px 18px;border-radius:12px;border:1px solid var(--rule);background:var(--tint)}
+.box>:last-child{margin-bottom:0}
+.box .lb{display:block;margin-bottom:4px;font:700 .8rem var(--head);letter-spacing:.04em}
+.ex{background:var(--blue-soft);border-color:#c8d7f0}.ex .lb{color:var(--blue)}
+.key{background:var(--or-soft);border-color:#f0c9b1}.key .lb{color:var(--or)}
+.warn{background:var(--gold-soft);border-color:#ebd29c}.warn .lb{color:var(--gold)}
+.proj{background:var(--teal-soft);border-color:#b5ddd5}.proj .lb{color:var(--teal)}
+.mock{background:#fff;border:1.5px dashed #b9c6d8}.mock .lb{color:var(--violet)}
+table.tb{width:100%;border-collapse:collapse;margin:12px 0 16px;font-size:.92rem;line-height:1.55}
+.tb th,.tb td{border:1px solid var(--rule);padding:7px 10px;text-align:left;vertical-align:top}
+.tb th{background:var(--tint);font:700 .84rem var(--head);color:var(--navy)}
+.tb td.k{font-weight:700;color:var(--navy);white-space:nowrap}
+.tb td.n{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+.tb tr.ph td{background:#f7f9fc;font:700 .84rem var(--head);color:var(--navy)}
+.tb tr.ex td{background:var(--bad-soft)}
+.tw{overflow-x:auto}
+.pill{display:inline-block;padding:0 8px;border-radius:999px;font:600 .76rem/1.7 var(--head);white-space:nowrap}
+.pl-in{background:var(--blue-soft);color:var(--blue)}.pl-home{background:var(--or-soft);color:var(--or)}.pl-team{background:var(--teal-soft);color:var(--teal)}.pl-ind{background:var(--violet-soft);color:var(--violet)}
+figure{margin:20px 0;padding:0}
+figure>svg{display:block;width:100%;max-width:100%;height:auto;margin:0 auto}
+figcaption{margin-top:6px;color:var(--muted);font:500 .84rem var(--head);text-align:center}
+.outcomes{counter-reset:o;list-style:none;padding:0}
+.outcomes li{counter-increment:o;position:relative;padding:6px 0 6px 40px}
+.outcomes li::before{content:counter(o);position:absolute;left:0;top:7px;width:28px;height:28px;border-radius:8px;background:var(--navy);color:#fff;display:grid;place-items:center;font:700 .85rem var(--head)}
+.toc{margin:14px 0 6px;padding:12px 18px;border:1px dashed #b9c6d8;border-radius:12px;font-family:var(--head);font-size:.9rem}
+.toc ol{margin:4px 0 0;padding-left:20px}.toc a{text-decoration:none}
+.media{margin:16px 0 4px;display:grid;gap:8px}
+.media .g{display:grid;grid-template-columns:120px 1fr;gap:10px;align-items:baseline;font-family:var(--head);font-size:.9rem}
+.media .g b{color:var(--or);font-size:.82rem}
+.media .g span{display:flex;flex-wrap:wrap;gap:2px 14px}.media .g span a{white-space:nowrap}
+.qa{margin:16px 0;padding:14px 18px;border:2px solid var(--navy);border-radius:14px}
+.qa .lb{display:block;margin-bottom:6px;color:var(--navy);font:700 .86rem var(--head)}
+.qa ol{margin:0;padding-left:22px}
+.qa li{margin:8px 0}
+.qa .ans{display:block;margin-top:4px;padding:6px 10px;border-radius:8px;background:var(--ok-soft);color:#174d27;font-size:.95em}
+.qa li.rv{cursor:pointer}
+.qa .rq{display:inline-block;margin-left:6px;padding:0 8px;border:1px dashed #9fb3c8;border-radius:999px;color:var(--muted);font:600 .78rem var(--head)}
+@media screen{.qa li.rv:not(.open) .ans{display:none}.qa li.rv.open .rq{display:none}}
+pre.code{margin:6px 0 14px;padding:12px 14px;border-radius:10px;background:var(--night);color:#eef2f8;font:500 .8rem/1.6 var(--mono);overflow-x:auto;white-space:pre}
+pre.code .c{color:#9fb0c8}
+.file{display:flex;gap:10px;align-items:baseline;margin:14px 0 0;font:600 .84rem var(--head)}
+.file code{background:none;border:0;padding:0;color:var(--navy);font-weight:600}
+.file span{color:var(--muted);font-weight:500}
+.gl td:first-child{font-weight:700;color:var(--navy);white-space:nowrap}
+.refs li{margin:6px 0;font-size:.92rem}
+.foot{margin-top:40px;padding-top:12px;border-top:1px solid var(--rule);color:var(--muted);font:500 .82rem var(--head)}
+@media (max-width:720px){.tb.wide{min-width:620px;font-size:.86rem}body{font-size:17px}.doc{margin:0;padding:24px 18px;border-radius:0;border:0}h1{font-size:1.6rem}h2{font-size:1.3rem}.media .g{grid-template-columns:1fr;gap:2px}.bar .t{display:none}}
+@page{size:A4;margin:16mm 15mm 18mm}
+@media print{body{background:#fff;font-size:11.5pt;line-height:1.6}.bar{display:none}.doc{margin:0;padding:0;border:0;max-width:none}
+h2{break-after:avoid;margin-top:26px}h3,h4{break-after:avoid}.box,figure,tr,.qa li{break-inside:avoid}pre.code{break-inside:avoid;white-space:pre-wrap}.qa .rq{display:none}
+a{color:var(--ink);text-decoration:none}.toc{break-inside:avoid}.media a{color:var(--blue)}}
+/* แผนภาพ: ตั้ง font/size/fill ที่ .fig แล้วให้คลาสย่อยปรับ */
+.fig{font-family:var(--body);font-size:15px;fill:var(--ink)}
+.fig .t-b{font-family:var(--head);font-weight:600;font-size:16px}
+.fig .t-c{font-family:var(--head);font-weight:600;font-size:14px}
+.fig .t-h{font-family:var(--head);font-weight:700;font-size:19px;fill:var(--navy)}
+.fig .t-s{font-family:var(--head);font-size:13px;fill:var(--muted)}
+.fig .t-x{font-family:var(--head);font-size:12px;fill:var(--muted)}
+.fig .t-m{font-family:var(--mono);font-size:12px;fill:var(--navy)}
+.fig .t-w{fill:#fff;font-family:var(--head);font-weight:600;font-size:15px}
+.fig .t-ws{fill:#d6e0ef;font-family:var(--head);font-size:13px}
+.fig .t-o{font-family:var(--head);font-weight:700;font-size:13px;fill:var(--or)}
+.fig .t-r{font-family:var(--head);font-weight:700;font-size:13px;fill:var(--bad)}
+.fig .n{fill:#fff;stroke:var(--rule);stroke-width:1.5}
+.fig .nb{fill:var(--blue-soft);stroke:var(--blue);stroke-width:1.8}
+.fig .nt{fill:var(--teal-soft);stroke:var(--teal);stroke-width:1.8}
+.fig .nv{fill:var(--violet-soft);stroke:var(--violet);stroke-width:1.8}
+.fig .no{fill:var(--or-soft);stroke:var(--or);stroke-width:1.6}
+.fig .nn{fill:var(--navy);stroke:none}
+.fig .nk{fill:var(--ok-soft);stroke:var(--ok);stroke-width:1.8}
+.fig .zone{fill:#f7f9fc;stroke:#a9b8cc;stroke-width:1.5;stroke-dasharray:7 6}
+.fig .e{stroke:var(--navy);stroke-width:2;fill:none}
+.fig .em{stroke:var(--muted);stroke-width:1.8;fill:none}
+.fig .eb{stroke:var(--blue);stroke-width:2.2;fill:none}
+.fig .et{stroke:var(--teal);stroke-width:2.2;fill:none}
+.fig .eo{stroke:var(--or);stroke-width:2.2;fill:none}
+.fig .er{stroke:var(--bad);stroke-width:2;fill:none}
+.fig .dash{stroke-dasharray:7 6}
+.fig .life{stroke:#b9c6d8;stroke-width:1.5;stroke-dasharray:4 5}
+.fig .axis{stroke:#c9d4e3;stroke-width:3}
+</style>
+</head>
+<body data-session="T02">
+<div class="bar"><a class="back" href="../index.html#t02">← ENGSE207</a><span class="t">ครั้งที่ 2 · เอกสารประกอบการเรียน</span><span class="sp"></span><button class="pri" id="print" type="button">พิมพ์ / บันทึกเป็น PDF</button></div>
+<main class="doc">
+<p class="kick">ENGSE207 · ครั้งที่ 2 · เอกสารประกอบการเรียน</p>
+<h1>ความรับผิดชอบขององค์ประกอบและเส้นทางข้อมูล</h1>
+<p class="meta">สัปดาห์ 3 (สอนชดเชยต่อเนื่องกับครั้งที่ 3) · อ่านประมาณ 90 นาที · CLO1, CLO3, CLO4, CLO6 · <b>อ่านก่อนเข้าเรียน</b> ในช่วงหยุด 30 พ.ย.–4 ธ.ค. · ฉบับ 1.0 (28 พ.ย. 2569)</p>
+<div class="media" id="media"></div>
+<nav class="toc" aria-label="สารบัญ"><b>สารบัญ</b><ol>
+<li><a href="#intro">ครั้งนี้อยู่ตรงไหนของภาค และต้องเตรียมอะไร</a></li>
+<li><a href="#p1">องค์ประกอบ ความรับผิดชอบ และหลักการแบ่งหน้าที่</a></li>
+<li><a href="#p2">Task Board รุ่นแรก: Monolith</a></li>
+<li><a href="#p3">เส้นทางข้อมูล: จากปุ่มบนหน้าจอถึงฐานข้อมูล</a></li>
+<li><a href="#p4">Docker เท่าที่ใช้ในครั้งนี้ และ C4 Container ≠ Docker container</a></li>
+<li><a href="#p5">Git: เปลี่ยนทีละน้อยและอ่าน diff เป็นคู่</a></li>
+<li><a href="#p6">งานก่อนคาบ ในคาบ และหลังเรียน</a></li>
+<li><a href="#sum">สิ่งที่ต้องจำจากครั้งที่ 2</a></li></ol></nav>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<marker id="a-n" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#13294b"/></marker>
+<marker id="a-m" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#5a6880"/></marker>
+<marker id="a-b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#2459a6"/></marker>
+<marker id="a-t" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#0f7f70"/></marker>
+<marker id="a-o" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#c95f1f"/></marker>
+<marker id="a-r" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#b3261e"/></marker>
+</defs></svg>
+
+<h2 id="intro"><span class="no">บทนำ</span>ครั้งนี้อยู่ตรงไหนของภาค และต้องเตรียมอะไร</h2>
+<p>ครั้งที่ 1 เราอ่านโค้ด 5 ไฟล์ของคำขอ “สร้างงาน” บนกระดาษ ตั้งแต่หน้าจอ React ผ่าน route → service → repository จนถึงฐานข้อมูล โค้ดชุดนั้นเป็น <b>ระบบรุ่นที่ทีมจะไปถึงกลางภาค</b> เราดูปลายทางก่อนเพื่อให้รู้ว่ากำลังเดินไปทางไหน</p>
+<p>ตั้งแต่ครั้งนี้ เราจะ <b>ย้อนกลับไปเริ่มจากรุ่นที่เล็กที่สุด</b> แล้วให้ระบบโตขึ้นทีละรุ่น ทุกครั้งที่เปลี่ยนรุ่น ทีมจะได้เห็นเองว่ารุ่นเดิมมีปัญหาอะไร และรูปแบบสถาปัตยกรรมใหม่แก้ปัญหานั้นได้แค่ไหน แลกกับอะไร นี่คือวิธีที่สถาปนิกทำงานจริง คือไม่เลือกสถาปัตยกรรมเพราะชื่อดัง แต่เลือกเพราะปัญหาที่เห็นจากระบบของตัวเอง</p>
+<figure>
+<svg class="fig" viewBox="0 0 760 214" role="img" aria-label="เส้นทางของ Task Board 6 รุ่น จาก Monolith ใน T02 ถึง Event-Driven ใน T11">
+<rect x="16" y="44" width="104" height="96" rx="10" class="nn"/>
+<rect x="138" y="44" width="104" height="96" rx="10" class="nb"/>
+<rect x="260" y="44" width="104" height="96" rx="10" class="nb"/>
+<rect x="382" y="44" width="104" height="96" rx="10" class="nt"/>
+<rect x="504" y="44" width="104" height="96" rx="10" class="nv"/>
+<rect x="626" y="44" width="104" height="96" rx="10" class="nv"/>
+<path d="M122 92 H134" class="e" marker-end="url(#a-n)"/><path d="M244 92 H256" class="e" marker-end="url(#a-n)"/><path d="M366 92 H378" class="e" marker-end="url(#a-n)"/><path d="M488 92 H500" class="e" marker-end="url(#a-n)"/><path d="M610 92 H622" class="e" marker-end="url(#a-n)"/>
+<text x="68" y="68" text-anchor="middle" class="t-w">v1 Monolith</text><text x="68" y="92" text-anchor="middle" class="t-ws">T02–T03</text><text x="68" y="118" text-anchor="middle" class="t-ws">app + db</text>
+<text x="190" y="68" text-anchor="middle" class="t-c">v2 Layered</text><text x="190" y="92" text-anchor="middle" class="t-s">T04</text><text x="190" y="118" text-anchor="middle" class="t-s">app + db</text>
+<text x="312" y="68" text-anchor="middle" class="t-c">v3 N-Tier</text><text x="312" y="92" text-anchor="middle" class="t-s">T05–T07</text><text x="312" y="118" text-anchor="middle" class="t-s">web + api + db</text>
+<text x="434" y="68" text-anchor="middle" class="t-c">v4 Cloud</text><text x="434" y="92" text-anchor="middle" class="t-s">T08–T09</text><text x="434" y="118" text-anchor="middle" class="t-s">ขึ้น Railway</text>
+<text x="556" y="68" text-anchor="middle" class="t-c">v5 แยกบริการ</text><text x="556" y="92" text-anchor="middle" class="t-s">T10</text><text x="556" y="118" text-anchor="middle" class="t-s">+1 บริการ</text>
+<text x="678" y="68" text-anchor="middle" class="t-c">v6 Event</text><text x="678" y="92" text-anchor="middle" class="t-s">T11</text><text x="678" y="118" text-anchor="middle" class="t-s">+ broker</text>
+<path d="M312 40 V24 H430" class="em dash"/><text x="436" y="28" class="t-x">โค้ด 5 ไฟล์ที่อ่านใน T01 อยู่ในรูปแบบนี้</text>
+<text x="68" y="164" text-anchor="middle" class="t-r">กฎซ้ำหลายที่</text><text x="68" y="182" text-anchor="middle" class="t-r">ล่มทั้งก้อน</text>
+<text x="190" y="164" text-anchor="middle" class="t-o">กฎอยู่ที่เดียว</text><text x="190" y="182" text-anchor="middle" class="t-x">แต่ยัง process เดียว</text>
+<text x="312" y="164" text-anchor="middle" class="t-o">แยก tier ได้</text><text x="312" y="182" text-anchor="middle" class="t-x">ชิ้นส่วนมากขึ้น</text>
+<text x="434" y="164" text-anchor="middle" class="t-o">ใช้ได้จริงบนเน็ต</text><text x="434" y="182" text-anchor="middle" class="t-x">config · ค่าใช้จ่าย</text>
+<text x="556" y="164" text-anchor="middle" class="t-o">ขยายเฉพาะส่วน</text><text x="556" y="182" text-anchor="middle" class="t-x">ล้มบางส่วน · timeout</text>
+<text x="678" y="164" text-anchor="middle" class="t-o">ไม่ต้องรอกัน</text><text x="678" y="182" text-anchor="middle" class="t-x">ไล่ปัญหายากขึ้น</text>
+<text x="16" y="206" class="t-x">แถวล่าง: สิ่งที่ได้ (สีส้ม) และปัญหาที่ตามมา (สีเทา) · รุ่นแรกยังไม่มีอะไรให้แลก ปัญหาจึงเป็นสีแดง</text>
+</svg>
+<figcaption>รูปที่ 1 · Task Board โตจากเล็กไปใหญ่ 6 รุ่น ครั้งนี้และครั้งหน้าใช้รุ่น v1 Monolith</figcaption>
+</figure>
+
+<h3>T02 และ T03 เรียนวันเดียวกัน</h3>
+<p>สัปดาห์ที่ 2 มหาวิทยาลัยหยุด (30 พ.ย.–4 ธ.ค. 2569) จึงสอนชดเชยครั้งที่ 2 ต่อเนื่องกับครั้งที่ 3 ในวันเดียว เวลาในห้องของแต่ละครั้งเหลือ 2 ชั่วโมงครึ่ง เราจึง <b>ย้ายการอ่านทฤษฎีและการเตรียมระบบไปไว้ในช่วงหยุด</b> แล้วใช้เวลาในห้องลงมือกับระบบจริงให้มากที่สุด</p>
+<div class="tw"><table class="tb">
+<tr><th>กลุ่มเรียน</th><th>วัน</th><th>T02 ความรับผิดชอบและเส้นทางข้อมูล</th><th>T03 คุณภาพและข้อขัดข้อง</th><th>ห้อง</th></tr>
+<tr><td class="k">SEC1</td><td>จันทร์ 7 ธ.ค. 2569</td><td>08:00–10:30</td><td>10:30–13:00</td><td>C3-405</td></tr>
+<tr><td class="k">SEC2</td><td>ศุกร์ 11 ธ.ค. 2569</td><td>08:00–10:30</td><td>10:30–13:00</td><td>C3-405</td></tr>
+</table></div>
+<div class="box key"><span class="lb">ก่อนเข้าห้อง ต้องทำ 3 อย่าง (รายละเอียดในส่วนที่ 6)</span>
+<ol>
+<li><b>อ่านเอกสารนี้</b> ทั้งฉบับ ใช้เวลาประมาณ 90 นาที ตอบคำถามในกรอบด้วยตัวเองก่อนคลิกดูแนวคำตอบ</li>
+<li><b>ตัวแทนทีมนำโค้ด Task Board v1 เข้า repo ทีม</b> แล้ว push ขึ้น <code>main</code> (ระบบตรวจการส่งงานจะเห็นไฟล์ <code>docker-compose.yml</code>)</li>
+<li><b>ทุกคนที่เครื่องผ่าน check-docker</b> ลองรันระบบที่บ้านหนึ่งรอบ ใครยังรันไม่ได้ให้จดอาการไว้ แล้วมารันบน iMac ในห้อง</li>
+</ol></div>
+
+<h3>หลังอ่านแล้วคุณจะทำได้</h3>
+<ol class="outcomes">
+<li>บอกได้ว่าองค์ประกอบหนึ่งรับผิดชอบเรื่องอะไร และใช้ separation of concerns, cohesion, coupling อธิบายว่าการแบ่งหน้าที่แบบหนึ่งดีหรือไม่ดีเพราะอะไร</li>
+<li>อธิบายว่า Monolith คืออะไร ทำไมระบบส่วนใหญ่เริ่มจากรูปแบบนี้ และชี้จุดในโค้ด Task Board v1 ที่จะเป็นปัญหาเมื่อระบบโตขึ้น</li>
+<li>ตามค่าหนึ่งค่าจาก event บนหน้าจอ ผ่าน fetch, HTTP/JSON, route ในเซิร์ฟเวอร์ และ SQL จนถึงฐานข้อมูล แล้วกลับมาที่หน้าจอ ทั้งกรณีปกติและกรณีผิดพลาด</li>
+<li>อ่าน HTTP method และ status code ที่ระบบใช้ แยก 400 กับ 500 ได้ และอธิบายว่าทำไมกฎที่ต้องเป็นจริงเสมอต้องอยู่ฝั่งเซิร์ฟเวอร์</li>
+<li>รันระบบด้วย Docker Compose ดูสถานะและ log ได้ และแยก C4 Container ออกจาก Docker container</li>
+<li>แก้โค้ดหนึ่งจุด ตรวจ <code>git diff</code> กับคู่ แล้ว commit ด้วยข้อความที่บอกว่าเปลี่ยนอะไรและทำไม</li>
+</ol>
+
+<h2 id="p1"><span class="no">ส่วนที่ 1</span>องค์ประกอบ ความรับผิดชอบ และหลักการแบ่งหน้าที่</h2>
+<div class="qa"><span class="lb">คำถามเปิด (ตอบในใจก่อน แล้วคลิกดูแนวคำตอบ)</span><ol><li class="rv">ถ้าเขียนโปรแกรม Task Board ทั้งหมดไว้ในฟังก์ชันเดียวยาว 500 บรรทัด ระบบยังทำงานได้ไหม และอะไรจะยากขึ้น<span class="rq">แนวคำตอบ</span><span class="ans">ทำงานได้ คอมพิวเตอร์ไม่สนว่าโค้ดแบ่งอย่างไร แต่<b>คน</b>จะลำบาก หาจุดที่ต้องแก้ยาก แก้เรื่องหนึ่งแล้วกระทบอีกเรื่องโดยไม่ตั้งใจ ทดสอบทีละส่วนไม่ได้ และหลายคนแก้ไฟล์เดียวกันพร้อมกันไม่ได้ การแบ่งหน้าที่จึงเป็นเรื่องของการ<b>เปลี่ยนแปลงและการทำงานร่วมกัน</b> ไม่ใช่เรื่องว่าโปรแกรมรันได้หรือไม่</span></li></ol></div>
+
+<h3>1.1 องค์ประกอบคืออะไร</h3>
+<p><b>องค์ประกอบ (component)</b> คือส่วนหนึ่งของระบบที่มี <b>หน้าที่ชัดเจน</b> มี <b>ขอบเขต</b> ว่าอะไรอยู่ข้างในและอะไรอยู่ข้างนอก และ <b>คุยกับส่วนอื่นผ่านช่องทางที่ตกลงกันไว้</b> (interface หรือสัญญา) องค์ประกอบมีได้หลายขนาด ขึ้นกับว่าเรามองระบบที่ระดับไหน</p>
+<div class="tw"><table class="tb">
+<tr><th>ระดับที่มอง</th><th>องค์ประกอบคือ</th><th>ตัวอย่างใน Task Board</th><th>คุยกันผ่าน</th></tr>
+<tr><td class="k">ในโค้ด</td><td>ฟังก์ชัน คลาส ไฟล์ หรือโมดูล</td><td><code>renderBoard()</code> ใน <code>app.js</code> · ส่วนที่ 5 ใน <code>server.js</code></td><td>การเรียกฟังก์ชันและค่าที่ส่งกลับ</td></tr>
+<tr><td class="k">ในการรัน</td><td>โปรแกรมที่รันแยกกัน (process)</td><td>เบราว์เซอร์ · แอป Node.js · PostgreSQL</td><td>HTTP/JSON · โปรโตคอลของ PostgreSQL</td></tr>
+<tr><td class="k">ในการติดตั้ง</td><td>เครื่องหรือ container ที่ติดตั้งแยกกัน</td><td>container <code>app</code> และ <code>db</code></td><td>เครือข่าย (network) และพอร์ต</td></tr>
+</table></div>
+<p>คำถามที่สถาปนิกถามเสมอเมื่อเห็นองค์ประกอบหนึ่งคือ <b>“ส่วนนี้รับผิดชอบเรื่องอะไร และเรื่องอะไรที่ไม่ควรรู้”</b> ถ้าตอบไม่ได้ในหนึ่งประโยค แปลว่าส่วนนั้นอาจทำหลายเรื่องเกินไป</p>
+
+<h3>1.2 Separation of Concerns: แยกเรื่องที่เปลี่ยนด้วยเหตุผลต่างกัน</h3>
+<p><b>Concern</b> คือ “เรื่อง” ที่ระบบต้องดูแล หลักการ <b>separation of concerns (SoC)</b> บอกให้แยกเรื่องที่ <b>เปลี่ยนด้วยเหตุผลต่างกัน</b> ออกจากกัน เช่น ลูกค้าอยากเปลี่ยนสีปุ่มเป็นเหตุผลด้านหน้าตา ส่วนลูกค้าอยากเปลี่ยนกฎว่างานที่ยังไม่มีผู้รับผิดชอบเริ่มทำไม่ได้เป็นเหตุผลด้านธุรกิจ ถ้าสองเรื่องนี้อยู่ปนกันในฟังก์ชันเดียว การเปลี่ยนเรื่องหนึ่งก็เสี่ยงทำอีกเรื่องพัง</p>
+<div class="tw"><table class="tb">
+<tr><th>Concern ของ Task Board</th><th>เปลี่ยนเมื่อ</th><th>อยู่ที่ไหนในรุ่น v1</th></tr>
+<tr><td class="k">แสดงผล</td><td>อยากได้หน้าตาหรือการจัดวางใหม่</td><td><code>public/index.html</code> <code>style.css</code> และส่วน C ของ <code>app.js</code></td></tr>
+<tr><td class="k">โต้ตอบกับผู้ใช้</td><td>เปลี่ยนวิธีกดหรือกรอกข้อมูล</td><td>ส่วน D ของ <code>app.js</code></td></tr>
+<tr><td class="k">สื่อสารผ่านเครือข่าย</td><td>เปลี่ยน URL รูปแบบข้อมูล หรือวิธีจัดการ error</td><td>ส่วน B ของ <code>app.js</code> และการรับคำขอใน <code>server.js</code></td></tr>
+<tr><td class="k">กฎของงาน (business rules)</td><td>ลูกค้าเปลี่ยนนโยบาย</td><td>กระจายอยู่ในส่วนที่ 5.2–5.5 ของ <code>server.js</code></td></tr>
+<tr><td class="k">เก็บและค้นข้อมูล</td><td>เปลี่ยนตาราง เปลี่ยนฐานข้อมูล หรือปรับความเร็ว</td><td>คำสั่ง SQL ที่แทรกอยู่ในแต่ละ route ของ <code>server.js</code></td></tr>
+<tr><td class="k">ตั้งค่าและการเชื่อมต่อ</td><td>ย้ายเครื่อง เปลี่ยนรหัสผ่าน ขึ้น Cloud</td><td>ส่วนที่ 1 ของ <code>server.js</code> และ <code>docker-compose.yml</code></td></tr>
+</table></div>
+<p>สังเกตแถวที่ 4 และ 5 กฎของงานกับคำสั่ง SQL ไม่มีที่อยู่ของตัวเอง แต่ฝังอยู่ใน route ทุกตัว นี่คือลักษณะของ v1 ที่เราจะพบปัญหาเองในห้อง และจะแก้ในครั้งที่ 4</p>
+
+<h3>1.3 Cohesion: ข้างในเกาะกันแค่ไหน</h3>
+<p><b>Cohesion</b> คือระดับที่สิ่งต่าง ๆ ภายในองค์ประกอบเดียวกัน <b>ทำงานเพื่อเป้าหมายเดียวกัน</b> องค์ประกอบที่ cohesion สูงอธิบายได้ในประโยคเดียว เช่น “ไฟล์นี้เก็บและค้นข้อมูลงาน” ส่วนองค์ประกอบที่ cohesion ต่ำต้องอธิบายด้วยคำว่า “และ” หลายครั้ง เช่น “ไฟล์นี้วาดหน้าจอ และตรวจกฎ และเขียน SQL และตั้งค่าเชื่อมต่อ”</p>
+<ul>
+<li><b>ดูอย่างไร</b> ถ้าแก้เรื่องหนึ่งแล้วต้องเลื่อนอ่านโค้ดของเรื่องอื่นที่ไม่เกี่ยวผ่านไปเรื่อย ๆ หรือฟังก์ชันหนึ่งมีตัวแปรที่ใช้คนละเรื่องกัน cohesion มักต่ำ</li>
+<li><b>ใน v1</b> แต่ละ route ในส่วนที่ 5 มี cohesion พอใช้ เพราะดูแลคำขอเดียว แต่ <code>server.js</code> ทั้งไฟล์มี cohesion ต่ำ เพราะรวมทุกเรื่องของระบบไว้</li>
+</ul>
+
+<h3>1.4 Coupling: ต่างส่วนผูกกันแน่นแค่ไหน</h3>
+<p><b>Coupling</b> คือระดับที่องค์ประกอบหนึ่ง <b>ต้องรู้หรือพึ่งพารายละเอียดภายใน</b> ของอีกองค์ประกอบ ยิ่งรู้มาก ยิ่งต้องแก้ตามกันมากเมื่อฝั่งหนึ่งเปลี่ยน เราอยากให้แต่ละส่วนรู้จักกันผ่าน <b>สัญญา</b> ที่ตกลงกันไว้เท่านั้น</p>
+<div class="tw"><table class="tb">
+<tr><th>แบบของการผูกกัน</th><th>ตัวอย่างใน Task Board v1</th><th>ถ้าเปลี่ยนจะเกิดอะไร</th></tr>
+<tr><td class="k">ผ่านสัญญา (หลวม)</td><td>หน้าจอรู้แค่ว่า <code>POST /api/tasks</code> รับ <code>{"title": ...}</code> และตอบ 201 หรือ 400</td><td>เปลี่ยนฐานข้อมูลข้างหลังได้ หน้าจอไม่ต้องแก้</td></tr>
+<tr><td class="k">ผ่านรูปร่างข้อมูล</td><td><code>app.js</code> ใช้ <code>t.assignee_name</code> ซึ่งเป็นชื่อที่ตั้งในคำสั่ง SQL ของ <code>server.js</code></td><td>ถ้าเปลี่ยนชื่อในคำสั่ง SQL หน้าจอจะแสดง “ยังไม่มีผู้รับผิดชอบ” ทุกงาน โดยไม่มี error ใดเตือน</td></tr>
+<tr><td class="k">ผ่านกฎที่ซ้ำกัน</td><td>กฎ “ต้องมีชื่องาน” เขียนไว้สองที่ ในส่วนที่ 5.2 (สร้าง) และ 5.3 (แก้ชื่อ)</td><td>แก้กฎที่เดียว อีกที่ยังใช้กฎเก่า ข้อมูลผิดกฎหลุดเข้าฐานข้อมูลได้</td></tr>
+<tr><td class="k">ผ่านโครงสร้างตาราง</td><td>ทุก route เขียน SQL ตรงกับชื่อคอลัมน์ของตาราง <code>tasks</code></td><td>เปลี่ยนชื่อคอลัมน์หนึ่ง ต้องตามแก้ทุก route ที่ใช้</td></tr>
+</table></div>
+<figure>
+<svg class="fig" viewBox="0 0 760 262" role="img" aria-label="เปรียบเทียบการแบ่งที่ cohesion ต่ำ coupling สูง กับ cohesion สูง coupling ต่ำ">
+<text x="20" y="24" class="t-r">ก. แต่ละไฟล์ทำหลายเรื่อง ผูกกันไปมา</text>
+<rect x="20" y="40" width="150" height="176" rx="10" class="n"/><rect x="210" y="40" width="150" height="176" rx="10" class="n"/>
+<text x="95" y="62" text-anchor="middle" class="t-c">ไฟล์ A</text><text x="285" y="62" text-anchor="middle" class="t-c">ไฟล์ B</text>
+<rect x="34" y="76" width="122" height="34" rx="6" class="nb"/><text x="95" y="98" text-anchor="middle" class="t-x">วาดรายการงาน</text>
+<rect x="34" y="120" width="122" height="34" rx="6" class="nt"/><text x="95" y="142" text-anchor="middle" class="t-x">SQL สมาชิก</text>
+<rect x="34" y="164" width="122" height="34" rx="6" class="no"/><text x="95" y="186" text-anchor="middle" class="t-x">ตรวจชื่องาน</text>
+<rect x="224" y="76" width="122" height="34" rx="6" class="nt"/><text x="285" y="98" text-anchor="middle" class="t-x">SQL งาน</text>
+<rect x="224" y="120" width="122" height="34" rx="6" class="nb"/><text x="285" y="142" text-anchor="middle" class="t-x">จัดสีปุ่ม</text>
+<rect x="224" y="164" width="122" height="34" rx="6" class="no"/><text x="285" y="186" text-anchor="middle" class="t-x">กฎสถานะ</text>
+<path d="M156 93 L224 137" class="er"/><path d="M156 137 L224 93" class="er"/><path d="M156 181 L224 93" class="er"/><path d="M156 93 L224 181" class="er"/><path d="M156 181 L224 181" class="er"/>
+<text x="190" y="238" text-anchor="middle" class="t-x">แก้เรื่องหนึ่ง ต้องเปิดทั้งสองไฟล์ · เส้นแดง = ต้องรู้รายละเอียดของอีกฝั่ง</text>
+<text x="400" y="24" class="t-o">ข. แต่ละส่วนทำเรื่องเดียว คุยผ่านสัญญา</text>
+<rect x="400" y="40" width="104" height="176" rx="10" class="nb"/><rect x="522" y="40" width="104" height="176" rx="10" class="no"/><rect x="644" y="40" width="104" height="176" rx="10" class="nt"/>
+<text x="452" y="62" text-anchor="middle" class="t-c">หน้าจอ</text><text x="574" y="62" text-anchor="middle" class="t-c">กฎของงาน</text><text x="696" y="62" text-anchor="middle" class="t-c">เก็บข้อมูล</text>
+<rect x="410" y="80" width="84" height="30" rx="6" class="n"/><text x="452" y="100" text-anchor="middle" class="t-x">วาดรายการ</text>
+<rect x="410" y="118" width="84" height="30" rx="6" class="n"/><text x="452" y="138" text-anchor="middle" class="t-x">จัดสีปุ่ม</text>
+<rect x="532" y="80" width="84" height="30" rx="6" class="n"/><text x="574" y="100" text-anchor="middle" class="t-x">ตรวจชื่องาน</text>
+<rect x="532" y="118" width="84" height="30" rx="6" class="n"/><text x="574" y="138" text-anchor="middle" class="t-x">กฎสถานะ</text>
+<rect x="654" y="80" width="84" height="30" rx="6" class="n"/><text x="696" y="100" text-anchor="middle" class="t-x">SQL งาน</text>
+<rect x="654" y="118" width="84" height="30" rx="6" class="n"/><text x="696" y="138" text-anchor="middle" class="t-x">SQL สมาชิก</text>
+<path d="M504 178 H518" class="et" marker-end="url(#a-t)"/><path d="M626 178 H640" class="et" marker-end="url(#a-t)"/>
+<text x="452" y="186" text-anchor="middle" class="t-m">JSON</text><text x="574" y="186" text-anchor="middle" class="t-m">fn()</text>
+<text x="574" y="238" text-anchor="middle" class="t-x">แก้กฎ แก้ที่กล่องกลางกล่องเดียว · เส้นเดียวต่อคู่ = รู้จักกันผ่านสัญญา</text>
+</svg>
+<figcaption>รูปที่ 2 · cohesion ต่ำ coupling สูง (ก) เทียบกับ cohesion สูง coupling ต่ำ (ข) ด้วยงานชุดเดียวกัน</figcaption>
+</figure>
+
+<h3>1.5 Modularity และการซ่อนรายละเอียด</h3>
+<p>เมื่อรวมสองหลักข้างบน เราได้เป้าหมายที่เรียกว่า <b>modularity</b> คือระบบประกอบจากชิ้นที่ <b>ข้างในเกาะกันแน่น (high cohesion)</b> และ <b>ข้างนอกผูกกันหลวม (low coupling)</b> แต่ละชิ้น <b>ซ่อนรายละเอียด</b> ที่คนอื่นไม่จำเป็นต้องรู้ (information hiding) เช่น หน้าจอไม่ต้องรู้ว่างานเก็บในตารางชื่ออะไร รู้แค่ว่าเรียก <code>GET /api/tasks</code> แล้วได้รายการงานกลับมา</p>
+<div class="box ex"><span class="lb">ทดสอบตัวเองด้วยคำถาม 3 ข้อ</span>
+<ol>
+<li><b>ประโยคเดียว:</b> อธิบายหน้าที่ของส่วนนี้ได้ในหนึ่งประโยคโดยไม่ใช้คำว่า “และ” ไหม</li>
+<li><b>เหตุผลเดียว:</b> ส่วนนี้จะถูกแก้ด้วยเหตุผลประเภทเดียวไหม (หน้าตา กฎธุรกิจ หรือการเก็บข้อมูล)</li>
+<li><b>ผลกระทบ:</b> ถ้าข้างในส่วนนี้เปลี่ยน ส่วนอื่นต้องแก้ตามกี่ที่</li>
+</ol></div>
+<div class="box warn"><span class="lb">แบ่งมากไปก็มีต้นทุน</span><p>การแบ่งเป็นชิ้นเล็กมากเกินไปทำให้ต้องเปิดหลายไฟล์เพื่อเข้าใจเรื่องเดียว และต้องส่งข้อมูลข้ามชิ้นไปมา ระบบเล็กอย่าง v1 จึงยังไม่จำเป็นต้องแบ่งละเอียด สิ่งที่สถาปนิกทำคือ <b>แบ่งเมื่อมีเหตุผล</b> เช่น เมื่อเห็นว่ากฎเดียวกันถูกเขียนซ้ำ หรือเมื่อหลายคนต้องแก้ไฟล์เดียวกันพร้อมกันบ่อย ๆ</p></div>
+<div class="qa"><span class="lb">ตรวจความเข้าใจส่วนที่ 1</span><ol>
+<li class="rv">ทำไมการที่ <code>app.js</code> ใช้ชื่อ <code>assignee_name</code> จาก SQL จึงนับเป็น coupling ทั้งที่สองไฟล์อยู่คนละฝั่งของเครือข่าย<span class="rq">แนวคำตอบ</span><span class="ans">coupling ไม่ได้วัดจากระยะทาง แต่วัดจาก<b>สิ่งที่ต้องรู้</b> หน้าจอต้องรู้ชื่อที่ฝั่งฐานข้อมูลตั้งไว้ จึงต้องแก้ตามเมื่อฝั่งนั้นเปลี่ยน ถ้าต้องการลด coupling ควรกำหนดรูปร่าง JSON เป็นสัญญาของ API แยกจากชื่อในฐานข้อมูล แล้วให้เซิร์ฟเวอร์แปลงให้</span></li>
+<li class="rv">ฟังก์ชัน <code>renderBoard()</code> ใน <code>app.js</code> มี cohesion สูงหรือต่ำ ดูจากอะไร<span class="rq">แนวคำตอบ</span><span class="ans">ค่อนข้างสูง เพราะทำเรื่องเดียว คือวาดรายการงานจาก state ลงหน้าจอ ไม่เรียก API ไม่ตรวจกฎ ถ้าอยากเปลี่ยนหน้าตาการ์ดงาน แก้ที่ฟังก์ชันนี้ที่เดียว</span></li>
+<li class="rv">กฎ “งานที่กำลังทำลบไม่ได้” ควรอยู่กับ concern ไหน และใน v1 อยู่ที่ไหน<span class="rq">แนวคำตอบ</span><span class="ans">เป็น <b>กฎของงาน (business rule)</b> ใน v1 อยู่ใน route ลบงาน (ส่วนที่ 5.5 ของ <code>server.js</code>) ปนกับการรับคำขอ HTTP และคำสั่ง SQL ในครั้งที่ 4 จะย้ายไปอยู่ในส่วนที่ดูแลกฎของงานโดยเฉพาะ</span></li>
+</ol></div>
+
+<h2 id="p2"><span class="no">ส่วนที่ 2</span>Task Board รุ่นแรก: Monolith</h2>
+
+<h3>2.1 Monolith คืออะไร</h3>
+<p><b>Monolith</b> คือระบบที่ทุกหน้าที่ของแอปพลิเคชัน <b>สร้าง ติดตั้ง และรันเป็นหน่วยเดียว</b> ในรุ่น v1 ของ Task Board โปรแกรม Node.js ตัวเดียว (<code>server.js</code>) ทำทุกอย่าง คือส่งหน้าเว็บให้เบราว์เซอร์ รับคำขอ API ตรวจกฎของงาน และเขียนคำสั่ง SQL ไปที่ PostgreSQL จะแก้เรื่องเล็กแค่ไหนก็ต้องรีสตาร์ตทั้งโปรแกรม และถ้าโปรแกรมนี้หยุด ทุกฟีเจอร์ก็หยุดพร้อมกัน</p>
+<p>ฐานข้อมูลแยกเป็นโปรแกรมต่างหากก็ยังนับเป็น Monolith เพราะ <b>ตัวแอปพลิเคชัน</b> ยังเป็นก้อนเดียว ลักษณะที่ใช้ดูว่าเป็น Monolith หรือไม่มี 4 ข้อ</p>
+<div class="tw"><table class="tb">
+<tr><th>ลักษณะ</th><th>ความหมาย</th><th>ใน Task Board v1</th></tr>
+<tr><td class="k">codebase เดียว</td><td>โค้ดของทุกฟีเจอร์อยู่ในโปรเจกต์เดียว</td><td>โฟลเดอร์ <code>app/</code> โฟลเดอร์เดียว</td></tr>
+<tr><td class="k">deploy หน่วยเดียว</td><td>แก้ฟีเจอร์ไหนก็ต้องติดตั้งใหม่ทั้งก้อน</td><td>container <code>app</code> ตัวเดียว</td></tr>
+<tr><td class="k">process เดียว</td><td>ทุกคำขอใช้หน่วยความจำและ CPU ชุดเดียวกัน</td><td>Node.js หนึ่ง process ตอบทุก URL</td></tr>
+<tr><td class="k">เรียกกันในโปรแกรม</td><td>ส่วนต่าง ๆ เรียกกันเป็นฟังก์ชัน ไม่ผ่านเครือข่าย</td><td>route เรียก <code>db.query()</code> ตรง ๆ</td></tr>
+</table></div>
+<figure>
+<svg class="fig" viewBox="0 0 760 300" role="img" aria-label="โครงสร้าง Task Board v1: เบราว์เซอร์ คุย HTTP กับ process Node.js เดียวที่ทำทุกอย่าง และคุยกับ PostgreSQL">
+<rect x="14" y="66" width="150" height="150" rx="12" class="nb"/>
+<text x="89" y="92" text-anchor="middle" class="t-b" style="fill:#2459a6">เบราว์เซอร์</text>
+<text x="89" y="116" text-anchor="middle" class="t-m">index.html</text><text x="89" y="138" text-anchor="middle" class="t-m">app.js</text><text x="89" y="160" text-anchor="middle" class="t-m">style.css</text>
+<text x="89" y="196" text-anchor="middle" class="t-x">รันบนเครื่องผู้ใช้</text>
+<rect x="214" y="26" width="356" height="248" rx="14" class="zone"/>
+<text x="228" y="48" class="t-s">container app · Node.js process เดียว · <tspan class="t-m">server.js</tspan></text>
+<rect x="234" y="62" width="316" height="40" rx="8" class="n"/><text x="392" y="87" text-anchor="middle" class="t-c">ส่งหน้าเว็บ (ส่วนที่ 2)</text>
+<rect x="234" y="110" width="316" height="40" rx="8" class="nb"/><text x="392" y="135" text-anchor="middle" class="t-c">รับคำขอ HTTP ของ API (ส่วนที่ 3–6)</text>
+<rect x="234" y="158" width="316" height="40" rx="8" class="no"/><text x="392" y="183" text-anchor="middle" class="t-c">กฎของงาน · ปนอยู่ในแต่ละ route</text>
+<rect x="234" y="206" width="316" height="40" rx="8" class="nt"/><text x="392" y="231" text-anchor="middle" class="t-c">คำสั่ง SQL · ปนอยู่ในแต่ละ route</text>
+<path d="M166 120 H230" class="eb" marker-end="url(#a-b)"/><path d="M230 160 H166" class="em dash" marker-end="url(#a-m)"/>
+<text x="198" y="112" text-anchor="middle" class="t-x">HTTP</text><text x="198" y="176" text-anchor="middle" class="t-x">JSON</text>
+<rect x="610" y="40" width="136" height="220" rx="14" class="zone"/>
+<text x="678" y="62" text-anchor="middle" class="t-s">container db</text>
+<path d="M630 108 v96 a48 14 0 0 0 96 0 v-96" class="nt"/><ellipse cx="678" cy="108" rx="48" ry="14" class="nt"/>
+<text x="678" y="160" text-anchor="middle" class="t-c">PostgreSQL</text><text x="678" y="180" text-anchor="middle" class="t-x">members</text><text x="678" y="196" text-anchor="middle" class="t-x">projects · tasks</text>
+<path d="M552 226 H626" class="et" marker-end="url(#a-t)"/><text x="590" y="218" text-anchor="middle" class="t-x">SQL</text>
+<text x="392" y="292" text-anchor="middle" class="t-x">แก้ส่วนไหนก็ต้องรีสตาร์ตทั้ง process · process หยุด = ทุกฟีเจอร์หยุด</text>
+</svg>
+<figcaption>รูปที่ 3 · Task Board v1: เบราว์เซอร์ → แอปก้อนเดียวที่ทำทุกอย่าง → PostgreSQL</figcaption>
+</figure>
+
+<h3>2.2 ทำไมเริ่มจาก Monolith</h3>
+<p>Monolith ไม่ได้แปลว่าไม่ดี ระบบใหญ่จำนวนมากเริ่มจากรูปแบบนี้ เพราะตอนเริ่มต้นทีมยังไม่รู้ว่าระบบจะโตไปทางไหน การแยกเป็นหลายส่วนตั้งแต่วันแรกมักแยกผิดที่ แล้วต้องรื้อใหม่ Martin Fowler เรียกแนวทางนี้ว่า <b>Monolith First</b> คือเริ่มจากก้อนเดียวที่ดูแลง่าย แล้วค่อยแยกเมื่อเห็นเหตุผลจริง</p>
+<div class="tw"><table class="tb">
+<tr><th>ได้อะไรตอนระบบยังเล็ก</th><th>ต้นทุนที่โตขึ้นเมื่อระบบใหญ่ขึ้น</th></tr>
+<tr><td>เขียนและรันง่าย มีโปรแกรมเดียวต้องเปิด</td><td>ไฟล์ยาวขึ้นเรื่อย ๆ หาจุดแก้ยาก กฎกระจายและซ้ำกัน</td></tr>
+<tr><td>ไล่ปัญหาง่าย ตาม log ที่เดียวเห็นทั้งเส้นทาง</td><td>ส่วนเดียวพังหรือใช้ CPU มาก ส่งผลกับผู้ใช้ทุกคน</td></tr>
+<tr><td>เรียกกันเป็นฟังก์ชัน เร็ว ไม่มีปัญหาเครือข่ายระหว่างส่วน</td><td>ขยายได้ทั้งก้อนเท่านั้น แม้มีแค่ส่วนเดียวที่ทำงานหนัก</td></tr>
+<tr><td>deploy ครั้งเดียวได้ทุกฟีเจอร์</td><td>แก้เรื่องเล็กก็ต้อง deploy ทั้งระบบ หลายทีมรอกันและชนกัน</td></tr>
+<tr><td>ข้อมูลอยู่ฐานเดียว ทำ transaction ง่าย</td><td>ทุกส่วนผูกกับโครงสร้างตารางเดียวกัน เปลี่ยนตารางกระทบทั้งระบบ</td></tr>
+</table></div>
+<p>คอลัมน์ขวาคือสิ่งที่ทีมจะ <b>วัดและเห็นเอง</b> ในครั้งที่ 2 และ 3 แล้วใช้เป็นเหตุผลในการเปลี่ยนรุ่นครั้งถัดไป</p>
+
+<h3>2.3 แผนที่โค้ดของ v1</h3>
+<figure>
+<img src="img/t02-v1-board.webp" alt="หน้าจอ Task Board v1 มีแถบสรุป ฟอร์มสร้างงาน และบอร์ด 3 คอลัมน์ ต้องทำ กำลังทำ เสร็จแล้ว" width="1180" height="640" style="display:block;width:100%;height:auto;border:1px solid var(--rule);border-radius:10px">
+<figcaption>รูปที่ 4 · หน้าจอ Task Board v1 ที่ http://localhost:3000 ข้อมูลตั้งต้นเป็นทีม 4 คน 7 งาน</figcaption>
+</figure>
+<pre class="code">repo ทีม/
+├── docker-compose.yml     <span class="c"># รัน 2 container: app และ db</span>
+├── .env.example           <span class="c"># ค่าตั้งต้น คัดลอกเป็น .env ได้</span>
+├── RUN.md                 <span class="c"># วิธีรัน คำสั่ง และแผนที่โค้ด</span>
+├── app/
+│   ├── server.js          <span class="c"># ทั้งแอปอยู่ที่นี่ ประมาณ 230 บรรทัด</span>
+│   ├── public/            <span class="c"># ไฟล์ที่ส่งไปรันในเบราว์เซอร์</span>
+│   │   ├── index.html
+│   │   ├── app.js
+│   │   └── style.css
+│   ├── Dockerfile
+│   └── package.json       <span class="c"># express, pg, nodemon</span>
+├── db/init/
+│   ├── 01-schema.sql      <span class="c"># ตาราง members, projects, tasks</span>
+│   └── 02-seed.sql        <span class="c"># ข้อมูลสมมติ</span>
+├── docs/  individual/  templates/   <span class="c"># ของทีมเดิมจาก T01</span></pre>
+<p><code>server.js</code> แบ่งเป็น 7 ส่วนด้วยหัวข้อในคอมเมนต์ ค้นคำว่า <code>ส่วนที่</code> เพื่อกระโดดไปยังแต่ละส่วนได้</p>
+<div class="tw"><table class="tb">
+<tr><th>ส่วน</th><th>ทำอะไร</th><th>concern</th></tr>
+<tr><td class="k">1</td><td>สร้าง connection pool ไปที่ PostgreSQL จากค่า environment</td><td>ตั้งค่า · การเชื่อมต่อ</td></tr>
+<tr><td class="k">2</td><td>อ่าน JSON ส่งไฟล์ใน <code>public/</code> และพิมพ์ log ทุกคำขอ API</td><td>รับคำขอ · แสดงผล</td></tr>
+<tr><td class="k">3</td><td><code>GET /api/health</code> ตรวจว่าแอปและฐานข้อมูลพร้อม</td><td>การดูแลระบบ</td></tr>
+<tr><td class="k">4</td><td><code>GET /api/members</code> รายชื่อสมาชิก</td><td>รับคำขอ + SQL</td></tr>
+<tr><td class="k">5.1–5.5</td><td>ดู สร้าง แก้ชื่อ เปลี่ยนสถานะ และลบงาน</td><td>รับคำขอ + <b>กฎของงาน</b> + SQL ปนกัน</td></tr>
+<tr><td class="k">6</td><td><code>GET /api/summary</code> สรุปจำนวนงานและงานค้างรายคน</td><td>รายงาน (ใช้ทดลองในครั้งที่ 3)</td></tr>
+<tr><td class="k">7</td><td>เริ่มฟังพอร์ต 3000</td><td>การรัน</td></tr>
+</table></div>
+<p>ฝั่งเบราว์เซอร์ <code>public/app.js</code> แบ่งเป็นส่วน A–E คือ <b>A</b> state ของหน้าจอ · <b>B</b> ฟังก์ชันเรียก API · <b>C</b> วาดหน้าจอจาก state · <b>D</b> รับ event จากผู้ใช้ · <b>E</b> เริ่มต้นโหลดข้อมูล</p>
+
+<h3>2.4 จุดที่ควรสังเกตใน v1</h3>
+<p>โค้ด v1 ทำงานถูกต้องตามที่ลูกค้าขอในตอนนี้ แต่มี 4 จุดที่สถาปนิกจะจดไว้ เพราะจะกลายเป็นปัญหาเมื่อระบบเปลี่ยน</p>
+<figure>
+<svg class="fig" viewBox="0 0 760 214" role="img" aria-label="กฎต้องมีชื่องานถูกเขียนไว้สองที่ ในการสร้างงานและการแก้ชื่องาน">
+<rect x="20" y="20" width="300" height="96" rx="10" class="n"/>
+<text x="34" y="44" class="t-m">app.post("/api/tasks") · ส่วนที่ 5.2</text>
+<rect x="34" y="58" width="272" height="44" rx="6" class="no"/><text x="170" y="86" text-anchor="middle" class="t-c">if (title === "") → 400</text>
+<rect x="20" y="128" width="300" height="74" rx="10" class="n"/>
+<text x="34" y="152" class="t-m">app.patch("/api/tasks/:id") · ส่วนที่ 5.3</text>
+<rect x="34" y="162" width="272" height="30" rx="6" class="no"/><text x="170" y="183" text-anchor="middle" class="t-c">if (title === "") → 400 (ซ้ำ)</text>
+<path d="M330 80 C380 80 380 112 420 112" class="eo" marker-end="url(#a-o)"/><path d="M330 177 C380 177 380 120 420 120" class="eo" marker-end="url(#a-o)"/>
+<rect x="430" y="64" width="314" height="104" rx="12" class="no"/>
+<text x="587" y="92" text-anchor="middle" class="t-b" style="fill:#c95f1f">ลูกค้าขอกฎใหม่</text>
+<text x="587" y="116" text-anchor="middle" class="t-c">“ชื่องานยาว 3–120 ตัวอักษร”</text>
+<text x="587" y="144" text-anchor="middle" class="t-s">ต้องหาและแก้ให้ครบทุกที่ที่กฎนี้อยู่</text>
+<text x="587" y="196" text-anchor="middle" class="t-r">แก้ไม่ครบ = ข้อมูลผิดกฎหลุดเข้าฐานข้อมูลทางอื่น</text>
+</svg>
+<figcaption>รูปที่ 5 · กฎเดียวกันอยู่สองที่ เป็นตัวอย่างของ modifiability ที่ต่ำ (โจทย์ในห้อง T02)</figcaption>
+</figure>
+<div class="tw"><table class="tb">
+<tr><th>จุดที่สังเกต</th><th>ตรงไหนในโค้ด</th><th>คุณภาพที่ได้รับผลกระทบ</th><th>จัดการในครั้งที่</th></tr>
+<tr><td class="k">กฎซ้ำหลายที่</td><td>กฎชื่องานในส่วนที่ 5.2 และ 5.3</td><td>แก้ไขได้ง่าย (modifiability)</td><td>T02 สังเกตและแก้ · T04 ย้ายไปที่เดียว</td></tr>
+<tr><td class="k">route ทำสามเรื่อง</td><td>ทุก route ในส่วนที่ 5 รับ HTTP + ตรวจกฎ + เขียน SQL</td><td>แก้ไขได้ง่าย · ทดสอบได้ง่าย</td><td>T04 แยกชั้น</td></tr>
+<tr><td class="k">ไม่ตรวจค่าสถานะ</td><td>ส่วนที่ 5.4 ปล่อยให้ฐานข้อมูลปฏิเสธเอง ผู้ใช้ได้ 500 แทน 400</td><td>ความถูกต้องของการตอบ · ใช้งานได้ดี</td><td>ฝึกแก้หลังเรียน T02</td></tr>
+<tr><td class="k">ใช้ CPU ร่วมกันทุกคำขอ</td><td>ส่วนที่ 6 ถ้ารายงานคำนวณหนัก คำขออื่นต้องรอ</td><td>performance · scalability</td><td>T03 วัดผล · T10 แยกบริการ</td></tr>
+</table></div>
+<div class="box key"><span class="lb">ครั้งนี้เรา “สังเกตและบันทึก” ไม่ใช่ “รื้อทั้งหมด”</span><p>ในห้องทีมจะแก้กฎชื่องานหนึ่งเรื่องและจดว่าต้องแก้กี่ที่ ส่วนการจัดโครงสร้างใหม่ทั้งไฟล์เป็นงานของครั้งที่ 4 การเห็นปัญหาก่อนแล้วค่อยแก้ ทำให้เรามีหลักฐานว่าการแยกชั้นแก้ปัญหาอะไรได้จริง และเขียนเป็นเหตุผลใน ADR ได้</p></div>
+<div class="qa"><span class="lb">ตรวจความเข้าใจส่วนที่ 2</span><ol>
+<li class="rv">ถ้าฐานข้อมูลแยกเป็น container ของตัวเอง ทำไม v1 ยังเรียกว่า Monolith<span class="rq">แนวคำตอบ</span><span class="ans">เพราะคำว่า Monolith ดูที่<b>ตัวแอปพลิเคชัน</b> ทุกหน้าที่ของแอป (หน้าเว็บ API กฎ การเข้าถึงข้อมูล) ยังสร้าง ติดตั้ง และรันเป็นหน่วยเดียว ฐานข้อมูลเป็นซอฟต์แวร์สำเร็จรูปที่แอปเรียกใช้ การแยกฐานข้อมูลออกเป็น container จึงไม่ได้ทำให้แอปแยกเป็นหลายส่วน</span></li>
+<li class="rv">ระบบเล็กที่มีผู้ใช้ 20 คนและนักพัฒนา 2 คน ควรเริ่มเป็น Monolith หรือหลายบริการ เพราะอะไร<span class="rq">แนวคำตอบ</span><span class="ans">ส่วนใหญ่ควรเริ่มเป็น Monolith เพราะดูแลง่าย รันง่าย ไล่ปัญหาง่าย และทีมยังไม่รู้ว่าจะแยกที่เส้นไหนถึงจะถูก ข้อดีของหลายบริการ เช่น ขยายเฉพาะส่วนหรือให้หลายทีม deploy แยกกัน ยังไม่จำเป็นกับขนาดนี้ แต่ต้นทุนเรื่องเครือข่าย การ deploy และการไล่ปัญหาจะเกิดทันที</span></li>
+<li class="rv">ทำไมการไม่ตรวจค่าสถานะในส่วนที่ 5.4 ทำให้ผู้ใช้ได้ status 500 ไม่ใช่ 400<span class="rq">แนวคำตอบ</span><span class="ans">เมื่อส่งค่าที่ไม่รู้จัก เช่น <code>"flying"</code> โค้ดส่งต่อไปถึงคำสั่ง <code>UPDATE</code> ฐานข้อมูลปฏิเสธเพราะ CHECK constraint แล้วโยน error ซึ่งถูกจับใน <code>catch</code> ที่ตอบ 500 ทุกกรณี ระบบจึงบอกผู้ใช้ว่า “ระบบผิดพลาด” ทั้งที่จริงเป็นข้อมูลที่ผู้ใช้ส่งมาผิด ควรตรวจค่าก่อนแล้วตอบ 400 พร้อมข้อความที่บอกว่าแก้อย่างไร</span></li>
+</ol></div>
+
+<h2 id="p3"><span class="no">ส่วนที่ 3</span>เส้นทางข้อมูล: จากปุ่มบนหน้าจอถึงฐานข้อมูล</h2>
+<div class="qa"><span class="lb">คำถามเปิด</span><ol><li class="rv">Task Board v1 เป็น Monolith แต่ทำไมยังพูดได้ว่ามีรูปแบบ Client–Server อยู่ข้างใน<span class="rq">แนวคำตอบ</span><span class="ans">เพราะโค้ดรันอยู่สองที่ <code>app.js</code> ถูกส่งไปรันใน<b>เบราว์เซอร์ของผู้ใช้</b> (client) ส่วน <code>server.js</code> รันบน<b>เครื่องที่ติดตั้งระบบ</b> (server) ทั้งสองคุยกันผ่านเครือข่ายด้วย HTTP/JSON Monolith บอกว่าฝั่งเซิร์ฟเวอร์เป็นก้อนเดียว ส่วน Client–Server บอกว่าใครขอและใครตอบ สองคำนี้จึงใช้พร้อมกันได้</span></li></ol></div>
+
+<h3>3.1 สามฝ่ายที่คุยกันในหนึ่งคำขอ</h3>
+<div class="tw"><table class="tb">
+<tr><th>ฝ่าย</th><th>รันที่ไหน</th><th>รับผิดชอบ</th><th>ไม่ควรรู้</th></tr>
+<tr><td class="k">เบราว์เซอร์ (client)</td><td>เครื่องผู้ใช้</td><td>แสดงผล รับ event ส่งคำขอ และแสดงผลลัพธ์หรือข้อความผิดพลาด</td><td>ตาราง คำสั่ง SQL รหัสผ่านฐานข้อมูล</td></tr>
+<tr><td class="k">แอป Node.js (server)</td><td>container <code>app</code></td><td>รับคำขอ ตรวจกฎ อ่านเขียนข้อมูล และตอบด้วย status ที่ถูกต้อง</td><td>หน้าตาของปุ่มหรือการจัดวาง</td></tr>
+<tr><td class="k">PostgreSQL (database server)</td><td>container <code>db</code></td><td>เก็บข้อมูลอย่างถาวร บังคับโครงสร้างและข้อจำกัดของตาราง</td><td>ว่าคำขอมาจากหน้าจอไหน</td></tr>
+</table></div>
+<p>สังเกตว่าแอป Node.js เป็นทั้ง <b>server</b> ของเบราว์เซอร์ และเป็น <b>client</b> ของ PostgreSQL บทบาท client หรือ server จึงขึ้นกับว่าเรามองการคุยคู่ไหน</p>
+
+<h3>3.2 หน้าตาของคำขอและคำตอบ HTTP</h3>
+<figure>
+<svg class="fig" viewBox="0 0 760 236" role="img" aria-label="ส่วนประกอบของคำขอ HTTP และคำตอบ HTTP ของการสร้างงาน">
+<rect x="14" y="14" width="356" height="208" rx="12" class="nb"/>
+<text x="30" y="40" class="t-b" style="fill:#2459a6">คำขอ (request)</text>
+<text x="30" y="70" class="t-m">POST /api/tasks HTTP/1.1</text><text x="356" y="70" text-anchor="end" class="t-o">method + URL</text>
+<text x="30" y="98" class="t-m">Host: localhost:3000</text>
+<text x="30" y="120" class="t-m">Content-Type: application/json</text><text x="356" y="120" text-anchor="end" class="t-o">headers</text>
+<path d="M30 136 H354" class="life"/>
+<text x="30" y="164" class="t-m">{"title":"ทำหน้าชำระเงิน",</text><text x="30" y="186" class="t-m"> "assigneeId":"2"}</text><text x="356" y="186" text-anchor="end" class="t-o">body (JSON)</text>
+<rect x="390" y="14" width="356" height="208" rx="12" class="nt"/>
+<text x="406" y="40" class="t-b" style="fill:#0f7f70">คำตอบ (response)</text>
+<text x="406" y="70" class="t-m">HTTP/1.1 201 Created</text><text x="732" y="70" text-anchor="end" class="t-o">status</text>
+<text x="406" y="98" class="t-m">Content-Type: application/json</text><text x="732" y="120" text-anchor="end" class="t-o">headers</text>
+<path d="M406 136 H730" class="life"/>
+<text x="406" y="164" class="t-m">{"id":8,"title":"ทำหน้าชำระเงิน",</text><text x="406" y="186" class="t-m"> "status":"todo","assignee_id":2,…}</text><text x="732" y="208" text-anchor="end" class="t-o">body (JSON)</text>
+</svg>
+<figcaption>รูปที่ 6 · คำขอและคำตอบของการสร้างงาน เปิดดูของจริงได้ที่ DevTools แท็บ Network</figcaption>
+</figure>
+<div class="tw"><table class="tb">
+<tr><th>Method</th><th>ความหมาย</th><th>ใน Task Board v1</th></tr>
+<tr><td class="k">GET</td><td>ขอดูข้อมูล ไม่เปลี่ยนอะไรในระบบ</td><td><code>/api/tasks</code> <code>/api/members</code> <code>/api/summary</code> <code>/api/health</code></td></tr>
+<tr><td class="k">POST</td><td>สร้างสิ่งใหม่</td><td><code>/api/tasks</code></td></tr>
+<tr><td class="k">PATCH</td><td>แก้บางส่วนของสิ่งที่มีอยู่</td><td><code>/api/tasks/:id</code> แก้ชื่อ · <code>/api/tasks/:id/status</code> เปลี่ยนสถานะ</td></tr>
+<tr><td class="k">DELETE</td><td>ลบ</td><td><code>/api/tasks/:id</code></td></tr>
+</table></div>
+<div class="tw"><table class="tb">
+<tr><th>Status</th><th>ความหมาย</th><th>ตัวอย่างใน Task Board v1</th><th>ใครต้องแก้</th></tr>
+<tr><td class="k">200 OK</td><td>สำเร็จ และมีข้อมูลตอบกลับ</td><td>ดูรายการงาน แก้ชื่อ เปลี่ยนสถานะสำเร็จ</td><td>—</td></tr>
+<tr><td class="k">201 Created</td><td>สร้างสำเร็จ</td><td>สร้างงานใหม่</td><td>—</td></tr>
+<tr><td class="k">204 No Content</td><td>สำเร็จ ไม่มีข้อมูลตอบกลับ</td><td>ลบงาน</td><td>—</td></tr>
+<tr><td class="k">400 Bad Request</td><td>ข้อมูลที่ส่งมาผิดกฎ</td><td>ชื่องานว่าง · เริ่มทำงานที่ยังไม่มีผู้รับผิดชอบ · ลบงานที่กำลังทำ</td><td>ผู้ใช้แก้ข้อมูลแล้วส่งใหม่</td></tr>
+<tr><td class="k">404 Not Found</td><td>ไม่พบสิ่งที่ขอ</td><td>แก้หรือลบงาน id ที่ไม่มี</td><td>ผู้ใช้ หรือหน้าจอที่ส่ง id ผิด</td></tr>
+<tr><td class="k">500 Internal Server Error</td><td>ฝั่งเซิร์ฟเวอร์ผิดพลาด</td><td>SQL ผิด ฐานข้อมูลปฏิเสธ หรือโค้ดมีบั๊ก</td><td>ทีมพัฒนา ดูจาก log</td></tr>
+<tr><td class="k">503 Service Unavailable</td><td>บริการยังไม่พร้อม</td><td><code>/api/health</code> เมื่อฐานข้อมูลหยุด</td><td>ผู้ดูแลระบบ</td></tr>
+</table></div>
+<p>จำง่าย ๆ ว่า <b>2xx สำเร็จ · 4xx ผู้ส่งต้องแก้ · 5xx ระบบต้องแก้</b> การตอบ status ให้ถูกกลุ่มสำคัญกับสถาปัตยกรรม เพราะส่วนอื่น (หน้าจอ แอปมือถือ ระบบเฝ้าดู) ใช้ status ตัดสินว่าจะทำอะไรต่อ เช่น 5xx อาจลองส่งใหม่ แต่ 4xx ส่งใหม่กี่ครั้งก็ไม่ผ่าน</p>
+
+<h3>3.3 JSON คือสัญญาระหว่างหน้าจอกับเซิร์ฟเวอร์</h3>
+<p>JSON (JavaScript Object Notation) เป็นข้อความรูปแบบหนึ่งที่ทั้งสองฝั่งตกลงกันว่าจะใช้ ตอนส่งออกจากเบราว์เซอร์ อ็อบเจกต์ถูกแปลงเป็นข้อความด้วย <code>JSON.stringify()</code> ฝั่งเซิร์ฟเวอร์ <code>express.json()</code> แปลงกลับเป็นอ็อบเจกต์ใน <code>req.body</code> และตอนตอบกลับก็แปลงทางกลับกัน สัญญาของ <code>POST /api/tasks</code> มีดังนี้</p>
+<div class="tw"><table class="tb">
+<tr><th></th><th>รูปร่าง</th><th>หมายเหตุ</th></tr>
+<tr><td class="k">ส่งไป</td><td><code>{"title": "ข้อความ", "assigneeId": 2 หรือ null}</code></td><td><code>assigneeId</code> ไม่ใส่ก็ได้</td></tr>
+<tr><td class="k">สำเร็จ 201</td><td><code>{"id", "title", "status", "assignee_id", "created_at"}</code></td><td><code>status</code> เป็น <code>"todo"</code> เสมอ</td></tr>
+<tr><td class="k">ผิดกฎ 400</td><td><code>{"error": "ข้อความอธิบายที่ผู้ใช้อ่านเข้าใจ"}</code></td><td>หน้าจอแสดงข้อความนี้ใต้ฟอร์ม</td></tr>
+<tr><td class="k">ระบบผิดพลาด 500</td><td><code>{"error": "เกิดข้อผิดพลาดในระบบ"}</code></td><td>ไม่บอกรายละเอียดภายใน รายละเอียดอยู่ใน log</td></tr>
+</table></div>
+
+<h3>3.4 ฝั่งเบราว์เซอร์: event → state → fetch → render</h3>
+<p>หน้าจอ v1 เขียนด้วย JavaScript ธรรมดา ไม่ใช้ React แต่ใช้ความคิดเดียวกับที่เห็นใน <code>TaskForm.jsx</code> ของครั้งที่ 1 คือ <b>รับ event → ส่งคำขอ → เก็บผลไว้ใน state → วาดหน้าจอใหม่จาก state</b></p>
+<p class="file"><code>app/public/app.js</code><span>ส่วน D · รับ event จากฟอร์ม</span></p>
+<pre class="code">$("task-form").addEventListener("submit", async (event) => {
+  event.preventDefault();              <span class="c">// ไม่ให้เบราว์เซอร์โหลดหน้าใหม่</span>
+  $("form-error").textContent = "";
+  try {
+    await api.createTask({ title: $("title").value, assigneeId: $("assignee").value || null });
+    $("title").value = "";
+    await reload();                    <span class="c">// ขอรายการงานใหม่ แล้ววาดบอร์ด</span>
+  } catch (err) {
+    $("form-error").textContent = err.message;   <span class="c">// แสดงข้อความใต้ฟอร์ม</span>
+  }
+});</pre>
+<p class="file"><code>app/public/app.js</code><span>ส่วน B · ส่งคำขอและอ่านคำตอบ</span></p>
+<pre class="code">async function request(method, url, data) {
+  const res = await fetch(url, {
+    method,
+    headers: { "Content-Type": "application/json" },
+    body: data ? JSON.stringify(data) : undefined,
+  });
+  if (res.status === 204) return null;                  <span class="c">// ลบสำเร็จ ไม่มี body</span>
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(body.error || `HTTP ${res.status}`);   <span class="c">// 4xx/5xx กลายเป็น error</span>
+  return body;
+}
+
+const api = {
+  createTask: (data) => request("POST", "/api/tasks", data),
+  <span class="c">// ... listTasks, renameTask, moveTask, deleteTask</span>
+};</pre>
+<ul>
+<li><b>event</b> คือสิ่งที่ผู้ใช้ทำ เช่น submit ฟอร์ม หรือคลิกปุ่ม <code>addEventListener</code> ผูกฟังก์ชันไว้รอ event นั้น</li>
+<li><b>state</b> คือข้อมูลที่หน้าจอถืออยู่ตอนนี้ ใน v1 คือตัวแปร <code>tasks</code> และ <code>members</code> ในส่วน A หน้าจอไม่ได้เก็บข้อมูลจริง ของจริงอยู่ในฐานข้อมูลเสมอ</li>
+<li><b>fetch</b> ส่งคำขอ HTTP แล้วคืนค่าเป็น Promise ที่ต้อง <code>await</code></li>
+<li><b>render</b> คือวาดหน้าจอใหม่ทั้งหมดจาก state (<code>renderBoard()</code> ในส่วน C) แทนการแก้ทีละจุด ทำให้หน้าจอตรงกับข้อมูลเสมอ</li>
+</ul>
+<div class="box warn"><span class="lb">ข้อผิดพลาดที่พบบ่อยกับ async/await</span>
+<ul>
+<li><b>ลืม <code>await</code></b> ตัวแปรจะได้ Promise ไม่ใช่ข้อมูล เช่น <code>const tasks = api.listTasks()</code> แล้วเรียก <code>tasks.filter</code> จะ error ว่าไม่ใช่ฟังก์ชัน</li>
+<li><b>ไม่ตรวจ <code>res.ok</code></b> <code>fetch</code> ไม่ throw เมื่อได้ 400 หรือ 500 มัน throw เฉพาะตอนเครือข่ายใช้ไม่ได้ ถ้าไม่ตรวจเอง หน้าจอจะคิดว่าสำเร็จทั้งที่เซิร์ฟเวอร์ปฏิเสธ</li>
+<li><b>ไม่มี <code>try/catch</code></b> error ที่ throw ออกมาไม่มีใครจับ ผู้ใช้ไม่เห็นข้อความอะไร เห็นแค่ว่ากดแล้วไม่เกิดอะไรขึ้น</li>
+</ul></div>
+
+<h3>3.5 ฝั่งเซิร์ฟเวอร์: route รับคำขอ ตรวจกฎ และเขียน SQL</h3>
+<p class="file"><code>app/server.js</code><span>ส่วนที่ 5.2 · สร้างงานใหม่</span></p>
+<pre class="code">app.post("/api/tasks", async (req, res) => {
+  try {
+    <span class="c">// กฎ: ต้องมีชื่องาน</span>
+    const title = (req.body.title || "").trim();
+    if (title === "") {
+      return res.status(400).json({ error: "กรุณาใส่ชื่องาน" });
+    }
+    const assigneeId = req.body.assigneeId ? Number(req.body.assigneeId) : null;
+
+    const result = await db.query(
+      `INSERT INTO tasks (title, status, assignee_id)
+       VALUES ($1, 'todo', $2)
+       RETURNING id, title, status, assignee_id, created_at`,
+      [title, assigneeId]
+    );
+    res.status(201).json(result.rows[0]);
+  } catch (err) {
+    console.error("[api] POST /api/tasks failed:", err.message);
+    res.status(500).json({ error: "เกิดข้อผิดพลาดในระบบ" });
+  }
+});</pre>
+<ul>
+<li><b><code>.trim()</code></b> ตัดช่องว่างหัวท้าย ชื่อที่มีแต่ช่องว่างจึงนับเป็นชื่อว่าง</li>
+<li><b><code>return res.status(400)…</code></b> ตอบแล้วออกจากฟังก์ชันทันที คำขอที่ผิดกฎ <b>ไม่ไปถึงฐานข้อมูล</b></li>
+<li><b><code>$1, $2</code></b> คือ parameter ของ SQL ค่าจากผู้ใช้ถูกส่งแยกจากคำสั่ง ฐานข้อมูลจึงไม่เอาไปรันเป็นคำสั่ง นี่คือวิธีกัน SQL injection ห้ามต่อข้อความ SQL ด้วยค่าจากผู้ใช้เด็ดขาด</li>
+<li><b><code>RETURNING</code></b> ให้ PostgreSQL ส่งแถวที่เพิ่งสร้างกลับมา รวม <code>id</code> ที่ฐานข้อมูลสร้างให้</li>
+<li><b><code>catch</code></b> จับทุก error ที่ไม่ได้คาดไว้ บันทึกรายละเอียดลง log และตอบผู้ใช้ด้วยข้อความกลาง ๆ</li>
+</ul>
+
+<h3>3.6 ตามหนึ่งคำขอตั้งแต่ต้นจนจบ</h3>
+<figure>
+<svg class="fig" viewBox="0 0 760 392" role="img" aria-label="ลำดับการทำงานของการสร้างงาน ทั้งกรณีปกติและกรณีชื่องานว่าง">
+<rect x="20" y="12" width="100" height="40" rx="8" class="n"/><text x="70" y="37" text-anchor="middle" class="t-c">ผู้ใช้</text>
+<rect x="190" y="12" width="130" height="40" rx="8" class="nb"/><text x="255" y="37" text-anchor="middle" class="t-c">app.js</text>
+<rect x="410" y="12" width="140" height="40" rx="8" class="no"/><text x="480" y="37" text-anchor="middle" class="t-c">server.js</text>
+<rect x="620" y="12" width="120" height="40" rx="8" class="nt"/><text x="680" y="37" text-anchor="middle" class="t-c">PostgreSQL</text>
+<path d="M70 52 V384" class="life"/><path d="M255 52 V384" class="life"/><path d="M480 52 V384" class="life"/><path d="M680 52 V384" class="life"/>
+<path d="M70 78 H251" class="e" marker-end="url(#a-n)"/><text x="160" y="72" text-anchor="middle" class="t-x">① กดสร้างงาน (submit)</text>
+<path d="M255 110 H476" class="eb" marker-end="url(#a-b)"/><text x="365" y="104" text-anchor="middle" class="t-m">② POST /api/tasks {title}</text>
+<rect x="486" y="124" width="140" height="28" rx="6" class="no"/><text x="556" y="143" text-anchor="middle" class="t-x">③ ตรวจกฎ title</text>
+<path d="M480 176 H676" class="et" marker-end="url(#a-t)"/><text x="578" y="170" text-anchor="middle" class="t-m">④ INSERT … RETURNING</text>
+<path d="M680 202 H484" class="et dash" marker-end="url(#a-t)"/><text x="578" y="196" text-anchor="middle" class="t-x">⑤ แถวใหม่ (id = 8)</text>
+<path d="M480 230 H259" class="eb dash" marker-end="url(#a-b)"/><text x="365" y="224" text-anchor="middle" class="t-m">⑥ 201 + JSON</text>
+<path d="M255 262 H476" class="eb" marker-end="url(#a-b)"/><text x="365" y="256" text-anchor="middle" class="t-m">⑦ GET /api/tasks → 200</text>
+<path d="M255 290 H74" class="e dash" marker-end="url(#a-n)"/><text x="160" y="284" text-anchor="middle" class="t-x">⑧ วาดบอร์ดใหม่</text>
+<path d="M480 326 H259" class="er dash" marker-end="url(#a-r)"/><text x="365" y="320" text-anchor="middle" class="t-r">③′ ชื่อว่าง → 400 {"error"}</text>
+<path d="M255 356 H74" class="er dash" marker-end="url(#a-r)"/><text x="160" y="350" text-anchor="middle" class="t-r">ข้อความใต้ฟอร์ม</text>
+<rect x="626" y="326" width="108" height="40" fill="#fff"/><text x="680" y="340" text-anchor="middle" class="t-x">กรณีผิดกฎ</text><text x="680" y="358" text-anchor="middle" class="t-x">ไม่ถึงฐานข้อมูล</text>
+</svg>
+<figcaption>รูปที่ 7 · เส้นทึบคือคำขอ เส้นประคือคำตอบ สีแดงคือกรณีชื่องานว่าง ซึ่งจบที่ขั้น ③ ไม่ถึงฐานข้อมูล</figcaption>
+</figure>
+<p>ลองตามค่าของชื่องานหนึ่งค่า สมมติผู้ใช้พิมพ์ <code>"  ทำหน้าชำระเงิน "</code> (มีช่องว่างหัวท้าย) แล้วดูว่าค่าเดียวกันเปลี่ยนรูปไปอย่างไรในแต่ละจุด</p>
+<div class="tw"><table class="tb">
+<tr><th>จุดที่</th><th>อยู่ที่</th><th>ค่าในจุดนั้น</th></tr>
+<tr><td class="n">1</td><td>ช่อง input · <code>$("title").value</code></td><td>สตริง <code>"  ทำหน้าชำระเงิน "</code></td></tr>
+<tr><td class="n">2</td><td>body ของคำขอ (ข้อความบนเครือข่าย)</td><td><code>{"title":"  ทำหน้าชำระเงิน ","assigneeId":null}</code></td></tr>
+<tr><td class="n">3</td><td><code>req.body.title</code> ใน <code>server.js</code></td><td>สตริงเดิม มีช่องว่างหัวท้าย</td></tr>
+<tr><td class="n">4</td><td>ตัวแปร <code>title</code> หลัง <code>.trim()</code></td><td><code>"ทำหน้าชำระเงิน"</code></td></tr>
+<tr><td class="n">5</td><td>parameter <code>$1</code> ของ INSERT → คอลัมน์ <code>tasks.title</code></td><td><code>ทำหน้าชำระเงิน</code> เก็บถาวร</td></tr>
+<tr><td class="n">6</td><td>body ของคำตอบ 201</td><td><code>{"id":8,"title":"ทำหน้าชำระเงิน",…}</code></td></tr>
+<tr><td class="n">7</td><td>state <code>tasks</code> หลัง <code>reload()</code> → การ์ดบนบอร์ด</td><td>การ์ด “ทำหน้าชำระเงิน” ในคอลัมน์ต้องทำ</td></tr>
+</table></div>
+
+<h3>3.7 ขอบเขตความเชื่อถือ: กฎต้องบังคับที่เซิร์ฟเวอร์</h3>
+<p><b>ขอบเขตความเชื่อถือ (trust boundary)</b> คือเส้นแบ่งระหว่างส่วนที่เราควบคุมได้กับส่วนที่เราควบคุมไม่ได้ ทุกอย่างที่รันในเบราว์เซอร์อยู่ <b>นอก</b> ขอบเขต เพราะผู้ใช้เปิด DevTools แก้โค้ด หรือส่งคำขอเองได้ ส่วน <code>server.js</code> และฐานข้อมูลอยู่ <b>ใน</b> ขอบเขต</p>
+<p>ลองพิมพ์คำสั่งนี้ใน Console ของ DevTools ขณะเปิดหน้า Task Board คำขอนี้ไม่ผ่านฟอร์มเลย</p>
+<pre class="code">fetch("/api/tasks", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ title: "A" })
+}).then(r => r.json().then(b => console.log(r.status, b)));</pre>
+<p>ถ้ากฎ “ชื่องานยาวอย่างน้อย 3 ตัวอักษร” มีแค่ในหน้าจอ เช่น ใส่ <code>minlength="3"</code> ที่ input คำขอนี้จะผ่าน และงานชื่อ <code>A</code> จะเข้าฐานข้อมูล ดังนั้น</p>
+<div class="tw"><table class="tb">
+<tr><th></th><th>ตรวจที่หน้าจอ</th><th>ตรวจที่เซิร์ฟเวอร์</th></tr>
+<tr><td class="k">เพื่ออะไร</td><td>ให้ผู้ใช้รู้ตัวเร็ว ไม่ต้องรอคำตอบ (ใช้งานสะดวก)</td><td>บังคับกฎจริง ทุกทางที่ข้อมูลเข้ามา</td></tr>
+<tr><td class="k">ข้ามได้ไหม</td><td>ได้ ด้วย DevTools สคริปต์ หรือแอปอื่น</td><td>ไม่ได้ ถ้าทุกทางเข้าผ่าน API</td></tr>
+<tr><td class="k">จำเป็นไหม</td><td>ทางเลือกเสริม</td><td><b>จำเป็นเสมอ</b></td></tr>
+</table></div>
+<div class="qa"><span class="lb">ตรวจความเข้าใจส่วนที่ 3</span><ol>
+<li class="rv">กดสร้างงานโดยไม่ใส่ชื่อ แล้วเปิดแท็บ Network จะเห็นคำขอกี่รายการ status อะไร และฐานข้อมูลเปลี่ยนไหม<span class="rq">แนวคำตอบ</span><span class="ans">เห็นคำขอ <code>POST /api/tasks</code> หนึ่งรายการ status <b>400</b> body เป็น <code>{"error":"กรุณาใส่ชื่องาน"}</code> และ<b>ไม่มี</b> <code>GET /api/tasks</code> ตามมา เพราะ <code>reload()</code> อยู่หลัง <code>await api.createTask()</code> ซึ่ง throw ก่อน ฐานข้อมูลไม่เปลี่ยน เพราะ route ตอบ 400 ก่อนถึงคำสั่ง INSERT</span></li>
+<li class="rv">ถ้าลบ <code>if (!res.ok) throw …</code> ออกจาก <code>request()</code> แล้วสร้างงานชื่อว่าง ผู้ใช้จะเห็นอะไร<span class="rq">แนวคำตอบ</span><span class="ans">ไม่เห็นข้อความผิดพลาด ช่องชื่องานถูกล้างเหมือนสำเร็จ บอร์ดโหลดใหม่โดยไม่มีงานใหม่ ผู้ใช้จะสับสนว่างานหายไปไหน เพราะ <code>fetch</code> ไม่ถือว่า 400 เป็น error หน้าจอต้องตรวจ <code>res.ok</code> เอง</span></li>
+<li class="rv">ทำไม route ตอบ 500 ด้วยข้อความกลาง ๆ แทนการส่ง <code>err.message</code> ให้ผู้ใช้<span class="rq">แนวคำตอบ</span><span class="ans">ข้อความ error ภายในอาจมีชื่อตาราง คำสั่ง SQL หรือโครงสร้างระบบ ซึ่งผู้ใช้แก้ไม่ได้และผู้ไม่หวังดีใช้หาจุดโจมตีได้ รายละเอียดจึงเก็บใน log สำหรับทีมพัฒนา ส่วนผู้ใช้ได้ข้อความที่บอกแค่ว่าระบบมีปัญหา</span></li>
+</ol></div>
+
+<h2 id="p4"><span class="no">ส่วนที่ 4</span>Docker เท่าที่ใช้ในครั้งนี้ และ C4 Container ≠ Docker container</h2>
+<p>ครั้งนี้เรา <b>ใช้</b> Docker เหมือนผู้ใช้โปรแกรมหนึ่งตัว ยังไม่ต้องเขียน Dockerfile เอง ครั้งที่ 3 จะดูลึกเรื่อง port, volume และ network ด้วยการทดลองกับระบบที่รันอยู่ และครั้งที่ 5 จึงเริ่มแก้ไฟล์ Compose เมื่อระบบแยกเป็นหลาย tier</p>
+
+<h3>4.1 ทำไมรายวิชานี้ใช้ Docker</h3>
+<p>Task Board ต้องใช้ Node.js และ PostgreSQL รุ่นที่ตรงกัน ถ้าแต่ละคนติดตั้งเองบน Windows, macOS และ iMac ของห้องแล็บ จะได้รุ่นต่างกัน ตั้งค่าต่างกัน แล้วเกิดปัญหา “เครื่องผมรันได้ เครื่องเพื่อนรันไม่ได้” Docker แก้ปัญหานี้ด้วยการแพ็กโปรแกรมพร้อมสิ่งที่มันต้องใช้ไว้ด้วยกัน ทุกเครื่องจึงรันของชุดเดียวกัน</p>
+<div class="tw"><table class="tb">
+<tr><th>คำ</th><th>คืออะไร</th><th>ใน Task Board v1</th></tr>
+<tr><td class="k">image</td><td>ชุดไฟล์ที่แพ็กโปรแกรมและสิ่งที่ต้องใช้ไว้ เหมือนไฟล์ติดตั้งที่พร้อมรัน ไม่เปลี่ยนแปลง</td><td><code>postgres:16-alpine</code> และ image ของ app ที่สร้างจาก <code>app/Dockerfile</code></td></tr>
+<tr><td class="k">container</td><td>โปรแกรมที่กำลังรันจาก image หนึ่ง image สร้างได้หลาย container</td><td>container ชื่อลงท้าย <code>-app-1</code> และ <code>-db-1</code></td></tr>
+<tr><td class="k">Dockerfile</td><td>สูตรบอกวิธีสร้าง image</td><td><code>app/Dockerfile</code> เริ่มจาก <code>node:24-alpine</code> แล้วติดตั้ง dependency</td></tr>
+<tr><td class="k">Compose file</td><td>ไฟล์บอกว่าระบบมี container อะไรบ้าง ตั้งค่าอย่างไร และต่อกันอย่างไร</td><td><code>docker-compose.yml</code> มี 2 service: <code>app</code> และ <code>db</code></td></tr>
+<tr><td class="k">service</td><td>ชื่อของแต่ละส่วนในไฟล์ Compose ใช้เรียกในคำสั่ง</td><td><code>docker compose logs app</code> หมายถึง service ชื่อ app</td></tr>
+</table></div>
+
+<h3>4.2 อ่านไฟล์ Compose ของ v1</h3>
+<p class="file"><code>docker-compose.yml</code><span>ตัดมาเฉพาะส่วนสำคัญ</span></p>
+<pre class="code">services:
+  app:
+    build: ./app                        <span class="c"># สร้าง image จาก app/Dockerfile</span>
+    ports:
+      - "${APP_PORT:-3000}:3000"        <span class="c"># พอร์ตเครื่องเรา : พอร์ตใน container</span>
+    environment:
+      DB_HOST: db                        <span class="c"># เรียก PostgreSQL ด้วยชื่อ service</span>
+      DB_USER: ${POSTGRES_USER:-taskboard}
+    volumes:
+      - ./app:/app                       <span class="c"># แก้โค้ดในเครื่อง แอปใน container เห็นทันที</span>
+    depends_on:
+      db:
+        condition: service_healthy       <span class="c"># รอให้ฐานข้อมูลพร้อมก่อน</span>
+
+  db:
+    image: postgres:16-alpine            <span class="c"># ใช้ image สำเร็จรูป ไม่ต้องสร้างเอง</span>
+    volumes:
+      - pgdata:/var/lib/postgresql/data  <span class="c"># ข้อมูลอยู่ใน volume</span>
+      - ./db/init:/docker-entrypoint-initdb.d:ro   <span class="c"># สร้างตารางและใส่ข้อมูลตั้งต้นครั้งแรก</span></pre>
+<p>สองบรรทัดที่ควรจำตั้งแต่วันนี้ คือ <code>DB_HOST: db</code> แอปไม่ได้ต่อฐานข้อมูลที่ <code>localhost</code> แต่ต่อด้วยชื่อ service เพราะทั้งสองอยู่คนละ container และ <code>./app:/app</code> ทำให้แก้ <code>server.js</code> ในเครื่องแล้วแอปใน container รีสตาร์ตเองโดยไม่ต้องสร้าง image ใหม่</p>
+
+<h3>4.3 คำสั่งที่ใช้ในห้อง</h3>
+<div class="tw"><table class="tb">
+<tr><th>คำสั่ง</th><th>ทำอะไร</th><th>ควรเห็น</th></tr>
+<tr><td class="k"><code>docker compose up -d --build</code></td><td>สร้าง image (ถ้ายังไม่มี) แล้วเปิดทุก service เบื้องหลัง</td><td>container app และ db ถูกสร้างและ start</td></tr>
+<tr><td class="k"><code>docker compose ps</code></td><td>ดูสถานะและพอร์ต</td><td>app <code>Up</code> · db <code>Up (healthy)</code> · <code>0.0.0.0:3000-&gt;3000/tcp</code></td></tr>
+<tr><td class="k"><code>docker compose logs -f app</code></td><td>ดู log ของแอปแบบสด (Ctrl+C เพื่อออก)</td><td>บรรทัด <code>[api] POST /api/tasks -&gt; 201 (4 ms)</code> ทุกครั้งที่กดบนหน้าจอ</td></tr>
+<tr><td class="k"><code>docker compose down</code></td><td>หยุดและลบ container ข้อมูลใน volume ยังอยู่</td><td>container หายจาก <code>ps</code></td></tr>
+</table></div>
+<p>ตัวอย่าง log จริงของ v1 เมื่อสร้างงานหนึ่งครั้ง ส่งชื่อว่างหนึ่งครั้ง และส่งสถานะที่ไม่มีในระบบหนึ่งครั้ง</p>
+<pre class="code">[app] Task Board v1 monolith listening on http://localhost:3000
+[api] GET /api/tasks -&gt; 200 (3 ms)
+[api] POST /api/tasks -&gt; 201 (4 ms)
+[api] POST /api/tasks -&gt; 400 (1 ms)
+[api] PATCH /api/tasks/:id/status failed: new row for relation "tasks" violates check constraint "tasks_status_check"
+[api] PATCH /api/tasks/5/status -&gt; 500 (2 ms)</pre>
+<p>บรรทัดที่ 5 คือรายละเอียดที่ผู้ใช้ไม่เห็น แต่ทีมพัฒนาใช้หาสาเหตุ นี่คือเหตุผลที่ต้องเปิด log คู่กับแท็บ Network เสมอเมื่อไล่ปัญหา</p>
+
+<h3>4.4 C4 Container ไม่ใช่ Docker container</h3>
+<p>คำว่า container ใช้สองความหมายในวิชานี้ และสับสนกันบ่อยมาก</p>
+<div class="tw"><table class="tb">
+<tr><th></th><th>C4 Container</th><th>Docker container</th></tr>
+<tr><td class="k">อยู่ในโลกของ</td><td>แบบสถาปัตยกรรม (แผนภาพที่ใช้อธิบายระบบ)</td><td>เครื่องมือติดตั้งและรันโปรแกรม</td></tr>
+<tr><td class="k">หมายถึง</td><td>ส่วนของระบบที่รันหรือเก็บข้อมูลแยกได้ เช่น เว็บแอป API ฐานข้อมูล แอปมือถือ</td><td>process ที่แยกสภาพแวดล้อม รันจาก image หนึ่งตัว</td></tr>
+<tr><td class="k">ตอบคำถาม</td><td>ระบบมีส่วนใหญ่อะไร แต่ละส่วนรับผิดชอบอะไร คุยกันอย่างไร</td><td>โปรแกรมนี้รันด้วยอะไร ตั้งค่าอย่างไร เปิดพอร์ตไหน</td></tr>
+<tr><td class="k">ใช้ในงาน</td><td>ARCH-02 (เริ่มวาดครั้งที่ 5)</td><td><code>docker-compose.yml</code> และการ deploy</td></tr>
+</table></div>
+<figure>
+<svg class="fig" viewBox="0 0 760 250" role="img" aria-label="มุมมอง C4 ของ Task Board v1 มี 2 container คือแอปและฐานข้อมูล และมุมมอง Docker มี container app และ db">
+<text x="20" y="22" class="t-b" style="fill:#6a45c4">มุมมอง C4 · แบบสถาปัตยกรรม</text>
+<rect x="20" y="36" width="340" height="190" rx="12" class="zone"/>
+<rect x="40" y="58" width="300" height="70" rx="10" class="nv"/><text x="190" y="84" text-anchor="middle" class="t-c">Task Board Web Application</text><text x="190" y="106" text-anchor="middle" class="t-x">[Node.js + Express] ส่งหน้าเว็บ รับ API ตรวจกฎ</text>
+<path d="M190 130 V156" class="em" marker-end="url(#a-m)"/><text x="200" y="148" class="t-x">อ่าน/เขียน [SQL]</text>
+<rect x="40" y="160" width="300" height="56" rx="10" class="nt"/><text x="190" y="184" text-anchor="middle" class="t-c">Database</text><text x="190" y="204" text-anchor="middle" class="t-x">[PostgreSQL] งาน สมาชิก โครงงาน</text>
+<text x="400" y="22" class="t-b" style="fill:#0f7f70">มุมมอง Docker · การรันบนเครื่อง</text>
+<rect x="400" y="36" width="340" height="190" rx="12" class="zone"/>
+<rect x="420" y="58" width="300" height="70" rx="10" class="n"/><text x="570" y="84" text-anchor="middle" class="t-m">container: …-app-1</text><text x="570" y="106" text-anchor="middle" class="t-x">image สร้างจาก app/Dockerfile · พอร์ต 3000:3000</text>
+<path d="M570 130 V156" class="em" marker-end="url(#a-m)"/><text x="580" y="148" class="t-x">เครือข่าย Compose · ชื่อ db</text>
+<rect x="420" y="160" width="300" height="56" rx="10" class="n"/><text x="570" y="184" text-anchor="middle" class="t-m">container: …-db-1</text><text x="570" y="204" text-anchor="middle" class="t-x">postgres:16-alpine · volume pgdata</text>
+<text x="380" y="244" text-anchor="middle" class="t-x">ใน v1 บังเอิญจับคู่กันหนึ่งต่อหนึ่ง แต่ไม่จำเป็นต้องเป็นแบบนี้เสมอ</text>
+</svg>
+<figcaption>รูปที่ 8 · ระบบเดียวกัน มองสองแบบ ซ้ายบอกหน้าที่ ขวาบอกวิธีรัน</figcaption>
+</figure>
+<p>ใน v1 จำนวนตรงกันพอดี แต่ในหลายสถานการณ์ไม่ตรงกัน</p>
+<ul>
+<li><b>ขึ้น Cloud (T08)</b> ฐานข้อมูลอาจใช้บริการ PostgreSQL ของผู้ให้บริการ ไม่ใช่ Docker container ของเรา แต่ในแผนภาพ C4 ยังเป็น Database container เหมือนเดิม</li>
+<li><b>ขยายแอป</b> ถ้ารันแอป 3 ชุดเพื่อรับผู้ใช้มากขึ้น จะมี Docker container 3 ตัว แต่แผนภาพ C4 ยังมี Web Application กล่องเดียว</li>
+<li><b>แยก tier (T05)</b> เมื่อแยกหน้าเว็บ React ออกจาก API จำนวน C4 Container เพิ่มเป็น 3 เพราะ <b>หน้าที่</b> แยกกันจริง ไม่ใช่เพราะเพิ่ม container ใน Compose</li>
+</ul>
+<div class="qa"><span class="lb">ตรวจความเข้าใจส่วนที่ 4</span><ol>
+<li class="rv">ทำไมใน <code>docker-compose.yml</code> แอปต่อฐานข้อมูลที่ host ชื่อ <code>db</code> ไม่ใช่ <code>localhost</code><span class="rq">แนวคำตอบ</span><span class="ans">แต่ละ container มีเครือข่ายของตัวเอง <code>localhost</code> ใน container app หมายถึงตัว container app เอง ซึ่งไม่มี PostgreSQL อยู่ Compose สร้างเครือข่ายให้ทุก service และตั้งชื่อเครื่องตามชื่อ service แอปจึงต่อด้วยชื่อ <code>db</code> (ครั้งที่ 3 จะทดลองเรื่องนี้)</span></li>
+<li class="rv">ถ้าแก้ <code>server.js</code> แล้วบันทึก ต้องสั่ง <code>docker compose up --build</code> ใหม่ไหม<span class="rq">แนวคำตอบ</span><span class="ans">ไม่ต้อง เพราะ <code>./app:/app</code> ทำให้ container เห็นไฟล์ในเครื่องเราโดยตรง และ <code>nodemon</code> รีสตาร์ตแอปเองเมื่อ <code>server.js</code> เปลี่ยน ดูได้จาก log ต้อง build ใหม่เฉพาะเมื่อแก้ <code>package.json</code> หรือ <code>Dockerfile</code></span></li>
+</ol></div>
+
+<h2 id="p5"><span class="no">ส่วนที่ 5</span>Git: เปลี่ยนทีละน้อยและอ่าน diff เป็นคู่</h2>
+<p>ในการทำงานเป็นทีม การเปลี่ยนแต่ละครั้งต้อง <b>เล็กพอให้คนอื่นอ่านเข้าใจ</b> และ <b>มีเหตุผลกำกับ</b> นี่คือทักษะเดียวกับที่ใช้ในจุดตรวจรายคน A1a ครั้งที่ 7 ซึ่งต้องแก้หนึ่งจุดและอธิบาย diff ของตัวเองได้</p>
+<div class="tw"><table class="tb">
+<tr><th>ลำดับ</th><th>คำสั่ง</th><th>ตอบคำถาม</th></tr>
+<tr><td class="n">1</td><td><code>git pull</code></td><td>ได้งานล่าสุดของเพื่อนแล้วหรือยัง</td></tr>
+<tr><td class="n">2</td><td><code>git status</code></td><td>ไฟล์ไหนเปลี่ยน มีไฟล์ที่ไม่ควร commit ไหม เช่น <code>.env</code> <code>node_modules</code></td></tr>
+<tr><td class="n">3</td><td><code>git diff</code></td><td>เปลี่ยนบรรทัดไหน ตรงกับที่ตั้งใจหรือไม่</td></tr>
+<tr><td class="n">4</td><td><code>git add &lt;ไฟล์&gt;</code></td><td>เลือกเฉพาะไฟล์ที่เกี่ยวกับการเปลี่ยนนี้</td></tr>
+<tr><td class="n">5</td><td><code>git commit -m "…"</code></td><td>เปลี่ยนอะไร เพราะอะไร</td></tr>
+<tr><td class="n">6</td><td><code>git push</code></td><td>ส่งขึ้น repo ทีม ให้ระบบตรวจการส่งงานและเพื่อนเห็น</td></tr>
+</table></div>
+<p>ตัวอย่างการอ่าน diff (ตัวอย่างนี้ไม่ใช่โจทย์ในห้อง) บรรทัดที่ขึ้นต้นด้วย <code>-</code> คือของเดิม <code>+</code> คือของใหม่ <code>@@</code> บอกตำแหน่งบรรทัด</p>
+<pre class="code">diff --git a/app/server.js b/app/server.js
+@@ -181,7 +181,7 @@ app.delete("/api/tasks/:id", async (req, res) => {
+     <span class="c">// กฎ: งานที่กำลังทำ (doing) ลบไม่ได้</span>
+     if (current.rows[0].status === "doing") {
+-      return res.status(400).json({ error: "งานที่กำลังทำลบไม่ได้ ให้เปลี่ยนสถานะก่อน" });
++      return res.status(400).json({ error: "ลบไม่ได้ งานนี้กำลังทำอยู่ ให้ย้ายกลับไปต้องทำก่อน" });
+     }</pre>
+<p>ข้อความ commit ที่ดีบอก <b>อะไร</b> และ <b>ทำไม</b> ในบรรทัดเดียว เช่น <code>t02: บอกวิธีแก้ในข้อความเมื่อลบงานที่กำลังทำ</code> ส่วนข้อความอย่าง <code>update</code> หรือ <code>แก้งาน</code> ไม่ช่วยให้ใครเข้าใจว่าเปลี่ยนอะไร</p>
+<div class="box ex"><span class="lb">อ่าน diff เป็นคู่: ผู้ตรวจถาม 4 ข้อก่อนให้ commit</span>
+<ol>
+<li>ทุกบรรทัดที่เปลี่ยนเกี่ยวกับโจทย์นี้ใช่ไหม มีบรรทัดที่เปลี่ยนโดยไม่ตั้งใจ เช่น ช่องว่างหรือ <code>console.log</code> ที่ลืมลบไหม</li>
+<li>เปลี่ยนครบทุกที่ที่ควรเปลี่ยนหรือยัง (ค้นทั้งโปรเจกต์แล้วหรือยัง)</li>
+<li>ทดสอบกรณีปกติและกรณีผิดพลาดแล้วได้ผลตามคาด</li>
+<li>คนลงมืออธิบายได้ไหมว่าทำไมแก้ที่ไฟล์นี้ ไม่ใช่ไฟล์อื่น</li>
+</ol></div>
+
+<h2 id="p6"><span class="no">ส่วนที่ 6</span>งานก่อนคาบ ในคาบ และหลังเรียน</h2>
+<h3>6.1 ก่อนคาบ (ช่วงหยุด 30 พ.ย.–4 ธ.ค. และก่อนวันเรียน)</h3>
+<div class="tw"><table class="tb">
+<tr><th>ทำอะไร</th><th>ใคร</th><th>ผลที่ต้องมี</th></tr>
+<tr><td class="k">อ่านเอกสารนี้</td><td>ทุกคน</td><td>ตอบคำถามในกรอบได้ด้วยตัวเอง จดข้อที่ยังไม่เข้าใจ 1–3 ข้อไว้ถามในห้อง</td></tr>
+<tr><td class="k">นำโค้ด v1 เข้า repo ทีม</td><td>ตัวแทนทีม 1 คน</td><td>ไฟล์ <code>docker-compose.yml</code> <code>app/</code> <code>db/</code> อยู่บน <code>main</code> ของ repo ทีมก่อนเริ่มคาบ T02</td></tr>
+<tr><td class="k">รันระบบที่บ้าน</td><td>ทุกคนที่เครื่องผ่าน check-docker</td><td>เปิด http://localhost:3000 แล้วเห็นบอร์ด ใครรันไม่ได้ให้จดข้อความ error มาด้วย</td></tr>
+</table></div>
+<p>ตัวแทนทีมทำในโฟลเดอร์ repo ทีมบนเครื่องตัวเอง (Windows ใช้ Ubuntu/WSL 2 · macOS ใช้ Terminal)</p>
+<pre class="code">cd ~/engse207-2569-s&lt;SEC&gt;-&lt;ชื่อทีม&gt;
+git pull
+curl -fsSL https://github.com/se-rmutl/engse207-taskboard/archive/refs/tags/v1-monolith.tar.gz \
+  | tar -xz --strip-components=1 --exclude='*/README.md' --exclude='*/.gitignore'
+git status                      <span class="c"># เห็น app/ db/ docker-compose.yml .env.example RUN.md เป็นไฟล์ใหม่</span>
+git add -A
+git commit -m "t02: เพิ่มโค้ด Task Board v1 monolith"
+git push</pre>
+<p>สมาชิกคนอื่น <code>git pull</code> แล้วรัน <code>docker compose up -d --build</code> ครั้งแรกจะดาวน์โหลด image ประมาณ 2–5 นาที ดูขั้นตอนเต็มและวิธีแก้ปัญหาใน <code>RUN.md</code> ที่มากับโค้ด</p>
+
+<h3>6.2 ในคาบ T02 (2 ชั่วโมงครึ่ง บน iMac ของห้องแล็บ)</h3>
+<div class="tw"><table class="tb">
+<tr><th>เวลา</th><th>ทำอะไร</th><th>ผลที่ได้</th></tr>
+<tr><td class="n">08:00–08:30</td><td>สรุปทฤษฎีจากเอกสารนี้ ผู้สอนรัน v1 สด และดูเส้นทางของระบบทั้งภาค</td><td>ตอบคำถามบนสไลด์ได้</td></tr>
+<tr><td class="n">08:30–08:45</td><td><b>A</b> หมุนบทบาท เข้า GitHub บน iMac โคลน repo ทีม แล้วเปิดระบบ</td><td>ทุกคนเห็นบอร์ดบนเครื่องตัวเอง</td></tr>
+<tr><td class="n">08:45–09:10</td><td><b>B</b> ทายก่อนรัน แล้วดูของจริงใน Network และ log ทั้งกรณีปกติและกรณีผิดพลาด</td><td>หลักฐานกรณี 201, 400 และ 500</td></tr>
+<tr><td class="n">09:10–09:50</td><td><b>C</b> โจทย์เปลี่ยนกฎชื่องาน หาให้ครบทุกที่ ทดสอบทุกกรณี</td><td>โค้ดที่ผ่านกรณีปกติและผิดพลาด</td></tr>
+<tr><td class="n">09:50–10:05</td><td><b>D</b> อ่าน diff เป็นคู่ แล้ว commit</td><td>commit บน <code>main</code></td></tr>
+<tr><td class="n">10:05–10:20</td><td><b>E</b> เก็บหลักฐานลงบันทึกแล็บ ปิดระบบ และออกจาก GitHub บน iMac</td><td>ร่าง <code>docs/labs/t02.md</code></td></tr>
+<tr><td class="n">10:20–10:30</td><td>พัก แล้วต่อครั้งที่ 3 ด้วยระบบเดิม</td><td>—</td></tr>
+</table></div>
+
+<h3>6.3 หลังเรียน</h3>
+<div class="tw"><table class="tb">
+<tr><th>รหัส</th><th>งาน</th><th>ส่งที่</th><th>กำหนดส่ง</th></tr>
+<tr><td class="k">L02</td><td><span class="pill pl-team">กลุ่ม</span> บันทึกแล็บ T02: บทบาท หลักฐาน ผลทดสอบ commit และสิ่งที่ยังค้าง</td><td><code>docs/labs/t02.md</code></td><td>ก่อนเริ่มคาบ T04 · SEC1 จ. 14 ธ.ค. 08:00 · SEC2 ศ. 18 ธ.ค. 08:00</td></tr>
+<tr><td class="k">A9L</td><td><span class="pill pl-ind">เดี่ยว</span> เริ่มบันทึกบทบาท แหล่งอ้างอิง และการใช้ AI แถวแรกของ T02</td><td><code>individual/A9-log-&lt;รหัส&gt;.md</code></td><td>เพิ่มทุกครั้งสอน ใช้ประกอบ A9 ท้ายภาค</td></tr>
+</table></div>
+<div class="box ex"><span class="lb">ฝึกเพิ่มที่บ้าน (ไม่คิดคะแนน แต่เป็นการซ้อมก่อน A1a)</span><p>ทำให้ <code>PATCH /api/tasks/:id/status</code> ตอบ <b>400</b> พร้อมข้อความที่เข้าใจได้ เมื่อส่งสถานะที่ไม่ใช่ <code>todo</code> <code>doing</code> หรือ <code>done</code> แทนการปล่อยให้ฐานข้อมูลปฏิเสธจนได้ 500 ทดสอบทั้งค่าที่ถูกและค่าผิดด้วยคำสั่ง <code>fetch</code> ใน Console จับเวลาตัวเอง ถ้าทำเสร็จภายใน 30 นาทีโดยไม่ใช้ AI แปลว่าพร้อมสำหรับ A1a</p></div>
+
+<h2 id="sum"><span class="no">สรุป</span>สิ่งที่ต้องจำจากครั้งที่ 2</h2>
+<ol>
+<li><b>แบ่งหน้าที่เพื่อรองรับการเปลี่ยน</b> แยกเรื่องที่เปลี่ยนด้วยเหตุผลต่างกัน ให้ข้างในเกาะกันแน่น (cohesion สูง) และข้างนอกรู้จักกันผ่านสัญญา (coupling ต่ำ)</li>
+<li><b>Monolith คือจุดเริ่มที่สมเหตุสมผล</b> ง่ายต่อการเขียน รัน และไล่ปัญหา แต่ต้นทุนเพิ่มเมื่อระบบโต เช่น กฎซ้ำหลายที่ ส่วนเดียวกระทบทั้งระบบ</li>
+<li><b>ตามคำขอได้ทั้งเส้น</b> event → fetch → HTTP/JSON → route → SQL → ฐานข้อมูล → คำตอบ → state → render ทั้งกรณีปกติและผิดพลาด</li>
+<li><b>2xx สำเร็จ · 4xx ผู้ส่งแก้ · 5xx ระบบแก้</b> และกฎที่ต้องเป็นจริงเสมอต้องบังคับที่เซิร์ฟเวอร์</li>
+<li><b>C4 Container บอกหน้าที่ · Docker container บอกวิธีรัน</b> สองอย่างไม่จำเป็นต้องจับคู่หนึ่งต่อหนึ่ง</li>
+</ol>
+<div class="qa"><span class="lb">คำถามทบทวน (คลิกแต่ละข้อเพื่อดูแนวคำตอบ)</span><ol>
+<li class="rv">เพื่อนเสนอให้แก้กฎ “ชื่องานยาว 3–120 ตัวอักษร” ด้วยการใส่ <code>minlength</code> และ <code>maxlength</code> ที่ input ในหน้าเว็บอย่างเดียว ตอบเพื่อนอย่างไร<span class="rq">แนวคำตอบ</span><span class="ans">ใส่ที่หน้าเว็บได้เพื่อให้ผู้ใช้รู้ตัวเร็ว แต่<b>ไม่พอ</b> เพราะหน้าเว็บอยู่นอกขอบเขตความเชื่อถือ ใครก็ส่งคำขอตรงไปที่ <code>POST /api/tasks</code> หรือ <code>PATCH /api/tasks/:id</code> ได้ กฎต้องบังคับใน <code>server.js</code> และต้องบังคับ<b>ทุก route</b> ที่รับชื่องาน</span></li>
+<li class="rv">ระบบตอบ 500 เมื่อผู้ใช้ส่งสถานะ <code>"flying"</code> ผิดตรงไหนในมุมของสถาปัตยกรรม<span class="rq">แนวคำตอบ</span><span class="ans">ผิดที่<b>สัญญา</b> 5xx บอกส่วนอื่นว่าระบบมีปัญหา เช่น ระบบเฝ้าดูจะแจ้งเตือน หรือหน้าจออาจลองส่งซ้ำ ทั้งที่จริงเป็นข้อมูลผิดจากผู้ส่ง ซึ่งควรเป็น 4xx และการตรวจค่าควรอยู่ในส่วนที่ดูแลกฎของงาน ไม่ปล่อยให้ฐานข้อมูลเป็นด่านแรก</span></li>
+<li class="rv">ถ้าลูกค้าอยากให้แอปมือถือใช้ Task Board ได้ด้วย ส่วนไหนของ v1 นำไปใช้ต่อได้ และส่วนไหนเป็นอุปสรรค<span class="rq">แนวคำตอบ</span><span class="ans">API ใน <code>server.js</code> ใช้ต่อได้ เพราะคุยด้วย HTTP/JSON ที่แอปมือถือเรียกได้เหมือนเบราว์เซอร์ อุปสรรคคือหน้าเว็บกับ API อยู่ในโปรแกรมเดียวกัน ทุกการเปลี่ยนหน้าเว็บต้อง deploy API ไปด้วย และสัญญา JSON ยังผูกกับชื่อใน SQL นี่เป็นเหตุผลหนึ่งที่จะแยก Client–Server ให้ชัดในครั้งที่ 5</span></li>
+<li class="rv">บอกความต่างของ image กับ container ในประโยคเดียว<span class="rq">แนวคำตอบ</span><span class="ans">image คือชุดไฟล์ที่แพ็กไว้และไม่เปลี่ยน ส่วน container คือโปรแกรมที่กำลังรันจาก image นั้น หนึ่ง image สร้างได้หลาย container</span></li>
+<li class="rv">ในห้องทีมต้องแก้กฎชื่องานกี่ที่ใน v1 และตัวเลขนี้บอกอะไรเกี่ยวกับสถาปัตยกรรม<span class="rq">แนวคำตอบ</span><span class="ans">อย่างน้อย 2 ที่ใน <code>server.js</code> (สร้างงานและแก้ชื่องาน) และอาจรวมหน้าเว็บถ้าต้องการให้ผู้ใช้รู้ตัวเร็ว จำนวนที่ต้องแก้ต่อหนึ่งการเปลี่ยนเป็นตัววัดหนึ่งของ <b>modifiability</b> ยิ่งมากยิ่งเสี่ยงแก้ไม่ครบ ครั้งที่ 4 จะทำให้กฎนี้อยู่ที่เดียว แล้วเทียบตัวเลขกัน</span></li>
+</ol></div>
+
+<h3>ศัพท์สำคัญ</h3>
+<div class="tw"><table class="tb gl">
+<tr><td>component · องค์ประกอบ</td><td>ส่วนของระบบที่มีหน้าที่ชัด มีขอบเขต และคุยกับส่วนอื่นผ่าน interface</td></tr>
+<tr><td>separation of concerns</td><td>แยกเรื่องที่เปลี่ยนด้วยเหตุผลต่างกันออกจากกัน</td></tr>
+<tr><td>cohesion</td><td>ระดับที่สิ่งภายในองค์ประกอบเดียวกันทำงานเพื่อเป้าหมายเดียวกัน ควรสูง</td></tr>
+<tr><td>coupling</td><td>ระดับที่องค์ประกอบหนึ่งต้องรู้รายละเอียดของอีกองค์ประกอบ ควรต่ำ</td></tr>
+<tr><td>modularity</td><td>ระบบประกอบจากชิ้นที่ cohesion สูง coupling ต่ำ และซ่อนรายละเอียดภายใน</td></tr>
+<tr><td>Monolith</td><td>แอปพลิเคชันที่ทุกหน้าที่สร้าง ติดตั้ง และรันเป็นหน่วยเดียว</td></tr>
+<tr><td>Client–Server</td><td>รูปแบบที่ฝั่งหนึ่งส่งคำขอและอีกฝั่งให้บริการ คุยกันผ่านเครือข่าย</td></tr>
+<tr><td>trust boundary</td><td>เส้นแบ่งระหว่างส่วนที่ระบบควบคุมได้กับส่วนที่ควบคุมไม่ได้ กฎต้องบังคับฝั่งที่ควบคุมได้</td></tr>
+<tr><td>status code</td><td>ตัวเลข 3 หลักในคำตอบ HTTP บอกผลของคำขอ 2xx 4xx 5xx</td></tr>
+<tr><td>image · container</td><td>ชุดไฟล์ที่แพ็กไว้ · โปรแกรมที่กำลังรันจาก image</td></tr>
+<tr><td>Docker Compose</td><td>เครื่องมือรันหลาย container ตามที่เขียนไว้ในไฟล์เดียว</td></tr>
+<tr><td>C4 Container</td><td>ส่วนของระบบที่รันหรือเก็บข้อมูลแยกได้ ในแผนภาพระดับที่ 2 ของ C4</td></tr>
+<tr><td>diff · commit</td><td>รายการบรรทัดที่เปลี่ยน · การบันทึกการเปลี่ยนหนึ่งชุดพร้อมข้อความอธิบาย</td></tr>
+</table></div>
+
+<h3>อ่านเพิ่ม</h3>
+<ol class="refs">
+<li>Parnas, D. L. (1972). On the criteria to be used in decomposing systems into modules. <i>Communications of the ACM, 15</i>(12), 1053–1058. บทความต้นทางของการแบ่งโมดูลด้วยการซ่อนรายละเอียด</li>
+<li>Bass, L., Clements, P., &amp; Kazman, R. (2021). <i>Software Architecture in Practice</i> (4th ed.). Addison-Wesley. บทที่ 8 Modifiability</li>
+<li>Fowler, M. (2015). <i>MonolithFirst</i>. <a href="https://martinfowler.com/bliki/MonolithFirst.html">martinfowler.com/bliki/MonolithFirst.html</a></li>
+<li>MDN Web Docs. <i>An overview of HTTP</i>, <i>HTTP response status codes</i> และ <i>Using the Fetch API</i>. <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP">developer.mozilla.org/en-US/docs/Web/HTTP</a></li>
+<li>node-postgres. <i>Queries: Parameterized query</i>. <a href="https://node-postgres.com/features/queries">node-postgres.com/features/queries</a></li>
+<li>Docker Docs. <i>Docker Compose overview</i>. <a href="https://docs.docker.com/compose/">docs.docker.com/compose</a></li>
+<li>Brown, S. <i>The C4 model: Container diagram</i>. <a href="https://c4model.com/diagrams/container">c4model.com/diagrams/container</a></li>
+<li>Chacon, S., &amp; Straub, B. (2014). <i>Pro Git</i> (2nd ed.). บทที่ 2 Git Basics. <a href="https://git-scm.com/book/en/v2">git-scm.com/book</a></li>
+</ol>
+<p class="foot">ENGSE207 สถาปัตยกรรมซอฟต์แวร์ · ภาค 2/2569 · เอกสารประกอบการเรียนครั้งที่ 2 ฉบับ 1.0 · 28 พ.ย. 2569 · อาจารย์ธนิต เกตุแก้ว หลักสูตรวิศวกรรมซอฟต์แวร์ มทร.ล้านนา</p>
+
+</main>
+<script>
+(function(){'use strict';
+var all=[].slice.call(document.querySelectorAll('.qa li.rv'));
+all.forEach(function(li){li.setAttribute('tabindex','0');li.setAttribute('role','button');li.setAttribute('aria-expanded','false');
+ function t(){var o=!li.classList.contains('open');li.classList.toggle('open',o);li.setAttribute('aria-expanded',o?'true':'false');}
+ li.addEventListener('click',function(e){if(e.target.closest('a'))return;t();});
+ li.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();t();}});});
+window.addEventListener('beforeprint',function(){all.forEach(function(li){li.classList.add('open');});});
+var b=document.getElementById('print');if(b)b.addEventListener('click',function(){window.print();});
+function media(){var P=window.ENGSE207&&window.ENGSE207.plan,sid=document.body.getAttribute('data-session'),box=document.getElementById('media');
+ if(!P||!box||!P.sessions||!P.sessions[sid])return;
+ var L=P.sessions[sid].links||[],G=[['read','อ่านและทบทวน'],['lab','ปฏิบัติในห้อง'],['home','งานหลังเรียน'],['guide','คู่มือ']];
+ var esc=function(s){return String(s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});};
+ var fix=function(h){return /^(https?:|\/|#)/.test(h)?h:'../'+h;};
+ box.innerHTML=G.map(function(g){var xs=L.filter(function(l){return (l.g||'read')===g[0]&&!/^notes\//.test(l.href);});
+  if(g[0]==='home')xs=xs.concat([{label:'สิ่งที่ต้องส่งและกำหนดส่ง',href:'deliverables.html'}]);
+  return xs.length?'<div class="g"><b>'+g[1]+'</b><span>'+xs.map(function(l){return '<a href="'+esc(fix(l.href))+'">'+esc(l.label)+'</a>';}).join('')+'</span></div>':'';}).join('');}
+if(window.ENGSE207&&window.ENGSE207.plan)media();else document.addEventListener('DOMContentLoaded',media);
+})();
+</script>
+</body>
+</html>
