@@ -42,6 +42,8 @@ window.ENGSE207.plan = {
         { label: "ใบงาน T01", href: "handouts/t01-worksheet.html", g: "lab", main: true },
         { label: "สไลด์ 3 ขั้นตอนปฏิบัติ", href: "slides/t01-3-lab.html", g: "lab" },
         { label: "ลงทะเบียนทีม", href: "register.html", g: "home", sec: true },
+        { label: "Lab 0A รันบนเครื่อง (I02)", href: "notes/lab0a.html", g: "home" },
+        { label: "Lab 0B ย้ายเข้า Docker (I02)", href: "notes/lab0b.html", g: "home" },
         { label: "ติดตั้ง Docker (Windows/macOS)", href: "docker.html", g: "guide" }
       ] },
     T02: { no: "ครั้งที่ 2", week: 2, title: "ความรับผิดชอบขององค์ประกอบและเส้นทางข้อมูล", clo: [1, 3, 4, 6],
@@ -57,7 +59,9 @@ window.ENGSE207.plan = {
         { label: "สไลด์ 2 ปฏิบัติ T02", href: "slides/t02-2-lab.html", g: "lab" },
         { label: "โค้ด Task Board (repo กลาง)", href: "https://github.com/se-rmutl/engse207-taskboard", g: "guide" },
         { label: "ติดตั้ง Docker", href: "docker.html", g: "guide" },
-        { label: "คู่มือคำสั่ง Docker", href: "notes/docker-guide.html", g: "guide" }
+        { label: "คู่มือคำสั่ง Docker", href: "notes/docker-guide.html", g: "guide" },
+        { label: "Lab 0 ปูพื้น: 0A รันบนเครื่อง", href: "notes/lab0a.html", g: "guide" },
+        { label: "Lab 0 ปูพื้น: 0B ย้ายเข้า Docker", href: "notes/lab0b.html", g: "guide" }
       ] },
     T03: { no: "ครั้งที่ 3", week: 3, title: "คุณลักษณะคุณภาพและการวิเคราะห์ข้อขัดข้อง", clo: [1, 4, 5, 7],
       topics: ["functional requirement กับ quality attribute: modifiability, reliability, performance, scalability", "quality scenario: สิ่งกระตุ้น สภาพแวดล้อม ผลตอบสนอง และตัววัด",

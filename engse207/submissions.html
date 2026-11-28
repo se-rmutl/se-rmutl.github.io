@@ -13,7 +13,24 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700&display=swap">
   <link rel="stylesheet" href="portal.css?v=6">
   <link rel="stylesheet" href="secui.css?v=2">
-  <script src="data.js?v=4" defer></script>
+  <style>
+    .mine input#sid { width: 9.5em; padding: 7px 10px; border: 1px solid #4a628a; border-radius: 8px; background: var(--night-2); color: #fff; font: 600 .9rem var(--mono); }
+    .mine input#sid::placeholder { color: #8ea2bf; font-weight: 500; }
+    .mine .sid-note { display: block; margin-top: 6px; font-size: .8rem; color: #b8c6da; }
+    .pchips { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 0; padding: 0; list-style: none; }
+    .pchips li { display: inline-flex !important; grid-template-columns: none !important; gap: 6px; align-items: center; padding: 3px 9px !important; border: 1px solid var(--line) !important; border-radius: 999px; font-size: .8rem; background: #fff; }
+    .pchips code { background: none; padding: 0; font-size: .78rem; }
+    .pchips .ok, .pchips .late { border-color: #9cc8a9 !important; background: #eef8f1; color: var(--ok); }
+    .pchips .warn, .pchips .branch { border-color: #e6c67c !important; background: #fdf6e6; color: #7a510a; }
+    .pchips .miss { border-color: #e6a89e !important; background: #fdf0ee; color: var(--hot); }
+    .pchips .due, .pchips .na { color: #405a72; }
+    .pchips .me { outline: 2.5px solid var(--night, #101b2e); outline-offset: 1px; font-weight: 700; }
+    .my-indiv { margin: 0 0 14px; }
+    .my-indiv ul { margin: 6px 0 0; padding-left: 18px; }
+    .my-indiv li { margin: 3px 0; }
+    .mx .pill-s.part { background: #eef2f6; color: #2d4a66; }
+  </style>
+  <script src="data.js?v=7" defer></script>
   <script src="schedule.js?v=3" defer></script>
 </head>
 <body>
@@ -46,7 +63,9 @@
         <div id="secbox"></div>
         <div class="mine" id="mine-bar" hidden>
           <label for="team">ทีมของคุณ <select id="team"><option value="">เลือกรหัสทีม</option></select></label>
+          <label for="sid">เลขท้ายรหัสนักศึกษา <input id="sid" type="text" inputmode="numeric" autocomplete="off" maxlength="13" placeholder="เช่น 0001-2"></label>
           <button class="btn main" id="recheck" type="button" disabled>ตรวจทีมนี้ใหม่</button>
+          <small class="sid-note">ใส่เลขท้ายรหัส 5 หลักพร้อมขีด (เช่น <b>0001-2</b>) เพื่อดูงานเดี่ยวของตัวเอง · เก็บไว้ในเบราว์เซอร์นี้เท่านั้น</small>
           <p class="msg" id="msg" aria-live="polite"></p>
         </div>
         <p class="src" id="src"></p>
@@ -59,6 +78,7 @@
         <h2 id="mine-title">งานของทีม</h2>
         <p class="sec-lead" id="mine-meta"></p>
         <div id="mine-sum" class="mine-sum" hidden></div>
+        <div id="my-indiv" class="mine-sum my-indiv" hidden></div>
         <div class="card"><ul class="mylist" id="mine"></ul></div>
       </div>
     </section>
@@ -86,7 +106,7 @@
           <ul class="rules">
             <li>ตรวจว่ามีไฟล์หรือโฟลเดอร์ตาม path ใน branch <code>main</code> ชื่อไฟล์และตำแหน่งต้องตรงทุกตัวอักษร ดู path ทั้งหมดที่<a href="deliverables.html#repo" data-keep-sec>หน้าสิ่งที่ต้องส่ง</a></li>
             <li>จุดตรวจที่ใช้ tag (<code>t07-a5a</code>, <code>t14-submit</code>) ต้องมี tag นั้นบน GitHub ด้วย ไม่ใช่แค่ในเครื่อง ใช้ <code>git push origin &lt;ชื่อ tag&gt;</code></li>
-            <li>งานเดี่ยวตรวจไฟล์ของสมาชิกทุกคนตามรหัสในแบบลงทะเบียน ถ้ายังขาด ระบบบอกรหัสที่ปิดบางส่วนไว้ ให้ดูเลขท้ายของตัวเอง</li>
+            <li>งานเดี่ยว (ไฟล์ใน <code>individual/</code> ที่ลงท้ายด้วยรหัส) ตรวจไฟล์ของสมาชิกทุกคนตามรหัสในแบบลงทะเบียน แสดงสถานะรายคนด้วยรหัสที่ปิดบางส่วน ช่องของทีมขึ้น <b>ส่งแล้ว x/y คน</b> จนกว่าจะครบทุกคน · ใส่เลขท้ายรหัสของตัวเองที่ช่อง <b>เลขท้ายรหัสนักศึกษา</b> ด้านบน ระบบจะสรุปงานเดี่ยวของคุณให้</li>
             <li>เวลาที่แสดงคือเวลา commit แรกที่ไฟล์นั้นเข้ามา ถ้าหลังเวลาครบกำหนดจะขึ้นว่าส่งหลังกำหนด</li>
             <li>งาน <code>D02</code> และ <code>I01</code> มีการตรวจความครบถ้วนเบื้องต้น (เช่น ข้อความแม่แบบค้าง, รายชื่อสมาชิก, คำตอบ C1–C8, ผล <code>check-docker.sh</code>) ถ้าขึ้น <code>⚠</code> ให้แก้แล้ว push ขึ้น <code>main</code> จากนั้นกดปุ่ม <b>ตรวจทีมนี้ใหม่</b> ได้เลย (อาจารย์ตรวจเนื้อหาเชิงลึกและให้คะแนนแยก)</li>
           </ul>
@@ -128,6 +148,43 @@
     function myTeam() { try { return safeTeam(localStorage.getItem(key()) || ""); } catch (e) { return ""; } }
     function show(id, on) { $(id).hidden = !on; }
     function pathText(p) { return String(p).replace(/\{ID\}/g, "<รหัส>"); }
+    /* งานเดี่ยวรายคน: เลขท้ายรหัส 4 หลัก-1 หลัก ตรงกับรหัสที่ปิดบางส่วนในข้อมูล (•••••••0001-2) */
+    function tailOf(v) { var m = String(v || "").replace(/\s+/g, "").match(/(\d{4})-?(\d)$/); return m ? m[1] + "-" + m[2] : ""; }
+    function myTail() { try { return tailOf(localStorage.getItem("engse207.myIdTail") || ""); } catch (e) { return ""; } }
+    function isIndiv(it) { return (it.paths || []).some(function (p) { return /\{ID\}/.test(p); }); }
+    function doneS(s) { return s === "ok" || s === "late" || s === "warn"; }
+    function perCount(c) { var p = c.per || []; return { n: p.filter(function (x) { return doneS(x.s); }).length, all: p.length }; }
+    var PNAME = { ok: "ส่งแล้ว", late: "ส่งหลังกำหนด", warn: "ส่งแล้ว · ตรวจเนื้อหา", branch: "อยู่ branch อื่น ยังไม่นับ", due: "ยังไม่ส่ง", miss: "เลยกำหนดแล้วยังไม่ส่ง", na: "เปิด repo ไม่ได้" };
+    function perChips(c, tail) {
+      if (!c.per || !c.per.length) return "";
+      return '<ul class="pchips">' + c.per.map(function (x) {
+        var me = tail && x.id.slice(-6) === tail;
+        return '<li class="' + esc(x.s) + (me ? " me" : "") + '"><code>' + esc(x.id.replace(/^•+/, "•••")) + "</code> " + esc((MARK[x.s] || "") + " " + PNAME[x.s] + (x.at ? " " + when(x.at) : "")) + (me ? " (คุณ)" : "") + "</li>";
+      }).join("") + "</ul>";
+    }
+    /** งานเดี่ยวของคนที่ใส่เลขท้ายรหัส ในทีมที่เลือก */
+    function myIndivHtml(t, items, tail) {
+      var rows = [], found = false, fallback = false, indiv = items.filter(isIndiv);
+      indiv.forEach(function (it) {
+        var c = cellOf(t, it.id), x = null;
+        if (c.per) { x = c.per.filter(function (p) { return p.id.slice(-6) === tail; })[0] || null; if (x) found = true; }
+        else if (c.s !== "unchecked" && c.s !== "na") {
+          // เว็บแอปรุ่นเก่ายังไม่ส่งรายคน: ดูจากรายการที่ยังขาด
+          fallback = true;
+          var missing = (c.miss || []).some(function (m) { return m.indexOf(tail) >= 0; });
+          x = missing ? { s: c.s === "miss" ? "miss" : "due" } : /ok|late|warn/.test(c.s) ? { s: c.s } : { s: "ok", note: "ไม่อยู่ในรายการที่ยังขาด" };
+          if (missing) found = true;
+        }
+        if (!x) return;
+        rows.push("<li><b>" + esc(it.id) + "</b> " + esc(it.title) + " · <b>" + esc(x.note || ((MARK[x.s] || "") + " " + PNAME[x.s])) + "</b>" + (x.at ? " " + esc(when(x.at, true)) : "") +
+          (doneS(x.s) ? "" : " · ครบกำหนด " + esc(when(it.due, true)) + " · ไฟล์ <code>" + esc(pathText((it.paths || [])[0] || "")).replace("&lt;รหัส&gt;", "&lt;รหัสของคุณ&gt;") + "</code>") + "</li>");
+      });
+      if (!indiv.length) return { lv: "", html: "<span>ยังไม่มีงานเดี่ยวในช่วงนี้</span>" };
+      if (!found && !fallback) return { lv: "wa", html: "<span>ไม่พบรหัสลงท้าย <b>" + esc(tail) + "</b> ใน " + esc(t.id) + " · ตรวจว่าเลือกทีมถูก และรหัสในแบบลงทะเบียนตรงกับรหัสจริง</span>" };
+      var lack = rows.filter(function (r) { return /ยังไม่ส่ง|branch/.test(r); }).length;
+      return { lv: lack ? (rows.some(function (r) { return /เลยกำหนด/.test(r); }) ? "no" : "wa") : "ok",
+        html: '<div><b>งานเดี่ยวของรหัสลงท้าย ' + esc(tail) + "</b>" + (fallback ? " <small>(สรุปจากรายการที่ยังขาด ตรวจว่าเลือกทีมถูก)</small>" : "") + "<ul>" + rows.join("") + "</ul></div>" };
+    }
 
     function load(extra) {
       var my = token;
@@ -173,7 +230,7 @@
 
     function fixLinksHtml(it, c) {
       var q = sec ? "?sec=" + encodeURIComponent(sec) : "";
-      var links = ['<a href="deliverables.html' + q + "#i-" + encodeURIComponent(it.id) + '">ดูวิธีทำ ' + esc(it.id) + "</a>"];
+      var links = ['<a href="deliverables.html' + q + "#item-" + encodeURIComponent(it.id) + '">ดูวิธีทำ ' + esc(it.id) + "</a>"];
       var cwText = (c.cw || []).join(" ");
       if (it.id === "I01" || /docker/i.test(cwText)) links.push('<a href="docker.html' + q + '">คู่มือ Docker</a>');
       if (it.id === "D01") links.push('<a href="register.html' + q + '#repo">ขั้นตอนสร้าง repo</a>');
@@ -255,7 +312,9 @@
         var c = cellOf(t, it.id);
         return c.s !== "due" || !it.due || +new Date(it.due) <= ahead();
       });
-      var todo = teamTodos(t, mineItems), sumEl = $("mine-sum");
+      var todo = teamTodos(t, mineItems), sumEl = $("mine-sum"), tail = myTail(), mi = $("my-indiv");
+      show("my-indiv", !!tail);
+      if (tail) { var r = myIndivHtml(t, mineItems, tail); mi.className = "mine-sum my-indiv " + r.lv; mi.innerHTML = r.html; }
       show("mine-sum", true);
       sumEl.className = "mine-sum " + (todo.lv === "no" ? "no" : todo.lv === "wa" ? "wa" : todo.lv === "ok" ? "ok" : "");
       sumEl.innerHTML = todo.list.length
@@ -266,11 +325,14 @@
         if (c.at) extra += '<p class="h">commit ' + esc(when(c.at, true)) + "</p>";
         if (c.s === "branch") extra += '<p class="h warn-note">พบใน branch <code>' + esc(c.br) + "</code> ให้ merge เข้า main ก่อนครบกำหนด</p>";
         if (c.cw && c.cw.length) extra += '<p class="h warn-note">⚠ จุดที่ควรตรวจแก้: ' + c.cw.map(esc).join(" · ") + "</p>";
-        if (c.miss && c.miss.length) extra += '<p class="h">ยังขาด ' + c.miss.map(function (m) { return "<code>" + esc(m) + "</code>"; }).join(" ") + "</p>";
+        if (c.per && c.per.length) extra += '<p class="h">รายคน (รหัสปิดบางส่วน ดูเลขท้ายของตัวเอง)</p>' + perChips(c, tail);
+        else if (c.miss && c.miss.length) extra += '<p class="h">ยังขาด ' + c.miss.map(function (m) { return "<code>" + esc(m) + "</code>"; }).join(" ") + (isIndiv(it) ? " · รหัสที่ไม่อยู่ในรายการนี้ส่งแล้ว" : "") + "</p>";
         if (c.hint && c.hint.length) extra += '<p class="h">พบ ' + c.hint.map(function (h) { return "<code>" + esc(h) + "</code>"; }).join(" ") + " ให้ย้ายหรือเปลี่ยนชื่อเป็น path ที่กำหนด</p>";
         if (/warn|branch|miss|due/.test(c.s)) extra += '<p class="fix-links">' + fixLinksHtml(it, c) + "</p>";
         var paths = (it.paths || []).map(function (p) { return "<code>" + esc(pathText(p)) + "</code>"; }).concat((it.tags || []).map(function (g) { return "tag <code>" + esc(g) + "</code>"; })).join(" ");
-        return '<li><div><span class="mark ' + esc(c.s) + '">' + esc(MARK[c.s] + " " + NAME[c.s]) + '</span></div><div><b><span class="it-id">' + esc(it.id) + "</span> " + esc(it.title) +
+        var label = MARK[c.s] + " " + NAME[c.s], pc = perCount(c);
+        if (pc.all && (c.s === "due" || c.s === "miss")) label = MARK[c.s] + " ส่งแล้ว " + pc.n + "/" + pc.all + " คน";
+        return '<li><div><span class="mark ' + esc(c.s) + '">' + esc(label) + '</span></div><div><b><span class="it-id">' + esc(it.id) + "</span> " + esc(it.title) +
           '</b><p class="h">ครบกำหนด ' + esc(when(it.due, true) || "ตามที่อาจารย์แจ้ง") + (paths ? " · " + paths : "") + "</p>" + extra + "</div></li>";
       }).join("") || '<li><div></div><div>ยังไม่มีงานที่ถึงช่วงตรวจ</div></li>';
     }
@@ -287,8 +349,9 @@
           : '<button type="button" class="bell-btn lv-ok" data-toggle="' + esc(t.id) + '" aria-expanded="' + (isOpen ? "true" : "false") + '">✓ ครบ</button>';
         var row = '<tr class="mx-row' + (t.id === me ? " me" : "") + '" data-team="' + esc(t.id) + '"><td>' + esc(t.id) + "</td><td>" + bell + "</td>" + items.map(function (it) {
           var c = cellOf(t, it.id);
-          var tip = it.id + " · " + NAME[c.s] + (c.at ? " · " + when(c.at) : "") + (c.cw && c.cw.length ? " · " + c.cw.join("; ") : "");
-          return '<td title="' + esc(tip) + '"><span class="pill-s ' + esc(c.s) + '">' + esc(MARK[c.s]) + "</span></td>";
+          var pc = perCount(c), part = pc.all && (c.s === "due" || c.s === "miss") && pc.n > 0;
+          var tip = it.id + " · " + NAME[c.s] + (pc.all ? " · ส่งแล้ว " + pc.n + "/" + pc.all + " คน" : "") + (c.at ? " · " + when(c.at) : "") + (c.cw && c.cw.length ? " · " + c.cw.join("; ") : "");
+          return '<td title="' + esc(tip) + '"><span class="pill-s ' + esc(c.s) + (part && c.s === "due" ? " part" : "") + '">' + esc(part ? pc.n + "/" + pc.all : MARK[c.s]) + "</span></td>";
         }).join("") + "</tr>";
         if (!isOpen) return row;
         var detBody = todo.list.length
@@ -312,6 +375,13 @@
       renderMatrix(myTeam());
     });
     $("team").addEventListener("change", function () { selectTeam(this.value); });
+    $("sid").value = myTail();
+    $("sid").addEventListener("input", function () {
+      var t = tailOf(this.value);
+      try { if (t) localStorage.setItem("engse207.myIdTail", t); else if (!this.value.trim()) localStorage.removeItem("engse207.myIdTail"); } catch (e) { /* โหมดส่วนตัว */ }
+      if (data && (t || !this.value.trim())) renderMine(myTeam());
+    });
+    $("sid").addEventListener("blur", function () { var t = tailOf(this.value); if (t) this.value = t; });
     $("every").addEventListener("change", function () { if (data) renderMatrix(myTeam()); });
     $("recheck").addEventListener("click", function () { triggerRecheck(myTeam()); });
 

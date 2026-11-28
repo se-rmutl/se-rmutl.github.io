@@ -1,0 +1,468 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ENGSE207 Lab 0A · รันและรู้จักโค้ด Task Board บนเครื่องของเรา</title>
+<meta name="description" content="ปูพื้นก่อนครั้งที่ 2: ติดตั้ง Node.js และ PostgreSQL บน macOS หรือ Windows WSL รัน Task Board v1 บนเครื่อง สร้างฐานข้อมูลจากสคริปต์ ตามคำขอหนึ่งเส้น และลองแก้โค้ด 3 จุด">
+<link rel="canonical" href="https://se-rmutl.github.io/engse207/notes/lab0a.html">
+<link rel="icon" href="../../assets/se-logo.png" type="image/png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=Sarabun:wght@400;500;700&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+:root{--night:#101b2e;--navy:#13294b;--blue:#2459a6;--blue-soft:#e5edfa;--teal:#0f7f70;--teal-soft:#def3ef;--violet:#6a45c4;--violet-soft:#efe9fb;
+--or:#c95f1f;--or-soft:#fcece1;--gold:#9a6400;--gold-soft:#fbf1dc;--ok:#1f6b33;--ok-soft:#e3f1e6;--bad:#b3261e;--bad-soft:#fdecea;
+--ink:#16233a;--muted:#5a6880;--rule:#d7e0ec;--tint:#f3f6fb;--paper:#fff;--p1:#2f6fe4;--p2:#7a4fd6;--p3:#0f8f7d;--p4:#d0662b;
+--head:"IBM Plex Sans Thai","Sarabun",system-ui,sans-serif;--body:"Sarabun","IBM Plex Sans Thai",system-ui,sans-serif;--mono:"JetBrains Mono",ui-monospace,monospace}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:#eef2f7;color:var(--ink);font:400 18px/1.75 var(--body);-webkit-text-size-adjust:100%}
+a{color:var(--blue)}
+a:focus-visible,button:focus-visible,li.rv:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
+.bar{position:sticky;top:0;z-index:10;display:flex;align-items:center;gap:10px;padding:10px 18px;background:rgba(255,255,255,.94);border-bottom:1px solid var(--rule);backdrop-filter:blur(6px);font-family:var(--head);font-size:.9rem}
+.bar a.back{color:var(--navy);font-weight:600;text-decoration:none}
+.bar .sp{flex:1}
+.bar button,.bar a.pdf{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border:1px solid var(--navy);border-radius:999px;background:#fff;color:var(--navy);font:600 .86rem var(--head);cursor:pointer;text-decoration:none}
+.bar button.pri{background:var(--navy);color:#fff}
+.doc{max-width:880px;margin:24px auto 64px;padding:44px 56px;background:#fff;border:1px solid var(--rule);border-radius:18px}
+.kick{margin:0;color:var(--or);font:700 .82rem var(--head);letter-spacing:.08em}
+h1{margin:6px 0 4px;font:700 2.05rem/1.3 var(--head);color:var(--navy);letter-spacing:-.01em}
+.meta{margin:0 0 18px;color:var(--muted);font:500 .9rem var(--head)}
+h2{margin:46px 0 10px;padding-top:8px;font:700 1.55rem/1.35 var(--head);color:var(--navy);border-top:3px solid var(--navy);scroll-margin-top:70px}
+h2 .no{color:var(--or);margin-right:8px}
+h3{margin:30px 0 6px;font:700 1.18rem/1.45 var(--head);color:var(--navy);scroll-margin-top:70px}
+h4{margin:18px 0 4px;font:700 1rem var(--head);color:var(--ink)}
+p{margin:0 0 12px}
+ul,ol{margin:0 0 12px;padding-left:24px}
+li{margin:3px 0}
+code{font:500 .84em var(--mono);background:var(--tint);border:1px solid #e3e9f2;border-radius:5px;padding:0 5px;overflow-wrap:anywhere}
+b,strong{font-weight:700;color:var(--navy)}
+.en{color:var(--muted);font-size:.92em}
+.box{margin:16px 0;padding:14px 18px;border-radius:12px;border:1px solid var(--rule);background:var(--tint)}
+.box>:last-child{margin-bottom:0}
+.box .lb{display:block;margin-bottom:4px;font:700 .8rem var(--head);letter-spacing:.04em}
+.ex{background:var(--blue-soft);border-color:#c8d7f0}.ex .lb{color:var(--blue)}
+.key{background:var(--or-soft);border-color:#f0c9b1}.key .lb{color:var(--or)}
+.warn{background:var(--gold-soft);border-color:#ebd29c}.warn .lb{color:var(--gold)}
+.proj{background:var(--teal-soft);border-color:#b5ddd5}.proj .lb{color:var(--teal)}
+.mock{background:#fff;border:1.5px dashed #b9c6d8}.mock .lb{color:var(--violet)}
+table.tb{width:100%;border-collapse:collapse;margin:12px 0 16px;font-size:.92rem;line-height:1.55}
+.tb th,.tb td{border:1px solid var(--rule);padding:7px 10px;text-align:left;vertical-align:top}
+.tb th{background:var(--tint);font:700 .84rem var(--head);color:var(--navy)}
+.tb td.k{font-weight:700;color:var(--navy);white-space:nowrap}
+.tb td.n{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+.tb tr.ph td{background:#f7f9fc;font:700 .84rem var(--head);color:var(--navy)}
+.tb tr.ex td{background:var(--bad-soft)}
+.tw{overflow-x:auto}
+.pill{display:inline-block;padding:0 8px;border-radius:999px;font:600 .76rem/1.7 var(--head);white-space:nowrap}
+.pl-in{background:var(--blue-soft);color:var(--blue)}.pl-home{background:var(--or-soft);color:var(--or)}.pl-team{background:var(--teal-soft);color:var(--teal)}.pl-ind{background:var(--violet-soft);color:var(--violet)}
+figure{margin:20px 0;padding:0}
+figure>svg{display:block;width:100%;max-width:100%;height:auto;margin:0 auto}
+figcaption{margin-top:6px;color:var(--muted);font:500 .84rem var(--head);text-align:center}
+.outcomes{counter-reset:o;list-style:none;padding:0}
+.outcomes li{counter-increment:o;position:relative;padding:6px 0 6px 40px}
+.outcomes li::before{content:counter(o);position:absolute;left:0;top:7px;width:28px;height:28px;border-radius:8px;background:var(--navy);color:#fff;display:grid;place-items:center;font:700 .85rem var(--head)}
+.toc{margin:14px 0 6px;padding:12px 18px;border:1px dashed #b9c6d8;border-radius:12px;font-family:var(--head);font-size:.9rem}
+.toc ol{margin:4px 0 0;padding-left:20px}.toc a{text-decoration:none}
+.media{margin:16px 0 4px;display:grid;gap:8px}
+.media .g{display:grid;grid-template-columns:120px 1fr;gap:10px;align-items:baseline;font-family:var(--head);font-size:.9rem}
+.media .g b{color:var(--or);font-size:.82rem}
+.media .g span{display:flex;flex-wrap:wrap;gap:2px 14px}.media .g span a{white-space:nowrap}
+.qa{margin:16px 0;padding:14px 18px;border:2px solid var(--navy);border-radius:14px}
+.qa .lb{display:block;margin-bottom:6px;color:var(--navy);font:700 .86rem var(--head)}
+.qa ol{margin:0;padding-left:22px}
+.qa li{margin:8px 0}
+.qa .ans{display:block;margin-top:4px;padding:6px 10px;border-radius:8px;background:var(--ok-soft);color:#174d27;font-size:.95em}
+.qa li.rv{cursor:pointer}
+.qa .rq{display:inline-block;margin-left:6px;padding:0 8px;border:1px dashed #9fb3c8;border-radius:999px;color:var(--muted);font:600 .78rem var(--head)}
+@media screen{.qa li.rv:not(.open) .ans{display:none}.qa li.rv.open .rq{display:none}}
+pre.code{margin:6px 0 14px;padding:12px 14px;border-radius:10px;background:var(--night);color:#eef2f8;font:500 .8rem/1.6 var(--mono);overflow-x:auto;white-space:pre}
+pre.code .c{color:#9fb0c8}
+.file{display:flex;gap:10px;align-items:baseline;margin:14px 0 0;font:600 .84rem var(--head)}
+.file code{background:none;border:0;padding:0;color:var(--navy);font-weight:600}
+.file span{color:var(--muted);font-weight:500}
+.gl td:first-child{font-weight:700;color:var(--navy);white-space:nowrap}
+.refs li{margin:6px 0;font-size:.92rem}
+.foot{margin-top:40px;padding-top:12px;border-top:1px solid var(--rule);color:var(--muted);font:500 .82rem var(--head)}
+@media (max-width:720px){.tb.wide{min-width:620px;font-size:.86rem}body{font-size:17px}.doc{margin:0;padding:24px 18px;border-radius:0;border:0}h1{font-size:1.6rem}h2{font-size:1.3rem}.media .g{grid-template-columns:1fr;gap:2px}.bar .t{display:none}}
+@page{size:A4;margin:16mm 15mm 18mm}
+@media print{body{background:#fff;font-size:11.5pt;line-height:1.6}.bar{display:none}.doc{margin:0;padding:0;border:0;max-width:none}
+h2{break-after:avoid;margin-top:26px}h3,h4{break-after:avoid}.box,figure,tr,.qa li{break-inside:avoid}pre.code{break-inside:avoid;white-space:pre-wrap}.qa .rq{display:none}
+a{color:var(--ink);text-decoration:none}.toc{break-inside:avoid}.media a{color:var(--blue)}}
+/* แผนภาพ: ตั้ง font/size/fill ที่ .fig แล้วให้คลาสย่อยปรับ */
+.fig{font-family:var(--body);font-size:15px;fill:var(--ink)}
+.fig .t-b{font-family:var(--head);font-weight:600;font-size:16px}
+.fig .t-c{font-family:var(--head);font-weight:600;font-size:14px}
+.fig .t-h{font-family:var(--head);font-weight:700;font-size:19px;fill:var(--navy)}
+.fig .t-s{font-family:var(--head);font-size:13px;fill:var(--muted)}
+.fig .t-x{font-family:var(--head);font-size:12px;fill:var(--muted)}
+.fig .t-m{font-family:var(--mono);font-size:12px;fill:var(--navy)}
+.fig .t-w{fill:#fff;font-family:var(--head);font-weight:600;font-size:15px}
+.fig .t-ws{fill:#d6e0ef;font-family:var(--head);font-size:13px}
+.fig .t-o{font-family:var(--head);font-weight:700;font-size:13px;fill:var(--or)}
+.fig .t-r{font-family:var(--head);font-weight:700;font-size:13px;fill:var(--bad)}
+.fig .n{fill:#fff;stroke:var(--rule);stroke-width:1.5}
+.fig .nb{fill:var(--blue-soft);stroke:var(--blue);stroke-width:1.8}
+.fig .nt{fill:var(--teal-soft);stroke:var(--teal);stroke-width:1.8}
+.fig .nv{fill:var(--violet-soft);stroke:var(--violet);stroke-width:1.8}
+.fig .no{fill:var(--or-soft);stroke:var(--or);stroke-width:1.6}
+.fig .nn{fill:var(--navy);stroke:none}
+.fig .nk{fill:var(--ok-soft);stroke:var(--ok);stroke-width:1.8}
+.fig .zone{fill:#f7f9fc;stroke:#a9b8cc;stroke-width:1.5;stroke-dasharray:7 6}
+.fig .e{stroke:var(--navy);stroke-width:2;fill:none}
+.fig .em{stroke:var(--muted);stroke-width:1.8;fill:none}
+.fig .eb{stroke:var(--blue);stroke-width:2.2;fill:none}
+.fig .et{stroke:var(--teal);stroke-width:2.2;fill:none}
+.fig .eo{stroke:var(--or);stroke-width:2.2;fill:none}
+.fig .er{stroke:var(--bad);stroke-width:2;fill:none}
+.fig .dash{stroke-dasharray:7 6}
+.fig .life{stroke:#b9c6d8;stroke-width:1.5;stroke-dasharray:4 5}
+.fig .axis{stroke:#c9d4e3;stroke-width:3}
+
+.bar button#copy{background:var(--teal);border-color:var(--teal);color:#fff}
+.road{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:14px 0 8px;font-family:var(--head)}
+.road .st{display:inline-flex;flex-direction:column;padding:6px 12px;border-radius:10px;border:1.5px solid var(--rule);background:#fff;font-weight:700;font-size:.9rem;color:var(--navy);line-height:1.35}
+.road .st a{color:inherit}
+.road .st small{font-weight:500;color:var(--muted);font-size:.74rem}
+.road .st.done{background:var(--tint)}
+.road .st.now{background:var(--navy);color:#fff;border-color:var(--navy)}.road .st.now small{color:#c9d6ea}
+.road .ar{color:var(--muted);font-weight:700}
+h2 .tm{margin-left:8px;font:600 .8rem var(--head);color:var(--muted);letter-spacing:0}
+.see{margin:8px 0 16px;padding:10px 14px;border-radius:10px;background:var(--ok-soft);border:1px solid #bfdcc6;font-size:.95rem}
+.see>b:first-child{color:var(--ok);margin-right:6px}
+.see pre.code{margin:6px 0 4px}
+.small{font-size:.9rem;color:var(--muted)}
+details.key{margin:14px 0;padding:8px 14px;border:1px solid #f0c9b1;border-radius:12px;background:var(--or-soft)}
+details.key summary{cursor:pointer;font:700 .9rem var(--head);color:var(--or)}
+details.key pre.code{margin-top:8px}
+.ev{display:grid;grid-template-columns:1fr 1fr;gap:12px 14px;margin:12px 0}
+.ev label{display:block;font:600 .88rem/1.6 var(--head);color:var(--navy)}
+.ev label code{font-size:.8rem}
+.ev label.full{grid-column:1/-1}
+.ev input,.ev textarea{display:block;margin-top:5px;font:500 .84rem/1.5 var(--mono);padding:8px 10px;border:1.5px solid #c9d4e3;border-radius:8px;background:#fbfcfe;color:var(--ink);width:100%}
+.ev textarea{resize:vertical}
+.ev input:focus,.ev textarea:focus{outline:2px solid var(--blue);border-color:var(--blue)}
+.center{text-align:center}
+button.big{padding:10px 22px;border-radius:999px;border:0;background:var(--teal);color:#fff;font:700 .95rem var(--head);cursor:pointer}
+button.ghost{padding:9px 16px;border-radius:999px;border:1.5px solid var(--rule);background:#fff;color:var(--muted);font:600 .85rem var(--head);cursor:pointer}
+.toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,20px);opacity:0;padding:10px 18px;border-radius:999px;background:var(--navy);color:#fff;font:600 .9rem var(--head);transition:.25s;pointer-events:none;z-index:20;max-width:90vw;text-align:center}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+@media (max-width:720px){.ev{grid-template-columns:1fr}.road .ar{display:none}.bar button#copy{font-size:.78rem;padding:6px 10px}}
+@media print{.toast,.center button,details.key{display:none}.ev textarea,.ev input{border:1px solid #bbb;background:#fff}.see{break-inside:avoid}}
+</style>
+</head>
+<body data-lab="lab0a">
+<div class="bar"><a class="back" href="../index.html">← ENGSE207</a><span class="t">Lab 0A · รันและรู้จักโค้ดบนเครื่อง</span><span class="sp"></span><button class="pri" id="copy" type="button">คัดลอกหลักฐาน 0A (Markdown)</button><button id="print" type="button">พิมพ์</button></div>
+<main class="doc">
+<p class="kick">ENGSE207 · ปูพื้นก่อนครั้งที่ 2 · ทำเองนอกเวลา</p>
+<h1>Lab 0A · รันและรู้จักโค้ด Task Board บนเครื่องของเรา</h1>
+<p class="meta">ประมาณ 2–2.5 ชั่วโมง · งานเดี่ยว <b>I02</b> ต้องทำแต่ไม่คิดคะแนน · ส่งพร้อม Lab 0B ก่อนเริ่มคาบ T02 · ฉบับ 1.0 (28 พ.ย. 2569)</p>
+
+<div class="road" aria-label="ลำดับการเตรียมตัวก่อน T02">
+<span class="st done">T01<small>เห็นโค้ดบนจอ</small></span><span class="ar">→</span>
+<span class="st now">Lab 0A<small>รันเองบนเครื่อง</small></span><span class="ar">→</span>
+<span class="st"><a href="lab0b.html">Lab 0B</a><small>ย้ายเข้า Docker</small></span><span class="ar">→</span>
+<span class="st">P02<small>งานทีม</small></span><span class="ar">→</span>
+<span class="st">T02<small>ในห้อง</small></span></div>
+
+<div class="box proj"><span class="lb">ทำไมต้องทำ</span>
+<p>ใน T01 เราดูโค้ด Task Board บนจอผู้สอน แต่ยังไม่มีใครได้รันเอง ครั้งที่ 2 จะเปิดระบบนี้ด้วย Docker แล้วตามคำขอทีละเส้น ถ้าไม่เคยเห็นว่าระบบประกอบด้วยอะไรและแต่ละไฟล์ทำอะไร คำสั่ง Docker จะเป็นแค่สิ่งที่พิมพ์ตาม</p>
+<p>Lab 0A ให้เราติดตั้งทุกอย่างเอง รันแอปและฐานข้อมูลบนเครื่องโดยตรง อ่านโค้ดตามคำขอหนึ่งเส้น แล้วลองแก้ 3 จุด <b>Lab 0B</b> จะย้ายระบบเดียวกันนี้เข้า Docker ทีละขั้น จนเข้าใจทุกบรรทัดของ <code>docker-compose.yml</code> ที่จะใช้ใน T02</p></div>
+
+<h3>เรียนอะไรมาแล้วจาก T01</h3>
+<div class="tw"><table class="tb">
+<tr><th>มีแล้ว</th><th>ได้มาอย่างไร</th><th>ใช้ใน Lab 0A</th></tr>
+<tr><td class="k">ภาพของ Task Board</td><td>สไลด์ T01 และหน้าจอที่ผู้สอนสาธิต</td><td>รันจริงบนเครื่อง และตามคำขอ “สร้างงาน”</td></tr>
+<tr><td class="k">Git และบัญชี GitHub</td><td>สร้าง repo ทีมในคาบ T01</td><td>ดึงโค้ดจาก repo กลางด้วย <code>git clone</code> และดูสิ่งที่แก้ด้วย <code>git diff</code></td></tr>
+<tr><td class="k">VS Code และ Terminal</td><td>ใช้มาตั้งแต่วิชาก่อน ๆ</td><td>เปิดโค้ด แก้ไฟล์ และพิมพ์คำสั่ง</td></tr>
+<tr><td class="k">Docker Desktop</td><td>งานหลังเรียน T01 (H1)</td><td>ยังไม่ใช้ใน 0A · ใช้ใน 0B</td></tr>
+</table></div>
+
+<h3>ทำเสร็จแล้วจะทำได้</h3>
+<ul class="outcomes">
+<li>ติดตั้ง Node.js และ PostgreSQL แล้วตรวจรุ่นได้</li>
+<li>สร้างฐานข้อมูลจากสคริปต์ <code>db/init</code> และดูข้อมูลด้วย psql</li>
+<li>รันแอปด้วย <code>npm run dev</code> และอ่าน log ของแอป</li>
+<li>บอกได้ว่าคำขอ “สร้างงาน” ผ่านไฟล์และส่วนไหนบ้าง ตั้งแต่ปุ่มบนหน้าจอถึงฐานข้อมูล</li>
+<li>เพิ่ม API หนึ่งตัว และแสดงผลบนหน้าเว็บได้เอง</li>
+</ul>
+
+<nav class="toc" aria-label="สารบัญ"><b>สารบัญ</b><ol>
+<li><a href="#s1">ติดตั้ง Node.js และ PostgreSQL</a></li>
+<li><a href="#s2">ดึงโค้ดมาไว้ในโฟลเดอร์ฝึก และรู้จักแต่ละไฟล์</a></li>
+<li><a href="#s3">สร้างฐานข้อมูลจากสคริปต์</a></li>
+<li><a href="#s4">รันแอปบนเครื่อง</a></li>
+<li><a href="#s5">ตามคำขอ “สร้างงาน” หนึ่งเส้น</a></li>
+<li><a href="#s6">ลองแก้ 3 จุด</a></li>
+<li><a href="#s7">ติดปัญหา</a></li>
+<li><a href="#qa">ทบทวนและสรุป</a></li>
+<li><a href="#ev">หลักฐาน 0A</a></li></ol></nav>
+
+<div class="box key"><span class="lb">กติกาของแล็บนี้</span><ul>
+<li>ทำใน <b>โฟลเดอร์ฝึก</b> <code>~/engse207-practice</code> ไม่ใช่ใน repo ทีม แก้อะไรพังก็ไม่กระทบงานทีม</li>
+<li>Windows ทำทุกอย่างใน <b>เทอร์มินัล Ubuntu (WSL)</b> ตัวเดียวกับที่ติดตั้ง Docker ไม่ใช้ PowerShell คำสั่งจึงเหมือน macOS ทุกบรรทัด</li>
+<li>ทุกขั้นมีกล่อง <b>ควรเห็น</b> ถ้าไม่เห็นแบบนั้น ให้ดู <a href="#s7">ส่วนที่ 7</a> ก่อนไปขั้นถัดไป</li>
+<li>ระหว่างทำ วางผลของคำสั่งลงช่อง <b>หลักฐาน</b> ท้ายหน้า (browser จำไว้ให้) จบ 0B แล้วกดปุ่มคัดลอก ไปวางในไฟล์ <code>individual/LAB0-&lt;รหัสนักศึกษา&gt;.md</code> ของ repo ทีม</li>
+</ul></div>
+
+<h2 id="s1"><span class="no">ขั้นที่ 1</span>ติดตั้ง Node.js และ PostgreSQL <span class="tm">30–45 นาที</span></h2>
+<p>แอปต้องใช้ 2 อย่าง: <b>Node.js</b> สำหรับรันโค้ด JavaScript ฝั่งเซิร์ฟเวอร์ และ <b>PostgreSQL</b> สำหรับเก็บข้อมูล ใครมี Node.js รุ่น 20 ขึ้นไป และ PostgreSQL รุ่น 14 ขึ้นไปอยู่แล้ว ข้ามไปตรวจรุ่นท้ายขั้นนี้ได้</p>
+
+<h3>1.1 macOS</h3>
+<ol>
+<li><b>Node.js</b> เปิด <a href="https://nodejs.org/">nodejs.org</a> ดาวน์โหลดตัวติดตั้งรุ่น <b>LTS</b> (ไฟล์ .pkg) แล้วติดตั้งตามขั้นตอนปกติ</li>
+<li><b>PostgreSQL</b> ใช้ <a href="https://postgresapp.com/">Postgres.app</a> ดาวน์โหลด ลากไปไว้ใน Applications แล้วดับเบิลคลิกเปิด กด <b>Initialize</b> เพื่อสร้างเซิร์ฟเวอร์ (ทำงานที่ localhost พอร์ต 5432)</li>
+<li>ให้ Terminal รู้จักคำสั่ง <code>psql</code> ของ Postgres.app แล้ว <b>ปิด Terminal และเปิดใหม่</b></li>
+</ol>
+<pre class="code">sudo mkdir -p /etc/paths.d &amp;&amp; echo /Applications/Postgres.app/Contents/Versions/latest/bin | sudo tee /etc/paths.d/postgresapp</pre>
+<p class="small">Postgres.app ต้องเปิดอยู่ (มีรูปช้างที่แถบเมนูด้านบน) ทุกครั้งที่จะใช้ฐานข้อมูล</p>
+
+<h3>1.2 Windows (เทอร์มินัล Ubuntu ของ WSL)</h3>
+<pre class="code">sudo apt update
+sudo apt install -y postgresql postgresql-client curl                     <span class="c"># ฐานข้อมูล</span>
+sudo service postgresql start                                              <span class="c"># เปิดฐานข้อมูล</span>
+curl -fsSL https://deb.nodesource.com/setup_24.x | sudo -E bash -          <span class="c"># เพิ่มแหล่งติดตั้ง Node.js 24</span>
+sudo apt install -y nodejs                                                 <span class="c"># Node.js และ npm</span></pre>
+<ul>
+<li>ทุกครั้งที่ปิดเครื่องหรือปิด WSL แล้วเปิดใหม่ ให้สั่ง <code>sudo service postgresql start</code> อีกครั้ง</li>
+<li>อย่าใช้ <code>sudo apt install nodejs</code> <b>ก่อน</b> เพิ่มแหล่ง NodeSource เพราะจะได้ Node.js รุ่นเก่าของ Ubuntu</li>
+<li>เปิดหน้าเว็บที่รันใน WSL ด้วยเบราว์เซอร์ของ Windows ได้ตามปกติ (<code>http://localhost:3000</code>)</li>
+</ul>
+
+<h3>1.3 ตรวจรุ่น (ทั้งสองระบบ)</h3>
+<pre class="code">node -v; npm -v; psql --version; git --version</pre>
+<div class="see"><b>ควรเห็น</b> <code>v24.x</code> (หรือ v20 ขึ้นไป) · <code>10.x</code> หรือ <code>11.x</code> · <code>psql (PostgreSQL) 16.x</code> (14–17 ใช้ได้) · <code>git version 2.x</code> · คัดลอกทั้ง 4 บรรทัดไปวางในช่องหลักฐาน 1</div>
+
+<h2 id="s2"><span class="no">ขั้นที่ 2</span>ดึงโค้ดมาไว้ในโฟลเดอร์ฝึก และรู้จักแต่ละไฟล์ <span class="tm">15 นาที</span></h2>
+<pre class="code">mkdir -p ~/engse207-practice &amp;&amp; cd ~/engse207-practice
+git clone --branch v1-monolith --depth 1 https://github.com/se-rmutl/engse207-taskboard.git tb-local
+cd tb-local
+ls -a
+code .                       <span class="c"># เปิดใน VS Code (หรือ File › Open Folder แล้วเลือก tb-local)</span></pre>
+<p>Git จะเตือนว่าอยู่ใน <i>detached HEAD</i> เป็นเรื่องปกติ เพราะเราดึงรุ่นที่ติดป้าย <code>v1-monolith</code> มาฝึก ไม่ได้จะส่งอะไรกลับ</p>
+<div class="tw"><table class="tb">
+<tr><th>ไฟล์หรือโฟลเดอร์</th><th>หน้าที่</th><th>เปิดดูอะไร</th></tr>
+<tr><td class="k"><code>app/server.js</code></td><td><b>ทั้งเซิร์ฟเวอร์อยู่ในไฟล์เดียว</b> ส่งหน้าเว็บ รับ API ตรวจกฎของงาน และเขียน SQL</td><td>อ่านหัวข้อ “ส่วนที่ 1–7” ในคอมเมนต์ ไล่ให้รู้ว่าแต่ละส่วนทำอะไร</td></tr>
+<tr><td class="k"><code>app/public/index.html</code></td><td>โครงหน้าเว็บ ฟอร์มสร้างงาน และบอร์ด 3 คอลัมน์</td><td>หา <code>id="task-form"</code> และ <code>id="list-todo"</code></td></tr>
+<tr><td class="k"><code>app/public/app.js</code></td><td>โค้ดที่รันใน <b>เบราว์เซอร์</b> รับ event เรียก API แล้ววาดหน้าจอ</td><td>อ่านหัวข้อ “ส่วนที่ A–E”</td></tr>
+<tr><td class="k"><code>app/public/style.css</code></td><td>หน้าตา</td><td>—</td></tr>
+<tr><td class="k"><code>app/package.json</code></td><td>รายชื่อ dependency (express, pg, nodemon) และคำสั่ง <code>npm run dev</code></td><td>ดูส่วน <code>scripts</code></td></tr>
+<tr><td class="k"><code>db/init/01-schema.sql</code></td><td>สร้างตาราง members, projects, tasks</td><td>ดูคอลัมน์ของ tasks</td></tr>
+<tr><td class="k"><code>db/init/02-seed.sql</code></td><td>ข้อมูลตั้งต้น 4 คน 7 งาน</td><td>ใช้ในขั้นที่ 6.3</td></tr>
+<tr><td class="k"><code>app/Dockerfile</code> <code>docker-compose.yml</code> <code>.env.example</code></td><td>ไฟล์สำหรับรันด้วย Docker</td><td><b>ยังไม่ใช้</b> · เป็นเรื่องของ Lab 0B</td></tr>
+<tr><td class="k"><code>RUN.md</code></td><td>วิธีรันด้วย Docker แผนที่โค้ด และตารางแก้ปัญหา</td><td>อ่านส่วนที่ 4 แผนที่โค้ด</td></tr>
+</table></div>
+<div class="box ex"><span class="lb">ทำไมเรียกว่า Monolith</span><p>หน้าเว็บ API กฎของงาน และ SQL ทำงานใน <b>process เดียว</b> คือ <code>node server.js</code> ติดตั้งและรันเป็นหน่วยเดียว ฐานข้อมูลเป็นอีกโปรแกรมหนึ่งที่แอปเรียกใช้ ภาพนี้จะเป็นจุดเริ่มต้นของทั้งภาค และค่อย ๆ แยกเป็นชั้นและเป็นบริการในครั้งต่อ ๆ ไป</p></div>
+
+<h2 id="s3"><span class="no">ขั้นที่ 3</span>สร้างฐานข้อมูลจากสคริปต์ <span class="tm">15–20 นาที</span></h2>
+<p>แอปคาดว่าจะเจอฐานข้อมูลชื่อ <code>taskboard</code> ผู้ใช้ <code>taskboard</code> รหัส <code>taskboard_dev</code> ที่ <code>localhost:5432</code> (ดูค่าเหล่านี้ใน <code>server.js</code> ส่วนที่ 1) เราจึงสร้างให้ตรงกัน</p>
+<h3>3.1 สร้างผู้ใช้และฐานข้อมูล</h3>
+<pre class="code">psql postgres                <span class="c"># macOS (Postgres.app)</span>
+sudo -u postgres psql        <span class="c"># Windows (WSL)</span></pre>
+<p>พรอมต์เปลี่ยนเป็น <code>postgres=#</code> แล้วพิมพ์ทีละบรรทัด</p>
+<pre class="code">CREATE ROLE taskboard LOGIN PASSWORD 'taskboard_dev';
+CREATE DATABASE taskboard OWNER taskboard;
+\q</pre>
+<div class="see"><b>ควรเห็น</b> <code>CREATE ROLE</code> และ <code>CREATE DATABASE</code></div>
+
+<h3>3.2 สร้างตารางและใส่ข้อมูลตั้งต้น</h3>
+<p>กลับมาที่โฟลเดอร์ <code>tb-local</code> ตั้งตัวแปรเก็บที่อยู่ฐานข้อมูลไว้ใช้ซ้ำ (ตัวแปรนี้อยู่เฉพาะหน้าต่าง Terminal นี้ เปิดหน้าต่างใหม่ต้องตั้งอีกครั้ง)</p>
+<pre class="code">cd ~/engse207-practice/tb-local
+export DB_URL=postgresql://taskboard:taskboard_dev@localhost:5432/taskboard
+psql "$DB_URL" -f db/init/01-schema.sql       <span class="c"># สร้าง 3 ตาราง</span>
+psql "$DB_URL" -f db/init/02-seed.sql         <span class="c"># ใส่ข้อมูลตั้งต้น</span>
+psql "$DB_URL" -c "\dt"
+psql "$DB_URL" -c "SELECT id, title, status, assignee_id FROM tasks ORDER BY id;"
+psql "$DB_URL" -c "SELECT COUNT(*) FROM tasks;"</pre>
+<div class="see"><b>ควรเห็น</b> <code>CREATE TABLE</code> 3 ครั้ง · <code>INSERT 0 4</code> <code>INSERT 0 1</code> <code>INSERT 0 7</code> · <code>\dt</code> มี members projects tasks · งาน 7 แถว งาน #6 ไม่มีผู้รับผิดชอบ · วางผลของ <code>COUNT(*)</code> ในช่องหลักฐาน 2</div>
+<p>สังเกตว่าสคริปต์เหล่านี้ <b>ไม่รันเอง</b> เราต้องสั่งรันทีละไฟล์ จำข้อนี้ไว้ ใน Lab 0B จะเห็นว่า Docker รันให้ตอนไหน</p>
+
+<h2 id="s4"><span class="no">ขั้นที่ 4</span>รันแอปบนเครื่อง <span class="tm">10 นาที</span></h2>
+<pre class="code">cd ~/engse207-practice/tb-local/app
+npm ci                       <span class="c"># ติดตั้ง dependency ตาม package-lock.json ลงโฟลเดอร์ node_modules</span>
+npm run dev                  <span class="c"># รัน server.js ผ่าน nodemon · ปล่อยหน้าต่างนี้ไว้</span></pre>
+<div class="see"><b>ควรเห็น</b>
+<pre class="code">[nodemon] starting `node server.js`
+[app] Task Board v1 monolith listening on http://localhost:3000</pre>
+เปิด <code>http://localhost:3000</code> เห็นบอร์ด 3 คอลัมน์ 7 งาน และ <code>http://localhost:3000/api/health</code> ได้ <code>{"app":"ok","db":"ok",…}</code> · วาง 2 บรรทัดข้างบนในช่องหลักฐาน 3</div>
+<ul>
+<li><code>npm ci</code> อาจเตือน <code>2 moderate severity vulnerabilities</code> <b>ไม่ต้อง</b> รัน <code>npm audit fix --force</code> เพราะจะเปลี่ยนรุ่น dependency ให้ต่างจากของทีม</li>
+<li>หน้าต่างนี้ต้องเปิดค้างไว้ ปิดแอปด้วย <b>Ctrl+C</b> · คำสั่งอื่นให้เปิด Terminal หน้าต่างที่สอง</li>
+</ul>
+<div class="box ex"><span class="lb">แอปรู้ได้อย่างไรว่าฐานข้อมูลอยู่ที่ไหน</span>
+<pre class="code">const db = new Pool({
+  host: process.env.DB_HOST || "localhost",      <span class="c"># ไม่มีตัวแปร DB_HOST ก็ใช้ localhost</span>
+  port: Number(process.env.DB_PORT || 5432),
+  user: process.env.DB_USER || "taskboard",
+  password: process.env.DB_PASSWORD || "taskboard_dev",
+  database: process.env.DB_NAME || "taskboard",
+  …</pre>
+<p>แอปอ่านค่าจาก <b>environment variable</b> ก่อน ถ้าไม่มีจึงใช้ค่าหลัง <code>||</code> บนเครื่องเราไม่ได้ตั้งตัวแปรเหล่านี้ แอปจึงใช้ค่าหลัง <code>||</code> ทั้งหมด ซึ่งตรงกับที่สร้างไว้ในขั้นที่ 3 Lab 0B จะส่งค่าเหล่านี้เข้าไปจาก Docker แทน</p></div>
+
+<h2 id="s5"><span class="no">ขั้นที่ 5</span>ตามคำขอ “สร้างงาน” หนึ่งเส้น <span class="tm">20–30 นาที</span></h2>
+<p>เปิด DevTools (macOS: Option+Cmd+I · Windows: F12) แท็บ <b>Network</b> เลือกตัวกรอง Fetch/XHR แล้วสร้างงาน “ลองจาก Lab 0A” ดูทั้งแท็บ Network และหน้าต่าง Terminal ที่รันแอป</p>
+<div class="tw"><table class="tb">
+<tr><th>ลำดับ</th><th>เกิดที่</th><th>ไฟล์ · ส่วน</th><th>สิ่งที่เกิดขึ้น</th></tr>
+<tr><td class="n">1</td><td>เบราว์เซอร์</td><td><code>index.html</code> ฟอร์ม <code>task-form</code></td><td>ผู้ใช้กดปุ่ม “สร้างงาน” เกิด event <code>submit</code></td></tr>
+<tr><td class="n">2</td><td>เบราว์เซอร์</td><td><code>app.js</code> ส่วนที่ D</td><td>อ่านค่าจากฟอร์ม แล้วเรียก <code>api.createTask(…)</code></td></tr>
+<tr><td class="n">3</td><td>เบราว์เซอร์</td><td><code>app.js</code> ส่วนที่ B</td><td><code>request()</code> ส่ง <code>fetch</code> แบบ POST ไปที่ <code>/api/tasks</code> พร้อม JSON</td></tr>
+<tr><td class="n">4</td><td>เซิร์ฟเวอร์</td><td><code>server.js</code> ส่วนที่ 2</td><td>ตัวเขียน log จับเวลาคำขอ</td></tr>
+<tr><td class="n">5</td><td>เซิร์ฟเวอร์</td><td><code>server.js</code> ส่วนที่ 5.2</td><td>route ตรวจชื่องาน แล้วสั่ง <code>INSERT</code></td></tr>
+<tr><td class="n">6</td><td>ฐานข้อมูล</td><td>ตาราง <code>tasks</code></td><td>เพิ่มแถวใหม่ ส่งแถวที่สร้างกลับมา</td></tr>
+<tr><td class="n">7</td><td>เซิร์ฟเวอร์ → เบราว์เซอร์</td><td><code>server.js</code> 5.2 · <code>app.js</code> ส่วนที่ C</td><td>ตอบ 201 พร้อม JSON · หน้าจอโหลดรายการใหม่แล้ววาดบอร์ด</td></tr>
+</table></div>
+<div class="see"><b>ควรเห็น</b> แท็บ Network มี <code>tasks</code> แบบ POST สถานะ 201 (ดู Payload และ Response) ตามด้วย GET <code>tasks</code> และ <code>summary</code> · Terminal มี <code>[api] POST /api/tasks -&gt; 201 (… ms)</code></div>
+
+<h3>5.1 ใส่ console.log สองที่ ดูว่าข้อความไปโผล่ที่ไหน</h3>
+<p>เพิ่มบรรทัดแรกใน <code>server.js</code> ส่วนที่ 5.2 ใต้ <code>try {</code> และบรรทัดที่สองใน <code>app.js</code> ส่วนที่ D ใต้ <code>$("form-error").textContent = "";</code> บันทึกทั้งสองไฟล์ รีเฟรชหน้าเว็บ แล้วสร้างงานอีกครั้ง</p>
+<pre class="code"><span class="c">// server.js ส่วนที่ 5.2</span>
+    console.log("[ฝึก] เซิร์ฟเวอร์ได้รับ", req.body);
+<span class="c">// app.js ส่วนที่ D</span>
+  console.log("[ฝึก] หน้าจอกำลังส่ง", $("title").value);</pre>
+<div class="see"><b>ควรเห็น</b> บรรทัดของ server.js ขึ้นใน <b>Terminal</b> (หลัง nodemon รีสตาร์ตเอง) · บรรทัดของ app.js ขึ้นใน <b>Console ของเบราว์เซอร์</b> · ตอบช่องหลักฐาน 5 แล้ว <b>ลบทั้งสองบรรทัดออก</b></div>
+
+<h2 id="s6"><span class="no">ขั้นที่ 6</span>ลองแก้ 3 จุด <span class="tm">30–40 นาที</span></h2>
+<h3>6.1 แก้หน้าเว็บ (ไฟล์ static)</h3>
+<p>ใน <code>app/public/index.html</code> เปลี่ยนป้ายมุมขวาบน แล้ว <b>รีเฟรชเบราว์เซอร์</b> (ไม่ต้องรีสตาร์ตแอป)</p>
+<pre class="code">&lt;span class="ver"&gt;v1 Monolith · ฝึกโดย &lt;ชื่อเล่นของคุณ&gt;&lt;/span&gt;</pre>
+<p>ทำไมไม่ต้องรีสตาร์ต: เซิร์ฟเวอร์ส่งไฟล์ในโฟลเดอร์ <code>public/</code> ให้เบราว์เซอร์ตรง ๆ ทุกครั้งที่ขอ (<code>express.static</code> ใน server.js ส่วนที่ 2) ส่วน nodemon เฝ้าแค่ <code>server.js</code></p>
+
+<h3>6.2 เพิ่ม API ของตัวเอง แล้วแสดงบนหน้าเว็บ</h3>
+<p><b>(ก) เซิร์ฟเวอร์</b> ใน <code>server.js</code> วางโค้ดนี้ <b>เหนือ</b> บรรทัดหัวข้อ “ส่วนที่ 4 · API สมาชิก” เปลี่ยน <code>by</code> เป็นรหัสนักศึกษาของตัวเอง แล้วบันทึก</p>
+<pre class="code">// Lab 0A · API ที่ฉันเพิ่มเอง
+app.get("/api/about", async (req, res) =&gt; {
+  try {
+    const result = await db.query("SELECT COUNT(*)::int AS total FROM tasks");
+    res.json({ app: "Task Board", version: "v1-monolith", by: "&lt;รหัสนักศึกษา&gt;", tasks: result.rows[0].total });
+  } catch (err) {
+    console.error("[api] GET /api/about failed:", err.message);
+    res.status(500).json({ error: "เกิดข้อผิดพลาดในระบบ" });
+  }
+});</pre>
+<pre class="code">curl -s localhost:3000/api/about; echo     <span class="c"># หน้าต่าง Terminal ที่สอง</span></pre>
+<div class="see"><b>ควรเห็น</b> Terminal ของแอปขึ้น <code>[nodemon] restarting due to changes...</code> · curl ได้ <code>{"app":"Task Board","version":"v1-monolith","by":"…","tasks":8}</code> (ตัวเลขเท่ากับจำนวนงานที่มีตอนนั้น) · วางในช่องหลักฐาน 6</div>
+<p><b>(ข) หน้าเว็บ</b> แก้ 2 ไฟล์ แล้วรีเฟรช</p>
+<pre class="code"><span class="c">&lt;!-- index.html ใต้บรรทัด &lt;p class="sub"&gt;โครงงาน: … &lt;/p&gt; --&gt;</span>
+      &lt;p class="sub" id="about"&gt;&lt;/p&gt;
+
+<span class="c">// app.js ส่วนที่ B · เพิ่มในวงเล็บของ const api = { … } ต่อจาก deleteTask</span>
+  about: () =&gt; request("GET", "/api/about"),
+
+<span class="c">// app.js ส่วนที่ E · ต่อจากบรรทัด await reload(); ในฟังก์ชัน start</span>
+  const a = await api.about();
+  $("about").textContent = `${a.app} ${a.version} · งานทั้งหมด ${a.tasks} งาน · ฝึกโดย ${a.by}`;</pre>
+<div class="see"><b>ควรเห็น</b> ใต้ชื่อโครงงานมีบรรทัด “Task Board v1-monolith · งานทั้งหมด … งาน · ฝึกโดย …” · Network มี GET <code>about</code> 200 · นี่คือเส้นทางครบรอบเดียวกับขั้นที่ 5: route → fetch → render</div>
+
+<h3>6.3 เพิ่มสมาชิกในข้อมูลตั้งต้น แล้วสร้างฐานข้อมูลใหม่</h3>
+<p>ใน <code>db/init/02-seed.sql</code> เพิ่มตัวเองเป็นสมาชิกคนที่ 5 (ระวังจุลภาคท้ายบรรทัด <code>('ฝน', 'member')</code>)</p>
+<pre class="code">  ('ฝน', 'member'),
+  ('&lt;ชื่อเล่นของคุณ&gt;', 'member');</pre>
+<p>แก้ไฟล์แล้ว ฐานข้อมูลยังไม่เปลี่ยน เพราะสคริปต์รันเฉพาะตอนเราสั่ง ต้องลบตารางแล้วรันใหม่ (ข้อมูลที่สร้างไว้จะหายหมด)</p>
+<pre class="code">cd ~/engse207-practice/tb-local
+export DB_URL=postgresql://taskboard:taskboard_dev@localhost:5432/taskboard
+psql "$DB_URL" -c "DROP TABLE tasks, projects, members;"
+psql "$DB_URL" -f db/init/01-schema.sql
+psql "$DB_URL" -f db/init/02-seed.sql
+psql "$DB_URL" -c "SELECT id, name FROM members;"</pre>
+<div class="see"><b>ควรเห็น</b> สมาชิก 5 คน · รีเฟรชหน้าเว็บ ช่องผู้รับผิดชอบมีชื่อคุณ งานกลับเป็น 7 งาน (งานที่สร้างระหว่างฝึกหายไป) · แอป <b>ไม่ต้องรีสตาร์ต</b></div>
+<h3>6.4 สรุปสิ่งที่แก้ด้วย Git</h3>
+<pre class="code">git status
+git diff --stat</pre>
+<div class="see"><b>ควรเห็น</b> 4 ไฟล์ <code>app/public/app.js</code> <code>app/public/index.html</code> <code>app/server.js</code> <code>db/init/02-seed.sql</code> · วางผล <code>git diff --stat</code> ในช่องหลักฐาน 7 · <b>เก็บโฟลเดอร์นี้ไว้</b> Lab 0B ใช้ต่อ</div>
+
+<h2 id="s7"><span class="no">ขั้นที่ 7</span>ติดปัญหา</h2>
+<div class="tw"><table class="tb wide">
+<tr><th>ข้อความหรืออาการ</th><th>สาเหตุที่พบบ่อย</th><th>แก้</th></tr>
+<tr><td><code>psql: command not found</code></td><td>macOS ยังไม่ตั้ง PATH หรือยังไม่เปิด Terminal ใหม่ · WSL ยังไม่ติดตั้ง postgresql-client</td><td>ทำ 1.1 ข้อ 3 แล้วปิดเปิด Terminal · WSL <code>sudo apt install -y postgresql-client</code></td></tr>
+<tr><td><code>connection to server … failed: Connection refused</code> พอร์ต 5432</td><td>ฐานข้อมูลยังไม่เปิด</td><td>macOS เปิด Postgres.app กด Start · WSL <code>sudo service postgresql start</code></td></tr>
+<tr><td><code>role "…" does not exist</code> ตอน <code>psql postgres</code> (macOS)</td><td>Postgres.app ยังไม่ได้กด Initialize</td><td>เปิด Postgres.app กด Initialize</td></tr>
+<tr><td><code>password authentication failed for user "taskboard"</code></td><td>พิมพ์รหัสตอนสร้าง role ผิด</td><td>เข้า <code>psql postgres</code> หรือ <code>sudo -u postgres psql</code> แล้ว <code>ALTER ROLE taskboard PASSWORD 'taskboard_dev';</code></td></tr>
+<tr><td><code>database "taskboard" does not exist</code></td><td>ข้ามขั้น 3.1</td><td>ทำ 3.1 ใหม่</td></tr>
+<tr><td><code>relation "members" already exists</code></td><td>รัน 01-schema.sql ซ้ำ</td><td>ไม่เป็นไร ถ้าต้องการเริ่มใหม่ใช้คำสั่ง DROP ใน 6.3</td></tr>
+<tr><td>หน้าเว็บขึ้น “โหลดรายการงานไม่ได้” · health ได้ <code>"db":"down"</code></td><td>แอปต่อฐานข้อมูลไม่ได้ (ปิดอยู่ หรือยังไม่ได้สร้างตาราง)</td><td>ดูบรรทัด <code>failed:</code> ใน Terminal ของแอป แล้วแก้ตามข้อที่ตรงในตารางนี้</td></tr>
+<tr><td><code>Error: listen EADDRINUSE … :3000</code></td><td>มีโปรแกรมอื่นใช้พอร์ต 3000 เช่น Task Board ที่รันด้วย Docker ไว้</td><td>ปิดตัวเก่า (<code>docker compose down</code> ในโฟลเดอร์นั้น) หรือรันด้วยพอร์ตอื่น <code>PORT=3001 npm run dev</code></td></tr>
+<tr><td><code>nodemon: not found</code> หรือ <code>Cannot find module 'express'</code></td><td>ยังไม่ได้ <code>npm ci</code> หรือรันผิดโฟลเดอร์</td><td><code>cd</code> เข้า <code>tb-local/app</code> แล้ว <code>npm ci</code></td></tr>
+<tr><td>แก้ server.js แล้วแอปไม่ทำงาน · Terminal ขึ้น <code>app crashed</code></td><td>โค้ดมี SyntaxError</td><td>อ่านบรรทัดที่ Terminal บอก แก้แล้วบันทึก nodemon จะเริ่มใหม่เอง</td></tr>
+<tr><td>แก้ index.html หรือ app.js แล้วไม่เห็นผล</td><td>เบราว์เซอร์จำไฟล์เก่า</td><td>รีเฟรชแบบ Cmd+Shift+R (macOS) หรือ Ctrl+Shift+R</td></tr>
+</table></div>
+
+<h2 id="qa"><span class="no">ทบทวน</span>ตรวจความเข้าใจ และสรุป</h2>
+<div class="qa"><span class="lb">ตอบในใจก่อน แล้วคลิกดูแนวคำตอบ</span><ol>
+<li class="rv">แอปหนึ่งตัวใน v1 ทำหน้าที่อะไรบ้าง ทำไมเรียกว่า Monolith<span class="rq">แนวคำตอบ</span><span class="ans">ส่งหน้าเว็บ รับคำขอ API ตรวจกฎของงาน และเขียน SQL ทั้งหมดอยู่ใน <code>server.js</code> และรันเป็น process เดียว ติดตั้งเป็นหน่วยเดียว จึงเรียกว่า Monolith</span></li>
+<li class="rv"><code>console.log</code> ใน <code>app.js</code> กับใน <code>server.js</code> ไปโผล่คนละที่ เพราะอะไร<span class="rq">แนวคำตอบ</span><span class="ans"><code>app.js</code> ถูกส่งไปรันในเบราว์เซอร์ของผู้ใช้ จึงขึ้นใน Console ของเบราว์เซอร์ ส่วน <code>server.js</code> รันในเครื่องที่เป็นเซิร์ฟเวอร์ จึงขึ้นใน Terminal ที่รันแอป เวลาไล่ปัญหาต้องดูทั้งสองที่</span></li>
+<li class="rv">แก้ <code>index.html</code> แค่รีเฟรช แต่แก้ <code>server.js</code> ต้องรอให้แอปรีสตาร์ต ต่างกันอย่างไร<span class="rq">แนวคำตอบ</span><span class="ans">ไฟล์ใน <code>public/</code> ถูกอ่านจากดิสก์ใหม่ทุกครั้งที่เบราว์เซอร์ขอ ส่วน <code>server.js</code> ถูกโหลดเข้าหน่วยความจำตอนเริ่ม process ต้องเริ่ม process ใหม่จึงจะเห็นโค้ดใหม่ ซึ่ง nodemon ทำให้อัตโนมัติ</span></li>
+<li class="rv">แก้ <code>02-seed.sql</code> แล้วทำไมข้อมูลในฐานข้อมูลไม่เปลี่ยนเอง<span class="rq">แนวคำตอบ</span><span class="ans">สคริปต์เป็นแค่ไฟล์ข้อความ จะมีผลเมื่อเราสั่งรันด้วย psql เท่านั้น ฐานข้อมูลเก็บข้อมูลไว้แยกจากไฟล์สคริปต์ ต้องลบตารางแล้วรันใหม่จึงได้ข้อมูลตามไฟล์</span></li>
+<li class="rv">ถ้าเพื่อนในทีมใช้ PostgreSQL รุ่น 13 และ Node.js รุ่น 16 เขาจะรันได้เหมือนเราไหม การติดตั้งแบบนี้มีปัญหาอะไรเมื่อทำงานเป็นทีม<span class="rq">แนวคำตอบ</span><span class="ans">อาจรันไม่ได้หรือได้ผลต่างกัน ทุกคนต้องติดตั้งเอง รุ่นไม่ตรงกัน ตั้งค่าต่างกัน เปิดบริการเองทุกครั้ง และทำซ้ำบนเครื่องใหม่ยาก ปัญหา “เครื่องผมรันได้” นี้คือเหตุผลที่ Lab 0B ย้ายระบบเข้า Docker</span></li>
+</ol></div>
+<div class="box key"><span class="lb">สรุป Lab 0A</span><ul>
+<li>Task Board v1 = แอป Node.js หนึ่งตัว (หน้าเว็บ + API + กฎ + SQL) คุยกับ PostgreSQL หนึ่งตัว</li>
+<li>แอปรู้ที่อยู่ฐานข้อมูลจาก environment variable ถ้าไม่มีใช้ค่าตั้งต้นใน <code>server.js</code></li>
+<li>คำขอหนึ่งเส้น: event → <code>app.js</code> → fetch → route ใน <code>server.js</code> → SQL → JSON กลับ → render</li>
+<li>ไฟล์ใน <code>public/</code> แก้แล้วรีเฟรช · <code>server.js</code> แก้แล้ว nodemon รีสตาร์ต · สคริปต์ฐานข้อมูลต้องสั่งรันเอง</li>
+<li>ติดตั้งเองทำได้ แต่ทุกเครื่องต้องทำซ้ำและรุ่นอาจไม่ตรงกัน → <a href="lab0b.html"><b>ไปต่อ Lab 0B</b></a></li>
+</ul></div>
+
+<h2 id="ev"><span class="no">ส่งงาน</span>หลักฐาน 0A</h2>
+<p>วางผลจริงจากเครื่องของคุณ browser จำไว้ให้ (เครื่องเดิม เบราว์เซอร์เดิม) ทำ Lab 0B ต่อ แล้วกดปุ่มคัดลอกของทั้งสองหน้าไปวางในไฟล์เดียวกัน ขั้นตอนส่งอยู่ท้าย Lab 0B</p>
+<div class="ev">
+<label>รหัสนักศึกษา<input data-k="sid" placeholder="68543210000-0"></label>
+<label>ชื่อ-นามสกุล<input data-k="name"></label>
+<label class="full">เครื่องที่ใช้<input data-k="os" placeholder="เช่น MacBook Air M2 macOS 15 · หรือ Windows 11 + WSL Ubuntu 24.04"></label>
+<label class="full">1 · ผลของ <code>node -v; npm -v; psql --version; git --version</code><textarea data-k="versions" rows="4"></textarea></label>
+<label class="full">2 · ผลของ <code>SELECT COUNT(*) FROM tasks;</code> หลังใส่ข้อมูลตั้งต้น<textarea data-k="count" rows="4"></textarea></label>
+<label class="full">3 · บรรทัดที่แอปพิมพ์ตอนเริ่ม และบรรทัด <code>[api] POST /api/tasks</code><textarea data-k="startlog" rows="4"></textarea></label>
+<label class="full">4 · เขียนเส้นทางของคำขอ “สร้างงาน” ด้วยคำของตัวเอง (ไฟล์ · ส่วน · ทำอะไร)<textarea data-k="trace" rows="5"></textarea></label>
+<label class="full">5 · console.log ทั้งสองบรรทัดไปโผล่ที่ไหน เพราะอะไร<textarea data-k="logs" rows="3"></textarea></label>
+<label class="full">6 · ผลของ <code>curl -s localhost:3000/api/about</code><textarea data-k="about" rows="2"></textarea></label>
+<label class="full">7 · ผลของ <code>git diff --stat</code><textarea data-k="diffstat" rows="5"></textarea></label>
+<label class="full">8 · ติดตรงไหน แก้อย่างไร (ไม่ติดเลยให้เขียนว่าไม่ติด) · ใช้ AI ช่วยไหม ใช้กับอะไร<textarea data-k="hard" rows="4"></textarea></label>
+</div>
+<p class="center"><button class="big" id="copy2" type="button">คัดลอกหลักฐาน 0A (Markdown)</button> <button class="ghost" id="clear" type="button">ล้างช่องทั้งหมด</button></p>
+
+<p class="foot">ENGSE207 สถาปัตยกรรมซอฟต์แวร์ · ภาค 2/2569 · Lab 0A ฉบับ 1.0 · 28 พ.ย. 2569 · อาจารย์ธนิต เกตุแก้ว หลักสูตรวิศวกรรมซอฟต์แวร์ มทร.ล้านนา · คำสั่ง Docker ทั้งหมดอยู่ใน <a href="docker-guide.html">คู่มือคำสั่ง Docker</a></p>
+</main>
+<div class="toast" id="toast" role="status"></div>
+<script>
+(function(){'use strict';
+var LAB=document.body.getAttribute('data-lab'),KEY='engse207-'+LAB;
+var st={};try{st=JSON.parse(localStorage.getItem(KEY)||'{}');}catch(e){}
+var fields=[].slice.call(document.querySelectorAll('.ev [data-k]'));
+fields.forEach(function(el){var k=el.getAttribute('data-k');if(st[k]!=null)el.value=st[k];
+ el.addEventListener('input',function(){st[k]=el.value;try{localStorage.setItem(KEY,JSON.stringify(st));}catch(e){}});});
+function v(k){var el=document.querySelector('.ev [data-k="'+k+'"]');return el?el.value.replace(/\s+$/,''):'';}
+function code(t){return '```text\n'+(t||'(ยังไม่ได้วาง)')+'\n```';}
+function ans(t){return t||'(ยังไม่ได้ตอบ)';}
+function today(){var d=new Date();return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2);}
+function md(){
+ if(LAB==='lab0a'){return ['# Lab 0 (I02) · '+(v('sid')||'<รหัสนักศึกษา>')+' '+(v('name')||'<ชื่อ-นามสกุล>'),'',
+  '## Lab 0A · รันและรู้จักโค้ด Task Board บนเครื่อง','','- เครื่องที่ใช้: '+ans(v('os')),'- วันที่คัดลอก: '+today(),'',
+  '### 1 รุ่นเครื่องมือ',code(v('versions')),'','### 2 จำนวนงานหลังใส่ข้อมูลตั้งต้น',code(v('count')),'',
+  '### 3 log ตอนเริ่มแอป และตอนสร้างงาน',code(v('startlog')),'','### 4 เส้นทางของคำขอ “สร้างงาน”',ans(v('trace')),'',
+  '### 5 console.log ไปโผล่ที่ไหน',ans(v('logs')),'','### 6 /api/about',code(v('about')),'',
+  '### 7 สิ่งที่แก้ (git diff --stat)',code(v('diffstat')),'','### 8 ติดตรงไหน · การใช้ AI',ans(v('hard')),''].join('\n');}
+ return ['## Lab 0B · ย้าย Task Board เข้า Docker','','- วันที่คัดลอก: '+today(),'',
+  '### 1 รุ่น Docker',code(v('docker')),'','### 2 Dockerfile ที่เขียนเอง และ image',code(v('dockerfile')),'',
+  '### 3 รันแอปตัวเดียว',ans(v('alone')),'','### 4 ฐานข้อมูลใน container (psql ผ่านพอร์ต 5433)',code(v('psql')),'',
+  '### 5 สอง container คุยกัน',code(v('net')),'','### 6 Compose รอบที่ 1: คำทายและผลจริง',ans(v('round1')),'',
+  '### 7 docker-compose.yml ของฉัน และ docker compose ps',code(v('compose')),'','### 8 แก้ server.js กับไฟล์ของเรา',ans(v('rebuild')),'',
+  '### 9 เทียบกับไฟล์จริงของ T02',ans(v('compare')),'','### 10 ติดตรงไหน · การใช้ AI',ans(v('hard')),''].join('\n');}
+var t=document.getElementById('toast'),tm;
+function toast(m){t.textContent=m;t.classList.add('on');clearTimeout(tm);tm=setTimeout(function(){t.classList.remove('on');},2600);}
+function copy(){var text=md(),empty=fields.filter(function(el){return !el.value.trim();}).length;
+ var done=function(){toast('คัดลอกแล้ว'+(empty?' · ยังว่าง '+empty+' ช่อง':'')+' · วางในไฟล์ individual/LAB0-<รหัส>.md');};
+ if(navigator.clipboard&&window.isSecureContext){navigator.clipboard.writeText(text).then(done,fb);}else fb();
+ function fb(){var ta=document.createElement('textarea');ta.value=text;ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.select();
+  try{document.execCommand('copy');done();}catch(e){toast('คัดลอกไม่ได้ ให้เลือกข้อความเอง');}document.body.removeChild(ta);}}
+['copy','copy2'].forEach(function(id){var b=document.getElementById(id);if(b)b.addEventListener('click',copy);});
+var c=document.getElementById('clear');if(c)c.addEventListener('click',function(){if(!confirm('ล้างทุกช่องในหน้านี้?'))return;st={};try{localStorage.removeItem(KEY);}catch(e){}fields.forEach(function(el){el.value='';});toast('ล้างแล้ว');});
+var p=document.getElementById('print');if(p)p.addEventListener('click',function(){window.print();});
+var all=[].slice.call(document.querySelectorAll('.qa li.rv'));
+all.forEach(function(li){li.setAttribute('tabindex','0');li.setAttribute('role','button');li.setAttribute('aria-expanded','false');
+ function tg(){var o=!li.classList.contains('open');li.classList.toggle('open',o);li.setAttribute('aria-expanded',o?'true':'false');}
+ li.addEventListener('click',function(e){if(e.target.closest('a'))return;tg();});
+ li.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();tg();}});});
+window.addEventListener('beforeprint',function(){all.forEach(function(li){li.classList.add('open');});});
+window.ENGSE207_LAB0={md:md};
+})();
+</script>
+</body>
+</html>

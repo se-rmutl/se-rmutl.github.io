@@ -1,0 +1,535 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ENGSE207 Lab 0B · ย้าย Task Board เข้า Docker ทีละขั้น</title>
+<meta name="description" content="ปูพื้นก่อนครั้งที่ 2: เขียน Dockerfile เอง build image รัน container ย้าย PostgreSQL เข้า container เครือข่าย volume และเขียน docker-compose.yml เองทีละรอบ แล้วเทียบกับไฟล์ที่ใช้จริง">
+<link rel="canonical" href="https://se-rmutl.github.io/engse207/notes/lab0b.html">
+<link rel="icon" href="../../assets/se-logo.png" type="image/png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=Sarabun:wght@400;500;700&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+:root{--night:#101b2e;--navy:#13294b;--blue:#2459a6;--blue-soft:#e5edfa;--teal:#0f7f70;--teal-soft:#def3ef;--violet:#6a45c4;--violet-soft:#efe9fb;
+--or:#c95f1f;--or-soft:#fcece1;--gold:#9a6400;--gold-soft:#fbf1dc;--ok:#1f6b33;--ok-soft:#e3f1e6;--bad:#b3261e;--bad-soft:#fdecea;
+--ink:#16233a;--muted:#5a6880;--rule:#d7e0ec;--tint:#f3f6fb;--paper:#fff;--p1:#2f6fe4;--p2:#7a4fd6;--p3:#0f8f7d;--p4:#d0662b;
+--head:"IBM Plex Sans Thai","Sarabun",system-ui,sans-serif;--body:"Sarabun","IBM Plex Sans Thai",system-ui,sans-serif;--mono:"JetBrains Mono",ui-monospace,monospace}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:#eef2f7;color:var(--ink);font:400 18px/1.75 var(--body);-webkit-text-size-adjust:100%}
+a{color:var(--blue)}
+a:focus-visible,button:focus-visible,li.rv:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
+.bar{position:sticky;top:0;z-index:10;display:flex;align-items:center;gap:10px;padding:10px 18px;background:rgba(255,255,255,.94);border-bottom:1px solid var(--rule);backdrop-filter:blur(6px);font-family:var(--head);font-size:.9rem}
+.bar a.back{color:var(--navy);font-weight:600;text-decoration:none}
+.bar .sp{flex:1}
+.bar button,.bar a.pdf{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border:1px solid var(--navy);border-radius:999px;background:#fff;color:var(--navy);font:600 .86rem var(--head);cursor:pointer;text-decoration:none}
+.bar button.pri{background:var(--navy);color:#fff}
+.doc{max-width:880px;margin:24px auto 64px;padding:44px 56px;background:#fff;border:1px solid var(--rule);border-radius:18px}
+.kick{margin:0;color:var(--or);font:700 .82rem var(--head);letter-spacing:.08em}
+h1{margin:6px 0 4px;font:700 2.05rem/1.3 var(--head);color:var(--navy);letter-spacing:-.01em}
+.meta{margin:0 0 18px;color:var(--muted);font:500 .9rem var(--head)}
+h2{margin:46px 0 10px;padding-top:8px;font:700 1.55rem/1.35 var(--head);color:var(--navy);border-top:3px solid var(--navy);scroll-margin-top:70px}
+h2 .no{color:var(--or);margin-right:8px}
+h3{margin:30px 0 6px;font:700 1.18rem/1.45 var(--head);color:var(--navy);scroll-margin-top:70px}
+h4{margin:18px 0 4px;font:700 1rem var(--head);color:var(--ink)}
+p{margin:0 0 12px}
+ul,ol{margin:0 0 12px;padding-left:24px}
+li{margin:3px 0}
+code{font:500 .84em var(--mono);background:var(--tint);border:1px solid #e3e9f2;border-radius:5px;padding:0 5px;overflow-wrap:anywhere}
+b,strong{font-weight:700;color:var(--navy)}
+.en{color:var(--muted);font-size:.92em}
+.box{margin:16px 0;padding:14px 18px;border-radius:12px;border:1px solid var(--rule);background:var(--tint)}
+.box>:last-child{margin-bottom:0}
+.box .lb{display:block;margin-bottom:4px;font:700 .8rem var(--head);letter-spacing:.04em}
+.ex{background:var(--blue-soft);border-color:#c8d7f0}.ex .lb{color:var(--blue)}
+.key{background:var(--or-soft);border-color:#f0c9b1}.key .lb{color:var(--or)}
+.warn{background:var(--gold-soft);border-color:#ebd29c}.warn .lb{color:var(--gold)}
+.proj{background:var(--teal-soft);border-color:#b5ddd5}.proj .lb{color:var(--teal)}
+.mock{background:#fff;border:1.5px dashed #b9c6d8}.mock .lb{color:var(--violet)}
+table.tb{width:100%;border-collapse:collapse;margin:12px 0 16px;font-size:.92rem;line-height:1.55}
+.tb th,.tb td{border:1px solid var(--rule);padding:7px 10px;text-align:left;vertical-align:top}
+.tb th{background:var(--tint);font:700 .84rem var(--head);color:var(--navy)}
+.tb td.k{font-weight:700;color:var(--navy);white-space:nowrap}
+.tb td.n{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+.tb tr.ph td{background:#f7f9fc;font:700 .84rem var(--head);color:var(--navy)}
+.tb tr.ex td{background:var(--bad-soft)}
+.tw{overflow-x:auto}
+.pill{display:inline-block;padding:0 8px;border-radius:999px;font:600 .76rem/1.7 var(--head);white-space:nowrap}
+.pl-in{background:var(--blue-soft);color:var(--blue)}.pl-home{background:var(--or-soft);color:var(--or)}.pl-team{background:var(--teal-soft);color:var(--teal)}.pl-ind{background:var(--violet-soft);color:var(--violet)}
+figure{margin:20px 0;padding:0}
+figure>svg{display:block;width:100%;max-width:100%;height:auto;margin:0 auto}
+figcaption{margin-top:6px;color:var(--muted);font:500 .84rem var(--head);text-align:center}
+.outcomes{counter-reset:o;list-style:none;padding:0}
+.outcomes li{counter-increment:o;position:relative;padding:6px 0 6px 40px}
+.outcomes li::before{content:counter(o);position:absolute;left:0;top:7px;width:28px;height:28px;border-radius:8px;background:var(--navy);color:#fff;display:grid;place-items:center;font:700 .85rem var(--head)}
+.toc{margin:14px 0 6px;padding:12px 18px;border:1px dashed #b9c6d8;border-radius:12px;font-family:var(--head);font-size:.9rem}
+.toc ol{margin:4px 0 0;padding-left:20px}.toc a{text-decoration:none}
+.media{margin:16px 0 4px;display:grid;gap:8px}
+.media .g{display:grid;grid-template-columns:120px 1fr;gap:10px;align-items:baseline;font-family:var(--head);font-size:.9rem}
+.media .g b{color:var(--or);font-size:.82rem}
+.media .g span{display:flex;flex-wrap:wrap;gap:2px 14px}.media .g span a{white-space:nowrap}
+.qa{margin:16px 0;padding:14px 18px;border:2px solid var(--navy);border-radius:14px}
+.qa .lb{display:block;margin-bottom:6px;color:var(--navy);font:700 .86rem var(--head)}
+.qa ol{margin:0;padding-left:22px}
+.qa li{margin:8px 0}
+.qa .ans{display:block;margin-top:4px;padding:6px 10px;border-radius:8px;background:var(--ok-soft);color:#174d27;font-size:.95em}
+.qa li.rv{cursor:pointer}
+.qa .rq{display:inline-block;margin-left:6px;padding:0 8px;border:1px dashed #9fb3c8;border-radius:999px;color:var(--muted);font:600 .78rem var(--head)}
+@media screen{.qa li.rv:not(.open) .ans{display:none}.qa li.rv.open .rq{display:none}}
+pre.code{margin:6px 0 14px;padding:12px 14px;border-radius:10px;background:var(--night);color:#eef2f8;font:500 .8rem/1.6 var(--mono);overflow-x:auto;white-space:pre}
+pre.code .c{color:#9fb0c8}
+.file{display:flex;gap:10px;align-items:baseline;margin:14px 0 0;font:600 .84rem var(--head)}
+.file code{background:none;border:0;padding:0;color:var(--navy);font-weight:600}
+.file span{color:var(--muted);font-weight:500}
+.gl td:first-child{font-weight:700;color:var(--navy);white-space:nowrap}
+.refs li{margin:6px 0;font-size:.92rem}
+.foot{margin-top:40px;padding-top:12px;border-top:1px solid var(--rule);color:var(--muted);font:500 .82rem var(--head)}
+@media (max-width:720px){.tb.wide{min-width:620px;font-size:.86rem}body{font-size:17px}.doc{margin:0;padding:24px 18px;border-radius:0;border:0}h1{font-size:1.6rem}h2{font-size:1.3rem}.media .g{grid-template-columns:1fr;gap:2px}.bar .t{display:none}}
+@page{size:A4;margin:16mm 15mm 18mm}
+@media print{body{background:#fff;font-size:11.5pt;line-height:1.6}.bar{display:none}.doc{margin:0;padding:0;border:0;max-width:none}
+h2{break-after:avoid;margin-top:26px}h3,h4{break-after:avoid}.box,figure,tr,.qa li{break-inside:avoid}pre.code{break-inside:avoid;white-space:pre-wrap}.qa .rq{display:none}
+a{color:var(--ink);text-decoration:none}.toc{break-inside:avoid}.media a{color:var(--blue)}}
+/* แผนภาพ: ตั้ง font/size/fill ที่ .fig แล้วให้คลาสย่อยปรับ */
+.fig{font-family:var(--body);font-size:15px;fill:var(--ink)}
+.fig .t-b{font-family:var(--head);font-weight:600;font-size:16px}
+.fig .t-c{font-family:var(--head);font-weight:600;font-size:14px}
+.fig .t-h{font-family:var(--head);font-weight:700;font-size:19px;fill:var(--navy)}
+.fig .t-s{font-family:var(--head);font-size:13px;fill:var(--muted)}
+.fig .t-x{font-family:var(--head);font-size:12px;fill:var(--muted)}
+.fig .t-m{font-family:var(--mono);font-size:12px;fill:var(--navy)}
+.fig .t-w{fill:#fff;font-family:var(--head);font-weight:600;font-size:15px}
+.fig .t-ws{fill:#d6e0ef;font-family:var(--head);font-size:13px}
+.fig .t-o{font-family:var(--head);font-weight:700;font-size:13px;fill:var(--or)}
+.fig .t-r{font-family:var(--head);font-weight:700;font-size:13px;fill:var(--bad)}
+.fig .n{fill:#fff;stroke:var(--rule);stroke-width:1.5}
+.fig .nb{fill:var(--blue-soft);stroke:var(--blue);stroke-width:1.8}
+.fig .nt{fill:var(--teal-soft);stroke:var(--teal);stroke-width:1.8}
+.fig .nv{fill:var(--violet-soft);stroke:var(--violet);stroke-width:1.8}
+.fig .no{fill:var(--or-soft);stroke:var(--or);stroke-width:1.6}
+.fig .nn{fill:var(--navy);stroke:none}
+.fig .nk{fill:var(--ok-soft);stroke:var(--ok);stroke-width:1.8}
+.fig .zone{fill:#f7f9fc;stroke:#a9b8cc;stroke-width:1.5;stroke-dasharray:7 6}
+.fig .e{stroke:var(--navy);stroke-width:2;fill:none}
+.fig .em{stroke:var(--muted);stroke-width:1.8;fill:none}
+.fig .eb{stroke:var(--blue);stroke-width:2.2;fill:none}
+.fig .et{stroke:var(--teal);stroke-width:2.2;fill:none}
+.fig .eo{stroke:var(--or);stroke-width:2.2;fill:none}
+.fig .er{stroke:var(--bad);stroke-width:2;fill:none}
+.fig .dash{stroke-dasharray:7 6}
+.fig .life{stroke:#b9c6d8;stroke-width:1.5;stroke-dasharray:4 5}
+.fig .axis{stroke:#c9d4e3;stroke-width:3}
+
+.bar button#copy{background:var(--teal);border-color:var(--teal);color:#fff}
+.road{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:14px 0 8px;font-family:var(--head)}
+.road .st{display:inline-flex;flex-direction:column;padding:6px 12px;border-radius:10px;border:1.5px solid var(--rule);background:#fff;font-weight:700;font-size:.9rem;color:var(--navy);line-height:1.35}
+.road .st a{color:inherit}
+.road .st small{font-weight:500;color:var(--muted);font-size:.74rem}
+.road .st.done{background:var(--tint)}
+.road .st.now{background:var(--navy);color:#fff;border-color:var(--navy)}.road .st.now small{color:#c9d6ea}
+.road .ar{color:var(--muted);font-weight:700}
+h2 .tm{margin-left:8px;font:600 .8rem var(--head);color:var(--muted);letter-spacing:0}
+.see{margin:8px 0 16px;padding:10px 14px;border-radius:10px;background:var(--ok-soft);border:1px solid #bfdcc6;font-size:.95rem}
+.see>b:first-child{color:var(--ok);margin-right:6px}
+.see pre.code{margin:6px 0 4px}
+.small{font-size:.9rem;color:var(--muted)}
+details.key{margin:14px 0;padding:8px 14px;border:1px solid #f0c9b1;border-radius:12px;background:var(--or-soft)}
+details.key summary{cursor:pointer;font:700 .9rem var(--head);color:var(--or)}
+details.key pre.code{margin-top:8px}
+.ev{display:grid;grid-template-columns:1fr 1fr;gap:12px 14px;margin:12px 0}
+.ev label{display:block;font:600 .88rem/1.6 var(--head);color:var(--navy)}
+.ev label code{font-size:.8rem}
+.ev label.full{grid-column:1/-1}
+.ev input,.ev textarea{display:block;margin-top:5px;font:500 .84rem/1.5 var(--mono);padding:8px 10px;border:1.5px solid #c9d4e3;border-radius:8px;background:#fbfcfe;color:var(--ink);width:100%}
+.ev textarea{resize:vertical}
+.ev input:focus,.ev textarea:focus{outline:2px solid var(--blue);border-color:var(--blue)}
+.center{text-align:center}
+button.big{padding:10px 22px;border-radius:999px;border:0;background:var(--teal);color:#fff;font:700 .95rem var(--head);cursor:pointer}
+button.ghost{padding:9px 16px;border-radius:999px;border:1.5px solid var(--rule);background:#fff;color:var(--muted);font:600 .85rem var(--head);cursor:pointer}
+.toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,20px);opacity:0;padding:10px 18px;border-radius:999px;background:var(--navy);color:#fff;font:600 .9rem var(--head);transition:.25s;pointer-events:none;z-index:20;max-width:90vw;text-align:center}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+@media (max-width:720px){.ev{grid-template-columns:1fr}.road .ar{display:none}.bar button#copy{font-size:.78rem;padding:6px 10px}}
+@media print{.toast,.center button,details.key{display:none}.ev textarea,.ev input{border:1px solid #bbb;background:#fff}.see{break-inside:avoid}}
+</style>
+</head>
+<body data-lab="lab0b">
+<div class="bar"><a class="back" href="../index.html">← ENGSE207</a><span class="t">Lab 0B · ย้าย Task Board เข้า Docker</span><span class="sp"></span><button class="pri" id="copy" type="button">คัดลอกหลักฐาน 0B (Markdown)</button><button id="print" type="button">พิมพ์</button></div>
+<main class="doc">
+<p class="kick">ENGSE207 · ปูพื้นก่อนครั้งที่ 2 · ทำเองนอกเวลา</p>
+<h1>Lab 0B · ย้าย Task Board เข้า Docker ทีละขั้น</h1>
+<p class="meta">ประมาณ 2–2.5 ชั่วโมง · ทำต่อจาก <a href="lab0a.html">Lab 0A</a> ในโฟลเดอร์เดิม · งานเดี่ยว <b>I02</b> ต้องทำแต่ไม่คิดคะแนน · ส่งก่อนเริ่มคาบ T02 · ฉบับ 1.0 (28 พ.ย. 2569)</p>
+
+<div class="road" aria-label="ลำดับการเตรียมตัวก่อน T02">
+<span class="st done">T01<small>เห็นโค้ดบนจอ</small></span><span class="ar">→</span>
+<span class="st done"><a href="lab0a.html">Lab 0A</a><small>รันเองบนเครื่อง</small></span><span class="ar">→</span>
+<span class="st now">Lab 0B<small>ย้ายเข้า Docker</small></span><span class="ar">→</span>
+<span class="st">P02<small>งานทีม</small></span><span class="ar">→</span>
+<span class="st">T02<small>ในห้อง</small></span></div>
+
+<div class="box proj"><span class="lb">จาก 0A มาถึงตรงนี้</span>
+<p>ใน 0A เราติดตั้ง Node.js และ PostgreSQL เอง สร้างผู้ใช้และตารางด้วยมือ แล้วรันแอปด้วย <code>npm run dev</code> ทุกขั้นต้องทำซ้ำบนทุกเครื่อง และรุ่นของแต่ละคนอาจไม่ตรงกัน</p>
+<p>0B จะ <b>แทนทีละอย่างด้วย Docker</b> เปลี่ยนครั้งละหนึ่งเรื่อง แล้วดูผล จนได้ <code>docker-compose.yml</code> ที่เขียนเอง จากนั้นเอาไปเทียบกับไฟล์ที่ใช้จริงใน T02 ทุกบรรทัดของไฟล์นั้นจะมีเหตุผลที่เราเจอมาเองแล้ว</p></div>
+
+<div class="tw"><table class="tb">
+<tr><th>ใน 0A ทำเอง</th><th>ใน 0B ให้ Docker ทำ</th><th>ขั้น</th></tr>
+<tr><td>ติดตั้ง Node.js และ <code>npm ci</code> บนเครื่อง</td><td><code>Dockerfile</code> เริ่มจาก image <code>node:24-alpine</code> แล้ว <code>RUN npm ci</code></td><td class="n">1–2</td></tr>
+<tr><td>ติดตั้ง PostgreSQL แล้วเปิดบริการ</td><td>image <code>postgres:16-alpine</code> รันเป็น container</td><td class="n">3</td></tr>
+<tr><td>สร้าง role และฐานข้อมูลด้วยมือ</td><td>ตัวแปร <code>POSTGRES_USER</code> <code>POSTGRES_PASSWORD</code> <code>POSTGRES_DB</code></td><td class="n">3</td></tr>
+<tr><td>รัน <code>01-schema.sql</code> <code>02-seed.sql</code> ด้วย psql</td><td>วางไว้ที่ <code>/docker-entrypoint-initdb.d</code> แล้ว PostgreSQL รันให้ครั้งแรก</td><td class="n">3</td></tr>
+<tr><td>ข้อมูลอยู่ในเครื่องของเรา</td><td>เก็บใน volume ที่ Docker ดูแล</td><td class="n">3</td></tr>
+<tr><td>แอปต่อ <code>localhost:5432</code></td><td>แอปต่อด้วยชื่อในเครือข่าย เช่น <code>db</code></td><td class="n">4</td></tr>
+<tr><td>สั่งเปิดทีละโปรแกรม จำลำดับเอง</td><td><code>docker compose up</code> คำสั่งเดียว</td><td class="n">5</td></tr>
+</table></div>
+
+<nav class="toc" aria-label="สารบัญ"><b>สารบัญ</b><ol>
+<li><a href="#s0">เตรียมเครื่อง</a></li>
+<li><a href="#s1">เขียน Dockerfile ของแอปเอง แล้ว build image</a></li>
+<li><a href="#s2">รัน container ของแอปตัวเดียว</a></li>
+<li><a href="#s3">ย้ายฐานข้อมูลเข้า container</a></li>
+<li><a href="#s4">ให้สอง container คุยกัน</a></li>
+<li><a href="#s5">เขียน docker-compose.yml เอง ทีละรอบ</a></li>
+<li><a href="#s6">เทียบกับไฟล์ที่ใช้จริงใน T02</a></li>
+<li><a href="#s7">เก็บกวาด และส่งหลักฐาน</a></li>
+<li><a href="#s8">ติดปัญหา</a></li>
+<li><a href="#qa">ทบทวนและสรุป</a></li>
+<li><a href="#ev">หลักฐาน 0B</a></li></ol></nav>
+
+<h2 id="s0"><span class="no">ขั้นที่ 0</span>เตรียมเครื่อง <span class="tm">5 นาที</span></h2>
+<ul>
+<li>เปิด Docker Desktop รอจนขึ้น <b>Engine running</b> (Windows ใช้เทอร์มินัล Ubuntu ที่เปิด WSL Integration แล้ว ตาม <a href="../docker.html">คู่มือติดตั้ง</a>)</li>
+<li><b>ปิดแอปของ 0A</b> ในหน้าต่างที่รัน <code>npm run dev</code> ด้วย Ctrl+C เพราะ container ของเราจะใช้พอร์ต 3000</li>
+<li>PostgreSQL ของ 0A เปิดไว้ได้ ฐานข้อมูลใน Docker จะใช้พอร์ต <b>5433</b> ฝั่งเครื่องเรา จึงไม่ชนกับ 5432</li>
+<li>ถ้าเคยเปิด Task Board จาก <b>repo ทีม</b> (P02) ไว้ ให้ปิดก่อน เพราะใช้พอร์ต 3000 และ 5433 เหมือนกัน: เข้าโฟลเดอร์ repo ทีมแล้วสั่ง <code>docker compose down</code> (ข้อมูลของทีมยังอยู่)</li>
+</ul>
+<pre class="code">cd ~/engse207-practice/tb-local
+docker version --format 'Docker {{.Server.Version}}'
+<span class="c"># เก็บไฟล์ของจริงไว้เทียบในขั้นที่ 6 เราจะเขียนเองใหม่</span>
+mv app/Dockerfile app/Dockerfile.original
+mv docker-compose.yml docker-compose.original.yml</pre>
+<div class="see"><b>ควรเห็น</b> <code>Docker 2x.x.x</code> · ถ้าขึ้น <code>Cannot connect to the Docker daemon</code> แปลว่ายังไม่เปิด Docker Desktop · วางเลขรุ่นในช่องหลักฐาน 1</div>
+
+<h2 id="s1"><span class="no">ขั้นที่ 1</span>เขียน Dockerfile ของแอปเอง แล้ว build image <span class="tm">20–30 นาที</span></h2>
+<p><b>Dockerfile</b> คือสูตรบอกวิธีสร้าง <b>image</b> ซึ่งเป็นชุดไฟล์ที่มีทั้ง Node.js dependency และโค้ดของเราพร้อมรัน สร้างไฟล์ใหม่ <code>app/Dockerfile</code> แล้วพิมพ์ทีละบรรทัด อ่านคอมเมนต์ไปด้วย</p>
+<p class="file"><code>app/Dockerfile</code><span>ฉบับที่เราเขียนเอง</span></p>
+<pre class="code"># 1) เริ่มจาก image ที่มี Node.js 24 อยู่แล้ว · แทนการติดตั้ง Node.js เองใน 0A
+FROM node:24-alpine
+
+# 2) โฟลเดอร์ทำงานข้างใน container
+WORKDIR /app
+
+# 3) คัดลอกรายการ dependency แล้วติดตั้ง · แทน npm ci ใน 0A (ไม่เอา nodemon)
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev
+
+# 4) คัดลอกโค้ดที่เหลือ รวมถึงที่เราแก้ใน 0A
+COPY . .
+
+# 5) บอกว่าแอปฟังพอร์ต 3000 และคำสั่งที่ใช้เริ่มแอป
+EXPOSE 3000
+CMD ["node", "server.js"]</pre>
+<div class="box warn"><span class="lb">.dockerignore สำคัญกับเครื่องที่ทำ 0A แล้ว</span><p>ใน 0A เรา <code>npm ci</code> บนเครื่อง จึงมีโฟลเดอร์ <code>app/node_modules</code> ที่สร้างสำหรับระบบของเรา ถ้า <code>COPY . .</code> คัดลอกโฟลเดอร์นี้ไปทับของใน image ผลอาจเพี้ยน ไฟล์ <code>app/.dockerignore</code> ที่มากับโค้ดกันไว้แล้ว ลองดู <code>cat app/.dockerignore</code> ต้องเห็น <code>node_modules</code></p></div>
+<pre class="code">docker build -t tb-app:mine ./app       <span class="c"># ครั้งแรกดาวน์โหลด node:24-alpine 1–3 นาที</span>
+docker images tb-app</pre>
+<div class="see"><b>ควรเห็น</b> ขั้น <code>[1/5]</code>…<code>[5/5]</code> ตามบรรทัดใน Dockerfile แล้ว <code>naming to docker.io/library/tb-app:mine</code> · <code>docker images</code> มี <code>tb-app</code> แท็ก <code>mine</code> พร้อมขนาด · วาง Dockerfile และผล <code>docker images</code> ในช่องหลักฐาน 2</div>
+<p>ลอง build ซ้ำอีกครั้งทันที จะเสร็จในไม่กี่วินาที เพราะทุกขั้นขึ้นคำว่า <code>CACHED</code> Docker เก็บผลของแต่ละบรรทัดไว้ ถ้าไฟล์ที่บรรทัดนั้นใช้ไม่เปลี่ยน ก็ใช้ของเดิม นี่คือเหตุผลที่คัดลอก <code>package.json</code> ก่อนโค้ด</p>
+
+<h2 id="s2"><span class="no">ขั้นที่ 2</span>รัน container ของแอปตัวเดียว <span class="tm">10 นาที</span></h2>
+<p><b>container</b> คือโปรแกรมที่กำลังรันจาก image หนึ่ง image สร้าง container ได้หลายตัว ลองรันแอปโดยยังไม่มีฐานข้อมูลใน Docker</p>
+<pre class="code">docker run --rm --name tb-app -p 3000:3000 tb-app:mine
+<span class="c"># --rm      ลบ container ทิ้งเมื่อหยุด</span>
+<span class="c"># -p 3000:3000   พอร์ตเครื่องเรา : พอร์ตใน container</span></pre>
+<p>หน้าต่างนี้จะค้างแสดง log ของแอป เปิดเบราว์เซอร์ที่ <code>http://localhost:3000</code> และหน้าต่าง Terminal ที่สอง</p>
+<pre class="code">curl -s localhost:3000/api/health; echo</pre>
+<div class="see"><b>ควรเห็น</b> หน้าเว็บเปิดได้ แต่ขึ้น “โหลดรายการงานไม่ได้” · health ได้ <code>{"app":"ok","db":"down","error":"connect ECONNREFUSED 127.0.0.1:5432"}</code> (บางเครื่องเป็น <code>::1:5432</code>) · วางผลและเหตุผลในช่องหลักฐาน 3</div>
+<div class="box ex"><span class="lb">ทำไมต่อไม่ได้ ทั้งที่ PostgreSQL ของ 0A ยังเปิดอยู่</span><p>แอปไม่ได้ตั้ง <code>DB_HOST</code> จึงใช้ค่าตั้งต้น <code>localhost</code> แต่ <b>localhost ข้างใน container หมายถึงตัว container เอง</b> ไม่ใช่เครื่องของเรา ใน container นี้ไม่มีใครฟังพอร์ต 5432 จึงได้ ECONNREFUSED ส่วนหน้าเว็บยังเปิดได้ เพราะไฟล์ใน <code>public/</code> ไม่ต้องใช้ฐานข้อมูล</p></div>
+<p>กลับไปหน้าต่างแรก กด <b>Ctrl+C</b> เพื่อหยุด container (ถูกลบทิ้งเพราะใส่ <code>--rm</code>)</p>
+
+<h2 id="s3"><span class="no">ขั้นที่ 3</span>ย้ายฐานข้อมูลเข้า container <span class="tm">20 นาที</span></h2>
+<p>สร้าง <b>เครือข่าย</b> สำหรับให้ container คุยกัน แล้วรัน PostgreSQL จาก image สำเร็จรูป อ่านคอมเมนต์ว่าแต่ละบรรทัดแทนอะไรใน 0A</p>
+<pre class="code">docker network create tb-net
+
+docker run -d --name tb-db --network tb-net \
+  -e POSTGRES_USER=taskboard \
+  -e POSTGRES_PASSWORD=taskboard_dev \
+  -e POSTGRES_DB=taskboard \
+  -p 5433:5432 \
+  -v tb-pgdata:/var/lib/postgresql/data \
+  -v "$PWD/db/init":/docker-entrypoint-initdb.d:ro \
+  postgres:16-alpine</pre>
+<div class="tw"><table class="tb">
+<tr><th>ส่วนของคำสั่ง</th><th>แทนอะไรใน 0A</th></tr>
+<tr><td class="k"><code>-d</code></td><td>รันเบื้องหลัง แทนการเปิด Postgres.app หรือ <code>service postgresql start</code></td></tr>
+<tr><td class="k"><code>-e POSTGRES_USER … POSTGRES_DB</code></td><td><code>CREATE ROLE</code> และ <code>CREATE DATABASE</code> ในขั้น 3.1 ของ 0A image ทำให้ตอนเริ่มครั้งแรก</td></tr>
+<tr><td class="k"><code>-p 5433:5432</code></td><td>เปิดประตูจากเครื่องเราพอร์ต 5433 เข้าพอร์ต 5432 ใน container</td></tr>
+<tr><td class="k"><code>-v tb-pgdata:/var/lib/…/data</code></td><td>ที่เก็บข้อมูลของฐานข้อมูล อยู่ใน <b>volume</b> ชื่อ tb-pgdata ไม่หายเมื่อลบ container</td></tr>
+<tr><td class="k"><code>-v "$PWD/db/init":/docker-entrypoint-initdb.d:ro</code></td><td>การรัน 01-schema.sql และ 02-seed.sql ด้วยมือ image รันทุกไฟล์ในโฟลเดอร์นี้ให้ <b>เฉพาะตอนที่ volume ยังว่าง</b></td></tr>
+</table></div>
+<pre class="code">docker ps
+docker logs tb-db 2&gt;&amp;1 | grep -E "docker-entrypoint-initdb.d/|ready to accept"
+psql "postgresql://taskboard:taskboard_dev@localhost:5433/taskboard" -c "SELECT id, name FROM members;"</pre>
+<div class="see"><b>ควรเห็น</b> <code>tb-db</code> สถานะ Up · log มีบรรทัด <code>running /docker-entrypoint-initdb.d/01-schema.sql</code> และ <code>02-seed.sql</code> แล้ว <code>ready to accept connections</code> · psql ผ่านพอร์ต <b>5433</b> ได้สมาชิก <b>5 คน</b> รวมชื่อที่เพิ่มใน 0A ข้อ 6.3 (เพราะ mount โฟลเดอร์ <code>db/init</code> ของเรา) · วางผล psql ในช่องหลักฐาน 4</div>
+
+<h2 id="s4"><span class="no">ขั้นที่ 4</span>ให้สอง container คุยกัน <span class="tm">15 นาที</span></h2>
+<pre class="code">docker run -d --name tb-app --network tb-net -p 3000:3000 -e DB_HOST=tb-db tb-app:mine
+docker ps
+curl -s localhost:3000/api/health; echo
+docker logs tb-app</pre>
+<div class="see"><b>ควรเห็น</b> health <code>"db":"ok"</code> · เปิดหน้าเว็บ เห็นบอร์ด 7 งาน ชื่อคุณในช่องผู้รับผิดชอบ และบรรทัด about จาก 0A · วางผล health ในช่องหลักฐาน 5</div>
+<div class="box ex"><span class="lb">ทำไมครั้งนี้ต่อได้</span><ul>
+<li><code>-e DB_HOST=tb-db</code> ส่งค่าเข้าไปแทนค่าตั้งต้น <code>localhost</code> ใน <code>server.js</code> (จำกล่อง “แอปรู้ได้อย่างไร” ใน 0A ขั้นที่ 4)</li>
+<li>ทั้งสองอยู่ในเครือข่าย <code>tb-net</code> Docker จึงแปลงชื่อ <code>tb-db</code> เป็นที่อยู่ของ container ฐานข้อมูลให้</li>
+<li>ในเครือข่าย แอปต่อพอร์ต <b>5432</b> ของ container โดยตรง ส่วน <b>5433</b> มีไว้ให้โปรแกรมบนเครื่องเรา เช่น psql ในขั้นที่ 3</li>
+</ul></div>
+<p>ลองนับดู: ต้องพิมพ์ 3 คำสั่งยาว ๆ จำชื่อ ค่าตั้ง พอร์ต และลำดับ (ฐานข้อมูลก่อนแอป) ทุกครั้ง ขั้นต่อไปจะเขียนสิ่งเหล่านี้ลงไฟล์เดียว เก็บกวาดก่อน</p>
+<pre class="code">docker rm -f tb-app tb-db
+docker network rm tb-net
+docker volume rm tb-pgdata</pre>
+
+<h2 id="s5"><span class="no">ขั้นที่ 5</span>เขียน docker-compose.yml เอง ทีละรอบ <span class="tm">30–40 นาที</span></h2>
+<p><b>Docker Compose</b> อ่านไฟล์ YAML ที่บอกว่าระบบมี <b>service</b> อะไรบ้าง แต่ละตัวตั้งค่าอย่างไร แล้วสร้างเครือข่ายให้เอง ชื่อ service ใช้เป็นชื่อเครื่องในเครือข่าย YAML ใช้การเยื้องด้วย <b>ช่องว่าง 2 ตัว</b> ห้ามใช้ Tab</p>
+
+<h3>5.1 รอบที่ 1 · สอง service แบบน้อยที่สุด</h3>
+<p class="file"><code>docker-compose.yml</code><span>สร้างใหม่ที่โฟลเดอร์ tb-local</span></p>
+<pre class="code">services:
+  app:
+    build: ./app                 # สร้าง image จาก app/Dockerfile ของเรา
+    ports:
+      - "3000:3000"
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: taskboard
+      POSTGRES_PASSWORD: taskboard_dev
+      POSTGRES_DB: taskboard
+    ports:
+      - "5433:5432"</pre>
+<p><b>ทายก่อนรัน:</b> health จะได้อะไร และหน้าเว็บจะมีงานไหม จดคำทายไว้ในช่องหลักฐาน 6 แล้วค่อยรัน</p>
+<pre class="code">docker compose up -d --build
+docker compose ps
+curl -s localhost:3000/api/health; echo</pre>
+<div class="see"><b>ควรเห็น</b> ชื่อ container ขึ้นต้นด้วยชื่อโฟลเดอร์ เช่น <code>tb-local-app-1</code> <code>tb-local-db-1</code> · health ยัง <code>"db":"down"</code> เพราะแอปยังต่อ <code>localhost</code> · และถึงต่อได้ก็ยังไม่มีตาราง เพราะยังไม่ได้ส่งสคริปต์ <code>db/init</code> ให้ฐานข้อมูล</div>
+
+<h3>5.2 รอบที่ 2 · บอกแอปว่าฐานข้อมูลอยู่ที่ไหน และให้ฐานข้อมูลมีข้อมูล</h3>
+<p>แก้ไฟล์ให้เป็นแบบนี้ (เพิ่มบรรทัดที่มีคอมเมนต์ “รอบ 2”)</p>
+<pre class="code">services:
+  app:
+    build: ./app
+    ports:
+      - "3000:3000"
+    environment:
+      DB_HOST: db                # รอบ 2 · ชื่อ service ของฐานข้อมูล
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: taskboard
+      POSTGRES_PASSWORD: taskboard_dev
+      POSTGRES_DB: taskboard
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data              # รอบ 2 · ข้อมูลอยู่ใน volume
+      - ./db/init:/docker-entrypoint-initdb.d:ro     # รอบ 2 · สคริปต์สร้างตารางและข้อมูลตั้งต้น
+
+volumes:
+  pgdata:                        # รอบ 2 · ประกาศ volume ที่ใช้ข้างบน</pre>
+<pre class="code">docker compose up -d             <span class="c"># Compose สร้างใหม่เฉพาะ service ที่ค่าเปลี่ยน</span>
+docker compose ps
+curl -s localhost:3000/api/health; echo
+docker compose logs -f app       <span class="c"># สร้างงานบนหน้าเว็บแล้วดู log · Ctrl+C เพื่อเลิกดู</span></pre>
+<div class="see"><b>ควรเห็น</b> health <code>"db":"ok"</code> · บอร์ด 7 งาน และสมาชิก 5 คน · log มี <code>[api] POST /api/tasks -&gt; 201</code> เมื่อสร้างงาน (ถ้า health ยัง down ในวินาทีแรก รอ 5 วินาทีแล้วลองใหม่ เหตุผลอยู่ในรอบที่ 3)</div>
+
+<h3>5.3 รอบที่ 3 · ให้แอปรอจนฐานข้อมูลพร้อม</h3>
+<p>Compose เริ่มทุก service เกือบพร้อมกัน แอปจึงอาจเริ่มก่อนที่ PostgreSQL พร้อมรับคำขอ เพิ่ม <b>healthcheck</b> ให้ db และให้ app รอจน db ผ่าน</p>
+<pre class="code">  app:
+    build: ./app
+    ports:
+      - "3000:3000"
+    environment:
+      DB_HOST: db
+    depends_on:                  # รอบ 3
+      db:
+        condition: service_healthy
+
+  db:
+    image: postgres:16-alpine
+    # … environment ports volumes เหมือนรอบ 2 …
+    healthcheck:                 # รอบ 3 · ถามฐานข้อมูลทุก 3 วินาทีว่าพร้อมหรือยัง
+      test: ["CMD-SHELL", "pg_isready -U taskboard -d taskboard"]
+      interval: 3s
+      timeout: 3s
+      retries: 20</pre>
+<details class="key"><summary>ดูไฟล์เต็มหลังรอบที่ 3 (เทียบกับของคุณ)</summary>
+<pre class="code">services:
+  app:
+    build: ./app
+    ports:
+      - "3000:3000"
+    environment:
+      DB_HOST: db
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: taskboard
+      POSTGRES_PASSWORD: taskboard_dev
+      POSTGRES_DB: taskboard
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./db/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U taskboard -d taskboard"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  pgdata:</pre></details>
+<pre class="code">docker compose down -v           <span class="c"># ลบทั้งหมดรวม volume เพื่อเริ่มจากศูนย์</span>
+docker compose up -d --build     <span class="c"># ดูข้อความระหว่างรอ</span>
+docker compose ps</pre>
+<div class="see"><b>ควรเห็น</b> ระหว่าง up มีบรรทัดว่า db กำลังรอให้ healthy แล้ว app จึงเริ่ม · <code>ps</code> เห็น db <code>Up (healthy)</code> · health ok ทันทีหลัง up เสร็จ · วางไฟล์ <code>docker-compose.yml</code> ฉบับเต็มของคุณ และผล <code>docker compose ps</code> ในช่องหลักฐาน 7</div>
+
+<h3>5.4 ทดลองการแก้โค้ดกับไฟล์ของเรา</h3>
+<p>แก้ <code>app/server.js</code> ในส่วน <code>/api/about</code> ที่เพิ่มใน 0A เปลี่ยน <code>version: "v1-monolith"</code> เป็น <code>version: "v1-docker"</code> บันทึก แล้วเรียก <code>curl -s localhost:3000/api/about</code></p>
+<div class="see"><b>ควรเห็น</b> ยังได้ <code>v1-monolith</code> เหมือนเดิม เพราะโค้ดถูกคัดลอกเข้า image ตอน build แล้ว ต้อง <code>docker compose up -d --build</code> จึงเห็น <code>v1-docker</code> · จดผลในช่องหลักฐาน 8</div>
+
+<h2 id="s6"><span class="no">ขั้นที่ 6</span>เทียบกับไฟล์ที่ใช้จริงใน T02 <span class="tm">20–30 นาที</span></h2>
+<pre class="code">diff -u app/Dockerfile app/Dockerfile.original
+diff -u docker-compose.yml docker-compose.original.yml</pre>
+<div class="tw"><table class="tb wide">
+<tr><th>ไฟล์จริงมีเพิ่ม</th><th>ทำไม</th><th>เจอใน</th></tr>
+<tr><td><code>CMD ["npm", "run", "dev"]</code> และ <code>npm ci</code> แบบมี dev dependency</td><td>รันผ่าน nodemon เพื่อให้แก้โค้ดแล้วแอปรีสตาร์ตเอง</td><td>T02 ส่วน C</td></tr>
+<tr><td><code>volumes: - ./app:/app</code> ใน service app</td><td><b>bind mount</b> เอาโฟลเดอร์โค้ดบนเครื่องเราไปวางทับใน container แก้ไฟล์แล้ว container เห็นทันที ไม่ต้อง build ใหม่ (ต่างจากข้อ 5.4)</td><td>T02 ส่วน C</td></tr>
+<tr><td><code>- /app/node_modules</code></td><td>กันไม่ให้ bind mount เอา <code>node_modules</code> ของเครื่องเราไปทับของใน image</td><td>—</td></tr>
+<tr><td><code>${APP_PORT:-3000}</code> <code>${POSTGRES_PASSWORD:-taskboard_dev}</code></td><td>อ่านค่าจากไฟล์ <code>.env</code> ถ้าไม่มีใช้ค่าหลัง <code>:-</code> เปลี่ยนพอร์ตหรือรหัสได้โดยไม่แก้ไฟล์ Compose</td><td>T02 ส่วน A (พอร์ตชน) · T03</td></tr>
+<tr><td><code>DB_PORT</code> <code>DB_USER</code> <code>DB_PASSWORD</code> <code>DB_NAME</code> <code>REPORT_COST_MS</code></td><td>ส่งทุกค่าแบบชัดเจน ไม่พึ่งค่าตั้งต้นในโค้ด · <code>REPORT_COST_MS</code> ใช้ในการทดลองครั้งที่ 3</td><td>T03</td></tr>
+<tr><td><code>restart: unless-stopped</code></td><td>ถ้า container ล้ม Docker เริ่มให้ใหม่ เว้นแต่เราสั่งหยุดเอง</td><td>T03</td></tr>
+</table></div>
+<p>สลับมาใช้ไฟล์จริง แล้วลองแก้โค้ดแบบข้อ 5.4 อีกครั้ง</p>
+<pre class="code">docker compose down -v
+mv docker-compose.yml docker-compose.mine.yml &amp;&amp; mv docker-compose.original.yml docker-compose.yml
+mv app/Dockerfile app/Dockerfile.mine &amp;&amp; mv app/Dockerfile.original app/Dockerfile
+docker compose up -d --build
+docker compose logs -f app       <span class="c"># ปล่อยไว้ แล้วแก้ version ใน /api/about เป็น "v1-live" บันทึก</span></pre>
+<div class="see"><b>ควรเห็น</b> log ขึ้น <code>[nodemon] restarting due to changes...</code> เอง · <code>curl -s localhost:3000/api/about</code> ได้ <code>v1-live</code> โดย <b>ไม่ต้อง build</b> · นี่คือวิธีที่จะใช้แก้โค้ดใน T02 · ตอบช่องหลักฐาน 9</div>
+
+<h2 id="s7"><span class="no">ขั้นที่ 7</span>เก็บกวาด และส่งหลักฐาน <span class="tm">15 นาที</span></h2>
+<pre class="code">docker compose down -v
+docker image rm tb-app:mine tb-local-app      <span class="c"># image ที่ build ระหว่างฝึก</span>
+docker ps -a                     <span class="c"># ไม่ควรเหลือ container ของ tb-local</span></pre>
+<p>เก็บโฟลเดอร์ <code>~/engse207-practice</code> ไว้ทบทวนได้ หรือลบทิ้งก็ได้ ไม่เกี่ยวกับ repo ทีม · ปิด PostgreSQL ของ 0A ได้ (macOS: Quit Postgres.app · WSL: <code>sudo service postgresql stop</code>)</p>
+<h3>ส่งหลักฐาน I02 (คนละไฟล์ ใน repo ทีม)</h3>
+<ol>
+<li>เปิดหน้า <a href="lab0a.html#ev">Lab 0A</a> กด <b>คัดลอกหลักฐาน 0A</b> แล้วกลับมาหน้านี้กด <b>คัดลอกหลักฐาน 0B</b> (ทำทีละหน้า วางทีละครั้ง)</li>
+<li>เข้าโฟลเดอร์ repo ทีมบนเครื่อง (ยังไม่มีให้ <code>git clone</code> repo ทีมก่อน) แล้วสร้างไฟล์ของตัวเอง</li>
+</ol>
+<pre class="code">cd ~/&lt;โฟลเดอร์ repo ทีม&gt;
+git pull
+mkdir -p individual
+code individual/LAB0-&lt;รหัสนักศึกษา&gt;.md          <span class="c"># วางหลักฐาน 0A แล้วต่อด้วย 0B · บันทึก</span>
+git add individual/LAB0-&lt;รหัสนักศึกษา&gt;.md
+git commit -m "lab0: &lt;รหัสนักศึกษา&gt;"
+git push</pre>
+<div class="see"><b>ควรเห็น</b> ไฟล์ขึ้นบน GitHub ในโฟลเดอร์ <code>individual/</code> ของ repo ทีม commit เป็นชื่อบัญชีของคุณเอง · ตรวจที่หน้า <a href="../submissions.html">สถานะการส่ง</a> ได้ภายในไม่กี่ชั่วโมง · ใช้รหัสนักศึกษาแบบเดียวกับไฟล์ <code>individual/T01-…</code></div>
+<p><b>ต่อจากนี้:</b> ถ้าทีมยังไม่ได้ทำ <b>P02</b> (นำโค้ด v1 เข้า repo ทีม) ให้ตัวแทนทีมทำตาม <a href="t02.html#p6">เอกสารครั้งที่ 2 ส่วนที่ 6</a> · ในคาบ T02 เราจะเปิดระบบด้วยไฟล์จริงที่เพิ่งเทียบ แล้วตามเส้นทางข้อมูลและแก้กฎหนึ่งข้อ คำสั่งทั้งหมดอยู่ใน <a href="docker-guide.html">คู่มือคำสั่ง Docker</a></p>
+
+<h2 id="s8"><span class="no">ขั้นที่ 8</span>ติดปัญหา</h2>
+<div class="tw"><table class="tb wide">
+<tr><th>ข้อความหรืออาการ</th><th>สาเหตุที่พบบ่อย</th><th>แก้</th></tr>
+<tr><td><code>Cannot connect to the Docker daemon</code></td><td>ยังไม่เปิด Docker Desktop · Windows ใช้ PowerShell หรือยังไม่เปิด WSL Integration</td><td>เปิด Docker Desktop รอ Engine running · ดู <a href="../docker.html">คู่มือติดตั้ง</a></td></tr>
+<tr><td><code>port is already allocated</code> (3000)</td><td>แอปของ 0A ยังรันอยู่ · container <code>tb-app</code> จากขั้นก่อนยังไม่ถูกลบ · หรือระบบของ repo ทีมยังเปิดอยู่</td><td>Ctrl+C ในหน้าต่าง <code>npm run dev</code> · <code>docker rm -f tb-app</code> · <code>docker ps</code> ดูว่าใครใช้พอร์ต ถ้าเป็นของ repo ทีมให้ <code>docker compose down</code> ในโฟลเดอร์นั้น</td></tr>
+<tr><td><code>port is already allocated</code> (5433)</td><td>container ฐานข้อมูลจากขั้นก่อนยังอยู่ หรือระบบของ repo ทีมยังเปิดอยู่</td><td><code>docker rm -f tb-db</code> · หรือ <code>docker compose down</code> ในโฟลเดอร์ที่เปิดไว้ (<code>docker ps</code> ดูชื่อ container)</td></tr>
+<tr><td><code>Conflict. The container name "/tb-db" is already in use</code></td><td>สั่ง <code>docker run</code> ซ้ำชื่อเดิม</td><td><code>docker rm -f tb-db</code> แล้วสั่งใหม่</td></tr>
+<tr><td>build ล้มที่ <code>RUN npm ci</code></td><td>เน็ตหลุด หรือไม่ได้คัดลอก <code>package-lock.json</code></td><td>ตรวจบรรทัด COPY ใน Dockerfile แล้ว build ใหม่</td></tr>
+<tr><td>ฐานข้อมูลไม่มีตาราง (<code>relation "tasks" does not exist</code>)</td><td>volume มีข้อมูลอยู่แล้วจากรอบก่อน สคริปต์ <code>db/init</code> จึงไม่รันซ้ำ</td><td><code>docker compose down -v</code> (หรือ <code>docker volume rm tb-pgdata</code>) แล้ว up ใหม่</td></tr>
+<tr><td><code>getaddrinfo ENOTFOUND db</code> หรือ <code>ENOTFOUND tb-db</code></td><td>สะกดชื่อไม่ตรงกับชื่อ service หรือชื่อ container · ไม่ได้อยู่เครือข่ายเดียวกัน</td><td>ตรวจ <code>DB_HOST</code> กับชื่อ service · ขั้นที่ 4 ต้องมี <code>--network tb-net</code> ทั้งสองตัว</td></tr>
+<tr><td><code>yaml: line … did not find expected key</code> หรือ <code>mapping values are not allowed</code></td><td>เยื้องไม่ตรง หรือใช้ Tab</td><td>เยื้องด้วยช่องว่าง 2 ตัวตามตัวอย่าง ตรวจบรรทัดที่ข้อความบอก</td></tr>
+<tr><td><code>no configuration file provided: not found</code></td><td>ไม่ได้อยู่ในโฟลเดอร์ <code>tb-local</code> หรือเปลี่ยนชื่อไฟล์แล้วยังไม่ได้สร้างใหม่</td><td><code>cd ~/engse207-practice/tb-local</code> · <code>ls</code> ต้องเห็น <code>docker-compose.yml</code></td></tr>
+<tr><td>Windows: mount <code>db/init</code> แล้วไม่มีไฟล์ใน container</td><td>เก็บโฟลเดอร์ฝึกไว้ใต้ <code>/mnt/c/…</code></td><td>ย้ายไปไว้ใต้ <code>~/</code> ของ Ubuntu ตามขั้นที่ 2 ของ 0A</td></tr>
+</table></div>
+
+<h2 id="qa"><span class="no">ทบทวน</span>ตรวจความเข้าใจ และสรุป</h2>
+<div class="qa"><span class="lb">ตอบในใจก่อน แล้วคลิกดูแนวคำตอบ</span><ol>
+<li class="rv">Dockerfile ของเรามาแทนขั้นไหนของ 0A บ้าง<span class="rq">แนวคำตอบ</span><span class="ans"><code>FROM node:24-alpine</code> แทนการติดตั้ง Node.js · <code>COPY package*.json</code> + <code>RUN npm ci</code> แทน <code>npm ci</code> บนเครื่อง · <code>CMD</code> แทนการพิมพ์คำสั่งเริ่มแอป ทุกคนที่ build จะได้รุ่นเดียวกัน</span></li>
+<li class="rv">ขั้นที่ 2 ทำไมแอปต่อฐานข้อมูลไม่ได้ ทั้งที่ PostgreSQL บนเครื่องเปิดอยู่<span class="rq">แนวคำตอบ</span><span class="ans">แอปใช้ค่าตั้งต้น <code>localhost</code> ซึ่งข้างใน container หมายถึงตัว container เอง ไม่ใช่เครื่องเรา ในนั้นไม่มีอะไรฟังพอร์ต 5432</span></li>
+<li class="rv">แอปใน container ต่อฐานข้อมูลที่ <code>db:5432</code> แต่ psql บนเครื่องต่อที่ <code>localhost:5433</code> ทำไมไม่เหมือนกัน<span class="rq">แนวคำตอบ</span><span class="ans">แอปอยู่ในเครือข่ายเดียวกับฐานข้อมูล จึงเรียกด้วยชื่อ service และพอร์ตใน container ส่วน psql อยู่บนเครื่องเรานอกเครือข่ายนั้น ต้องเข้าทางพอร์ตที่จับคู่ไว้ 5433 → 5432</span></li>
+<li class="rv">สคริปต์ใน <code>db/init</code> รันตอนไหน ทำไม up รอบสองจึงไม่รันซ้ำ<span class="rq">แนวคำตอบ</span><span class="ans">image ของ PostgreSQL รันไฟล์ในโฟลเดอร์นี้เฉพาะตอนที่ volume ข้อมูลยังว่าง รอบต่อไป volume มีข้อมูลแล้วจึงข้าม ต้อง <code>down -v</code> ถ้าอยากเริ่มใหม่ (ข้อมูลหาย)</span></li>
+<li class="rv">ทำไมไฟล์จริงของ T02 มี <code>./app:/app</code> และใช้ <code>npm run dev</code> ขณะที่ของเราไม่มี<span class="rq">แนวคำตอบ</span><span class="ans">เพื่อให้แก้โค้ดในเครื่องแล้ว container เห็นทันทีและ nodemon รีสตาร์ตให้ ไม่ต้อง build ใหม่ทุกครั้ง เหมาะกับช่วงพัฒนาและการเรียนในห้อง ส่วนแบบของเราเหมือนการส่งมอบ โค้ดอยู่ใน image ตายตัว</span></li>
+</ol></div>
+<div class="box key"><span class="lb">สรุป Lab 0B</span><ul>
+<li><b>image</b> = สูตรที่ build แล้ว · <b>container</b> = โปรแกรมที่รันจาก image · <b>Dockerfile</b> = วิธีสร้าง image ของแอป</li>
+<li><code>-p เครื่องเรา:container</code> เปิดประตูจากเครื่องเรา · ในเครือข่ายของ Docker เรียกกันด้วยชื่อ</li>
+<li>ข้อมูลที่ต้องอยู่รอดเก็บใน <b>volume</b> · สคริปต์ <code>db/init</code> รันครั้งเดียวตอน volume ว่าง</li>
+<li><b>docker-compose.yml</b> รวมทุกคำสั่ง <code>docker run</code> ไว้ในไฟล์เดียว เปิดทั้งระบบด้วย <code>docker compose up</code></li>
+<li>ไฟล์จริงของ T02 เพิ่ม bind mount + nodemon และค่าจาก <code>.env</code> เพื่อให้แก้โค้ดได้ทันทีและเปลี่ยนค่าได้โดยไม่แก้ไฟล์</li>
+</ul></div>
+
+<h2 id="ev"><span class="no">ส่งงาน</span>หลักฐาน 0B</h2>
+<p>วางผลจริงจากเครื่องของคุณ แล้วกดปุ่มคัดลอก ไปวางต่อจากหลักฐาน 0A ในไฟล์ <code>individual/LAB0-&lt;รหัสนักศึกษา&gt;.md</code> ตามขั้นที่ 7</p>
+<div class="ev">
+<label class="full">1 · ผลของ <code>docker version --format …</code><textarea data-k="docker" rows="2"></textarea></label>
+<label class="full">2 · Dockerfile ที่เขียนเอง และผลของ <code>docker images tb-app</code><textarea data-k="dockerfile" rows="8"></textarea></label>
+<label class="full">3 · health ตอนรันแอปตัวเดียว (ขั้นที่ 2) และอธิบายว่าทำไม<textarea data-k="alone" rows="4"></textarea></label>
+<label class="full">4 · ผล psql ผ่านพอร์ต 5433 (ขั้นที่ 3)<textarea data-k="psql" rows="5"></textarea></label>
+<label class="full">5 · health หลังให้สอง container คุยกัน (ขั้นที่ 4)<textarea data-k="net" rows="2"></textarea></label>
+<label class="full">6 · คำทายก่อนรันรอบที่ 1 และผลจริง<textarea data-k="round1" rows="3"></textarea></label>
+<label class="full">7 · <code>docker-compose.yml</code> ฉบับเต็มของคุณ และผล <code>docker compose ps</code><textarea data-k="compose" rows="12"></textarea></label>
+<label class="full">8 · ข้อ 5.4 แก้ server.js แล้วเห็นผลไหม ต้องทำอะไร<textarea data-k="rebuild" rows="3"></textarea></label>
+<label class="full">9 · ไฟล์จริงต่างจากของเราอย่างน้อย 2 จุด แต่ละจุดมีไว้ทำไม และข้อ 6 แก้โค้ดแล้วเกิดอะไร<textarea data-k="compare" rows="5"></textarea></label>
+<label class="full">10 · ติดตรงไหน แก้อย่างไร · ใช้ AI ช่วยไหม ใช้กับอะไร<textarea data-k="hard" rows="4"></textarea></label>
+</div>
+<p class="center"><button class="big" id="copy2" type="button">คัดลอกหลักฐาน 0B (Markdown)</button> <button class="ghost" id="clear" type="button">ล้างช่องทั้งหมด</button></p>
+
+<p class="foot">ENGSE207 สถาปัตยกรรมซอฟต์แวร์ · ภาค 2/2569 · Lab 0B ฉบับ 1.0 · 28 พ.ย. 2569 · อาจารย์ธนิต เกตุแก้ว หลักสูตรวิศวกรรมซอฟต์แวร์ มทร.ล้านนา · คำสั่ง Docker ทั้งหมดอยู่ใน <a href="docker-guide.html">คู่มือคำสั่ง Docker</a></p>
+</main>
+<div class="toast" id="toast" role="status"></div>
+<script>
+(function(){'use strict';
+var LAB=document.body.getAttribute('data-lab'),KEY='engse207-'+LAB;
+var st={};try{st=JSON.parse(localStorage.getItem(KEY)||'{}');}catch(e){}
+var fields=[].slice.call(document.querySelectorAll('.ev [data-k]'));
+fields.forEach(function(el){var k=el.getAttribute('data-k');if(st[k]!=null)el.value=st[k];
+ el.addEventListener('input',function(){st[k]=el.value;try{localStorage.setItem(KEY,JSON.stringify(st));}catch(e){}});});
+function v(k){var el=document.querySelector('.ev [data-k="'+k+'"]');return el?el.value.replace(/\s+$/,''):'';}
+function code(t){return '```text\n'+(t||'(ยังไม่ได้วาง)')+'\n```';}
+function ans(t){return t||'(ยังไม่ได้ตอบ)';}
+function today(){var d=new Date();return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2);}
+function md(){
+ if(LAB==='lab0a'){return ['# Lab 0 (I02) · '+(v('sid')||'<รหัสนักศึกษา>')+' '+(v('name')||'<ชื่อ-นามสกุล>'),'',
+  '## Lab 0A · รันและรู้จักโค้ด Task Board บนเครื่อง','','- เครื่องที่ใช้: '+ans(v('os')),'- วันที่คัดลอก: '+today(),'',
+  '### 1 รุ่นเครื่องมือ',code(v('versions')),'','### 2 จำนวนงานหลังใส่ข้อมูลตั้งต้น',code(v('count')),'',
+  '### 3 log ตอนเริ่มแอป และตอนสร้างงาน',code(v('startlog')),'','### 4 เส้นทางของคำขอ “สร้างงาน”',ans(v('trace')),'',
+  '### 5 console.log ไปโผล่ที่ไหน',ans(v('logs')),'','### 6 /api/about',code(v('about')),'',
+  '### 7 สิ่งที่แก้ (git diff --stat)',code(v('diffstat')),'','### 8 ติดตรงไหน · การใช้ AI',ans(v('hard')),''].join('\n');}
+ return ['## Lab 0B · ย้าย Task Board เข้า Docker','','- วันที่คัดลอก: '+today(),'',
+  '### 1 รุ่น Docker',code(v('docker')),'','### 2 Dockerfile ที่เขียนเอง และ image',code(v('dockerfile')),'',
+  '### 3 รันแอปตัวเดียว',ans(v('alone')),'','### 4 ฐานข้อมูลใน container (psql ผ่านพอร์ต 5433)',code(v('psql')),'',
+  '### 5 สอง container คุยกัน',code(v('net')),'','### 6 Compose รอบที่ 1: คำทายและผลจริง',ans(v('round1')),'',
+  '### 7 docker-compose.yml ของฉัน และ docker compose ps',code(v('compose')),'','### 8 แก้ server.js กับไฟล์ของเรา',ans(v('rebuild')),'',
+  '### 9 เทียบกับไฟล์จริงของ T02',ans(v('compare')),'','### 10 ติดตรงไหน · การใช้ AI',ans(v('hard')),''].join('\n');}
+var t=document.getElementById('toast'),tm;
+function toast(m){t.textContent=m;t.classList.add('on');clearTimeout(tm);tm=setTimeout(function(){t.classList.remove('on');},2600);}
+function copy(){var text=md(),empty=fields.filter(function(el){return !el.value.trim();}).length;
+ var done=function(){toast('คัดลอกแล้ว'+(empty?' · ยังว่าง '+empty+' ช่อง':'')+' · วางในไฟล์ individual/LAB0-<รหัส>.md');};
+ if(navigator.clipboard&&window.isSecureContext){navigator.clipboard.writeText(text).then(done,fb);}else fb();
+ function fb(){var ta=document.createElement('textarea');ta.value=text;ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.select();
+  try{document.execCommand('copy');done();}catch(e){toast('คัดลอกไม่ได้ ให้เลือกข้อความเอง');}document.body.removeChild(ta);}}
+['copy','copy2'].forEach(function(id){var b=document.getElementById(id);if(b)b.addEventListener('click',copy);});
+var c=document.getElementById('clear');if(c)c.addEventListener('click',function(){if(!confirm('ล้างทุกช่องในหน้านี้?'))return;st={};try{localStorage.removeItem(KEY);}catch(e){}fields.forEach(function(el){el.value='';});toast('ล้างแล้ว');});
+var p=document.getElementById('print');if(p)p.addEventListener('click',function(){window.print();});
+var all=[].slice.call(document.querySelectorAll('.qa li.rv'));
+all.forEach(function(li){li.setAttribute('tabindex','0');li.setAttribute('role','button');li.setAttribute('aria-expanded','false');
+ function tg(){var o=!li.classList.contains('open');li.classList.toggle('open',o);li.setAttribute('aria-expanded',o?'true':'false');}
+ li.addEventListener('click',function(e){if(e.target.closest('a'))return;tg();});
+ li.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();tg();}});});
+window.addEventListener('beforeprint',function(){all.forEach(function(li){li.classList.add('open');});});
+window.ENGSE207_LAB0={md:md};
+})();
+</script>
+</body>
+</html>
