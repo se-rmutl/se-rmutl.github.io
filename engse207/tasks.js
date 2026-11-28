@@ -49,7 +49,7 @@
         "git status ต้องเห็น app/ db/ docker-compose.yml .env.example RUN.md เป็นไฟล์ใหม่ แล้ว commit และ push ขึ้น main",
         "ทุกคนที่เครื่องผ่าน check-docker: git pull แล้ว docker compose up -d --build เปิด http://localhost:3000 ใครรันไม่ได้ให้จดข้อความ error มาในคาบ"],
       done: "docker-compose.yml และ app/server.js อยู่บน main ของ repo ทีมก่อนเริ่มคาบ T02", time: "ตัวแทนทีม 15 นาที · รันครั้งแรก 5–10 นาที",
-      links: [{ label: "เอกสารครั้งที่ 2 ส่วนที่ 6", href: "notes/t02.html#p6" }, { label: "repo กลาง engse207-taskboard", href: "https://github.com/se-rmutl/engse207-taskboard" }, { label: "คู่มือติดตั้ง Docker", href: "docker.html" }] },
+      links: [{ label: "เอกสารครั้งที่ 2 ส่วนที่ 6", href: "notes/t02.html#p6" }, { label: "repo กลาง engse207-taskboard", href: "https://github.com/se-rmutl/engse207-taskboard" }, { label: "คู่มือติดตั้ง Docker", href: "docker.html" }, { label: "คู่มือคำสั่ง Docker", href: "notes/docker-guide.html" }] },
     D03: { assigned: "T03",
       why: "บริบท ขอบเขต และ quality scenario เป็นฐานของการตัดสินใจทุกเรื่องที่ตามมาในภาค",
       steps: ["ในคาบ T03 ส่วน D: คัดลอก templates/arch-01-context.md ไปที่ docs/arch-01-context.md แล้ววาง QS จากปุ่มในใบงานลงส่วนที่ 6",

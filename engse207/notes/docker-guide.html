@@ -1,0 +1,473 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ENGSE207 คู่มือ Docker และคำสั่งที่ใช้ในแล็บ</title>
+<meta name="description" content="คู่มือประกอบแล็บ ENGSE207: คำสั่ง Docker Compose ที่ใช้กับ Task Board ตั้งแต่ครั้งที่ 2 เปิด ปิด ดู log exec psql .env curl health loop Git และตารางแก้ปัญหา พร้อมคำถามทบทวน">
+<link rel="canonical" href="https://se-rmutl.github.io/engse207/notes/docker-guide.html">
+<link rel="icon" href="../../assets/se-logo.png" type="image/png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=Sarabun:wght@400;500;700&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+:root{--night:#101b2e;--navy:#13294b;--blue:#2459a6;--blue-soft:#e5edfa;--teal:#0f7f70;--teal-soft:#def3ef;--violet:#6a45c4;--violet-soft:#efe9fb;
+--or:#c95f1f;--or-soft:#fcece1;--gold:#9a6400;--gold-soft:#fbf1dc;--ok:#1f6b33;--ok-soft:#e3f1e6;--bad:#b3261e;--bad-soft:#fdecea;
+--ink:#16233a;--muted:#5a6880;--rule:#d7e0ec;--tint:#f3f6fb;--paper:#fff;--p1:#2f6fe4;--p2:#7a4fd6;--p3:#0f8f7d;--p4:#d0662b;
+--head:"IBM Plex Sans Thai","Sarabun",system-ui,sans-serif;--body:"Sarabun","IBM Plex Sans Thai",system-ui,sans-serif;--mono:"JetBrains Mono",ui-monospace,monospace}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:#eef2f7;color:var(--ink);font:400 18px/1.75 var(--body);-webkit-text-size-adjust:100%}
+a{color:var(--blue)}
+a:focus-visible,button:focus-visible,li.rv:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
+.bar{position:sticky;top:0;z-index:10;display:flex;align-items:center;gap:10px;padding:10px 18px;background:rgba(255,255,255,.94);border-bottom:1px solid var(--rule);backdrop-filter:blur(6px);font-family:var(--head);font-size:.9rem}
+.bar a.back{color:var(--navy);font-weight:600;text-decoration:none}
+.bar .sp{flex:1}
+.bar button,.bar a.pdf{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border:1px solid var(--navy);border-radius:999px;background:#fff;color:var(--navy);font:600 .86rem var(--head);cursor:pointer;text-decoration:none}
+.bar button.pri{background:var(--navy);color:#fff}
+.doc{max-width:880px;margin:24px auto 64px;padding:44px 56px;background:#fff;border:1px solid var(--rule);border-radius:18px}
+.kick{margin:0;color:var(--or);font:700 .82rem var(--head);letter-spacing:.08em}
+h1{margin:6px 0 4px;font:700 2.05rem/1.3 var(--head);color:var(--navy);letter-spacing:-.01em}
+.meta{margin:0 0 18px;color:var(--muted);font:500 .9rem var(--head)}
+h2{margin:46px 0 10px;padding-top:8px;font:700 1.55rem/1.35 var(--head);color:var(--navy);border-top:3px solid var(--navy);scroll-margin-top:70px}
+h2 .no{color:var(--or);margin-right:8px}
+h3{margin:30px 0 6px;font:700 1.18rem/1.45 var(--head);color:var(--navy);scroll-margin-top:70px}
+h4{margin:18px 0 4px;font:700 1rem var(--head);color:var(--ink)}
+p{margin:0 0 12px}
+ul,ol{margin:0 0 12px;padding-left:24px}
+li{margin:3px 0}
+code{font:500 .84em var(--mono);background:var(--tint);border:1px solid #e3e9f2;border-radius:5px;padding:0 5px;overflow-wrap:anywhere}
+b,strong{font-weight:700;color:var(--navy)}
+.en{color:var(--muted);font-size:.92em}
+.box{margin:16px 0;padding:14px 18px;border-radius:12px;border:1px solid var(--rule);background:var(--tint)}
+.box>:last-child{margin-bottom:0}
+.box .lb{display:block;margin-bottom:4px;font:700 .8rem var(--head);letter-spacing:.04em}
+.ex{background:var(--blue-soft);border-color:#c8d7f0}.ex .lb{color:var(--blue)}
+.key{background:var(--or-soft);border-color:#f0c9b1}.key .lb{color:var(--or)}
+.warn{background:var(--gold-soft);border-color:#ebd29c}.warn .lb{color:var(--gold)}
+.proj{background:var(--teal-soft);border-color:#b5ddd5}.proj .lb{color:var(--teal)}
+.mock{background:#fff;border:1.5px dashed #b9c6d8}.mock .lb{color:var(--violet)}
+table.tb{width:100%;border-collapse:collapse;margin:12px 0 16px;font-size:.92rem;line-height:1.55}
+.tb th,.tb td{border:1px solid var(--rule);padding:7px 10px;text-align:left;vertical-align:top}
+.tb th{background:var(--tint);font:700 .84rem var(--head);color:var(--navy)}
+.tb td.k{font-weight:700;color:var(--navy);white-space:nowrap}
+.tb td.n{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+.tb tr.ph td{background:#f7f9fc;font:700 .84rem var(--head);color:var(--navy)}
+.tb tr.ex td{background:var(--bad-soft)}
+.tw{overflow-x:auto}
+.pill{display:inline-block;padding:0 8px;border-radius:999px;font:600 .76rem/1.7 var(--head);white-space:nowrap}
+.pl-in{background:var(--blue-soft);color:var(--blue)}.pl-home{background:var(--or-soft);color:var(--or)}.pl-team{background:var(--teal-soft);color:var(--teal)}.pl-ind{background:var(--violet-soft);color:var(--violet)}
+figure{margin:20px 0;padding:0}
+figure>svg{display:block;width:100%;max-width:100%;height:auto;margin:0 auto}
+figcaption{margin-top:6px;color:var(--muted);font:500 .84rem var(--head);text-align:center}
+.outcomes{counter-reset:o;list-style:none;padding:0}
+.outcomes li{counter-increment:o;position:relative;padding:6px 0 6px 40px}
+.outcomes li::before{content:counter(o);position:absolute;left:0;top:7px;width:28px;height:28px;border-radius:8px;background:var(--navy);color:#fff;display:grid;place-items:center;font:700 .85rem var(--head)}
+.toc{margin:14px 0 6px;padding:12px 18px;border:1px dashed #b9c6d8;border-radius:12px;font-family:var(--head);font-size:.9rem}
+.toc ol{margin:4px 0 0;padding-left:20px}.toc a{text-decoration:none}
+.media{margin:16px 0 4px;display:grid;gap:8px}
+.media .g{display:grid;grid-template-columns:120px 1fr;gap:10px;align-items:baseline;font-family:var(--head);font-size:.9rem}
+.media .g b{color:var(--or);font-size:.82rem}
+.media .g span{display:flex;flex-wrap:wrap;gap:2px 14px}.media .g span a{white-space:nowrap}
+.qa{margin:16px 0;padding:14px 18px;border:2px solid var(--navy);border-radius:14px}
+.qa .lb{display:block;margin-bottom:6px;color:var(--navy);font:700 .86rem var(--head)}
+.qa ol{margin:0;padding-left:22px}
+.qa li{margin:8px 0}
+.qa .ans{display:block;margin-top:4px;padding:6px 10px;border-radius:8px;background:var(--ok-soft);color:#174d27;font-size:.95em}
+.qa li.rv{cursor:pointer}
+.qa .rq{display:inline-block;margin-left:6px;padding:0 8px;border:1px dashed #9fb3c8;border-radius:999px;color:var(--muted);font:600 .78rem var(--head)}
+@media screen{.qa li.rv:not(.open) .ans{display:none}.qa li.rv.open .rq{display:none}}
+pre.code{margin:6px 0 14px;padding:12px 14px;border-radius:10px;background:var(--night);color:#eef2f8;font:500 .8rem/1.6 var(--mono);overflow-x:auto;white-space:pre}
+pre.code .c{color:#9fb0c8}
+.file{display:flex;gap:10px;align-items:baseline;margin:14px 0 0;font:600 .84rem var(--head)}
+.file code{background:none;border:0;padding:0;color:var(--navy);font-weight:600}
+.file span{color:var(--muted);font-weight:500}
+.gl td:first-child{font-weight:700;color:var(--navy);white-space:nowrap}
+.refs li{margin:6px 0;font-size:.92rem}
+.foot{margin-top:40px;padding-top:12px;border-top:1px solid var(--rule);color:var(--muted);font:500 .82rem var(--head)}
+@media (max-width:720px){.tb.wide{min-width:620px;font-size:.86rem}body{font-size:17px}.doc{margin:0;padding:24px 18px;border-radius:0;border:0}h1{font-size:1.6rem}h2{font-size:1.3rem}.media .g{grid-template-columns:1fr;gap:2px}.bar .t{display:none}}
+@page{size:A4;margin:16mm 15mm 18mm}
+@media print{body{background:#fff;font-size:11.5pt;line-height:1.6}.bar{display:none}.doc{margin:0;padding:0;border:0;max-width:none}
+h2{break-after:avoid;margin-top:26px}h3,h4{break-after:avoid}.box,figure,tr,.qa li{break-inside:avoid}pre.code{break-inside:avoid;white-space:pre-wrap}.qa .rq{display:none}
+a{color:var(--ink);text-decoration:none}.toc{break-inside:avoid}.media a{color:var(--blue)}}
+/* แผนภาพ: ตั้ง font/size/fill ที่ .fig แล้วให้คลาสย่อยปรับ */
+.fig{font-family:var(--body);font-size:15px;fill:var(--ink)}
+.fig .t-b{font-family:var(--head);font-weight:600;font-size:16px}
+.fig .t-c{font-family:var(--head);font-weight:600;font-size:14px}
+.fig .t-h{font-family:var(--head);font-weight:700;font-size:19px;fill:var(--navy)}
+.fig .t-s{font-family:var(--head);font-size:13px;fill:var(--muted)}
+.fig .t-x{font-family:var(--head);font-size:12px;fill:var(--muted)}
+.fig .t-m{font-family:var(--mono);font-size:12px;fill:var(--navy)}
+.fig .t-w{fill:#fff;font-family:var(--head);font-weight:600;font-size:15px}
+.fig .t-ws{fill:#d6e0ef;font-family:var(--head);font-size:13px}
+.fig .t-o{font-family:var(--head);font-weight:700;font-size:13px;fill:var(--or)}
+.fig .t-r{font-family:var(--head);font-weight:700;font-size:13px;fill:var(--bad)}
+.fig .n{fill:#fff;stroke:var(--rule);stroke-width:1.5}
+.fig .nb{fill:var(--blue-soft);stroke:var(--blue);stroke-width:1.8}
+.fig .nt{fill:var(--teal-soft);stroke:var(--teal);stroke-width:1.8}
+.fig .nv{fill:var(--violet-soft);stroke:var(--violet);stroke-width:1.8}
+.fig .no{fill:var(--or-soft);stroke:var(--or);stroke-width:1.6}
+.fig .nn{fill:var(--navy);stroke:none}
+.fig .nk{fill:var(--ok-soft);stroke:var(--ok);stroke-width:1.8}
+.fig .zone{fill:#f7f9fc;stroke:#a9b8cc;stroke-width:1.5;stroke-dasharray:7 6}
+.fig .e{stroke:var(--navy);stroke-width:2;fill:none}
+.fig .em{stroke:var(--muted);stroke-width:1.8;fill:none}
+.fig .eb{stroke:var(--blue);stroke-width:2.2;fill:none}
+.fig .et{stroke:var(--teal);stroke-width:2.2;fill:none}
+.fig .eo{stroke:var(--or);stroke-width:2.2;fill:none}
+.fig .er{stroke:var(--bad);stroke-width:2;fill:none}
+.fig .dash{stroke-dasharray:7 6}
+.fig .life{stroke:#b9c6d8;stroke-width:1.5;stroke-dasharray:4 5}
+.fig .axis{stroke:#c9d4e3;stroke-width:3}
+.tg{display:inline-block;margin-left:4px;padding:0 7px;border-radius:999px;background:var(--blue-soft);color:var(--blue);font:600 .7rem/1.65 var(--head);white-space:nowrap;vertical-align:1px}
+.tg.t3{background:var(--teal-soft);color:var(--teal)}
+.tb td code{white-space:nowrap}
+.tb.wide td code{white-space:normal}
+</style>
+</head>
+<body data-guide="docker">
+<div class="bar"><a class="back" href="../index.html">← ENGSE207</a><span class="t">คู่มือ Docker และคำสั่งในแล็บ</span><span class="sp"></span><button class="pri" id="print" type="button">พิมพ์ / บันทึกเป็น PDF</button></div>
+<main class="doc">
+<p class="kick">ENGSE207 · คู่มือประกอบแล็บ · ใช้ตั้งแต่ครั้งที่ 2</p>
+<h1>คู่มือ Docker และคำสั่งที่ใช้ในแล็บ</h1>
+<p class="meta">เปิดค้างไว้ระหว่างแล็บ หรืออ่านทบทวนหลังแล็บ T02–T03 · ใช้ต่อได้ทั้งภาค · ฉบับ 1.0 (28 พ.ย. 2569)</p>
+
+<div class="box proj"><span class="lb">ใช้คู่กับ</span>
+<p>แนวคิดอยู่ใน <a href="t02.html#p4">เอกสารครั้งที่ 2 ส่วนที่ 4</a> (Docker เท่าที่ใช้ และอ่านไฟล์ Compose) และ <a href="t03.html#p3">เอกสารครั้งที่ 3 ส่วนที่ 3</a> (image, container, port, volume, network) · ขั้นตอนแล็บอยู่ใน <a href="../handouts/t02-worksheet.html">ใบงาน T02</a> และ <a href="../handouts/t03-worksheet.html">ใบงาน T03</a> · ยังไม่ได้ติดตั้ง Docker ดู <a href="../docker.html">คู่มือติดตั้ง Docker</a></p>
+<p>คู่มือนี้ตอบคำถามเดียว คือ <b>อยากทำอะไร ต้องพิมพ์อะไร และควรเห็นอะไร</b> ทุกตัวอย่างใช้ Task Board v1 ที่อยู่ใน repo ทีม</p></div>
+
+<nav class="toc" aria-label="สารบัญ"><b>สารบัญ</b><ol>
+<li><a href="#g0">ถ้าจำได้แค่ 6 คำสั่ง</a></li>
+<li><a href="#g1">Terminal ที่ต้องใช้</a></li>
+<li><a href="#g2">วงจรการใช้งานหนึ่งรอบ: เปิด ทำงาน ปิด</a></li>
+<li><a href="#g3">แก้อะไรแล้วต้องสั่งอะไร</a></li>
+<li><a href="#g4">คำสั่ง Docker Compose แยกตามงาน</a></li>
+<li><a href="#g5">อ่าน log และตรวจด้วย curl</a></li>
+<li><a href="#g6">ดูข้อมูลในฐานข้อมูลด้วย psql</a></li>
+<li><a href="#g7">ค่าตั้งและไฟล์ .env</a></li>
+<li><a href="#g8">Git ที่ใช้คู่กับแล็บ</a></li>
+<li><a href="#g9">ติดปัญหา: อาการ → ดูอะไร → แก้อย่างไร</a></li>
+<li><a href="#g10">ก่อนลุกจาก iMac ของห้องแล็บ</a></li>
+<li><a href="#qa">ตรวจความเข้าใจ</a></li>
+<li><a href="#sum">สรุป: แผ่นคำสั่งฉบับย่อ</a></li></ol></nav>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<marker id="a-n" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#13294b"/></marker>
+<marker id="a-t" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#0f7f70"/></marker>
+<marker id="a-o" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#c95f1f"/></marker>
+</defs></svg>
+
+<h2 id="g0"><span class="no">เริ่มที่นี่</span>ถ้าจำได้แค่ 6 คำสั่ง</h2>
+<p>ทุกคำสั่งในหน้านี้พิมพ์ใน Terminal <b>ที่โฟลเดอร์ repo ทีม</b> (โฟลเดอร์ที่มีไฟล์ <code>docker-compose.yml</code>) และต้องเปิด Docker Desktop ไว้ก่อน</p>
+<div class="tw"><table class="tb">
+<tr><th>อยาก…</th><th>พิมพ์</th><th>ควรเห็น</th></tr>
+<tr><td class="k">เปิดระบบ</td><td><code>docker compose up -d --build</code></td><td>app และ db ขึ้นว่า Started หรือ Running</td></tr>
+<tr><td class="k">ดูว่าระบบรันอยู่ไหม</td><td><code>docker compose ps</code></td><td>app <code>Up</code> · db <code>Up (healthy)</code></td></tr>
+<tr><td class="k">ดูว่าแอปทำอะไรอยู่</td><td><code>docker compose logs -f app</code></td><td>บรรทัด <code>[api] … -&gt; 200</code> ทุกครั้งที่กดบนหน้าเว็บ · กด Ctrl+C เพื่อเลิกดู</td></tr>
+<tr><td class="k">เปิดหน้าเว็บ</td><td><code>http://localhost:3000</code> ในเบราว์เซอร์</td><td>บอร์ด 3 คอลัมน์</td></tr>
+<tr><td class="k">ดูข้อมูลในฐานข้อมูล</td><td><code>docker compose exec db psql -U taskboard -d taskboard</code></td><td>พรอมต์ <code>taskboard=#</code> · พิมพ์ <code>\q</code> เพื่อออก</td></tr>
+<tr><td class="k">ปิดระบบ</td><td><code>docker compose down</code></td><td>container หายจาก <code>ps</code> · ข้อมูลยังอยู่</td></tr>
+</table></div>
+
+<h2 id="g1"><span class="no">ส่วนที่ 1</span>Terminal ที่ต้องใช้</h2>
+<div class="tw"><table class="tb">
+<tr><th>เครื่อง</th><th>เปิด Terminal ที่ไหน</th><th>เก็บ repo ไว้ที่</th></tr>
+<tr><td class="k">iMac ห้องแล็บ · macOS</td><td>แอป Terminal หรือ Terminal ใน VS Code (เมนู Terminal › New Terminal)</td><td><code>~/Desktop</code> (ลบทิ้งก่อนลุก)</td></tr>
+<tr><td class="k">Windows</td><td>เทอร์มินัล <b>Ubuntu</b> ของ WSL 2 ไม่ใช่ PowerShell</td><td>โฟลเดอร์ของ Linux เช่น <code>~/engse207</code> ไม่ใช่ <code>/mnt/c/…</code></td></tr>
+<tr><td class="k">macOS ส่วนตัว</td><td>แอป Terminal</td><td>ที่ไหนก็ได้ เช่น <code>~/engse207</code></td></tr>
+</table></div>
+<pre class="code">pwd                          <span class="c"># ตอนนี้อยู่โฟลเดอร์ไหน</span>
+ls                           <span class="c"># ในโฟลเดอร์นี้มีอะไร ต้องเห็น docker-compose.yml app db</span>
+cd ~/Desktop/engse207-2569-s1-cloudcats    <span class="c"># เข้าโฟลเดอร์ repo ทีม (เปลี่ยนเป็นชื่อของทีม)</span>
+cd ..                        <span class="c"># ถอยออกหนึ่งชั้น</span>
+cp .env.example .env         <span class="c"># คัดลอกไฟล์</span>
+code .                       <span class="c"># เปิดโฟลเดอร์นี้ใน VS Code (ถ้าตั้งคำสั่ง code ไว้แล้ว)</span>
+clear                        <span class="c"># ล้างหน้าจอ</span></pre>
+<ul>
+<li><b>Tab</b> เติมชื่อไฟล์และโฟลเดอร์ให้ พิมพ์ไม่กี่ตัวแล้วกด Tab ลดการพิมพ์ผิด · <b>ลูกศรขึ้น</b> เรียกคำสั่งก่อนหน้า</li>
+<li><b>Ctrl+C</b> หยุดคำสั่งที่กำลังวิ่งอยู่ในหน้าต่างนั้น (เช่น <code>logs -f</code> หรือ health loop) <b>ไม่ได้ปิดระบบ</b></li>
+<li>แล็บต้องใช้ Terminal <b>2–3 หน้าต่าง</b>: หน้าต่างแรกพิมพ์คำสั่ง หน้าต่างที่สองเปิด <code>logs -f app</code> ทิ้งไว้ หน้าต่างที่สามใช้ health loop ในครั้งที่ 3 (macOS เปิดแท็บใหม่ด้วย Cmd+T แล้ว <code>cd</code> เข้าโฟลเดอร์ repo อีกครั้ง)</li>
+</ul>
+
+<h2 id="g2"><span class="no">ส่วนที่ 2</span>วงจรการใช้งานหนึ่งรอบ: เปิด ทำงาน ปิด</h2>
+<figure>
+<svg class="fig" viewBox="0 0 800 270" role="img" aria-label="วงจรการใช้งาน 7 ขั้น เปิด Docker Desktop เข้าโฟลเดอร์ repo docker compose up ตรวจด้วย ps ดูหน้าเว็บและ log ทดลองหรือแก้โค้ดวนซ้ำ แล้ว docker compose down">
+<rect x="20" y="24" width="168" height="86" rx="12" class="n"/><circle cx="34" cy="24" r="12" class="nn"/><text x="34" y="29" text-anchor="middle" class="t-w" style="font-size:13px">1</text><text x="104" y="52" text-anchor="middle" class="t-c">เปิด Docker Desktop</text><text x="104" y="76" text-anchor="middle" class="t-x">รอจนขึ้น</text><text x="104" y="94" text-anchor="middle" class="t-m">Engine running</text>
+<rect x="216" y="24" width="168" height="86" rx="12" class="n"/><circle cx="230" cy="24" r="12" class="nn"/><text x="230" y="29" text-anchor="middle" class="t-w" style="font-size:13px">2</text><text x="300" y="52" text-anchor="middle" class="t-c">เข้าโฟลเดอร์ repo</text><text x="300" y="76" text-anchor="middle" class="t-m">cd ~/…/repo-ทีม</text><text x="300" y="94" text-anchor="middle" class="t-x">git clone หรือ git pull</text>
+<rect x="412" y="24" width="168" height="86" rx="12" class="nb"/><circle cx="426" cy="24" r="12" class="nn"/><text x="426" y="29" text-anchor="middle" class="t-w" style="font-size:13px">3</text><text x="496" y="52" text-anchor="middle" class="t-c">เปิดระบบ</text><text x="496" y="76" text-anchor="middle" class="t-m">docker compose</text><text x="496" y="94" text-anchor="middle" class="t-m">up -d --build</text>
+<rect x="608" y="24" width="168" height="86" rx="12" class="nb"/><circle cx="622" cy="24" r="12" class="nn"/><text x="622" y="29" text-anchor="middle" class="t-w" style="font-size:13px">4</text><text x="692" y="52" text-anchor="middle" class="t-c">ตรวจสถานะ</text><text x="692" y="76" text-anchor="middle" class="t-m">docker compose ps</text><text x="692" y="94" text-anchor="middle" class="t-x">app Up · db healthy</text>
+<path d="M190 67 H210" class="e" marker-end="url(#a-n)"/><path d="M386 67 H406" class="e" marker-end="url(#a-n)"/><path d="M582 67 H602" class="e" marker-end="url(#a-n)"/>
+<path d="M692 112 V150" class="e" marker-end="url(#a-n)"/>
+<rect x="608" y="156" width="168" height="86" rx="12" class="nt"/><circle cx="622" cy="156" r="12" class="nn"/><text x="622" y="161" text-anchor="middle" class="t-w" style="font-size:13px">5</text><text x="692" y="184" text-anchor="middle" class="t-c">ดูของจริง</text><text x="692" y="208" text-anchor="middle" class="t-m">localhost:3000</text><text x="692" y="226" text-anchor="middle" class="t-m">logs -f app</text>
+<rect x="412" y="156" width="168" height="86" rx="12" class="nt"/><circle cx="426" cy="156" r="12" class="nn"/><text x="426" y="161" text-anchor="middle" class="t-w" style="font-size:13px">6</text><text x="496" y="184" text-anchor="middle" class="t-c">ทดลอง · แก้โค้ด</text><text x="496" y="208" text-anchor="middle" class="t-x">บันทึก server.js</text><text x="496" y="226" text-anchor="middle" class="t-x">แล้วแอปรีสตาร์ตเอง</text>
+<rect x="216" y="156" width="168" height="86" rx="12" class="no"/><circle cx="230" cy="156" r="12" class="nn"/><text x="230" y="161" text-anchor="middle" class="t-w" style="font-size:13px">7</text><text x="300" y="184" text-anchor="middle" class="t-c">ปิดระบบ</text><text x="300" y="208" text-anchor="middle" class="t-m">docker compose down</text><text x="300" y="226" text-anchor="middle" class="t-x">ข้อมูลยังอยู่ใน volume</text>
+<path d="M604 186 H586" class="et" marker-end="url(#a-t)"/><path d="M586 212 H604" class="et" marker-end="url(#a-t)"/>
+<text x="595" y="252" text-anchor="middle" class="t-x">วนซ้ำ</text>
+<path d="M410 199 H390" class="eo" marker-end="url(#a-o)"/>
+<text x="104" y="190" text-anchor="middle" class="t-x">ครั้งหน้าเริ่มที่ขั้น 1</text><text x="104" y="208" text-anchor="middle" class="t-x">ข้อมูลเดิมยังอยู่</text>
+<path d="M214 199 H160" class="em dash" style="stroke:var(--muted);stroke-width:1.6;stroke-dasharray:5 5;fill:none"/>
+</svg>
+<figcaption>รูปที่ 1 · หนึ่งรอบของการทำงานกับ Task Board ทั้งบน iMac และเครื่องตัวเอง</figcaption>
+</figure>
+
+<h3>2.1 เปิดระบบครั้งแรก</h3>
+<pre class="code">cd ~/Desktop/engse207-2569-s1-cloudcats
+docker compose up -d --build      <span class="c"># ครั้งแรก 2–5 นาที · ครั้งต่อไปไม่กี่วินาที</span>
+docker compose ps</pre>
+<p>ผลของ <code>docker compose ps</code> ที่ถูกต้อง (ตัดคอลัมน์ IMAGE COMMAND CREATED ออกให้สั้น)</p>
+<pre class="code">NAME                               SERVICE   STATUS                  PORTS
+engse207-2569-s1-cloudcats-app-1   app       Up 2 minutes            0.0.0.0:3000-&gt;3000/tcp
+engse207-2569-s1-cloudcats-db-1    db        Up 2 minutes (healthy)  0.0.0.0:5433-&gt;5432/tcp</pre>
+<ul>
+<li><b>ชื่อ container</b> = ชื่อโฟลเดอร์ + ชื่อ service + ลำดับ แต่ละทีมจึงได้ container และ volume ของตัวเอง ไม่ชนกัน</li>
+<li><b>SERVICE</b> คือชื่อที่ใช้ในคำสั่ง เช่น <code>logs app</code> <code>stop db</code> ไม่ต้องพิมพ์ชื่อ container เต็ม</li>
+<li><b>PORTS</b> อ่านว่า พอร์ตเครื่องเรา → พอร์ตใน container (รายละเอียดใน <a href="t03.html#p3">เอกสารครั้งที่ 3 ส่วน 3.3</a>)</li>
+<li>ถ้า db เป็น <code>(health: starting)</code> ให้รอ 5–10 วินาทีแล้ว <code>ps</code> ใหม่ app จะเริ่มหลัง db พร้อมเท่านั้น</li>
+</ul>
+<p>เปิด <code>http://localhost:3000</code> ต้องเห็นบอร์ด 3 คอลัมน์ งานตัวอย่าง 7 งาน และ <code>http://localhost:3000/api/health</code> ต้องได้ <code>{"app":"ok","db":"ok",…}</code></p>
+
+<h3>2.2 ระหว่างทำงาน</h3>
+<p>เปิดหน้าต่างที่สองไว้ดู log ตลอดแล็บ แล้ววางหน้าเว็บกับแท็บ Network ของ DevTools (macOS: Option+Cmd+I · Windows: F12) ไว้ข้างกัน</p>
+<pre class="code">docker compose logs -f app        <span class="c"># ดู log สด · Ctrl+C เพื่อเลิกดู แอปยังทำงานต่อ</span></pre>
+
+<h3>2.3 ปิดระบบ</h3>
+<pre class="code">docker compose down               <span class="c"># ลบ container และเครือข่าย ข้อมูลในฐานข้อมูลยังอยู่ใน volume</span></pre>
+<div class="box warn"><span class="lb">down กับ down -v ไม่เหมือนกัน</span><p><code>docker compose down -v</code> ลบ volume ด้วย ข้อมูลที่ทีมสร้างไว้ทั้งหมดหายและกลับเป็นข้อมูลตั้งต้น 7 งานเมื่อ <code>up</code> ครั้งถัดไป ใช้เฉพาะเมื่อ <b>ตั้งใจ</b> เริ่มข้อมูลใหม่ หรือใบงานสั่งให้ลอง</p></div>
+
+<h2 id="g3"><span class="no">ส่วนที่ 3</span>แก้อะไรแล้วต้องสั่งอะไร</h2>
+<p>คำถามที่พบบ่อยที่สุดในแล็บคือ “แก้แล้วทำไมไม่เห็นผล” คำตอบขึ้นกับว่าแก้ไฟล์ไหน เพราะแต่ละไฟล์เข้าไปถึง container คนละทาง</p>
+<div class="tw"><table class="tb">
+<tr><th>แก้อะไร</th><th>ต้องสั่ง</th><th>เพราะ</th></tr>
+<tr><td class="k"><code>app/server.js</code></td><td>ไม่ต้องสั่งอะไร ดู log ว่าแอปรีสตาร์ตแล้ว</td><td>โฟลเดอร์ <code>app/</code> ถูก mount เข้า container และ nodemon เฝ้าไฟล์นี้อยู่ บันทึกแล้วแอปเริ่มใหม่เอง</td></tr>
+<tr><td class="k"><code>app/public/*</code> (หน้าเว็บ)</td><td>รีเฟรชเบราว์เซอร์ (ถ้ายังเห็นของเก่า Cmd+Shift+R หรือ Ctrl+Shift+R)</td><td>เซิร์ฟเวอร์ส่งไฟล์จากโฟลเดอร์ที่ mount ไว้ แต่เบราว์เซอร์อาจจำไฟล์เก่า</td></tr>
+<tr><td class="k"><code>.env</code> หรือ <code>docker-compose.yml</code></td><td><code>docker compose up -d</code></td><td>ค่า environment ถูกใส่ตอน <b>สร้าง</b> container · <code>up -d</code> สร้างใหม่เฉพาะตัวที่ค่าเปลี่ยน · <code>restart</code> ใช้ไม่ได้ผล</td></tr>
+<tr><td class="k"><code>app/package.json</code> หรือ <code>app/Dockerfile</code></td><td><code>docker compose up -d --build</code></td><td>dependency อยู่ใน image ต้องสร้าง image ใหม่</td></tr>
+<tr><td class="k"><code>db/init/*.sql</code></td><td><code>docker compose down -v</code> แล้ว <code>up -d</code></td><td>ไฟล์ใน <code>db/init</code> รันเฉพาะตอน volume ยังว่าง · <b>ข้อมูลเดิมหาย</b></td></tr>
+<tr><td class="k">ไม่ได้แก้อะไร แค่อยากให้แอปเริ่มใหม่</td><td><code>docker compose restart app</code></td><td>หยุดแล้วเริ่ม container เดิม ค่าเดิมทุกอย่าง</td></tr>
+</table></div>
+
+<h2 id="g4"><span class="no">ส่วนที่ 4</span>คำสั่ง Docker Compose แยกตามงาน</h2>
+<p>รูปแบบคือ <code>docker compose &lt;คำสั่ง&gt; [ชื่อ service]</code> ไม่ใส่ชื่อ service แปลว่าทำกับทุก service ในไฟล์ ป้าย <span class="tg">T02</span> <span class="tg t3">T03</span> บอกว่าใบงานครั้งไหนใช้</p>
+
+<h3>4.1 เปิด ปิด และเริ่มใหม่</h3>
+<div class="tw"><table class="tb">
+<tr><th>คำสั่ง</th><th>ทำอะไร</th><th>ข้อมูลในฐานข้อมูล</th></tr>
+<tr><td class="k"><code>up -d --build</code> <span class="tg">T02</span></td><td>สร้าง image ถ้าจำเป็น แล้วเปิดทุก service เบื้องหลัง (<code>-d</code> = ไม่ผูกกับหน้าต่างนี้)</td><td>อยู่</td></tr>
+<tr><td class="k"><code>up -d</code> <span class="tg t3">T03</span></td><td>เปิด หรือสร้าง container ใหม่เฉพาะตัวที่ค่าตั้งเปลี่ยน</td><td>อยู่</td></tr>
+<tr><td class="k"><code>stop db</code> · <code>start db</code> <span class="tg t3">T03</span></td><td>หยุดชั่วคราว แล้วเริ่มตัวเดิม</td><td>อยู่</td></tr>
+<tr><td class="k"><code>restart app</code> <span class="tg t3">T03</span></td><td>หยุดแล้วเริ่มตัวเดิมทันที</td><td>อยู่</td></tr>
+<tr><td class="k"><code>down</code> <span class="tg">T02</span></td><td>ลบ container และเครือข่าย</td><td><b>อยู่</b></td></tr>
+<tr><td class="k"><code>down -v</code> <span class="tg t3">T03</span></td><td>ลบ container เครือข่าย <b>และ volume</b></td><td><b>หาย</b></td></tr>
+</table></div>
+
+<h3>4.2 ดูสถานะและส่วนประกอบ</h3>
+<div class="tw"><table class="tb">
+<tr><th>คำสั่ง</th><th>ทำอะไร</th></tr>
+<tr><td class="k"><code>docker compose ps</code> <span class="tg">T02</span></td><td>container ของโฟลเดอร์นี้ สถานะ และพอร์ต</td></tr>
+<tr><td class="k"><code>docker compose ps -a</code></td><td>รวม container ที่หยุดหรือล้มไปแล้ว ใช้ตอนหา container ที่หายจากรายการ</td></tr>
+<tr><td class="k"><code>docker compose images</code> <span class="tg t3">T03</span></td><td>image ที่ container ใช้ และขนาด</td></tr>
+<tr><td class="k"><code>docker volume ls</code> <span class="tg t3">T03</span></td><td>volume ทั้งเครื่อง ของทีมลงท้าย <code>_pgdata</code></td></tr>
+<tr><td class="k"><code>docker ps</code></td><td>container ที่รันอยู่ <b>ทั้งเครื่อง</b> ทุกโปรเจกต์ ใช้หาว่าใครจับพอร์ตอยู่</td></tr>
+<tr><td class="k"><code>docker compose config</code></td><td>แสดงไฟล์ Compose หลังแทนค่าจาก <code>.env</code> แล้ว ใช้ตรวจว่าค่าที่แก้เข้าไปจริง</td></tr>
+</table></div>
+
+<h3>4.3 ดู log</h3>
+<div class="tw"><table class="tb">
+<tr><th>คำสั่ง</th><th>ทำอะไร</th></tr>
+<tr><td class="k"><code>docker compose logs -f app</code> <span class="tg">T02</span></td><td>ตาม log ของแอปแบบสด</td></tr>
+<tr><td class="k"><code>docker compose logs --tail 30 app</code></td><td>ดู 30 บรรทัดล่าสุดแล้วจบ เหมาะกับคัดลอกลงบันทึกแล็บ</td></tr>
+<tr><td class="k"><code>docker compose logs --since 5m app</code></td><td>เฉพาะ 5 นาทีที่ผ่านมา</td></tr>
+<tr><td class="k"><code>docker compose logs db</code> <span class="tg t3">T03</span></td><td>log ของ PostgreSQL ดูตอนฐานข้อมูลเริ่มไม่ขึ้นหรือมีคนต่อไม่ได้</td></tr>
+<tr><td class="k"><code>docker compose logs -f</code></td><td>ทุก service ปนกัน มีชื่อ service นำหน้าแต่ละบรรทัด</td></tr>
+</table></div>
+
+<h3>4.4 เข้าไปทำงานข้างใน container</h3>
+<div class="tw"><table class="tb">
+<tr><th>คำสั่ง</th><th>ทำอะไร</th></tr>
+<tr><td class="k"><code>docker compose exec app sh</code></td><td>เปิด shell ใน container app (พิมพ์ <code>exit</code> เพื่อออก) ลอง <code>ls</code> หรือ <code>env | grep DB</code></td></tr>
+<tr><td class="k"><code>docker compose exec app printenv REPORT_COST_MS</code></td><td>ดูค่า environment หนึ่งตัวที่แอปเห็นจริง</td></tr>
+<tr><td class="k"><code>docker compose exec app node -e "…"</code> <span class="tg t3">T03</span></td><td>รัน JavaScript สั้น ๆ ใน container เช่นถามว่าชื่อ <code>db</code> ได้ IP อะไร</td></tr>
+<tr><td class="k"><code>docker compose exec db psql -U taskboard -d taskboard</code></td><td>เข้า PostgreSQL ใน container db (ดู <a href="#g6">ส่วนที่ 6</a>)</td></tr>
+</table></div>
+<div class="box ex"><span class="lb">exec กับ run ต่างกัน</span><p><code>exec</code> เข้าไปใน container ที่ <b>รันอยู่แล้ว</b> ส่วน <code>docker compose run</code> สร้าง container ใหม่อีกตัว ในวิชานี้ใช้ <code>exec</code> อย่างเดียว ถ้า <code>exec</code> ขึ้นว่า service is not running แปลว่ายังไม่ได้ <code>up</code></p></div>
+
+<h3>4.5 ทดลองในครั้งที่ 3</h3>
+<p>ใบงาน T03 ส่วน B ใช้คำสั่งต่อไปนี้ <b>ให้ทายผลก่อนกด</b> แล้วจดตัวเลขจริง คู่มือนี้จึงไม่บอกผลไว้</p>
+<pre class="code">docker compose stop db  ·  docker compose start db       <span class="c"># E1</span>
+docker compose restart app                              <span class="c"># E2</span>
+docker compose up -d                                    <span class="c"># E3 หลังแก้ REPORT_COST_MS ใน .env</span>
+docker compose up -d --scale app=2  ·  --scale app=1    <span class="c"># E4</span>
+docker compose down  ·  down -v  ·  up -d               <span class="c"># E5</span></pre>
+
+<h3>4.6 ดูแลพื้นที่ดิสก์ (เฉพาะเครื่องตัวเอง)</h3>
+<pre class="code">docker system df          <span class="c"># image container volume ใช้ที่ไปเท่าไร</span>
+docker image prune        <span class="c"># ลบ image ที่ไม่มีชื่อและไม่มีใครใช้ ระบบถามยืนยันก่อน</span></pre>
+<p>ห้ามใช้คำสั่ง prune บน iMac ของห้องแล็บ เพราะลบของทีมอื่นที่ใช้เครื่องเดียวกันได้</p>
+
+<h2 id="g5"><span class="no">ส่วนที่ 5</span>อ่าน log และตรวจด้วย curl</h2>
+<h3>5.1 อ่านหนึ่งบรรทัดของ log</h3>
+<pre class="code">[api] POST /api/tasks -&gt; 201 (4 ms)
+  │     │    │             │    └─ เวลาที่เซิร์ฟเวอร์ใช้ นับตั้งแต่ Express เริ่มรับคำขอ
+  │     │    │             └────── status code ที่ตอบกลับ
+  │     │    └──────────────────── path ของคำขอ
+  │     └───────────────────────── HTTP method
+  └─────────────────────────────── ป้ายบอกว่ามาจากส่วนไหนของแอป</pre>
+<p>บรรทัดที่ขึ้นต้น <code>[api] … failed:</code> คือรายละเอียดของ error ที่ผู้ใช้ไม่เห็น ใช้ชี้หาสาเหตุ เวลาในวงเล็บ <b>ไม่รวม</b> เวลาที่คำขอรอคิวก่อนถึง Express ครั้งที่ 3 จะเห็นว่าเรื่องนี้สำคัญอย่างไรเมื่อเทียบกับเวลาในแท็บ Network</p>
+
+<h3>5.2 curl: ยิงคำขอจาก Terminal โดยไม่ผ่านหน้าเว็บ</h3>
+<p>ใช้แยกว่าปัญหาอยู่ที่หน้าเว็บหรือที่เซิร์ฟเวอร์ ถ้า curl ได้ผลถูกแต่หน้าเว็บผิด ปัญหาอยู่ฝั่งเบราว์เซอร์</p>
+<pre class="code">curl -s localhost:3000/api/health                      <span class="c"># สุขภาพของแอปและฐานข้อมูล</span>
+curl -s localhost:3000/api/tasks                       <span class="c"># งานทั้งหมดเป็น JSON</span>
+curl -i localhost:3000/api/tasks                       <span class="c"># -i แสดงบรรทัด status และ header ด้วย</span>
+curl -s -X POST localhost:3000/api/tasks \
+     -H 'Content-Type: application/json' \
+     -d '{"title":"ทดสอบจาก curl"}'                     <span class="c"># สร้างงานใหม่ ต้องได้งานที่สร้างกลับมา</span></pre>
+
+<h3>5.3 health loop: วัดว่าระบบใช้ไม่ได้นานเท่าไร</h3>
+<p>ครั้งที่ 3 ใช้คำสั่งนี้ในหน้าต่างแยก เพื่อยิง health ทุกครึ่งวินาทีระหว่างทดลอง</p>
+<pre class="code">while true; do
+  echo "$(date +%T) $(curl -s -o /dev/null -w '%{http_code}' localhost:3000/api/health)"
+  sleep 0.5
+done</pre>
+<p>วางทั้ง 4 บรรทัดพร้อมกันได้ หรือพิมพ์เป็นบรรทัดเดียวแบบในใบงาน T03 ก็ได้ผลเหมือนกัน ผลที่ได้เป็นบรรทัดละหนึ่งครั้ง เช่น <code>11:20:01 200</code></p>
+<div class="tw"><table class="tb">
+<tr><th>ส่วน</th><th>ความหมาย</th></tr>
+<tr><td class="k"><code>while true; do … done</code></td><td>วนไม่รู้จบ กด Ctrl+C เพื่อหยุด</td></tr>
+<tr><td class="k"><code>date +%T</code></td><td>เวลาตอนนี้ ชั่วโมง:นาที:วินาที ใช้คำนวณช่วงที่ใช้ไม่ได้</td></tr>
+<tr><td class="k"><code>-o /dev/null</code></td><td>ทิ้งเนื้อหาคำตอบ ไม่ต้องแสดง</td></tr>
+<tr><td class="k"><code>-w '%{http_code}'</code></td><td>พิมพ์เฉพาะ status code · <code>000</code> แปลว่าต่อไม่ได้เลย ไม่มีใครฟังพอร์ตนั้น</td></tr>
+<tr><td class="k"><code>sleep 0.5</code></td><td>รอครึ่งวินาทีก่อนยิงรอบถัดไป</td></tr>
+</table></div>
+<p>คำสั่งนี้เป็นภาษา bash ใช้ได้ใน Terminal ของ macOS และ Ubuntu (WSL) <b>ใช้ใน PowerShell ไม่ได้</b></p>
+
+<h2 id="g6"><span class="no">ส่วนที่ 6</span>ดูข้อมูลในฐานข้อมูลด้วย psql</h2>
+<pre class="code">docker compose exec db psql -U taskboard -d taskboard</pre>
+<pre class="code">\dt                                              <span class="c"># มีตารางอะไรบ้าง</span>
+\d tasks                                         <span class="c"># คอลัมน์และข้อกำหนด (constraint) ของตาราง tasks</span>
+SELECT id, title, status, assignee_id FROM tasks ORDER BY id;
+SELECT * FROM members;
+SELECT status, COUNT(*) FROM tasks GROUP BY status;
+\q                                               <span class="c"># ออก</span></pre>
+<ul>
+<li>คำสั่ง SQL ต้องจบด้วย <code>;</code> ถ้าพรอมต์เปลี่ยนเป็น <code>taskboard-#</code> แปลว่ายังรอเครื่องหมายนี้อยู่</li>
+<li><code>UPDATE</code> และ <code>DELETE</code> เปลี่ยนข้อมูลจริงทันที ไม่มีปุ่มย้อนกลับ ใช้เฉพาะเมื่อใบงานสั่ง</li>
+<li>อยากใช้โปรแกรมดูฐานข้อมูลบนเครื่อง เช่น DBeaver หรือ TablePlus ให้ต่อที่ host <code>localhost</code> port <code>5433</code> ผู้ใช้ <code>taskboard</code> รหัส <code>taskboard_dev</code> ฐานข้อมูล <code>taskboard</code> (ค่าเริ่มต้นใน <code>.env.example</code> ใช้ในเครื่องเท่านั้น)</li>
+</ul>
+
+<h2 id="g7"><span class="no">ส่วนที่ 7</span>ค่าตั้งและไฟล์ .env</h2>
+<p>ไม่มีไฟล์ <code>.env</code> ระบบใช้ค่าเริ่มต้นที่เขียนใน <code>docker-compose.yml</code> ถ้าต้องการเปลี่ยนค่า ให้คัดลอกจากไฟล์ตัวอย่างก่อน</p>
+<pre class="code">cp .env.example .env                    <span class="c"># ทำครั้งเดียว</span>
+code .env                               <span class="c"># แก้ค่า เช่น APP_PORT=3001 หรือ REPORT_COST_MS=3000 แล้วบันทึก</span>
+docker compose up -d                    <span class="c"># ให้ Compose สร้าง container ที่ค่าเปลี่ยนขึ้นใหม่</span>
+docker compose exec app printenv REPORT_COST_MS   <span class="c"># ตรวจว่าแอปเห็นค่าใหม่แล้ว</span></pre>
+<div class="tw"><table class="tb">
+<tr><th>ค่า</th><th>ค่าเริ่มต้น</th><th>ใช้เมื่อ</th></tr>
+<tr><td class="k"><code>APP_PORT</code></td><td>3000</td><td>พอร์ต 3000 ของเครื่องมีโปรแกรมอื่นใช้อยู่</td></tr>
+<tr><td class="k"><code>DB_HOST_PORT</code></td><td>5433</td><td>พอร์ต 5433 ของเครื่องชน</td></tr>
+<tr><td class="k"><code>POSTGRES_USER</code> <code>POSTGRES_PASSWORD</code> <code>POSTGRES_DB</code></td><td>taskboard · taskboard_dev · taskboard</td><td>ปกติไม่ต้องแก้ ถ้าแก้หลังสร้าง volume แล้ว แอปจะต่อฐานข้อมูลไม่ได้ (ดู <a href="#g9">ส่วนที่ 9</a>)</td></tr>
+<tr><td class="k"><code>REPORT_COST_MS</code></td><td>0</td><td>ครั้งที่ 3 จำลองรายงานที่คำนวณหนัก ทดลองเสร็จแล้วตั้งกลับเป็น 0</td></tr>
+</table></div>
+<div class="box key"><span class="lb">.env ไม่ขึ้น Git</span><p>ไฟล์ <code>.gitignore</code> ของ repo ทีมกันไว้แล้ว เพราะในการใช้งานจริงไฟล์นี้มีรหัสผ่าน ส่วนที่ commit คือ <code>.env.example</code> ที่มีแต่ค่าตัวอย่าง หลักนี้ใช้ต่อในครั้งที่ 8 ตอนนำระบบขึ้น Cloud ซึ่งตั้งค่าเหล่านี้ในหน้าเว็บของผู้ให้บริการแทน</p></div>
+
+<h2 id="g8"><span class="no">ส่วนที่ 8</span>Git ที่ใช้คู่กับแล็บ</h2>
+<div class="tw"><table class="tb">
+<tr><th>คำสั่ง</th><th>ใช้เมื่อ</th></tr>
+<tr><td class="k"><code>git clone &lt;URL ของ repo ทีม&gt;</code></td><td>เครื่องยังไม่มี repo (บน iMac ใช้ VS Code › Clone Git Repository ได้)</td></tr>
+<tr><td class="k"><code>git pull</code></td><td>ก่อนเริ่มทำงาน และ <b>ก่อน commit ทุกครั้ง</b> เพื่อดึงงานที่เพื่อน push ไว้</td></tr>
+<tr><td class="k"><code>git status</code></td><td>ดูว่าไฟล์ไหนเปลี่ยน ก่อน add ทุกครั้ง</td></tr>
+<tr><td class="k"><code>git diff</code></td><td>อ่านสิ่งที่เปลี่ยนทีละบรรทัด (ครั้งที่ 2 ส่วน D อ่านเป็นคู่)</td></tr>
+<tr><td class="k"><code>git add &lt;ไฟล์&gt;</code></td><td>เลือกไฟล์ที่จะ commit ระบุชื่อไฟล์ ไม่ใช้ <code>git add .</code> ตอนที่มีไฟล์ทดลองค้าง</td></tr>
+<tr><td class="k"><code>git commit -m "t02: …"</code></td><td>บันทึกพร้อมข้อความที่บอกว่าเปลี่ยนอะไรและทำไม</td></tr>
+<tr><td class="k"><code>git push</code></td><td>ส่งขึ้น GitHub · ถ้าถูกปฏิเสธเพราะมีงานใหม่บน GitHub ให้ <code>git pull</code> แล้ว push อีกครั้ง</td></tr>
+<tr><td class="k"><code>git restore &lt;ไฟล์&gt;</code></td><td>ทิ้งสิ่งที่แก้ในไฟล์นั้น กลับเป็นรุ่นที่ commit ล่าสุด (ใช้คืนโค้ดหลังการ์ดข้อขัดข้องในครั้งที่ 3)</td></tr>
+<tr><td class="k"><code>git log --oneline -5</code></td><td>ดู commit ล่าสุด 5 รายการ ใช้อ้างในบันทึกแล็บ</td></tr>
+</table></div>
+<p>โค้ดพังจนกู้ไม่ได้ ดูส่วนที่ 7 ของ <code>RUN.md</code> ใน repo ทีม ซึ่งดึงรุ่นตั้งต้นของครั้งนั้นจาก <a href="https://github.com/se-rmutl/engse207-taskboard">repo กลาง</a> มาทับ แล้วจดในบันทึกแล็บว่ากู้คืน</p>
+
+<h2 id="g9"><span class="no">ส่วนที่ 9</span>ติดปัญหา: อาการ → ดูอะไร → แก้อย่างไร</h2>
+<p>ลำดับการดูที่ใช้ได้เกือบทุกกรณี: <b><code>docker compose ps</code></b> (รันอยู่ไหม) → <b><code>docker compose logs app</code></b> หรือ <code>logs db</code> (บ่นว่าอะไร) → <b>แท็บ Network</b> (หน้าเว็บส่งอะไรและได้อะไร) → <b><code>exec</code></b> เข้าไปดูค่าตั้งหรือข้อมูล อย่าเดาแก้ก่อนมีหลักฐาน</p>
+<div class="tw"><table class="tb wide">
+<tr><th>อาการหรือข้อความ</th><th>สาเหตุที่พบบ่อย</th><th>แก้</th></tr>
+<tr><td><code>Cannot connect to the Docker daemon</code> หรือ <code>docker: command not found</code></td><td>ยังไม่เปิด Docker Desktop · Windows ใช้ PowerShell หรือยังไม่เปิด WSL Integration</td><td>เปิด Docker Desktop รอ Engine running · Windows ใช้เทอร์มินัล Ubuntu และดู <a href="../docker.html">คู่มือติดตั้ง</a></td></tr>
+<tr><td><code>no configuration file provided: not found</code></td><td>ไม่ได้อยู่ในโฟลเดอร์ repo</td><td><code>pwd</code> · <code>ls</code> · <code>cd</code> เข้าโฟลเดอร์ที่มี <code>docker-compose.yml</code></td></tr>
+<tr><td><code>port is already allocated</code></td><td>มีโปรแกรมอื่นหรือ container เก่าจับพอร์ต 3000 หรือ 5433</td><td><code>docker ps</code> ดูว่าใครจับอยู่ ถ้าเป็นของโฟลเดอร์อื่นให้ไป <code>down</code> ที่นั่น หรือเปลี่ยน <code>APP_PORT</code> / <code>DB_HOST_PORT</code> ใน <code>.env</code> แล้ว <code>up -d</code></td></tr>
+<tr><td>เปิด localhost:3000 แล้วขึ้น This site can’t be reached</td><td>app ไม่ได้รัน หรือล้มวนอยู่</td><td><code>ps</code> ถ้า app เป็น Restarting หรือ Exited ให้ <code>logs --tail 30 app</code> หา error บรรทัดแรก</td></tr>
+<tr><td>หน้าเว็บขึ้น แต่โหลดงานไม่ได้ · health ได้ <code>"db":"down"</code></td><td>db หยุดหรือยังไม่ healthy</td><td><code>ps</code> · <code>logs db</code> · ถ้าหยุดอยู่ <code>start db</code></td></tr>
+<tr><td>แก้ <code>server.js</code> แล้วไม่เห็นผล</td><td>มี SyntaxError แอปจึงยังรันโค้ดเดิม หรือยังไม่ได้บันทึกไฟล์</td><td><code>logs -f app</code> ต้องเห็นบรรทัด restarting · แก้ error ตามบรรทัดที่บอก แล้วบันทึกใหม่</td></tr>
+<tr><td>แก้ <code>.env</code> แล้วค่าไม่เปลี่ยน</td><td>ใช้ <code>restart</code> ซึ่งไม่สร้าง container ใหม่</td><td><code>up -d</code> แล้วตรวจด้วย <code>exec app printenv &lt;ชื่อค่า&gt;</code></td></tr>
+<tr><td><code>password authentication failed for user "taskboard"</code></td><td>เปลี่ยนรหัสใน <code>.env</code> หลังฐานข้อมูลถูกสร้างแล้ว ฐานข้อมูลยังใช้รหัสเดิม</td><td>คืนค่าเดิมแล้ว <code>up -d</code> · ถ้าตั้งใจเปลี่ยนรหัสจริง ต้อง <code>down -v</code> (ข้อมูลหาย)</td></tr>
+<tr><td>แก้ไฟล์ seed แล้วข้อมูลไม่เปลี่ยน · หรือข้อมูลที่ทดลองไว้หายหมด</td><td>ไฟล์ใน <code>db/init</code> รันเฉพาะ volume ว่าง · มีคนสั่ง <code>down -v</code></td><td>อยากเริ่มใหม่ <code>down -v</code> แล้ว <code>up -d</code> · ข้อมูลหายหลัง <code>-v</code> เป็นพฤติกรรมปกติ ไม่ใช่บั๊ก</td></tr>
+<tr><td>build ครั้งแรกค้างนานหรือ <code>npm ci</code> ล้ม</td><td>ดาวน์โหลด image และ dependency ครั้งแรก หรือเน็ตหลุด</td><td>รอ 2–5 นาที · ลอง <code>up -d --build</code> อีกครั้งเมื่อเน็ตกลับมา</td></tr>
+<tr><td><code>no space left on device</code></td><td>ดิสก์ของ Docker เต็ม</td><td>เครื่องตัวเอง: <code>docker system df</code> แล้ว <code>docker image prune</code> · iMac: แจ้งผู้สอน</td></tr>
+</table></div>
+<p>ตารางนี้ต่อยอดจากตารางแก้ปัญหาใน <code>RUN.md</code> ส่วนที่ 6 ถ้าเจอปัญหาที่ไม่มีในตาราง ให้คัดลอกข้อความ error บรรทัดแรกพร้อมคำสั่งที่พิมพ์ ลงในบันทึกแล็บช่องสิ่งที่ยังค้าง</p>
+
+<h2 id="g10"><span class="no">ส่วนที่ 10</span>ก่อนลุกจาก iMac ของห้องแล็บ</h2>
+<ol>
+<li><code>git status</code> ต้องไม่มีไฟล์ที่ยังไม่ได้ commit ที่ต้องการเก็บ แล้ว <code>git pull</code> · <code>git push</code></li>
+<li><code>docker compose down</code> (ไม่ต้องใส่ <code>-v</code>)</li>
+<li>ลบโฟลเดอร์ repo บน Desktop (ลากลงถังขยะ)</li>
+<li>Sign out GitHub ใน VS Code (ไอคอน Accounts มุมซ้ายล่าง › Sign out) และในเบราว์เซอร์ · ถ้าใช้ token ให้ลบจาก Keychain Access</li>
+</ol>
+
+<h2 id="qa"><span class="no">ทบทวน</span>ตรวจความเข้าใจ</h2>
+<div class="qa"><span class="lb">ตอบในใจก่อน แล้วคลิกดูแนวคำตอบ</span><ol>
+<li class="rv">เปิด Terminal ใหม่แล้วพิมพ์ <code>docker compose ps</code> ได้ข้อความ <code>no configuration file provided</code> เกิดจากอะไร<span class="rq">แนวคำตอบ</span><span class="ans">Terminal ใหม่เริ่มที่โฟลเดอร์ home ไม่ใช่โฟลเดอร์ repo คำสั่ง <code>docker compose</code> หาไฟล์ <code>docker-compose.yml</code> จากโฟลเดอร์ปัจจุบัน ต้อง <code>cd</code> เข้าโฟลเดอร์ repo ก่อนทุกครั้งที่เปิดหน้าต่างใหม่</span></li>
+<li class="rv">แก้ <code>server.js</code> แล้วต้อง <code>up -d --build</code> ใหม่ไหม<span class="rq">แนวคำตอบ</span><span class="ans">ไม่ต้อง โฟลเดอร์ <code>app/</code> ถูก mount เข้า container และ nodemon รีสตาร์ตแอปเองเมื่อบันทึกไฟล์ ดูยืนยันใน <code>logs -f app</code> · ต้อง build ใหม่เมื่อแก้ <code>package.json</code> หรือ <code>Dockerfile</code> เท่านั้น</span></li>
+<li class="rv">แก้ <code>REPORT_COST_MS</code> ใน <code>.env</code> แล้วสั่ง <code>restart app</code> แต่ระบบยังเหมือนเดิม เพราะอะไร<span class="rq">แนวคำตอบ</span><span class="ans">ค่า environment ถูกใส่ตอนสร้าง container ส่วน <code>restart</code> หยุดแล้วเริ่มตัวเดิมด้วยค่าเดิม ต้องใช้ <code>docker compose up -d</code> ให้ Compose เห็นว่าค่าเปลี่ยนแล้วสร้าง container ใหม่ ตรวจด้วย <code>exec app printenv REPORT_COST_MS</code></span></li>
+<li class="rv">กด Ctrl+C ในหน้าต่างที่เปิด <code>logs -f app</code> ระบบหยุดไหม<span class="rq">แนวคำตอบ</span><span class="ans">ไม่หยุด เพราะเปิดระบบด้วย <code>up -d</code> container ทำงานเบื้องหลัง Ctrl+C หยุดแค่การตาม log ในหน้าต่างนั้น</span></li>
+<li class="rv">จบแล็บบน iMac ใช้ <code>down</code> หรือ <code>down -v</code> เพราะอะไร<span class="rq">แนวคำตอบ</span><span class="ans"><code>down</code> พอ ปิดระบบและลบ container โดยข้อมูลยังอยู่ใน volume ส่วน <code>-v</code> ลบข้อมูลทิ้งทั้งหมด ใช้เมื่อตั้งใจเริ่มข้อมูลใหม่เท่านั้น ข้อมูลที่ต้องส่งอาจารย์อยู่ใน repo ไม่ได้อยู่ในฐานข้อมูลบน iMac</span></li>
+<li class="rv">แอปใน container ต่อฐานข้อมูลที่ <code>db:5432</code> แต่โปรแกรม DBeaver บนเครื่องเราต้องต่อที่ <code>localhost:5433</code> ทำไมไม่เหมือนกัน<span class="rq">แนวคำตอบ</span><span class="ans">แอปอยู่ในเครือข่ายของ Compose จึงเรียกฐานข้อมูลด้วยชื่อ service และพอร์ตใน container ส่วนโปรแกรมบนเครื่องเราอยู่นอกเครือข่ายนั้น ต้องเข้าทางพอร์ตของเครื่องที่จับคู่ไว้ คือ 5433 → 5432</span></li>
+<li class="rv"><code>docker ps</code> เห็น container ของทีมอื่นบน iMac เครื่องเดียวกัน แต่ <code>docker compose ps</code> ไม่เห็น เพราะอะไร<span class="rq">แนวคำตอบ</span><span class="ans"><code>docker ps</code> ดูทั้งเครื่อง ส่วน <code>docker compose ps</code> ดูเฉพาะโปรเจกต์ของโฟลเดอร์ปัจจุบัน ชื่อโปรเจกต์มาจากชื่อโฟลเดอร์ แต่ละทีมจึงแยกกันโดยอัตโนมัติ</span></li>
+<li class="rv"><code>git push</code> ถูกปฏิเสธเพราะเพื่อน push ไปก่อน ควรทำอย่างไร<span class="rq">แนวคำตอบ</span><span class="ans"><code>git pull</code> เพื่อรวมงานของเพื่อนเข้ามาก่อน ถ้าแก้คนละไฟล์จะรวมให้เอง แล้ว <code>git push</code> อีกครั้ง ถ้าแก้ไฟล์เดียวกันตรงเดียวกันจะเกิด conflict ให้คุยกันว่าจะเก็บส่วนไหน แก้ไฟล์ แล้ว commit</span></li>
+</ol></div>
+
+<h2 id="sum"><span class="no">สรุป</span>แผ่นคำสั่งฉบับย่อ</h2>
+<div class="tw"><table class="tb">
+<tr class="ph"><td colspan="2">เปิด ดู ปิด</td></tr>
+<tr><td><code>docker compose up -d --build</code></td><td>เปิดระบบ (สร้าง image ถ้าจำเป็น)</td></tr>
+<tr><td><code>docker compose ps</code></td><td>รันอยู่ไหม พอร์ตอะไร</td></tr>
+<tr><td><code>docker compose logs -f app</code></td><td>ตาม log สด · Ctrl+C เลิกดู</td></tr>
+<tr><td><code>docker compose down</code></td><td>ปิดระบบ ข้อมูลยังอยู่</td></tr>
+<tr class="ph"><td colspan="2">หลังแก้ไฟล์</td></tr>
+<tr><td>แก้ <code>server.js</code></td><td>ไม่ต้องสั่ง ดู log ว่ารีสตาร์ตแล้ว</td></tr>
+<tr><td>แก้ <code>.env</code></td><td><code>docker compose up -d</code></td></tr>
+<tr><td>แก้ <code>package.json</code> หรือ <code>Dockerfile</code></td><td><code>docker compose up -d --build</code></td></tr>
+<tr><td>แก้ <code>db/init</code></td><td><code>docker compose down -v</code> แล้ว <code>up -d</code> (ข้อมูลหาย)</td></tr>
+<tr class="ph"><td colspan="2">เข้าไปดูข้างใน</td></tr>
+<tr><td><code>docker compose exec db psql -U taskboard -d taskboard</code></td><td>ดูข้อมูล · <code>\dt</code> · <code>\q</code></td></tr>
+<tr><td><code>docker compose exec app printenv &lt;ชื่อค่า&gt;</code></td><td>ค่าที่แอปเห็นจริง</td></tr>
+<tr><td><code>curl -s localhost:3000/api/health</code></td><td>แอปและฐานข้อมูลยังดีไหม</td></tr>
+<tr class="ph"><td colspan="2">Git</td></tr>
+<tr><td>ก่อนเริ่ม และก่อน commit</td><td><code>git pull</code></td></tr>
+<tr><td>บันทึกงานขึ้น GitHub</td><td><code>git status</code> → <code>git diff</code> → <code>git add &lt;ไฟล์&gt;</code> → <code>git commit -m "…"</code> → <code>git push</code></td></tr>
+</table></div>
+<div class="box key"><span class="lb">หลักคิด 4 ข้อ</span><ol>
+<li><b>container ทิ้งได้ ข้อมูลอยู่ใน volume</b> · <code>down</code> ปลอดภัย <code>down -v</code> ล้างข้อมูล</li>
+<li><b>docker compose ทำงานกับโฟลเดอร์ปัจจุบัน</b> · <code>cd</code> เข้า repo ก่อนเสมอ</li>
+<li><b>ค่า environment มีผลตอนสร้าง container</b> · แก้ <code>.env</code> แล้ว <code>up -d</code> ไม่ใช่ <code>restart</code></li>
+<li><b>ไล่ปัญหาจากหลักฐาน</b> · <code>ps</code> → <code>logs</code> → Network → <code>exec</code></li>
+</ol></div>
+
+<h3>อ่านเพิ่ม</h3>
+<ul class="refs">
+<li><code>RUN.md</code> ใน repo ทีม · วิธีรัน แผนที่โค้ด API ทั้งหมด และตารางแก้ปัญหาของ Task Board รุ่นที่ทีมใช้อยู่</li>
+<li><a href="t02.html#p4">เอกสารครั้งที่ 2 ส่วนที่ 4</a> และ <a href="t03.html#p3">เอกสารครั้งที่ 3 ส่วนที่ 3</a> · แนวคิดเบื้องหลังคำสั่ง</li>
+<li>Docker Docs. <a href="https://docs.docker.com/compose/">Docker Compose overview</a> และ <a href="https://docs.docker.com/reference/cli/docker/compose/">docker compose CLI reference</a></li>
+<li>PostgreSQL Docs. <a href="https://www.postgresql.org/docs/16/app-psql.html">psql</a></li>
+</ul>
+
+<p class="foot">ENGSE207 สถาปัตยกรรมซอฟต์แวร์ · ภาค 2/2569 · คู่มือ Docker และคำสั่งที่ใช้ในแล็บ ฉบับ 1.0 · 28 พ.ย. 2569 · อาจารย์ธนิต เกตุแก้ว หลักสูตรวิศวกรรมซอฟต์แวร์ มทร.ล้านนา</p>
+
+</main>
+<script>
+(function(){'use strict';
+var all=[].slice.call(document.querySelectorAll('.qa li.rv'));
+all.forEach(function(li){li.setAttribute('tabindex','0');li.setAttribute('role','button');li.setAttribute('aria-expanded','false');
+ function t(){var o=!li.classList.contains('open');li.classList.toggle('open',o);li.setAttribute('aria-expanded',o?'true':'false');}
+ li.addEventListener('click',function(e){if(e.target.closest('a'))return;t();});
+ li.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();t();}});});
+window.addEventListener('beforeprint',function(){all.forEach(function(li){li.classList.add('open');});});
+var b=document.getElementById('print');if(b)b.addEventListener('click',function(){window.print();});
+})();
+</script>
+</body>
+</html>

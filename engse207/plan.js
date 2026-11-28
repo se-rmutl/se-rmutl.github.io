@@ -56,7 +56,8 @@ window.ENGSE207.plan = {
         { label: "ใบงาน T02", href: "handouts/t02-worksheet.html", g: "lab", main: true },
         { label: "สไลด์ 2 ปฏิบัติ T02", href: "slides/t02-2-lab.html", g: "lab" },
         { label: "โค้ด Task Board (repo กลาง)", href: "https://github.com/se-rmutl/engse207-taskboard", g: "guide" },
-        { label: "คู่มือ Docker", href: "docker.html", g: "guide" }
+        { label: "ติดตั้ง Docker", href: "docker.html", g: "guide" },
+        { label: "คู่มือคำสั่ง Docker", href: "notes/docker-guide.html", g: "guide" }
       ] },
     T03: { no: "ครั้งที่ 3", week: 3, title: "คุณลักษณะคุณภาพและการวิเคราะห์ข้อขัดข้อง", clo: [1, 4, 5, 7],
       topics: ["functional requirement กับ quality attribute: modifiability, reliability, performance, scalability", "quality scenario: สิ่งกระตุ้น สภาพแวดล้อม ผลตอบสนอง และตัววัด",
@@ -69,7 +70,8 @@ window.ENGSE207.plan = {
         { label: "สไลด์ 1 คุณภาพและข้อขัดข้อง", href: "slides/t03-1-quality.html", g: "read" },
         { label: "ใบงาน T03", href: "handouts/t03-worksheet.html", g: "lab", main: true },
         { label: "สไลด์ 2 ปฏิบัติ T03", href: "slides/t03-2-lab.html", g: "lab" },
-        { label: "โค้ด Task Board (repo กลาง)", href: "https://github.com/se-rmutl/engse207-taskboard", g: "guide" }
+        { label: "โค้ด Task Board (repo กลาง)", href: "https://github.com/se-rmutl/engse207-taskboard", g: "guide" },
+        { label: "คู่มือคำสั่ง Docker", href: "notes/docker-guide.html", g: "guide" }
       ] },
     T04: { no: "ครั้งที่ 4", week: 4, title: "Layered และ Modular Monolith", clo: [1, 2, 4],
       topics: ["เปรียบเทียบ Client–Server, Layered และ Modular Monolith", "layer คือขอบเขตหน้าที่ในโค้ด · tier คือการแยกการติดตั้ง", "dependency direction, interface และต้นทุนการเปลี่ยน"],
